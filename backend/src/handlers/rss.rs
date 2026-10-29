@@ -132,10 +132,11 @@ pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) 
         .collect();
 
     let xml = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n  <channel>\n    <title>{title}</title>\n    <link>{site_url}{url_prefix}/blog</link>\n    <description>{description}</description>\n    <language>{locale}</language>\n    <lastBuildDate>{last_build}</lastBuildDate>\n    <atom:link href=\"{site_url}/rss{self_q}\" rel=\"self\" type=\"application/rss+xml\"/>\n{}\n  </channel>\n</rss>",
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n  <channel>\n    <title>{title}</title>\n    <link>{site_url}{url_prefix}/blog</link>\n    <description>{description}</description>\n    <language>{locale}</language>\n    <lastBuildDate>{last_build}</lastBuildDate>\n    <generator>{generator}</generator>\n    <atom:link href=\"{site_url}/rss{self_q}\" rel=\"self\" type=\"application/rss+xml\"/>\n{}\n  </channel>\n</rss>",
         items.join("\n"),
         title = escape_html(&crate::identity::site_name()),
         description = escape_html(&crate::identity::site_description()),
+        generator = crate::identity::SOFTWARE,
     );
     ([(header::CONTENT_TYPE, "application/rss+xml; charset=utf-8")], xml).into_response()
 }

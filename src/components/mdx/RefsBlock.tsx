@@ -7,6 +7,7 @@ import type { IconType } from 'react-icons';
 import { SiNpm, SiRust, SiPypi } from 'react-icons/si';
 import { FaGithub, FaXTwitter, FaBookOpen, FaLink, FaYoutube } from 'react-icons/fa6';
 import { LinkHoverPreview } from '@/components/common/LinkHoverPreview';
+import { siteHost, siteUrl } from '@/lib/siteIdentity';
 
 interface RefLink {
   text: string;
@@ -21,7 +22,7 @@ interface RefItem {
 function brandFor(href: string): { Icon: IconType; color: string } {
   let host = '';
   try {
-    host = new URL(href, 'https://koimsurai.com').hostname.replace(/^www\./, '');
+    host = new URL(href, siteUrl()).hostname.replace(/^www\./, '');
   } catch {
     /* 無法解析 → 預設 */
   }
@@ -31,7 +32,7 @@ function brandFor(href: string): { Icon: IconType; color: string } {
   if (host === 'pypi.org') return { Icon: SiPypi, color: '#6ea8d8' };
   if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return { Icon: FaYoutube, color: '#ff5252' };
   if (/(^|\.)(x\.com|twitter\.com)$/.test(host)) return { Icon: FaXTwitter, color: '#e8e8ea' };
-  if (host === 'koimsurai.com') return { Icon: FaBookOpen, color: 'var(--ink)' }; // 站內文章
+  if (host === siteHost()) return { Icon: FaBookOpen, color: 'var(--ink)' }; // 站內文章
   return { Icon: FaLink, color: 'rgba(255,255,255,0.5)' };
 }
 

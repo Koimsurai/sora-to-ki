@@ -39,6 +39,9 @@ const OFF_ON_FRESH_INSTALL: [&str; 1] = ["setup"];
 
 const NAME_MAX: usize = 60;
 const DESCRIPTION_MAX: usize = 300;
+const EMAIL_MAX: usize = 120;
+/// GitHub 帳號名的長度上限（GitHub 自己的規則）
+const GITHUB_MAX: usize = 39;
 
 /// 存在資料庫裡的那一份
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -51,6 +54,21 @@ pub struct SiteSettings {
     pub description: String,
     #[serde(default)]
     pub disabled_pages: Vec<String>,
+    /// 聯絡信箱（關於選單、朋友頁、留言頁）。
+    ///
+    /// `None`＝從來沒設過，退回環境變數 `SITE_EMAIL`；`Some("")`＝刻意清空。
+    /// 這兩個欄位是設定表建好之後才加的：既有的站不會再跑種子，靠這個退路接上環境變數，
+    /// 升級上來不會有一段聯絡方式不見的空窗。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    /// GitHub 帳號名（關於選單的連結、航行日誌的貢獻圖、首頁 JSON-LD 的 sameAs）。規則同 `email`，退路是 `SITE_GITHUB`
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub github: Option<String>,
+}
+
+/// 設定裡沒有就看環境變數（見 `SiteSettings::email`）
+fn or_env(value: Option<String>, key: &str) -> String {
+    value.unwrap_or_else(|| std::env::var(key).map(|v| v.trim().to_string()).unwrap_or_default())
 }
 
 static CURRENT: LazyLock<RwLock<Option<SiteSettings>>> = LazyLock::new(|| RwLock::new(None));
@@ -96,6 +114,9 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         author: crate::identity::env_site_author().unwrap_or_default(),
         description: crate::identity::env_site_description().unwrap_or_default(),
         disabled_pages,
+        // 留 None：讀的時候會退回 SITE_EMAIL／SITE_GITHUB，在後台改過才寫進來
+        email: None,
+        github: None,
     };
     // OR IGNORE：兩個程序同時開機的話，以先寫進去的那份為準
     sqlx::query("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)")
@@ -128,6 +149,10 @@ pub struct SiteConfig {
     pub description: String,
     /// 關掉的頁面（data/siteSections 的 key）
     pub disabled_pages: Vec<String>,
+    /// 聯絡信箱；空字串＝沒有
+    pub email: String,
+    /// GitHub 帳號名；空字串＝沒有
+    pub github: String,
 }
 
 impl From<SiteSettings> for SiteConfig {
@@ -139,6 +164,8 @@ impl From<SiteSettings> for SiteConfig {
             author,
             description: s.description,
             disabled_pages: s.disabled_pages,
+            email: or_env(s.email, "SITE_EMAIL"),
+            github: or_env(s.github, "SITE_GITHUB"),
         }
     }
 }
@@ -152,6 +179,10 @@ pub struct SiteConfigUpdate {
     pub description: Option<String>,
     /// 整份換掉（不是增減）。只收 TOGGLEABLE_PAGES 裡的 key
     pub disabled_pages: Option<Vec<String>>,
+    /// 聯絡信箱；空字串＝清空（不再退回環境變數）
+    pub email: Option<String>,
+    /// GitHub 帳號名（不是網址）；空字串＝清空
+    pub github: Option<String>,
 }
 
 /// 把 body 套到現有的設定上。錯誤訊息直接給後台與 MCP 顯示，所以寫成人看得懂的句子
@@ -190,6 +221,26 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
             .filter(|p| pages.iter().any(|q| q == *p))
             .map(|p| (*p).to_string())
             .collect();
+    }
+    if let Some(email) = body.email {
+        let email = email.trim();
+        if email.chars().count() > EMAIL_MAX {
+            return Err(format!("信箱最多 {EMAIL_MAX} 個字"));
+        }
+        if !email.is_empty() && !email.contains('@') {
+            return Err("信箱的格式不對".into());
+        }
+        s.email = Some(email.to_string());
+    }
+    if let Some(github) = body.github {
+        // 貼了整個網址或帶 @ 的也收：只留帳號名
+        let github = github.trim().trim_start_matches("https://github.com/").trim_start_matches('@');
+        let github = github.trim_end_matches('/');
+        let valid = github.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+        if !valid || github.len() > GITHUB_MAX {
+            return Err("GitHub 帳號名只能有英數字與連字號，最多 39 個字".into());
+        }
+        s.github = Some(github.to_string());
     }
     Ok(s)
 }
@@ -248,7 +299,39 @@ mod tests {
             author: String::new(),
             description: String::new(),
             disabled_pages: vec![],
+            email: None,
+            github: None,
         }
+    }
+
+    #[test]
+    fn 信箱與_github_清空要存成空字串_不是退回環境變數() {
+        let s = apply(
+            base(),
+            SiteConfigUpdate {
+                email: Some(String::new()),
+                github: Some(String::new()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(s.email.as_deref(), Some(""));
+        assert_eq!(s.github.as_deref(), Some(""));
+    }
+
+    #[test]
+    fn github_貼網址或帶_at_也只留帳號名() {
+        for input in ["https://github.com/Koimsurai/", "@Koimsurai", " Koimsurai "] {
+            let s =
+                apply(base(), SiteConfigUpdate { github: Some(input.into()), ..Default::default() }).unwrap();
+            assert_eq!(s.github.as_deref(), Some("Koimsurai"), "{input}");
+        }
+        assert!(
+            apply(base(), SiteConfigUpdate { github: Some("a/b".into()), ..Default::default() }).is_err()
+        );
+        assert!(
+            apply(base(), SiteConfigUpdate { email: Some("nope".into()), ..Default::default() }).is_err()
+        );
     }
 
     #[test]

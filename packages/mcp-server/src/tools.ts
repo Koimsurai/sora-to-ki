@@ -746,12 +746,14 @@ export function makeTools(api: ApiClient): Tool[] {
             },
             description: '要關掉的頁面（整份換掉）。給空陣列＝全部打開',
           },
+          email: { type: 'string', description: '聯絡信箱（關於選單、朋友頁、留言頁）；給空字串＝不顯示' },
+          github: { type: 'string', description: 'GitHub 帳號名（不是網址）；給空字串＝不顯示' },
         },
         additionalProperties: false,
       },
       handler: (a) =>
         api.request('PUT', '/api/admin/site/config', {
-          body: pick(a, ['name', 'author', 'description', 'disabled_pages']),
+          body: pick(a, ['name', 'author', 'description', 'disabled_pages', 'email', 'github']),
         }),
     },
 

@@ -16,7 +16,7 @@ import { disabledPaths } from '../disabledPaths';
 //   2. **alternate 必須對稱**。每個語系版本各自出一筆 <url>，且都帶「完整且相同」的一組
 //      alternate（含指回自己）。少一邊 Google 就不採信整組宣告。
 // `?? ''` 再 `||`：沒設與設成空字串都退回預設（跟 src/lib/postPath.ts 同一個寫法）。
-const SITE_URL = (process.env.SITE_URL ?? '') || 'https://koimsurai.com';
+const SITE_URL = (process.env.SITE_URL ?? '') || 'http://localhost';
 const BACKEND_URL = (process.env.BACKEND_URL ?? '') || 'http://backend-rs:3002';
 
 // UI 頁五語都有翻譯（src/routes/$locale/ 底下每頁都在），所以直接展開全語系。
