@@ -116,7 +116,7 @@
   },
   "home": {
     "orbit": {
-      "title": "Koimsurai 的個人網站：手記、碎念、作品與收藏",
+      "title": "{{author}} 的個人網站：手記、碎念、作品與收藏",
       "notesCount": "{{count}} 篇 · 最近 {{date}}",
       "momentsCount": "最近 {{date}}",
       "worksCount": "{{count}} 件",
@@ -653,7 +653,8 @@
     "emptyText": "第一則留言會出現在這條線上。",
     "privatePre": "不適合公開的話，寄信到",
     "privateMid": "；bug 回報或功能建議比較適合開",
-    "privatePost": "。"
+    "privatePost": "。",
+    "privateEnd": "。"
   },
   "signal": {
     "formTitle": "送出一道訊號",
@@ -750,7 +751,7 @@
     "title_rule3": "由數據長出來",
     "text_rule3": "作品頁螺旋上的每一顆星，都是照一個 repo 的數字長出來的。調整數字做一顆，再一步一步看它怎麼長成。",
     "title_license": "授權",
-    "text_license": "程式碼以 AGPL-3.0 開源；文章、照片與其他內容保留所有權利。",
+    "text_license": "這個站用 sora-to-ki 架設，程式碼以 AGPL-3.0 開源；文章、照片與其他內容保留所有權利。",
     "swatchGround": "黑，是紙",
     "swatchPaper": "白，是墨",
     "swatchAmber": "琥珀，是訊號",

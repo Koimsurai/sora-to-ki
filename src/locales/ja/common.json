@@ -116,7 +116,7 @@
   },
   "home": {
     "orbit": {
-      "title": "Koimsurai の個人サイト：ノート、つぶやき、作品、コレクション",
+      "title": "{{author}} の個人サイト：ノート、つぶやき、作品、コレクション",
       "notesCount": "{{count}} 本 · 最新 {{date}}",
       "momentsCount": "最新 {{date}}",
       "worksCount": "{{count}} 件",
@@ -653,7 +653,8 @@
     "emptyText": "最初のメッセージはこの線の上に現れます。",
     "privatePre": "公開に向かない内容はメールで：",
     "privateMid": "。バグ報告や機能の提案は",
-    "privatePost": " へどうぞ。"
+    "privatePost": " へどうぞ。",
+    "privateEnd": "。"
   },
   "signal": {
     "formTitle": "信号を送る",
@@ -750,7 +751,7 @@
     "title_rule3": "データから育つ",
     "text_rule3": "作品ページの螺旋にある星は、どれもひとつのリポジトリの数字から育っている。数字を変えてひとつ作り、育つ過程を一歩ずつ見てみる。",
     "title_license": "ライセンス",
-    "text_license": "コードは AGPL-3.0 で公開。記事・写真・その他のコンテンツは著作権を保有します。",
+    "text_license": "このサイトは sora-to-ki で動いています。コードは AGPL-3.0 で公開、記事・写真・その他のコンテンツは著作権を保有します。",
     "swatchGround": "黒は紙",
     "swatchPaper": "白はインク",
     "swatchAmber": "琥珀は信号",

@@ -15,14 +15,30 @@ use koimsurai_web_backend::handlers::site_config::load_or_seed;
 use serde_json::json;
 
 #[tokio::test]
-async fn 全新安裝的種子預設關掉設備頁() {
+async fn 全新安裝的種子關掉還沒做成範本的頁面_也不帶原作者的朋友() {
     let (app, pool) = test_app().await;
     sqlx::query("DELETE FROM users").execute(&pool).await.unwrap();
     load_or_seed(&pool).await.unwrap();
 
     let (status, v) = get(&app, "/api/site/config").await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(v["disabled_pages"], json!(["setup"]));
+    assert_eq!(v["disabled_pages"], json!(["works", "setup", "log"]));
+    let (friends,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM friend_links").fetch_one(&pool).await.unwrap();
+    assert_eq!(friends, 0);
+}
+
+#[tokio::test]
+async fn 既有的站升級上來_朋友一個都不能少() {
+    let (_app, pool) = test_app().await;
+    sqlx::query("INSERT INTO users (username, password_hash, role) VALUES ('old', 'x', 'admin')")
+        .execute(&pool)
+        .await
+        .unwrap();
+    load_or_seed(&pool).await.unwrap();
+    let (friends,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM friend_links").fetch_one(&pool).await.unwrap();
+    assert_eq!(friends, 2);
 }
 
 #[tokio::test]

@@ -116,7 +116,7 @@
   },
   "home": {
     "orbit": {
-      "title": "Koimsurai의 개인 사이트: 노트, 혼잣말, 작품, 컬렉션",
+      "title": "{{author}}의 개인 사이트: 노트, 혼잣말, 작품, 컬렉션",
       "notesCount": "{{count}}편 · 최근 {{date}}",
       "momentsCount": "최근 {{date}}",
       "worksCount": "{{count}}개",
@@ -653,7 +653,8 @@
     "emptyText": "첫 메시지는 이 선 위에 나타납니다.",
     "privatePre": "공개하기 어려운 내용은 메일로:",
     "privateMid": ". 버그 제보나 기능 제안은",
-    "privatePost": "에 남겨 주세요."
+    "privatePost": "에 남겨 주세요.",
+    "privateEnd": "."
   },
   "signal": {
     "formTitle": "신호 보내기",
@@ -750,7 +751,7 @@
     "title_rule3": "데이터에서 자란다",
     "text_rule3": "작품 페이지 나선 위의 별은 모두 한 저장소의 숫자로부터 자라났다. 숫자를 바꿔 하나를 만들고, 자라는 과정을 한 단계씩 보자.",
     "title_license": "라이선스",
-    "text_license": "코드는 AGPL-3.0으로 공개합니다. 글, 사진과 그 밖의 콘텐츠는 모든 권리를 보유합니다.",
+    "text_license": "이 사이트는 sora-to-ki로 만들었습니다. 코드는 AGPL-3.0으로 공개하며, 글, 사진과 그 밖의 콘텐츠는 모든 권리를 보유합니다.",
     "swatchGround": "검정은 종이",
     "swatchPaper": "흰색은 잉크",
     "swatchAmber": "호박색은 신호",
