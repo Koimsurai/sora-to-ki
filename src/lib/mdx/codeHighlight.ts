@@ -47,9 +47,17 @@ export function resolveLang(input: string | undefined, isSupported: (lang: strin
 
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/**
+ * vitesse-dark 的註解與標點在程式碼框上只有 3.9:1、3.2:1，低於內文的及格線 4.5。
+ * 色相不變、只提亮到 4.8:1（疊在 --ground + --wash 上算的）。部落格的註解常常就是在解釋重點。
+ * 程式碼是全站唯一允許多色的地方，其他顏色照主題原樣（見 .claude/rules/css.md 的配色那節）
+ */
+const CONTRAST_FIX: Record<string, string> = { '#758575dd': '#768676', '#666666': '#828282' };
+
 /** 一個 token 的 inline style（字型樣式照 shiki 的位元：1 斜體、2 粗體、4 底線、8 刪除線） */
 function tokenStyle(t: ThemedToken): string {
-  const parts = t.color ? [`color:${t.color}`] : [];
+  const color = t.color && (CONTRAST_FIX[t.color.toLowerCase()] ?? t.color);
+  const parts = color ? [`color:${color}`] : [];
   const fs = t.fontStyle ?? 0;
   if (fs > 0) {
     if (fs & 1) parts.push('font-style:italic');

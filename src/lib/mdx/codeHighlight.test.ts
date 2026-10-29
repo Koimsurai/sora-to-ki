@@ -52,6 +52,13 @@ describe('輸出的形狀（站上的樣式依賴它）', () => {
     const colors = new Set([...html.matchAll(/color:(#[0-9a-f]+)/g)].map((m) => m[1]));
     expect(colors.size).toBeGreaterThan(2);
   });
+
+  it('註解與標點提亮到 4.5:1 以上，主題原本那兩個暗色不會出現', async () => {
+    const html = (await highlightCode('// 說明\nconst a = { b: 1 };', 'ts')).toLowerCase();
+    expect(html).toContain('color:#768676');
+    expect(html).toContain('color:#828282');
+    expect(html).not.toMatch(/color:(#758575dd|#666666)/);
+  });
 });
 
 describe('內容原樣保留', () => {
