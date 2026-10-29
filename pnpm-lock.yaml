@@ -166,8 +166,8 @@ importers:
         specifier: ^0.18.1
         version: 0.18.1(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(immer@11.1.18)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@excalidraw/mermaid-to-excalidraw':
-        specifier: ^2.2.2
-        version: 2.2.2
+        specifier: ^3.1.0
+        version: 3.1.0
       '@fontsource-variable/fira-code':
         specifier: 5.3.0
         version: 5.3.0
@@ -1115,6 +1115,9 @@ packages:
 
   '@excalidraw/mermaid-to-excalidraw@2.2.2':
     resolution: {integrity: sha512-5VKQq5CdRocC82vOIUpQ5ufJOVV9FpBTdHGA+ULqazeIVV+cr299877omQCibsdS3Bpitz2fsnTwnIXEmLVDSg==}
+
+  '@excalidraw/mermaid-to-excalidraw@3.1.0':
+    resolution: {integrity: sha512-B3H6aXm4f4O4+f7k1z/Eu1xNj3ZurnCX9RQNzjx00RCfnanLY4z8Pj/1r76FP8yZ1Ue84z50gJoRFCUIZy5xDg==}
 
   '@excalidraw/random-username@1.1.0':
     resolution: {integrity: sha512-nULYsQxkWHnbmHvcs+efMkJ4/9TtvNyFeLyHdeGxW0zHs6P+jYVqcRff9A6Vq9w9JXeDRnRh2VKvTtS19GW2qA==}
@@ -7279,6 +7282,10 @@ packages:
     resolution: {integrity: sha512-3OdOK6rvkaTB569R4/I8U0H82MqPRxj7vfkbowa2rRhgSBPFhvWlfFy5eae0jP+2A6hE8abE17nsdyxJz2VBiQ==}
     engines: {node: '>=20'}
 
+  pele@1.8.0:
+    resolution: {integrity: sha512-AYmHttE70cwNJVXdfPMCANGivFlmc3bGGpMG0GqH5S5vE3RgtEuLlkqbhRfe94Csv/ZEd1TUbv2dMUHpw4p1Bg==}
+    engines: {node: '>=20'}
+
   pend@1.2.0:
     resolution: {integrity: sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==}
 
@@ -9323,6 +9330,12 @@ snapshots:
       '@mermaid-js/parser': 0.6.3
       mermaid: 11.17.1
       nanoid: 5.1.16
+
+  '@excalidraw/mermaid-to-excalidraw@3.1.0':
+    dependencies:
+      '@excalidraw/markdown-to-text': 0.1.2
+      nanoid: 5.1.16
+      pele: 1.8.0
 
   '@excalidraw/random-username@1.1.0': {}
 
@@ -15421,6 +15434,8 @@ snapshots:
   pathe@2.0.3: {}
 
   pele@1.12.0: {}
+
+  pele@1.8.0: {}
 
   pend@1.2.0: {}
 
