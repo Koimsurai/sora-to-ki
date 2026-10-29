@@ -12,11 +12,11 @@
 
 [**koimsurai.com**](https://koimsurai.com) · [手記](https://koimsurai.com/blog) · [此站點](https://koimsurai.com/about-site) · [航行日誌](https://koimsurai.com/history) · [RSS](https://koimsurai.com/rss)
 
-[![CI](https://img.shields.io/github/actions/workflow/status/timo9378/sora-to-ki/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/timo9378/sora-to-ki/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Koimsurai/sora-to-ki/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/Koimsurai/sora-to-ki/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
-[![frontend cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=frontend&label=frontend%20cov&logo=codecov&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=frontend)
-[![e2e cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=e2e&label=e2e%20cov&logo=playwright&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=e2e)
-[![backend cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=backend&label=backend%20cov&logo=rust&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=backend)
+[![frontend cov](https://img.shields.io/codecov/c/github/Koimsurai/sora-to-ki/main?flag=frontend&label=frontend%20cov&logo=codecov&logoColor=white)](https://app.codecov.io/gh/Koimsurai/sora-to-ki?flags%5B0%5D=frontend)
+[![e2e cov](https://img.shields.io/codecov/c/github/Koimsurai/sora-to-ki/main?flag=e2e&label=e2e%20cov&logo=playwright&logoColor=white)](https://app.codecov.io/gh/Koimsurai/sora-to-ki?flags%5B0%5D=e2e)
+[![backend cov](https://img.shields.io/codecov/c/github/Koimsurai/sora-to-ki/main?flag=backend&label=backend%20cov&logo=rust&logoColor=white)](https://app.codecov.io/gh/Koimsurai/sora-to-ki?flags%5B0%5D=backend)
 
 [![React 19](https://img.shields.io/badge/React_19-20232A?logo=react&logoColor=61DAFB)](https://react.dev/)
 [![TanStack Start](https://img.shields.io/badge/TanStack_Start-EF4444?logo=react&logoColor=white)](https://tanstack.com/start)
@@ -30,7 +30,7 @@
 
 從 2025 年 4 月開始寫，一路改到現在。前端是 **React 19 + TanStack Start（SSR + ISR）**，後端是 **Rust（axum + sqlx + SQLite）**，全部跑在家裡的一台伺服器上，用 Docker Compose 部署。
 
-> **想看舊站？** 2026 年 10 月整站翻新成現在的「宙と木」。翻新前的最後一版留在 tag [`v1-final`](https://github.com/timo9378/sora-to-ki/tree/v1-final)（`git checkout v1-final`），也還跑在 <https://archive.koimsurai.com>（唯讀）。
+> **想看舊站？** 2026 年 10 月整站翻新成現在的「宙と木」。翻新前的最後一版留在 tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)（`git checkout v1-final`），也還跑在 <https://archive.koimsurai.com>（唯讀）。
 
 ## 🌌 設計
 
@@ -98,7 +98,7 @@
 
 ## 🚀 2026-10 的大遷移
 
-這次不是換皮，是把整個站照上面的三條規則重新做一遍。舊版的樣子在 [`v1-final`](https://github.com/timo9378/sora-to-ki/tree/v1-final)。
+這次不是換皮，是把整個站照上面的三條規則重新做一遍。舊版的樣子在 [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)。
 
 **前台**
 
@@ -129,7 +129,7 @@
 
 ### 收藏與生活紀錄
 
-- **在看什麼**：動畫瘋觀看紀錄自動同步（[anigamer](https://github.com/timo9378/anigamer-rs)，自己寫的 SDK），電影與影集透過 Simkl 和 TMDb 同步
+- **在看什麼**：動畫瘋觀看紀錄自動同步（[anigamer](https://github.com/Koimsurai/anigamer-rs)，自己寫的 SDK），電影與影集透過 Simkl 和 TMDb 同步
 - **音樂**：Spotify 正在播放、最近播放、最愛曲風
 - **書櫃**：ISBN 查詢走國家圖書館的資料
 - **照片**：EXIF 資訊、CLIP 自動標籤、可縮放的全螢幕檢視；標題、標籤、精選與隱藏在後台改，NAS 重新同步不會蓋掉
@@ -192,7 +192,7 @@ flowchart LR
 需要 **Node.js ≥ 26**、**pnpm 12**、**Rust stable**（edition 2024），或者只要 Docker。
 
 ```bash
-git clone https://github.com/timo9378/sora-to-ki.git
+git clone https://github.com/Koimsurai/sora-to-ki.git
 cd sora-to-ki
 pnpm install
 ```
@@ -288,8 +288,8 @@ cargo clippy --all-targets -- -D warnings
 - 程式碼採 **AGPL-3.0**：如果你改過之後**架成網站對外提供**，也要以相同授權公開修改後的原始碼
 - 站上的**文章、照片、碎念、頭像與 logo 都不在授權範圍內**（見下方），fork 之後請換成你自己的
 - 很多內容綁定我的帳號：動態頁的 Steam／GitHub／WakaTime、動畫瘋同步、首頁與關於頁的自我介紹、設備頁的硬體清單。這些都要改成你自己的，或者直接拿掉
-- 想要翻新前的版本，從 tag [`v1-final`](https://github.com/timo9378/sora-to-ki/tree/v1-final) 開始
-- 有問題或發現 bug 都歡迎開 [issue](https://github.com/timo9378/sora-to-ki/issues)
+- 想要翻新前的版本，從 tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final) 開始
+- 有問題或發現 bug 都歡迎開 [issue](https://github.com/Koimsurai/sora-to-ki/issues)
 
 ## 📄 授權
 

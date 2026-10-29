@@ -480,6 +480,7 @@ export default function Log() {
 
 /** 後端拿不到貢獻資料時：站點誕生到今天每天 0，軌跡是平的 */
 function fallbackDays() {
-  const n = Math.max(2, Math.round((Date.now() - new Date(`${LOG_START}T00:00:00`).getTime()) / 864e5) + 1);
+  // 跟有資料時一樣：從 LOG_START 到今天（含）。四捨五入的話過了中午就多算一天
+  const n = Math.max(2, Math.floor((Date.now() - new Date(`${LOG_START}T00:00:00`).getTime()) / 864e5) + 1);
   return Array.from({ length: n }, () => 0);
 }

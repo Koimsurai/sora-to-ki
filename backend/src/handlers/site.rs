@@ -79,7 +79,7 @@ pub async fn get_github_stars(State(state): State<AppState>) -> Response {
         return Json(CountResponse { count }).into_response();
     }
 
-    let repo = std::env::var("GITHUB_REPO").unwrap_or_else(|_| "timo9378/sora-to-ki".to_string());
+    let repo = std::env::var("GITHUB_REPO").unwrap_or_else(|_| "Koimsurai/sora-to-ki".to_string());
     let fetched = async {
         // 走 state 的 client 與 ExternalUrls，不自己 new 一個也不硬編網址——
         // 硬編的話這支就完全測不了（測試會真的打 api.github.com，而且在 CI 上
@@ -151,7 +151,7 @@ mod tests {
     async fn 星數抓得到就快取_抓不到回上次的值() {
         let server = MockServer::start().await;
         Mock::given(m("GET"))
-            .and(p("/github/repos/timo9378/sora-to-ki"))
+            .and(p("/github/repos/Koimsurai/sora-to-ki"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "stargazers_count": 42, "name": "sora-to-ki"
             })))
@@ -188,7 +188,7 @@ mod tests {
         // GitHub 改欄位名或回錯誤物件（rate limit 是 200 + {message}）時走這條
         let server = MockServer::start().await;
         Mock::given(m("GET"))
-            .and(p("/github/repos/timo9378/sora-to-ki"))
+            .and(p("/github/repos/Koimsurai/sora-to-ki"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "message": "API rate limit exceeded"
             })))

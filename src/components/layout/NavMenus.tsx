@@ -24,7 +24,7 @@ import { thoughtLine } from '@/lib/thoughtRef';
 
 export type MenuKey = 'notes' | 'moments' | 'works' | 'collection' | 'about' | 'more';
 
-const GITHUB = 'https://github.com/timo9378';
+const GITHUB = 'https://github.com/Koimsurai';
 const CONTACT = 'service@koimsurai.com';
 
 const short = (iso: string) => dotDate(parseServerDate(iso), true);

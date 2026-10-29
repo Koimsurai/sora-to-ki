@@ -25,7 +25,7 @@ const langs = (o: Record<string, number>) => Object.entries(o).map(([name, bytes
 
 export const WORKS: WorkEntry[] = [
   {
-    repo: 'timo9378/Volticar_API',
+    repo: 'Koimsurai/Volticar_API',
     name: 'VoltiCar',
     origin: true,
     what: {
@@ -45,7 +45,7 @@ export const WORKS: WorkEntry[] = [
     },
   },
   {
-    repo: 'timo9378/sora-to-ki',
+    repo: 'Koimsurai/sora-to-ki',
     name: 'sora-to-ki',
     what: {
       'zh-TW': '你正在看的這個站',
@@ -55,7 +55,7 @@ export const WORKS: WorkEntry[] = [
       ko: '지금 보고 있는 이 사이트',
     },
     fallback: {
-      url: 'https://github.com/timo9378/sora-to-ki',
+      url: 'https://github.com/Koimsurai/sora-to-ki',
       created_at: '2025-03-31T00:00:00Z',
       pushed_at: '2026-10-23T00:00:00Z',
       stars: 2,
@@ -64,7 +64,7 @@ export const WORKS: WorkEntry[] = [
     },
   },
   {
-    repo: 'timo9378/flow2code',
+    repo: 'Koimsurai/flow2code',
     name: 'flow2code',
     what: {
       'zh-TW': '看穿 API 路由的 X 光',
@@ -74,7 +74,7 @@ export const WORKS: WorkEntry[] = [
       ko: 'API 라우트를 꿰뚫어 보는 엑스레이',
     },
     fallback: {
-      url: 'https://github.com/timo9378/flow2code',
+      url: 'https://github.com/Koimsurai/flow2code',
       created_at: '2026-02-26T00:00:00Z',
       pushed_at: '2026-06-12T00:00:00Z',
       stars: 4,
@@ -83,7 +83,7 @@ export const WORKS: WorkEntry[] = [
     },
   },
   {
-    repo: 'timo9378/session-to-obsidian',
+    repo: 'Koimsurai/session-to-obsidian',
     name: 'session-to-obsidian',
     what: {
       'zh-TW': '把對話整理成主題筆記',
@@ -93,7 +93,7 @@ export const WORKS: WorkEntry[] = [
       ko: '대화를 주제별 노트로 정리',
     },
     fallback: {
-      url: 'https://github.com/timo9378/session-to-obsidian',
+      url: 'https://github.com/Koimsurai/session-to-obsidian',
       created_at: '2026-06-18T00:00:00Z',
       pushed_at: '2026-10-13T00:00:00Z',
       stars: 2,
@@ -102,7 +102,7 @@ export const WORKS: WorkEntry[] = [
     },
   },
   {
-    repo: 'timo9378/anigamer-rs',
+    repo: 'Koimsurai/anigamer-rs',
     name: 'anigamer-rs',
     what: {
       'zh-TW': '巴哈姆特動畫瘋的 Rust SDK',
@@ -112,7 +112,7 @@ export const WORKS: WorkEntry[] = [
       ko: '바하무트 애니메이션 크레이지용 Rust SDK',
     },
     fallback: {
-      url: 'https://github.com/timo9378/anigamer-rs',
+      url: 'https://github.com/Koimsurai/anigamer-rs',
       created_at: '2026-07-15T00:00:00Z',
       pushed_at: '2026-08-04T00:00:00Z',
       stars: 0,
@@ -121,7 +121,7 @@ export const WORKS: WorkEntry[] = [
     },
   },
   {
-    repo: 'timo9378/nuntius',
+    repo: 'Koimsurai/nuntius',
     name: 'nuntius',
     what: {
       'zh-TW': 'Discord 與 GitHub 之間的信使',
@@ -131,7 +131,7 @@ export const WORKS: WorkEntry[] = [
       ko: 'Discord와 GitHub 사이의 전령',
     },
     fallback: {
-      url: 'https://github.com/timo9378/nuntius',
+      url: 'https://github.com/Koimsurai/nuntius',
       created_at: '2026-08-13T00:00:00Z',
       pushed_at: '2026-10-16T00:00:00Z',
       stars: 3,
