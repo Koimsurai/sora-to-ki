@@ -138,6 +138,8 @@ const LOCAL_NAMES: Record<FontStyle, Record<SerifFace, string[]>> = {
   },
   kai: { tc: ['LXGW WenKai TC'], sc: ['LXGW WenKai'], jp: ['Klee One'], kr: ['Gowun Batang'] },
   modern: { tc: ['MiSans'], sc: ['MiSans'], jp: ['BIZ UDPGothic'], kr: ['Pretendard Variable', 'Pretendard'] },
+  // Sketch 的手寫字不經過這個載入器（網址由伺服器畫圖時組好），只為了表格完整
+  hand: { tc: ['Xiaolai'], sc: ['Xiaolai'], jp: ['Xiaolai'], kr: ['Xiaolai'] },
 };
 const SAMPLE: Record<SerifFace, string> = {
   tc: '永字八法 明體 Serif',

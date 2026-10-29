@@ -22,7 +22,8 @@ import {
 } from '../../../../../src/lib/serifSubset';
 
 // 按頁裁字：GET /fonts/<風格>/<字重>/<鍵>.woff2?c=<字集>&f=<tc|sc|jp|kr>[&x=<tc|sc|jp|kr>]，回一個只含這些字的字型。
-// 風格是宋體（站上的主字型）、黑體、楷（手寫味）、現代無襯線（後三種是文章的「字體」切換）；
+// 風格是宋體（站上的主字型）、黑體、楷（手寫味）、現代無襯線（中間三種是文章的「字體」切換），
+// 以及 Sketch 區塊手繪圖裡的中日韓字（hand，網址由伺服器畫圖時組好，見 src/lib/mdx/sketchSvg.ts）；
 // f 是哪一套語系（同一種風格在各語系配的是不同的字，見 FONTS），沒帶就是繁中。編碼見 src/lib/serifSubset.ts。
 // x 是「只裁 x 那一套沒有的字」：繁中頁面上的簡體字（留言）用簡中那套補，見 serifSubset 的 fallbackFamilyOf。
 //
@@ -70,6 +71,14 @@ const FONTS: Record<FontStyle, Record<SerifFace, Source>> = {
     sc: { 400: 'MiSans-Regular.ttf', 600: 'MiSans-Semibold.ttf' },
     jp: { 400: 'BIZUDPGothic-Regular.ttf', 600: 'BIZUDPGothic-Bold.ttf' },
     kr: { file: 'PretendardVariable.ttf' },
+  },
+  // Sketch 的手寫字：小賴字體（繁簡漢字、假名、韓文都在同一支）；拉丁字是 Excalifont，不經過這裡。
+  // 它不是可變字型（沒有 wght 軸，寫成 { file } 會被當成可變字型去固定字重而裁失敗），只有一個字重
+  hand: {
+    tc: { 400: 'Xiaolai-Regular.ttf', 600: 'Xiaolai-Regular.ttf' },
+    sc: { 400: 'Xiaolai-Regular.ttf', 600: 'Xiaolai-Regular.ttf' },
+    jp: { 400: 'Xiaolai-Regular.ttf', 600: 'Xiaolai-Regular.ttf' },
+    kr: { 400: 'Xiaolai-Regular.ttf', 600: 'Xiaolai-Regular.ttf' },
   },
 };
 

@@ -5,9 +5,10 @@
  *   黑體  思源黑體 Noto Sans TC／SC／JP／KR（可變字重）
  *   楷    霞鶩文楷 TC、霞鶩文楷（簡）、Klee One（日）、Gowun Batang（韓）
  *   現代  MiSans（繁簡共用）、BIZ UDPGothic（日）、Pretendard（韓，可變字重）
+ *   手寫  小賴字體 Xiaolai（Sketch 區塊的中日韓字，四套語系共用一支）
  * 檔名沿用舊的 fetch-serif-font：Dockerfile 與 CI 的快取鍵都指著它。
  *
- * 字型太大（合計約 270 MB）不進 git；開發時跑一次，Docker 建置時在獨立的階段跑。
+ * 字型太大（合計約 290 MB）不進 git；開發時跑一次，Docker 建置時在獨立的階段跑。
  * 每一支都比對 sha256：上游換檔或被竄改都會直接失敗，而不是把一個沒驗過的字型拿去裁。
  * 來源都釘在不會變的位置：google/fonts 的某一個提交、GitHub release 的某一個版本（發布超過兩週）、
  * MiSans 官方壓縮檔（網址不帶版本，所以整個壓縮檔也比對 sha256，小米換了檔這裡就會停下來）。
@@ -118,6 +119,13 @@ const FILES = [
     'LXGWWenKai-Medium.ttf',
     'https://github.com/lxgw/LxgwWenKai/releases/download/v1.522/LXGWWenKai-Medium.ttf',
     'd4bdeb38a39151d74d084cba5090f8cb7d20bf83eedb78c35939ae70b9f4e3f6',
+  ],
+  // 小賴字體：Sketch 區塊手寫字裡的中日韓字（拉丁字是 Excalifont，見 public/excalifont）。
+  // 繁簡漢字、假名、韓文都在同一支裡（OFL-1.1）
+  [
+    'Xiaolai-Regular.ttf',
+    'https://github.com/lxgw/kose-font/releases/download/v3.126/Xiaolai-Regular.ttf',
+    'e2f68daf0e72777a8cf58bc83de1b98634b251e537ddbfca24b0ae50d1802da2',
   ],
 ];
 
