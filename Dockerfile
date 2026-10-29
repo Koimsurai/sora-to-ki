@@ -93,6 +93,11 @@ RUN --mount=type=secret,id=sentry_token \
 #      GlitchTip 已經有了自己那份，production 映像不需要留。
 RUN find .output/public/assets -name '*.map' -delete
 
+# 3.5) 預先壓縮的 .br / .gz 照 inject 之後的 JS 重壓。
+#    ⚠️ 壓縮檔是 build 時產生的，比 inject 早：不重壓的話讀者拿到的 .br 沒有 debug id，
+#      GlitchTip 對不回原始碼，而頁面照樣正常、不會有人發現。要排在對齊清單之前，清單才記得到新的大小
+RUN node scripts/recompress-public-assets.mjs
+
 # 4) 讓 nitro 的靜態資產清單追上前面兩步。
 #    ⚠️ 這步不是可有可無的收尾——少了它整站是白畫面。
 #    清單在第 48 行的 build 就定稿了，記著每支資產的 size；nitro 供應時 content-length
