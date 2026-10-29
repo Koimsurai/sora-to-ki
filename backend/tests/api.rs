@@ -854,7 +854,9 @@ async fn reactions_are_logged_with_visit_context() {
         .await
         .unwrap();
     sqlx::query(
-        "INSERT INTO comments (id, post_id, author, content, status) VALUES (7, 1, 'a', 'b', 'approved')",
+        "INSERT INTO comments (id, post_id, thought_id, page, author, content, status) VALUES \
+         (7, 1, NULL, NULL, 'a', 'b', 'approved'), (8, NULL, NULL, 'messages', 'a', 'b', 'approved'), \
+         (9, NULL, 1, NULL, 'a', 'b', 'approved')",
     )
     .execute(&pool)
     .await
@@ -869,7 +871,10 @@ async fn reactions_are_logged_with_visit_context() {
         StatusCode::OK
     );
     assert_eq!(post_with_visit(&app, "/api/site/likes", None).await, StatusCode::OK);
-    assert_eq!(post_with_visit(&app, "/api/comments/7/like", None).await, StatusCode::OK);
+    // 留言掛在文章、留言頁、碎念底下各一則
+    for id in [7, 8, 9] {
+        assert_eq!(post_with_visit(&app, &format!("/api/comments/{id}/like"), None).await, StatusCode::OK);
+    }
     // 喜歡換成不喜歡：收回一個、按下另一個，兩筆
     assert_eq!(
         post_with_visit(&app, "/api/thoughts/1/react", Some(json!({ "prev": "like", "next": "dislike" })))
@@ -881,7 +886,9 @@ async fn reactions_are_logged_with_visit_context() {
     let (status, body) = request(&app, "GET", "/api/admin/reactions", None, Some(&token)).await;
     assert_eq!(status, StatusCode::OK);
     let events = body["events"].as_array().unwrap();
-    let got: Vec<(String, String, i64, Option<String>)> = events
+    /// (kind, value, delta, target_title, comment_on)
+    type Event = (String, String, i64, Option<String>, Option<String>);
+    let got: Vec<Event> = events
         .iter()
         .rev()
         .map(|e| {
@@ -890,18 +897,22 @@ async fn reactions_are_logged_with_visit_context() {
                 e["value"].as_str().unwrap().to_string(),
                 e["delta"].as_i64().unwrap(),
                 e["target_title"].as_str().map(str::to_string),
+                e["comment_on"].as_str().map(str::to_string),
             )
         })
         .collect();
     assert_eq!(
         got,
         vec![
-            ("post".into(), "❤️".into(), 1, Some("公開文章".into())),
-            ("post".into(), "🎉".into(), -1, Some("公開文章".into())),
-            ("site".into(), "like".into(), 1, None),
-            ("comment".into(), "like".into(), 1, Some("公開文章".into()),),
-            ("thought".into(), "like".into(), -1, Some("第一則碎念".into())),
-            ("thought".into(), "dislike".into(), 1, Some("第一則碎念".into())),
+            ("post".into(), "❤️".into(), 1, Some("公開文章".into()), None),
+            ("post".into(), "🎉".into(), -1, Some("公開文章".into()), None),
+            ("site".into(), "like".into(), 1, None, None),
+            ("comment".into(), "like".into(), 1, Some("公開文章".into()), Some("post".into())),
+            // 留言頁的留言沒有標題：以前在後台被標成「（已刪除）」
+            ("comment".into(), "like".into(), 1, None, Some("messages".into())),
+            ("comment".into(), "like".into(), 1, Some("第一則碎念".into()), Some("thought".into())),
+            ("thought".into(), "like".into(), -1, Some("第一則碎念".into()), None),
+            ("thought".into(), "dislike".into(), 1, Some("第一則碎念".into()), None),
         ]
     );
     for e in events {

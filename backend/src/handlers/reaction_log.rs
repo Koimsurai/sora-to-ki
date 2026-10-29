@@ -89,7 +89,7 @@ pub struct ReactionsQuery {
     pub limit: Option<i64>,
 }
 
-/// 一筆紀錄。`target_title`：文章是標題、留言是它所在那篇的標題、碎念是內文開頭
+/// 一筆紀錄。`target_title`：文章是標題、碎念是內文開頭；留言是它所在那篇的標題或那則碎念的開頭
 #[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct ReactionLogEvent {
     #[specta(type = specta_typescript::Number)]
@@ -99,6 +99,9 @@ pub struct ReactionLogEvent {
     #[specta(type = Option<specta_typescript::Number>)]
     pub target_id: Option<i64>,
     pub target_title: Option<String>,
+    /// 留言掛在哪：`post`、`thought`，或頁面的 key（`messages` 是留言頁）。
+    /// 不是留言、或那則留言已經刪了是 null
+    pub comment_on: Option<String>,
     pub value: String,
     #[specta(type = specta_typescript::Number)]
     pub delta: i64,
@@ -135,9 +138,14 @@ pub async fn admin_reactions(
         "SELECT e.id, e.created_at, e.kind, e.target_id, e.value, e.delta, e.country, e.referrer, e.device, e.locale, \
            CASE e.kind \
              WHEN 'post' THEN (SELECT title FROM posts WHERE id = e.target_id) \
-             WHEN 'comment' THEN (SELECT p.title FROM comments c JOIN posts p ON p.id = c.post_id WHERE c.id = e.target_id) \
+             WHEN 'comment' THEN (SELECT COALESCE(p.title, substr(t.content, 1, 40)) FROM comments c \
+               LEFT JOIN posts p ON p.id = c.post_id LEFT JOIN thoughts t ON t.id = c.thought_id \
+               WHERE c.id = e.target_id) \
              WHEN 'thought' THEN (SELECT substr(content, 1, 40) FROM thoughts WHERE id = e.target_id) \
-           END AS target_title \
+           END AS target_title, \
+           CASE WHEN e.kind = 'comment' THEN (SELECT CASE WHEN post_id IS NOT NULL THEN 'post' \
+             WHEN thought_id IS NOT NULL THEN 'thought' ELSE page END FROM comments WHERE id = e.target_id) \
+           END AS comment_on \
          FROM reaction_events e ORDER BY e.id DESC LIMIT ?",
     )
     .bind(limit)
