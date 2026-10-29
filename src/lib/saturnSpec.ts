@@ -1,5 +1,6 @@
 // 首頁那顆土星的設定：3D 版（lib/starfieldGpu）與此站點遊樂場的平面版（about/colophonSaturn）共用這一份，
 // 兩邊畫出來的才是同一顆。只有數字，不碰 three。
+import type { Theme } from './theme';
 import type { Fold } from './viewportFold';
 import { focusY } from './viewportShape';
 
@@ -81,6 +82,124 @@ export const PLANET_COVER = 0.76;
 export const RING_COVER = 0.64;
 
 /**
+ * 主星的長相（主題預設，lib/theme）：3D（lib/starfieldGpu）與開場的小環（__root.tsx）照這份畫。
+ * 畫法全部一樣（刻線、太陽從左上前方來），換的只是數字，所以每個主題的主星都是同一支筆畫的
+ */
+export interface PlanetSpec {
+  /** 雲帶，南北已展開：[緯度°, 寬度°, 亮度增減] */
+  bands: [lat: number, width: number, delta: number][];
+  /** 底子的亮度（雲帶加減在它上面） */
+  base: number;
+  /** 兩極從 [全暗, 開始暗] 這段緯度（°）暗下去 */
+  pole: [dark: number, from: number];
+  /** 斑點（風暴）：[經度 rad, 緯度°, 東西半寬°, 南北半寬°, 亮度增減] */
+  spots: [lon: number, lat: number, wLon: number, wLat: number, delta: number][];
+  ring: {
+    /** [內緣, 外緣, 亮度]，單位是星球半徑 */
+    segments: [inner: number, outer: number, tone: number][];
+    gaps: [at: number, half: number][];
+    inner: number;
+    outer: number;
+    /**
+     * 環上的弧：[半徑, 從幾 rad, 到幾 rad, 亮度]。整圈的環很淡，只有這幾段亮——跟著環一起轉。
+     * 沒有的話是 []
+     */
+    arcs: [r: number, from: number, to: number, tone: number][];
+    /** 環整體的濃度（土星 1；海王星的環很暗，只剩弧與幾道細線） */
+    gain: number;
+    /**
+     * 環切成一圈圈刷痕（RING_ROWS）。海王星的環每一道都比一列刷痕還細，切了會剛好落在縫裡消失，
+     * 所以不切，直接照亮度畫成細線
+     */
+    brushed: boolean;
+  };
+  /** 開場那道小環畫哪幾圈：[半徑（星球半徑）, 亮度] */
+  boot: [r: number, tone: number][];
+}
+
+const ringMid = (i: number): [number, number] => {
+  const [inner, outer, tone] = RING_SEGMENTS[i];
+  return [(inner + outer) / 2, tone ** 0.75];
+};
+
+const SATURN: PlanetSpec = {
+  bands: SATURN_BANDS_FULL,
+  base: 0.52,
+  pole: [80, 48],
+  spots: [],
+  ring: {
+    segments: RING_SEGMENTS,
+    gaps: RING_GAPS,
+    inner: RING_INNER,
+    outer: RING_OUTER,
+    arcs: [],
+    gain: 1,
+    brushed: true,
+  },
+  // B 環最亮的那段與 A 環，中間空出來的就是卡西尼縫
+  boot: [ringMid(4), ringMid(7)],
+};
+
+/** 角度（°）→ rad */
+const deg = (d: number) => (d * Math.PI) / 180;
+
+/**
+ * 海王星（Voyager 2 的影像）：赤道一帶偏暗、中緯度一亮一暗，南緯 60° 以南一圈暗帶。
+ * 南緯 22° 的大暗斑，它南緣的白色伴雲，南緯 42° 那朵跑得最快的白雲（Scooter），南緯 55° 的小暗斑（中心有一點白）。
+ * 照片上的條紋很淡，這裡的增減比土星小
+ */
+const NEPTUNE: PlanetSpec = {
+  bands: [
+    [0, 14, -0.12],
+    [-24, 6, 0.1],
+    [24, 7, 0.08],
+    [-40, 4, -0.08],
+    [-46, 3, 0.1],
+    [44, 5, 0.06],
+    [-66, 9, -0.22],
+    [66, 9, -0.14],
+  ],
+  base: 0.56,
+  pole: [72, 44],
+  spots: [
+    [0.4, -22, 13, 6.5, -0.62],
+    [0.42, -29, 7, 1.6, 0.55],
+    [2.3, -42, 4, 1.5, 0.5],
+    [4.3, -55, 4.5, 2.6, -0.45],
+    [4.3, -55, 1.2, 0.8, 0.6],
+  ],
+  // 由內到外：Galle（寬、很淡）、Le Verrier（細）、Lassell（淡的一片）、Arago（細）、Adams（細，上面有弧）
+  ring: {
+    segments: [
+      [1.66, 1.74, 0.08],
+      [2.142, 2.156, 0.6],
+      [2.156, 2.3, 0.04],
+      [2.306, 2.316, 0.25],
+      [2.532, 2.548, 0.3],
+    ],
+    gaps: [],
+    inner: 1.6,
+    outer: 2.6,
+    // Adams 環上的弧，照順序是 Courage、Liberté、Égalité、Fraternité（實際只佔 40° 左右，這裡拉長一點才看得見）
+    arcs: [
+      [2.54, deg(0), deg(4), 1],
+      [2.54, deg(9), deg(19), 1],
+      [2.54, deg(24), deg(38), 1],
+      [2.54, deg(45), deg(66), 1],
+    ],
+    gain: 0.75,
+    brushed: false,
+  },
+  // 開場那道小環：Le Verrier 與 Adams（Adams 上的弧照載入的階段一段段亮起來，index.css 的 #boot）
+  boot: [
+    [2.149, 0.6],
+    [2.54, 0.5],
+  ],
+};
+
+export const PLANETS: Record<Theme, PlanetSpec> = { saturn: SATURN, neptune: NEPTUNE };
+
+/**
  * 首頁土星佔的那一塊（CSS 像素）：中心與可用的寬高。3D 背景與換頁的錨點都照這個。
  * 橫的畫面置中；直的手機提到 46%，下面留給手指；摺疊機直拿與直式平板再往上提到摺痕以上（lib/viewportShape）。
  * 摺起來時星球本體放進第一半（書本式左半、筆電式上半），另一半是五個分區的目錄
@@ -130,8 +249,8 @@ export const saturnGrowAt = (t: number) => ({ planet: growSpan(GROW_PLANET, t), 
  * 首頁 3D 土星的環在畫面上的中心與外緣半徑（CSS 像素）。開場那道小環在換頁時長大，
  * 要剛好長到這個大小，跟 3D 的環交棒（layout/TransitionLayer）
  */
-export function saturnRingOnScreen(w: number, h: number, fold: Fold | null) {
+export function saturnRingOnScreen(w: number, h: number, fold: Fold | null, outer = RING_OUTER) {
   const f = saturnFrame(w, h, fold);
   const scale = fitScale(f.width, f.height, h) * f.zoom;
-  return { x: f.x, y: f.y, r: ((RING_OUTER * scale) / SATURN_VIEW_HALF) * (h / 2) };
+  return { x: f.x, y: f.y, r: ((outer * scale) / SATURN_VIEW_HALF) * (h / 2) };
 }

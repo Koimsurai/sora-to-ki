@@ -13,6 +13,7 @@ import {
   Fn,
   abs,
   asin,
+  atan,
   exp,
   fract,
   fwidth,
@@ -45,14 +46,10 @@ import {
   ORBITS,
   PLANET_COVER,
   PLANET_ROWS,
+  PLANETS,
   RING_COVER,
-  RING_GAPS,
-  RING_INNER,
-  RING_OUTER,
   RING_ROWS,
-  RING_SEGMENTS,
   ROLL,
-  SATURN_BANDS_FULL,
   satellitePhase,
   satelliteSpeed,
   saturnFrame,
@@ -62,7 +59,9 @@ import {
   fitScale,
   SUN,
   TILT,
+  type PlanetSpec,
 } from './saturnSpec';
+import type { Theme } from './theme';
 import type { Fold } from './viewportFold';
 import { inspectWebGL } from './webglRenderer';
 import type { SatelliteScreen, SaturnGrow } from '@/store/homeOrbit';
@@ -161,6 +160,8 @@ export interface StarfieldInit {
   lite?: boolean;
   /** 開著幾個主要分區（站台設定）＝土星有幾條軌道。沒給就是全部 */
   sections?: number;
+  /** 主題（lib/theme）：主星照哪一份規格畫（lib/saturnSpec 的 PLANETS）。由主執行緒讀好傳進來，沒給是土星 */
+  theme?: Theme;
 }
 
 interface StarLayerCfg {
@@ -340,7 +341,9 @@ function buildSaturn(
   sunWorld: THREE.Vector3,
   { INK, GROUND, AMBER }: SaturnColors,
   initialSections: number,
+  spec: PlanetSpec,
 ): SaturnRig {
+  const { ring: ringSpec } = spec;
   // 外層側傾、內層俯角：跟提案的投影同一個順序（先自轉、再俯、再側傾）。
   // 環與軌道都在內層的水平面（y = 0）上，星球繞內層的 y 軸自轉，軸自然垂直於環
   const group = new THREE.Group();
@@ -374,18 +377,18 @@ function buildSaturn(
     return smoothstep(half.add(aa), half.sub(aa), f).mul(half.div(aa).clamp(0, 1));
   };
 
-  /** 環在半徑 r 的亮度（RING_SEGMENTS、RING_GAPS） */
+  /** 環在半徑 r 的亮度（規格裡的 segments、gaps） */
   const ringTone = (r: FloatNode) => {
     let tone: FloatNode = float(0);
-    for (const [inner, outer, value] of RING_SEGMENTS) {
+    for (const [inner, outer, value] of ringSpec.segments) {
       tone = tone.add(
         smoothstep(inner - 0.004, inner + 0.004, r)
           .mul(smoothstep(outer + 0.004, outer - 0.004, r))
           .mul(value),
       );
     }
-    for (const [at, half] of RING_GAPS) tone = tone.mul(smoothstep(half * 0.4, half, abs(r.sub(at))));
-    return tone;
+    for (const [at, half] of ringSpec.gaps) tone = tone.mul(smoothstep(half * 0.4, half, abs(r.sub(at))));
+    return tone.mul(ringSpec.gain);
   };
 
   const planetMat = new THREE.MeshBasicNodeMaterial();
@@ -394,14 +397,29 @@ function buildSaturn(
     const sun = normalize(sunInPlanet);
     // 晨昏線切得乾脆：參考圖背光那一面幾乎全黑
     const lit = smoothstep(-0.12, 0.4, dot(n, sun));
-    // 雲帶照真實土星的緯度排（SATURN_BANDS）
+    // 雲帶照真實星球的緯度排（規格裡的 bands）
     const lat = asin(n.y.clamp(-1, 1)).mul(180 / Math.PI);
-    let tone: FloatNode = float(0.52);
-    for (const [c, w, d] of SATURN_BANDS_FULL) {
+    let tone: FloatNode = float(spec.base);
+    for (const [c, w, d] of spec.bands) {
       tone = tone.add(exp(lat.sub(c).div(w).pow(2).negate()).mul(d * 1.6));
     }
+    // 斑點（風暴）：經度差先折回 ±π，東西方向的寬度在高緯度要乘 cos(緯度) 才是真的角距離
+    if (spec.spots.length) {
+      const lon = atan(n.x, n.z);
+      for (const [lo, la, wLon, wLat, d] of spec.spots) {
+        const dl = fract(
+          lon
+            .sub(lo)
+            .div(Math.PI * 2)
+            .add(0.5),
+        )
+          .sub(0.5)
+          .mul(360 * Math.cos((la * Math.PI) / 180));
+        tone = tone.add(exp(dl.div(wLon).pow(2).add(lat.sub(la).div(wLat).pow(2)).negate()).mul(d));
+      }
+    }
     // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
-    tone = tone.mul(smoothstep(80, 48, abs(lat)));
+    tone = tone.mul(smoothstep(spec.pole[0], spec.pole[1], abs(lat)));
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
     const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
     const row = n.y.mul(PLANET_ROWS).add(wave.mul(0.8));
@@ -452,7 +470,17 @@ function buildSaturn(
     const along = dot(p, sun).negate();
     const closest = p.add(sun.mul(along));
     const shade = select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.12), float(1));
-    const ink = ringTone(r)
+    // 環上的弧（海王星的 Adams 環）：跟著環轉，所以角度用轉過的 q
+    let tone = ringTone(r);
+    if (ringSpec.arcs.length) {
+      const a = atan(q.z, q.x);
+      for (const [at, from, to, value] of ringSpec.arcs) {
+        const along = smoothstep(from - 0.02, from + 0.02, a).mul(smoothstep(to + 0.02, to - 0.02, a));
+        tone = tone.add(along.mul(smoothstep(0.012, 0.004, abs(r.sub(at)))).mul(value));
+      }
+    }
+    if (!ringSpec.brushed) return tone.mul(shade).clamp(0, 1);
+    const ink = tone
       .mul(ringlets)
       .mul(mix(float(0.4), float(1), brush))
       .mul(shade)
@@ -463,7 +491,7 @@ function buildSaturn(
   const ringFade = uniform(1);
   ringMat.colorNode = paper;
   ringMat.opacityNode = ringInk.mul(ringFade);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 256, 1), ringMat);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(ringSpec.inner, ringSpec.outer, 256, 1), ringMat);
   ring.rotation.x = -Math.PI / 2;
   plane.add(ring);
 
@@ -535,7 +563,7 @@ function buildSaturn(
   /** 開始收的那一刻各部分長到幾成 */
   const collapseFrom = { ring: 0, orbit: [...orbitK], sat: [...satK] };
   /** 環從星球表面攤開：一開始外緣貼著星球 */
-  const RING_FROM = 1 / RING_OUTER;
+  const RING_FROM = 1 / ringSpec.outer;
   const applyParts = () => {
     body.scale.setScalar(Math.max(0.0001, planetK));
     ring.scale.setScalar(RING_FROM + (1 - RING_FROM) * ringK);
@@ -811,6 +839,7 @@ export async function createStarfieldRunner(
       AMBER: threeColor(colors.amber),
     },
     init.sections ?? ORBITS.length,
+    PLANETS[init.theme ?? 'saturn'],
   );
   saturn.setView(init.width, init.height, init.fold ?? null);
   let viewW = init.width;

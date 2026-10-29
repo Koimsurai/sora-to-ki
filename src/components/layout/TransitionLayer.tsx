@@ -19,7 +19,8 @@ import { useRouter } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import { isBotUserAgent } from '@/lib/bot';
 import { palette } from '@/lib/palette';
-import { RING_OUTER, saturnGrowAt, saturnRingOnScreen } from '@/lib/saturnSpec';
+import { PLANETS, saturnGrowAt, saturnRingOnScreen } from '@/lib/saturnSpec';
+import { currentTheme } from '@/lib/theme';
 import { currentFold, offCrease } from '@/lib/viewportFold';
 import {
   after,
@@ -82,7 +83,20 @@ const SKY_PARALLAX = 0.14;
 const RUN_LIMIT_MS = 8000;
 /** 彗尾的塵埃多久熄掉 */
 const DUST_LIFE_MS = 900;
+/** 尾巴的每一條：[往旁邊挪幾 px, 存活是 TAIL_MS 的幾倍, 濃度] */
+const COMET: [number, number, number][] = [[0, 1, 1]];
+const WINDS: [number, number, number][] = [
+  [0, 1.1, 1],
+  [-3.5, 0.6, 0.7],
+  [3.5, 0.4, 0.55],
+];
 const { paper: INK, amber: AMBER } = palette();
+/**
+ * 主題（lib/theme）：編排全站一份，畫法跟著主題換——收（defaultLeave）、尾巴（tail）、開場交棒的環。
+ * 跟配色一樣在模組載入時讀一次：主題在 paint 之前就掛上了，比這支早
+ */
+const THEME = currentTheme();
+const RING_OUTER = PLANETS[THEME].ring.outer;
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 
@@ -215,7 +229,39 @@ const circleAt = (main: HTMLElement, p: Pt, r: number) => {
   main.style.clipPath = `circle(${r.toFixed(1)}px at ${(p.x - box.left).toFixed(1)}px ${(p.y - box.top).toFixed(1)}px)`;
 };
 
-/** 預設的收：一圈遮罩把整頁收進 point，越收越快。alive() 變 false（被新的一趟取代）就停手，不再動遮罩 */
+/**
+ * 海王星的收：整頁切成一條條橫帶（星球的雲帶），每條往錨點那一列壓扁、左右兩端往錨點收。
+ * 每條的速度不一樣：越靠錨點那一列越快（海王星赤道的風最強），左端比右端快——風從左邊吹，收的時候帶子被吹斜。
+ * 帶子之間的縫從 0 慢慢拉開，第一幀跟整頁一模一樣
+ */
+const BANDS = 16;
+const bandsAt = (main: HTMLElement, p: Pt, k: number) => {
+  const box = main.getBoundingClientRect();
+  const w = window.innerWidth;
+  const h = window.innerHeight / BANDS;
+  const gap = 1 - 0.3 * clamp(k * 4);
+  let d = '';
+  for (let i = 0; i < BANDS; i++) {
+    const yc = (i + 0.5) * h;
+    const lat = Math.abs(yc - p.y) / window.innerHeight;
+    const speed = 0.8 + 0.45 * Math.cos(Math.min(1, lat * 1.6) * Math.PI * 0.5) + 0.1 * Math.sin(i * 2.3);
+    const e = easeIn(clamp(k * speed));
+    const cy = yc + (p.y - yc) * e;
+    const half = (h / 2) * (1 - e) * gap;
+    const left = p.x * easeIn(clamp(k * speed * 1.25));
+    const right = w + (p.x - w) * e;
+    if (half < 0.2 || right - left < 0.5) continue;
+    const x0 = (left - box.left).toFixed(1);
+    const x1 = (right - box.left).toFixed(1);
+    d += `M${x0} ${(cy - half - box.top).toFixed(1)}H${x1}V${(cy + half - box.top).toFixed(1)}H${x0}Z`;
+  }
+  main.style.clipPath = d ? `path('${d}')` : 'inset(50%)';
+};
+
+/**
+ * 預設的收：土星是一圈遮罩把整頁收進 point，海王星是雲帶（bandsAt），都是越收越快。
+ * alive() 變 false（被新的一趟取代）就停手，不再動遮罩
+ */
 function defaultLeave(main: HTMLElement, point: Pt, alive: () => boolean): Departure {
   const reach = coverRadius(point);
   const t0 = performance.now();
@@ -226,7 +272,8 @@ function defaultLeave(main: HTMLElement, point: Pt, alive: () => boolean): Depar
         return;
       }
       const k = clamp((now - t0) / LEAVE_MS);
-      circleAt(main, point, reach * (1 - easeIn(k)));
+      if (THEME === 'neptune') bandsAt(main, point, k);
+      else circleAt(main, point, reach * (1 - easeIn(k)));
       if (k < 1) requestAnimationFrame(step);
       else resolve();
     };
@@ -362,20 +409,32 @@ export default function TransitionLayer() {
       ctx.fill();
     };
 
-    /** 彗尾：每一段照它畫下去多久了變淡，散完就不畫；回傳還有沒有沒散完的 */
+    /**
+     * 彗尾：每一段照它畫下去多久了變淡，散完就不畫；回傳還有沒有沒散完的。
+     * 海王星是三條細風線（WINDS）：中間那條最長，兩側一短一更短，在點身上靠在一起、越舊越散開，像被風拉開的雲絲
+     */
     const tail = (points: Run['trail'], now: number) => {
       ctx.lineWidth = 1;
       ctx.lineCap = 'round';
       let alive = false;
-      for (let i = 1; i < points.length; i++) {
-        const k = 1 - (now - points[i].t) / TAIL_MS;
-        if (k <= 0) continue;
-        alive = true;
-        ctx.strokeStyle = `rgba(${INK}, ${(0.75 * Math.pow(k, 1.6)).toFixed(3)})`;
-        ctx.beginPath();
-        ctx.moveTo(points[i - 1].x, points[i - 1].y);
-        ctx.lineTo(points[i].x, points[i].y);
-        ctx.stroke();
+      for (const [offset, life, strength] of THEME === 'neptune' ? WINDS : COMET) {
+        for (let i = 1; i < points.length; i++) {
+          const k = 1 - (now - points[i].t) / (TAIL_MS * life);
+          if (k <= 0) continue;
+          alive = true;
+          const a = points[i - 1];
+          const b = points[i];
+          // 往旁邊挪 offset（垂直於這一段的方向）：在點身上靠在一起，越舊越散開
+          const l = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+          const spread = offset * (0.3 + 1.2 * (1 - k));
+          const ox = (-(b.y - a.y) / l) * spread;
+          const oy = ((b.x - a.x) / l) * spread;
+          ctx.strokeStyle = `rgba(${INK}, ${(0.75 * strength * Math.pow(k, 1.6)).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(a.x + ox, a.y + oy);
+          ctx.lineTo(b.x + ox, b.y + oy);
+          ctx.stroke();
+        }
       }
       return alive;
     };
@@ -644,7 +703,8 @@ export default function TransitionLayer() {
         const moved = { x: r.pos.x - prev.x, y: r.pos.y - prev.y };
         const lastPt = r.trail.at(-1);
         if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos, t: now });
-        if (len(moved) > 0.2) emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
+        // 海王星沒有塵埃：尾巴就是那三條風線
+        if (len(moved) > 0.2 && THEME !== 'neptune') emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
         world(() => {
           drawDust(r, dt, 1);
           tail(r.trail, now);
@@ -857,7 +917,7 @@ export default function TransitionLayer() {
       };
       run = r;
       if (handoff) {
-        const ring = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
+        const ring = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold(), RING_OUTER);
         bootRingUnit = ring.r / RING_OUTER;
         // 環的位置不在這裡定：它套在點上跟著走（track），點落在土星中心（首頁的錨點）時剛好就位
         root.dataset.bootRing = 'grow';

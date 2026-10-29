@@ -688,6 +688,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── 主題預設（lib/theme）：只換原始層，語意層在同一個元素（:root）上照著重算 ──
+   底色一律是黑夜，換的是訊號色與墨的溫度。--amber 在這裡是「這個主題的訊號色」，名字沿用原始層的。
+   對比度（疊在各自的底色上）：最淡的字 55% ≥ 4.5、訊號色 ≥ 3；訊號色跟墨的色差 ΔE2000 ≥ 20（認得出來） */
+/* 海王星：甲烷藍，墨偏冷，夜色帶一點藍。55% 的字 5.3:1，訊號色 8.6:1，訊號色與墨 ΔE 22.1 */
+:root[data-theme="neptune"] {
+  --ground: #07090d;
+  --ground-rgb: 7, 9, 13;
+  --paper: #e4e9ef;
+  --paper-rgb: 228, 233, 239;
+  --amber: #7eaee6;
+  --amber-rgb: 126, 174, 230;
+}
+
 /* ── 文章閱讀字體（右下角 FontSwitcher）──
  *
  * 為什麼字體棧放在 CSS 而不是 TSX：偏好存在 localStorage，server 讀不到，原本是在 BlogPost
@@ -1278,6 +1291,41 @@ html[data-boot="out"] .boot-pen {
   opacity: 0;
 }
 
+/* 主題（lib/theme）：每個主題的那兩圈都畫在裡面（__root.tsx 的 BOOT_RINGS），只留現在這個 */
+.boot-rings-neptune,
+.boot-lines-arc {
+  display: none;
+}
+/* 海王星不用筆畫：兩道細環一直都在，Adams 環上的四段弧照載入的四個階段一段段亮起來
+   （--boot-p 由 lib/bootRing 寫；--at 是那一段亮起來的進度）。遮片與筆尖整個不用 */
+:root[data-theme="neptune"] {
+  .boot-rings-saturn,
+  .boot-lines-prog,
+  .boot-arc,
+  .boot-pen {
+    display: none;
+  }
+  .boot-rings-neptune {
+    display: inline;
+  }
+  .boot-lines-arc {
+    display: block;
+  }
+  .boot-ring-base {
+    stroke-opacity: calc(var(--tone, 1) * 0.35);
+  }
+}
+.boot-ring-arc {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: clamp(0, calc((var(--boot-p, 0) - var(--at)) * 20 + 1), 1);
+  transition: opacity var(--dur-400) var(--easing-out);
+  /* 載得快的時候幾個階段會同一刻到：照順序錯開一點，還是看得出一段接一段亮 */
+  transition-delay: calc((var(--at) - 0.12) * var(--dur-400));
+}
 /* 不交棒的時候（別頁、沒有 3D、3D 等太久）：環收回中間那顆點裡，點再飛出去（layout/TransitionLayer 的
    BOOT_COLLAPSE_MS）。縮的是框的寬高，SVG 照新尺寸重畫，線一直是 1px；筆尖先退掉 */
 html[data-boot-collapse] .boot-ring,

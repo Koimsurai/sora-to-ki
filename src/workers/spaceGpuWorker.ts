@@ -8,6 +8,7 @@
 // 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse / stars，錯誤一律回報主執行緒處理。
 // 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）、土星長到幾成（saturnGrow）。
 import type { Palette } from '../lib/palette';
+import type { Theme } from '../lib/theme';
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
 import type { Fold } from '../lib/viewportFold';
 
@@ -23,6 +24,8 @@ interface InitMsg {
   palette?: Palette;
   /** 開著幾個主要分區＝土星幾條軌道（站台設定） */
   sections?: number;
+  /** 主題（lib/theme）：主星照哪一份規格畫 */
+  theme?: Theme;
 }
 interface ResizeMsg {
   type: 'resize';
@@ -117,6 +120,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           lite: msg.lite,
           palette: msg.palette,
           sections: msg.sections,
+          theme: msg.theme,
           onPerf: (report) => self.postMessage({ type: 'perf', report }),
           // device lost：worker 裡的 console.error 不會出現在頁面 console，而且這個 renderer
           // 之後一幀都不會再畫。轉給主執行緒，由它換一張新 canvas 重建（見 StarfieldGpu）。

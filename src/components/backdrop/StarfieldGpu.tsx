@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { InitTiming, PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
 import { palette } from '@/lib/palette';
+import { currentTheme } from '@/lib/theme';
 import { currentFold, subscribeFold } from '@/lib/viewportFold';
 import { MAIN_SECTIONS } from '@/data/siteSections';
 import { useEnabledSections } from '@/data/siteConfig';
@@ -266,6 +267,7 @@ export default function StarfieldGpu({
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
             palette: palette(),
+            theme: currentTheme(),
             sections: sectionsRef.current,
           },
           [offscreen],
@@ -356,6 +358,7 @@ export default function StarfieldGpu({
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
             palette: palette(),
+            theme: currentTheme(),
             sections: sectionsRef.current,
             onPerf: setPerf,
             onDeviceLost: (message) => {
