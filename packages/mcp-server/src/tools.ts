@@ -729,8 +729,9 @@ export function makeTools(api: ApiClient): Tool[] {
       description:
         '改站台設定，只改有帶的欄位，回傳改完的整份。改完前台的快取會立刻清掉。' +
         '\ndisabled_pages 是整份換掉不是增減：要多關一頁，先 koimsurai_get_site_config 拿現在的清單再加上去。' +
-        '\n能關的頁面：setup（設備）、log（航行日誌）、messages（留言）、photos（照片）、friends（朋友）、colophon（此站點）。' +
-        '手記、碎念、作品、收藏、關於這五個主要分區目前不能關。',
+        '\n能關的頁面：moments（碎念）、works（作品）、collection（收藏）、setup（設備）、log（航行日誌）、' +
+        'messages（留言）、photos（照片）、friends（朋友）、colophon（此站點）。' +
+        '關掉碎念／作品／收藏時首頁土星會少一條軌道。手記與關於不能關。',
       inputSchema: {
         type: 'object',
         properties: {
@@ -739,7 +740,10 @@ export function makeTools(api: ApiClient): Tool[] {
           description: { type: 'string', description: '一句話介紹（RSS 的描述），最多 300 字' },
           disabled_pages: {
             type: 'array',
-            items: { type: 'string', enum: ['setup', 'log', 'messages', 'photos', 'friends', 'colophon'] },
+            items: {
+              type: 'string',
+              enum: ['moments', 'works', 'collection', 'setup', 'log', 'messages', 'photos', 'friends', 'colophon'],
+            },
             description: '要關掉的頁面（整份換掉）。給空陣列＝全部打開',
           },
         },

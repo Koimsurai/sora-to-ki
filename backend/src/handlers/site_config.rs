@@ -25,11 +25,13 @@ use crate::{auth::AdminAuth, error::AppError, error::JsonBody, state::AppState};
 /// `site_settings` 裡這份設定的 key
 const KEY: &str = "site";
 
-/// 可以關掉的頁面（前端 `data/siteSections` 的 key）。
+/// 可以關掉的頁面（前端頁面登記表 `data/siteSections` 裡 toggleable 的那些，順序也要一樣，
+/// 前端有測試比對）。
 ///
-/// 目前只有收在「關於」與「更多」選單裡的頁面。五個主要分區（手記、碎念、作品、收藏、關於）
-/// 各對應首頁土星的一條軌道，關掉要連土星一起改，之後另外開放。
-pub const TOGGLEABLE_PAGES: [&str; 6] = ["setup", "log", "messages", "photos", "friends", "colophon"];
+/// 主要分區裡的碎念、作品、收藏可以關（首頁土星跟著少一條軌道）；手記與關於不行：
+/// 手記是 RSS、電子報、文章頁的根，關於是「關於」選單的家。
+pub const TOGGLEABLE_PAGES: [&str; 9] =
+    ["moments", "works", "collection", "setup", "log", "messages", "photos", "friends", "colophon"];
 
 /// 全新安裝時預設關掉的頁面：設備頁要站長自己的手繪圖紙才有東西可看。
 /// 既有的站升級上來不會被關掉任何一頁（見 [`load_or_seed`]）。

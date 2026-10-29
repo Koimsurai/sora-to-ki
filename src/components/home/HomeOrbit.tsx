@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { LocaleLink } from '@/i18n/locale-link';
 import { MAIN_SECTIONS } from '@/data/siteSections';
+import { useEnabledSections } from '@/data/siteConfig';
 import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
 import { saturnFrame } from '@/lib/saturnSpec';
@@ -82,6 +83,8 @@ export default function HomeOrbit() {
   const labelsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const tagsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const indexRef = useRef<(HTMLLIElement | null)[]>([]);
+  // 開著的主要分區，由內到外對應土星的軌道：關掉一個，最外圈那條收起來、後面的往內遞補（見 starfieldGpu 的 setSections）
+  const main = useEnabledSections(MAIN_SECTIONS);
   // 摺起來（CSS 的 viewport-segments）：浮動字卡換成另一半的目錄（common/FoldIndex）
   const folded = useFoldPose() !== null;
   const [flat, setFlat] = useState(false);
@@ -105,7 +108,7 @@ export default function HomeOrbit() {
       const i =
         source !== null
           ? Number(source)
-          : MAIN_SECTIONS.findIndex((s) => to === s.to.slice(1) || to.startsWith(`${s.to.slice(1)}/`));
+          : main.findIndex((s) => to === s.to.slice(1) || to.startsWith(`${s.to.slice(1)}/`));
       const sat = positionsRef.current[i] as SatelliteScreen | undefined;
       collapseSaturnTo(sat ? i : -1);
       sectionRef.current?.classList.add('is-leaving');
@@ -147,7 +150,7 @@ export default function HomeOrbit() {
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
-    const count = MAIN_SECTIONS.length;
+    const count = main.length;
     let positions: SatelliteScreen[] = [];
     let lastPositionsAt = performance.now();
     let pointer: [number, number] | null = null;
@@ -278,7 +281,7 @@ export default function HomeOrbit() {
         hintLevel = Math.max(0, Math.sin(Math.min(1, (k % 1) / 0.7) * Math.PI)) * 0.5;
       } else hintStart = 0;
 
-      const glow = MAIN_SECTIONS.map((_, i) => (i === near ? 1 : i === hint ? hintLevel : 0));
+      const glow = Array.from({ length: count }, (_, i) => (i === near ? 1 : i === hint ? hintLevel : 0));
       setSatelliteGlow(glow);
 
       const box = section.getBoundingClientRect();
@@ -392,7 +395,8 @@ export default function HomeOrbit() {
       section.removeEventListener('focusin', onFocusIn);
       section.removeEventListener('focusout', onFocusOut);
     };
-  }, []);
+    // 分區數變了（站台設定開關）就重新掛一次：衛星的序號與字卡的數量都跟著換
+  }, [main.length]);
 
   return (
     <section
@@ -404,7 +408,7 @@ export default function HomeOrbit() {
         {t('home.orbit.title')}
       </h1>
       <nav className="horbit-labels" aria-labelledby="horbit-title">
-        {MAIN_SECTIONS.map((s, i) => {
+        {main.map((s, i) => {
           const info = lines[s.key];
           return (
             <LocaleLink
@@ -426,7 +430,7 @@ export default function HomeOrbit() {
           );
         })}
         {/* 常駐小標註：同一個連結的第二個點擊區（觸控可以直接點），對輔助技術藏起來，免得同一個連結念兩次 */}
-        {MAIN_SECTIONS.map((s, i) => (
+        {main.map((s, i) => (
           <LocaleLink
             key={`tag-${s.key}`}
             to={s.to}
@@ -443,7 +447,7 @@ export default function HomeOrbit() {
         {/* 摺起來時另一半的目錄（沒有 3D 的平面備案本來就是一欄連結，不另外放） */}
         {!flat && (
           <FoldIndex className="horbit-index">
-            {MAIN_SECTIONS.map((s, i) => {
+            {main.map((s, i) => {
               const info = lines[s.key];
               return (
                 <li

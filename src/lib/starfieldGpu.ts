@@ -115,6 +115,8 @@ export interface StarfieldRunner {
   setStars(visible: boolean): void;
   /** 換頁的鏡頭移動：星空要在畫面上挪多少（累積的像素），換成星空鏡頭轉的角度 */
   setPan(x: number, y: number): void;
+  /** 開著幾個主要分區：土星留下幾條軌道（站台設定改了就呼叫，多的收起來、少的長出來） */
+  setSections(count: number): void;
   dispose(): void;
 }
 
@@ -157,6 +159,8 @@ export interface StarfieldInit {
   onSaturnGrow?: (grow: SaturnGrow) => void;
   /** 手機：星星只畫三分之一左右（手機只在首頁跑 3D，主角是土星與衛星） */
   lite?: boolean;
+  /** 開著幾個主要分區（站台設定）＝土星有幾條軌道。沒給就是全部 */
+  sections?: number;
 }
 
 interface StarLayerCfg {
@@ -259,6 +263,11 @@ interface SaturnRig {
   /** 縮回一點：下一次顯示時就從這一點撐開 */
   collapse(): void;
   /**
+   * 有幾個主要分區開著（站台設定）：由內到外留下前 count 條軌道與衛星，其餘的收起來。
+   * 開著的時候改也可以：多出來或少掉的那幾條慢慢長出來、收回去
+   */
+  setSections(count: number): void;
+  /**
    * 換頁轉場的「收」：整組收進一顆衛星（index）或土星中心（-1）。收的過程衛星停住，
    * 收進去的那一點在畫面上不動——轉場的點就從那裡接手飛出去
    */
@@ -327,7 +336,11 @@ interface SaturnColors {
 ///
 /// 只有星球繞自己的軸自轉（0.05 rad/s，捲動再多轉一點）；環與軌道的平面固定不動，
 /// 不然衛星的軌道會跟著晃。換頁時整組從一點撐開、或收回一點。
-function buildSaturn(sunWorld: THREE.Vector3, { INK, GROUND, AMBER }: SaturnColors): SaturnRig {
+function buildSaturn(
+  sunWorld: THREE.Vector3,
+  { INK, GROUND, AMBER }: SaturnColors,
+  initialSections: number,
+): SaturnRig {
   // 外層側傾、內層俯角：跟提案的投影同一個順序（先自轉、再俯、再側傾）。
   // 環與軌道都在內層的水平面（y = 0）上，星球繞內層的 y 軸自轉，軸自然垂直於環
   const group = new THREE.Group();
@@ -486,6 +499,12 @@ function buildSaturn(sunWorld: THREE.Vector3, { INK, GROUND, AMBER }: SaturnColo
     // 起始角度錯開，越外圈轉得越慢（克卜勒的味道就好，不必真的照比例）
     return { sprite, g, r, phase: satellitePhase(i) };
   });
+  /**
+   * 每條軌道還在不在（0 到 1）：站台設定關掉的分區，它那條軌道與衛星收起來。乘在長／收的進度上，
+   * 所以全部開著時（全是 1）畫面跟沒有這一層完全一樣。開機時直接是定值，之後改才有動畫
+   */
+  let sectionCount = initialSections;
+  const live: number[] = ORBITS.map((_, i) => (i < sectionCount ? 1 : 0));
   const syncSun = () => {
     group.updateWorldMatrix(true, true);
     body.worldToLocal(sunInPlanet.value.copy(sunWorld));
@@ -523,10 +542,10 @@ function buildSaturn(sunWorld: THREE.Vector3, { INK, GROUND, AMBER }: SaturnColo
     ring.visible = ringK > 0;
     ringFade.value = ringK;
     for (const [i, o] of orbitLines.entries()) {
-      const n = Math.round(CIRCLE_POINTS * (orbitK[i] ?? 0));
+      const n = Math.round(CIRCLE_POINTS * (orbitK[i] ?? 0) * (live[i] ?? 0));
       o.line.geometry.setDrawRange(0, n);
       o.line.visible = n > 1;
-      satellites[i].sprite.scale.setScalar(0.24 * Math.max(0.0001, satK[i] ?? 0));
+      satellites[i].sprite.scale.setScalar(0.24 * Math.max(0.0001, (satK[i] ?? 0) * (live[i] ?? 0)));
     }
   };
   /** 長／收的這一刻各部分該在哪 */
@@ -589,11 +608,21 @@ function buildSaturn(sunWorld: THREE.Vector3, { INK, GROUND, AMBER }: SaturnColo
         }
       }
       const growing = stage?.kind === 'grow';
+      // 分區開關：還在／不在的那幾條往目標靠（約 0.4 秒）
+      let reshaping = false;
+      for (let i = 0; i < live.length; i++) {
+        const target = i < sectionCount ? 1 : 0;
+        const now = live[i] ?? 0;
+        if (now === target) continue;
+        const next = now + (target - now) * Math.min(1, dt * 8);
+        live[i] = Math.abs(target - next) < 0.002 ? target : next;
+        reshaping = true;
+      }
       if (stage) {
         stage.t += dt;
         if (stageAt(stage.kind, stage.t)) stage = null;
         applyParts();
-      }
+      } else if (reshaping) applyParts();
       if (glide && (stage || pivot)) glide = null;
       if (glide) {
         glide.t += dt;
@@ -620,7 +649,7 @@ function buildSaturn(sunWorld: THREE.Vector3, { INK, GROUND, AMBER }: SaturnColo
       syncSun();
       const zooming = stage !== null || glide !== null;
       return {
-        moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002,
+        moving: zooming || glowing || reshaping || Math.abs(targetScrollRot - currentScrollRot) > 0.002,
         zooming,
         grow: growing ? { planet: planetK, ring: ringK } : null,
       };
@@ -657,6 +686,9 @@ function buildSaturn(sunWorld: THREE.Vector3, { INK, GROUND, AMBER }: SaturnColo
       pivot = null;
       pivotIndex = -1;
     },
+    setSections(count) {
+      sectionCount = Math.max(0, Math.min(ORBITS.length, Math.round(count)));
+    },
     collapseTo(index) {
       const sat = satellites[index] as (typeof satellites)[number] | undefined;
       group.updateWorldMatrix(true, true);
@@ -675,7 +707,8 @@ function buildSaturn(sunWorld: THREE.Vector3, { INK, GROUND, AMBER }: SaturnColo
       const [ex, ey] = toScreen(edge);
       const [cx, cy] = toScreen(center.clone());
       const radius = Math.hypot(ex - cx, ey - cy);
-      return satellites.map((s, i) => {
+      // 只回報開著的分區那幾顆：首頁一個分區一張字卡，數目對不上會當成 3D 還沒好、整個退成平面版
+      return satellites.slice(0, sectionCount).map((s, i) => {
         s.sprite.getWorldPosition(v);
         const behind = camera.position.distanceTo(v) > camDist;
         const [x, y] = toScreen(v);
@@ -770,11 +803,15 @@ export async function createStarfieldRunner(
   saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
   // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
   const colors = init.palette ?? DEFAULT_PALETTE;
-  const saturn = buildSaturn(new THREE.Vector3(...SUN).multiplyScalar(10), {
-    INK: threeColor(colors.paper),
-    GROUND: threeColor(colors.ground),
-    AMBER: threeColor(colors.amber),
-  });
+  const saturn = buildSaturn(
+    new THREE.Vector3(...SUN).multiplyScalar(10),
+    {
+      INK: threeColor(colors.paper),
+      GROUND: threeColor(colors.ground),
+      AMBER: threeColor(colors.amber),
+    },
+    init.sections ?? ORBITS.length,
+  );
   saturn.setView(init.width, init.height, init.fold ?? null);
   let viewW = init.width;
   let viewH = init.height;
@@ -1009,6 +1046,10 @@ export async function createStarfieldRunner(
         markActive();
         saturn.collapseTo(index);
         saturnAnimate = false;
+      },
+      setSections(count) {
+        markActive();
+        saturn.setSections(count);
       },
       setRunning(running) {
         if (running && !broken) {

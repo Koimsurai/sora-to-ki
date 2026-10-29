@@ -10,7 +10,13 @@
 // 這裡蓋三件事：掉了會不會重建、重建幾次之後會不會放棄、以及分頁在背景時會不會白重建一次。
 // 外加一條「掛載當下就同步一次狀態」——lazy 元件掛好之前發生的全螢幕，事件早就發完了。
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render as rtlRender } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
+
+// 元件讀站台設定（開著幾個主要分區＝土星幾條軌道），要有 QueryClient
+const render = (ui: ReactElement) =>
+  rtlRender(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
 
 function makeRunner() {
   return {
