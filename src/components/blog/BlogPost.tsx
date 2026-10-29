@@ -10,8 +10,9 @@ import {
   postReactionsQueryOptions,
   seriesQueryOptions,
   type PostDetail,
+  type PostNavItem,
 } from '@/data/blogList';
-import type { ExcerptLink, PostDetailResponse, PostListItem, ReactionRow } from '@koimsurai/api-types';
+import type { ExcerptLink, PostDetailResponse, ReactionRow } from '@koimsurai/api-types';
 import KoimLoader from '@/components/common/KoimLoader';
 import { highlightCode } from '@/lib/mdx/codeHighlight';
 import { isBlockCode } from '@/lib/mdx/codeKind';
@@ -583,7 +584,7 @@ const PrevNextNav = React.memo(({ currentId }: { currentId: string | number }) =
   const { t } = useTranslation();
   const navLocale = useLocale();
   const { data: allPosts = [] } = useQuery(recentPostsQueryOptions(200, navLocale));
-  const { prev, next } = useMemo<{ prev: PostListItem | null; next: PostListItem | null }>(() => {
+  const { prev, next } = useMemo<{ prev: PostNavItem | null; next: PostNavItem | null }>(() => {
     const published = allPosts.filter((p) => p.status === 'published' || !p.status);
     const sorted = [...published].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     const idx = sorted.findIndex((p) => String(p.id) === String(currentId));
@@ -625,7 +626,7 @@ function useNearbyPosts(currentId: string | number, postCategory?: string) {
   return useMemo(() => {
     const sorted = [...allPosts].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const currentIndex = sorted.findIndex((p) => String(p.id) === String(currentId));
-    if (currentIndex === -1) return { nearby: [] as PostListItem[], sameCategory: [] as PostListItem[], maxLen: 1 };
+    if (currentIndex === -1) return { nearby: [] as PostNavItem[], sameCategory: [] as PostNavItem[], maxLen: 1 };
     // 顯示範圍：最新→往前6、第2新→7、其後→以當前為中心前後各4（不滿則另一側補）
     let start;
     let end;
@@ -1231,8 +1232,10 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
   const { counts: reactionCounts, mine: myReactions, toggle: toggleReaction } = useReactions(post?.id ?? id);
 
   /* ── 排版優化：CJK-Latin 自動加空格 + 腳註 hover 浮窗 ── */
+  // 依「這份內文」重跑：伺服器編好的文章不帶原文（data/blogList），所以看 compiledMdx；編譯失敗的退路才看原文
+  const bodyKey = postData?.compiledMdx ?? postData?.content;
   useEffect(() => {
-    if (!post?.content || !contentRef.current) return;
+    if (!bodyKey || !contentRef.current) return;
     const root = contentRef.current;
 
     // 1) 中英文之間的空隙：支援 text-autospace 的瀏覽器由 CSS 處理（article-shell.css），
@@ -1273,7 +1276,7 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
       }
     });
     // 分批掛的時候等最後一批（註腳在文末）
-  }, [post?.content, bodyDone]);
+  }, [bodyKey, bodyDone]);
 
   /* ── Copy protection ── */
   useEffect(() => {
@@ -1318,11 +1321,18 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
   };
 
   /* ── Read time（與 fallback 共用同一算法）── */
-  const readTime = useMemo(() => readMinutes(post?.content ?? ''), [post?.content]);
+  // 伺服器編好的文章已經算好了（data/blogList，原文不送）；後台預覽與編譯失敗的退路才在這裡算
+  const readTime = useMemo(
+    () => postData?.readMinutes ?? readMinutes(postData?.content ?? ''),
+    [postData?.readMinutes, postData?.content],
+  );
 
   /* ── Extract headings：同步 useMemo（不再 useEffect 延遲）→ 第一幀 TOC 就有值、
         scroll-spy 也能更早啟動；與 fallback 共用 extractHeadings，anchor id 逐字一致 ── */
-  const headings = useMemo<Heading[]>(() => extractHeadings(post?.content ?? ''), [post?.content]);
+  const headings = useMemo<Heading[]>(
+    () => postData?.headings ?? extractHeadings(postData?.content ?? ''),
+    [postData?.headings, postData?.content],
+  );
 
   // 切語系換過來的：放回讀者原本那一章，再從畫面頂端往下掃一次（blog/useRetune）
   useRetune(post?.id ?? -1, colRef, contentRef, headings);
