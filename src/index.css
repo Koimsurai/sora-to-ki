@@ -467,8 +467,7 @@
        跟 v3 的 hex 不相等，換過去就不是零變化；而且哪些 shade 有輸出取決於 utility
        用到誰（跟 `--text-3xl` 被 tree-shake 掉是同一個陷阱）。這裡自己定義。
 
-       帶透明度時用 `rgba(var(--red-300-rgb), a)`。-rgb 只給真的有帶 alpha 用法的那幾個，
-       需要時再補。 */
+       翻新後公開頁不用這批，主要是後台的 Tailwind class 透過 @theme 在用；元件 CSS 走語意層。 */
     --zinc-100: #f4f4f5;
     --zinc-200: #e4e4e7;
     --zinc-300: #d4d4d8;
@@ -486,9 +485,7 @@
     --amber-300: #fcd34d;
     --amber-400: #fbbf24;
     --red-300: #fca5a5;
-    --red-300-rgb: 252, 165, 165;
     --red-400: #f87171;
-    --red-400-rgb: 248, 113, 113;
     --red-500: #ef4444;
     --green-300: #86efac;
     --green-400: #4ade80;
