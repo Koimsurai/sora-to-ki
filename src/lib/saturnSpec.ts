@@ -142,6 +142,10 @@ export interface PlanetSpec {
   retrograde: number[];
   /** 主星會脹縮（參宿四）：半徑變化多少（幾成）、脹縮一次幾秒、亮度跟著變多少（幾成） */
   pulse?: { amp: number; period: number; light: number };
+  /** 北極的六角形（土星）：離北極幾度、線寬幾度、多亮 */
+  hexagon?: { colat: number; width: number; delta: number };
+  /** 冰噴泉（土星的土衛二）：第幾顆衛星身後拖著一縷冰粒 */
+  plume?: number;
   /** 伴星（參宿四的 Siwarha）：繞主星的半徑（星球半徑）、大小、轉一圈幾秒。不是分區、沒有字卡 */
   companion?: { a: number; size: number; period: number };
   /**
@@ -171,9 +175,24 @@ const ringMid = (i: number): [number, number] => {
   return [(inner + outer) / 2, tone ** 0.75];
 };
 
+/**
+ * 土星的衛星照真實的間距排：土衛一 Mimas、土衛二 Enceladus、土衛三 Tethys、土衛四 Dione、土衛五 Rhea
+ * （3.08、3.95、4.89、6.26、8.74 個土星半徑，越外面隔得越開）。畫面放不下原比例，照同一個間距的節奏
+ * 對到環外（2.6）到原本的最外圈（5.7）之間。都在赤道面上、近乎正圓
+ */
+const SATURN_MOONS = [3.08, 3.95, 4.89, 6.26, 8.74].map((a) => ({
+  a: 2.6 + ((a - 3.08) * (5.7 - 2.6)) / (8.74 - 3.08),
+  e: 0,
+  incl: 0,
+  node: 0,
+  peri: 0,
+  precess: 0,
+}));
+
 const SATURN: PlanetSpec = {
   kind: 'planet',
-  bands: SATURN_BANDS_FULL,
+  // 北緯 78° 那條是北極六角形的邊，改由 hexagon 畫成真的六角形
+  bands: SATURN_BANDS_FULL.filter(([lat]) => lat !== 78),
   base: 0.52,
   rows: PLANET_ROWS,
   cover: PLANET_COVER,
@@ -194,6 +213,11 @@ const SATURN: PlanetSpec = {
   // B 環最亮的那段與 A 環，中間空出來的就是卡西尼縫
   boot: [ringMid(4), ringMid(7)],
   retrograde: [],
+  stars: SATURN_MOONS,
+  // 北極六角形：北緯 78° 一圈六角形的噴流（航海家號 1981 年發現，卡西尼號拍得最清楚）。首頁是從北方往下看，看得到
+  hexagon: { colat: 12, width: 0.9, delta: 0.55 },
+  // 土衛二南極的冰噴泉把冰粒噴進軌道，形成了 E 環
+  plume: 1,
 };
 
 /** 角度（°）→ rad */

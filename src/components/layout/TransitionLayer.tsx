@@ -685,26 +685,23 @@ export default function TransitionLayer() {
           }
           if (at < 1) pieces.push([at, 1, TAIL_FAINT * fade]);
         } else pieces.push([0, 1, 0.75 * fade]);
-        // 黑洞：這條線是點逃出去時拖著的光，用點的顏色、帶一層淡淡的光暈；越被拉回黑洞越暗（爬出重力井的光會變暗）
-        const light = hole ? 1 - 0.8 * (b.u ?? 0) : 0;
+        // 這條線是點拖著的光：用點的顏色、帶一層淡淡的光暈（白色的髮絲看不出是光）。
+        // 黑洞的越被拉回黑洞越暗（爬出重力井的光會變暗）
+        const light = hole ? 1 - 0.8 * (b.u ?? 0) : 1;
         for (const [u0, u1, alpha] of pieces) {
           if (u1 <= u0) continue;
           const x0 = b.x + (a.x - b.x) * u0;
           const y0 = b.y + (a.y - b.y) * u0;
           const x1 = b.x + (a.x - b.x) * u1;
           const y1 = b.y + (a.y - b.y) * u1;
-          if (hole) {
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = `rgba(${AMBER}, ${(0.12 * alpha * light).toFixed(3)})`;
-            ctx.beginPath();
-            ctx.moveTo(x0, y0);
-            ctx.lineTo(x1, y1);
-            ctx.stroke();
-            ctx.lineWidth = 1;
-          }
-          ctx.strokeStyle = hole
-            ? `rgba(${AMBER}, ${(alpha * light).toFixed(3)})`
-            : `rgba(${INK}, ${alpha.toFixed(3)})`;
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = `rgba(${AMBER}, ${(0.12 * alpha * light).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0);
+          ctx.lineTo(x1, y1);
+          ctx.stroke();
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = `rgba(${AMBER}, ${(alpha * light).toFixed(3)})`;
           ctx.beginPath();
           ctx.moveTo(x0, y0);
           ctx.lineTo(x1, y1);

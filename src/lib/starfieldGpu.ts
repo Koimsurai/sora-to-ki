@@ -451,6 +451,21 @@ function buildSaturn(
         .mul(breathLight);
     // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
     tone = tone.mul(smoothstep(spec.pole[0], spec.pole[1], abs(lat)));
+    // 北極六角形（土星）：在極區變暗之後才加，不然會被一起壓暗。六角形的「半徑」照方位角算：
+    // 頂點到邊的距離比是 cos(30°) / cos(θ mod 60° − 30°)；n 在星球本體的座標裡，六角形跟著自轉
+    if (spec.hexagon) {
+      const hex = spec.hexagon;
+      const colat = float(90).sub(lat);
+      const theta = atan(n.z, n.x)
+        .mul(180 / Math.PI)
+        .add(360);
+      const seg = fract(theta.div(60))
+        .mul(60)
+        .sub(30)
+        .mul(Math.PI / 180);
+      const edge = float(hex.colat * Math.cos(Math.PI / 6)).div(cos(seg));
+      tone = tone.add(exp(colat.sub(edge).div(hex.width).pow(2).negate()).mul(hex.delta));
+    }
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
     const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
     // 恆星（參宿四）用畫面上水平的直線刻（版畫用平行直線排出球體明暗的刻法），不跟著自轉：
@@ -748,6 +763,21 @@ function buildSaturn(
    * 每條軌道還在不在（0 到 1）：站台設定關掉的分區，它那條軌道與衛星收起來。乘在長／收的進度上，
    * 所以全部開著時（全是 1）畫面跟沒有這一層完全一樣。開機時直接是定值，之後改才有動畫
    */
+  // 土衛二的冰噴泉（spec.plume）：衛星身後一串越來越淡、越來越小的冰粒，沿著軌道拖在後面（E 環就是這樣來的）
+  const PLUME_N = 16;
+  const plume =
+    spec.plume === undefined
+      ? []
+      : Array.from({ length: PLUME_N }, (_, k) => {
+          const mat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
+          mat.colorNode = vec3(INK.r, INK.g, INK.b);
+          mat.opacityNode = smoothstep(0.5, 0.1, uv().sub(0.5).length()).mul(0.55 * (1 - k / PLUME_N));
+          const sprite = new THREE.Sprite(mat);
+          sprite.scale.setScalar(0.0001);
+          apses[spec.plume ?? 0].add(sprite);
+          return sprite;
+        });
+
   /**
    * 第 i 顆衛星此刻在軌道上的角度。圓軌道就是等速轉的角度；S 星的軌道照克卜勒定律走（近點快、遠點慢）：
    * 平近點角 M 等速增加，解克卜勒方程 E − e sin E = M 得偏近點角，再換成真近點角
@@ -941,6 +971,17 @@ function buildSaturn(
           // 軌道進動：整條橢圓繞著黑洞慢慢轉（GRAVITY 2020 年量到 S2 的軌道在進動）
           apses[i].rotation.y = ((st.peri + clock * st.precess) * Math.PI) / 180;
         } else s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
+        if (i === spec.plume) {
+          const shown = (satK[i] ?? 0) * (live[i] ?? 0);
+          for (const [k, p] of plume.entries()) {
+            const behind = a - (k + 1) * 0.035 * s.dir;
+            if (st) ellipseAt(st, behind, p.position);
+            else p.position.set(Math.cos(behind) * s.r, 0, Math.sin(behind) * s.r);
+            // 往外散開一點（噴出去的冰粒不會剛好在軌道上）
+            p.position.y += Math.sin(k * 1.7 + clock * 2) * 0.012 * k;
+            p.scale.setScalar(Math.max(0.0001, 0.07 * (1 - (0.6 * k) / PLUME_N) * shown));
+          }
+        }
         const target = glowTarget[i] ?? 0;
         s.g.value += (target - s.g.value) * Math.min(1, dt * 8);
         if (Math.abs(target - s.g.value) > 0.01) glowing = true;
