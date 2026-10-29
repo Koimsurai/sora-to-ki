@@ -49,8 +49,10 @@ const SERVER_ENTRY = '.output/server/index.mjs';
 //   而它剛好是每頁都 modulepreload 的 CommandPalette —— 正式站整站白畫面（1331 筆裡只漏這 1 筆，
 //   底下「一筆都沒配到就停」的保險擋不到）。所以現在兩道：字面值照 JS 的規則解析，
 //   而且清單裡**每一筆**都必須配到。
+// ⚠ 預先壓縮的那幾筆（`.br` / `.gz`，vite.config.start.ts 的 compressPublicAssets）在 type 與 etag 之間
+//   多一行 `"encoding": "br"`，重寫時要留著：nitro 靠它在回應帶上 Content-Encoding。
 const ENTRY =
-  /"(?<key>\/[^"]*)":\s*\{\s*"type":\s*"(?<type>[^"]*)",\s*"etag":\s*"(?<etag>(?:[^"\\]|\\.)*)",\s*"mtime":\s*"(?<mtime>[^"]*)",\s*"size":\s*(?<size>[0-9][0-9.eE+]*),\s*"path":\s*"(?<path>[^"]*)"\s*\}(?<comma>,?)/g;
+  /"(?<key>\/[^"]*)":\s*\{\s*"type":\s*"(?<type>[^"]*)",\s*(?:"encoding":\s*"(?<encoding>[^"]*)",\s*)?"etag":\s*"(?<etag>(?:[^"\\]|\\.)*)",\s*"mtime":\s*"(?<mtime>[^"]*)",\s*"size":\s*(?<size>[0-9][0-9.eE+]*),\s*"path":\s*"(?<path>[^"]*)"\s*\}(?<comma>,?)/g;
 /** 清單裡每個條目都有一行指向 public 的 path——拿來數「總共有幾筆」，跟配到的筆數對帳。 */
 const ENTRY_PATH = /"path":\s*"\.\.\/public\//g;
 
@@ -85,7 +87,8 @@ const patched = source.replace(ENTRY, (whole, ...args) => {
   const mtime = fs.statSync(file).mtime.toISOString();
   resized++;
   return (
-    `"${g.key}": {\n\t\t"type": "${g.type}",\n\t\t"etag": "\\"${etag}\\"",\n` +
+    `"${g.key}": {\n\t\t"type": "${g.type}",\n${g.encoding ? `\t\t"encoding": "${g.encoding}",\n` : ''}` +
+    `\t\t"etag": "\\"${etag}\\"",\n` +
     `\t\t"mtime": "${mtime}",\n\t\t"size": ${buf.length},\n\t\t"path": "${g.path}"\n\t}${g.comma}`
   );
 });

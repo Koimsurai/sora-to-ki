@@ -270,6 +270,11 @@ export default defineConfig(({ command }) => ({
         // 還會照 max-age=3600 再存一份），跟新的 JS 對不上 → hydration 失敗、整棵樹在 client 重建，
         // 開場那層停在舊的樣子（實際遇過：舊版的進度圈沒有新 CSS 可套，畫成一個黑圈）
         routeRules: command === 'build' ? ISR_ROUTE_RULES : {},
+        // 靜態資產（/assets 的 JS、CSS）建置時先壓好 brotli 與 gzip，供應時照 Accept-Encoding 挑。
+        // nginx 官方套件沒有 brotli 模組（自己編的話每次升 nginx 都得重編），放在這裡誰部署都一樣。
+        // ⚠ Dockerfile 在這之後才往 JS 裡寫 debug id：壓縮檔要在那之後重壓一次（scripts/recompress-public-assets.mjs），
+        //   否則讀者拿到的 .br 是沒有 debug id 的舊內容，GlitchTip 對不回原始碼
+        compressPublicAssets: { gzip: true, brotli: true },
       },
     }),
   ],
