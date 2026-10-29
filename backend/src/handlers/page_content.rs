@@ -204,6 +204,47 @@ pub async fn works_repos(pool: &SqlitePool) -> Result<Option<Vec<String>>, AppEr
     Ok(Some(works.items.into_iter().map(|w| w.repo).collect()))
 }
 
+// ── 此站點的問答 ─────────────────────────────────────────────────────
+
+/// 此站點的問答（六分儀那片天空裡的「問答」星）。沒有任何一題時那顆星不出現
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct QaContent {
+    /// 對準「問答」星時，題目上面那一句介紹
+    #[serde(default)]
+    pub intro: I18n,
+    #[serde(default)]
+    pub items: Vec<QaItem>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct QaItem {
+    #[serde(default)]
+    pub q: I18n,
+    /// 答案：空一行是分段、\`程式碼\`、[文字](網址)，單獨一行的網址會變成文章卡
+    #[serde(default)]
+    pub a: I18n,
+}
+
+/// 答案比一般欄位長（會有好幾段）
+const ANSWER_MAX: usize = 2000;
+
+impl QaContent {
+    fn validate(&self) -> Result<(), String> {
+        check_i18n("問答的介紹", &self.intro)?;
+        check_count("問答", &self.items, 30)?;
+        for it in &self.items {
+            check_i18n("問題", &it.q)?;
+            for (lang, text) in &it.a {
+                if !LOCALES.contains(&lang.as_str()) {
+                    return Err(format!("答案：不認得的語系 {lang}"));
+                }
+                check_text(&format!("答案（{lang}）"), text, ANSWER_MAX)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 // ── 航行日誌 ─────────────────────────────────────────────────────────
 
 /// 航行日誌：軌跡與任務計時器的起點、軌跡上的里程碑（貢獻圖、程式時數、遊戲是整合抓的，不在這裡）
@@ -357,6 +398,32 @@ pub async fn put_works(
         return Ok(bad_request(&msg));
     }
     save(&state.pool, "works", &body).await?;
+    Ok(Json(body).into_response())
+}
+
+/// `GET /api/pages/qa` —— 公開：此站點的問答
+#[utoipa::path(get, path = "/api/pages/qa", tag = "pages", responses((status = 200, body = QaContent)))]
+pub async fn get_qa(State(state): State<AppState>) -> Result<Json<QaContent>, AppError> {
+    Ok(Json(load(&state.pool, "qa").await?))
+}
+
+/// `PUT /api/admin/pages/qa` —— 整份覆蓋此站點的問答（後台與 MCP），回傳存好的那份
+#[utoipa::path(put, path = "/api/admin/pages/qa", tag = "pages", request_body = QaContent,
+    security(("bearer" = [])),
+    responses(
+        (status = 200, body = QaContent),
+        (status = 400, description = "欄位不合法（太長、太多題、不認得的語系）"),
+        (status = 401, description = "需要登入"),
+    ))]
+pub async fn put_qa(
+    State(state): State<AppState>,
+    _auth: AdminAuth,
+    JsonBody(body): JsonBody<QaContent>,
+) -> Result<Response, AppError> {
+    if let Err(msg) = body.validate() {
+        return Ok(bad_request(&msg));
+    }
+    save(&state.pool, "qa", &body).await?;
     Ok(Json(body).into_response())
 }
 

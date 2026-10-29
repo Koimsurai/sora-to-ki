@@ -179,6 +179,8 @@ impl Modify for SecurityAddon {
         handlers::page_content::put_log,
         handlers::page_content::get_works,
         handlers::page_content::put_works,
+        handlers::page_content::get_qa,
+        handlers::page_content::put_qa,
         handlers::thirdparty::admin_works_preview,
     ),
     components(schemas(
@@ -194,6 +196,8 @@ impl Modify for SecurityAddon {
         handlers::page_content::WorksContent,
         handlers::page_content::WorkItem,
         handlers::page_content::WorkSnapshot,
+        handlers::page_content::QaContent,
+        handlers::page_content::QaItem,
         handlers::telemetry::Telemetry,
         handlers::friends::FriendStar,
         handlers::friends::FriendPost,

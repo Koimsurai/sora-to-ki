@@ -4,6 +4,8 @@ import type {
   AboutQuote,
   AboutSkillGroup,
   LogContent,
+  QaContent,
+  QaItem,
   WorkItem,
   WorksContent,
 } from '@koimsurai/api-types';
@@ -83,6 +85,30 @@ export const worksContentQueryOptions = queryOptions({
 
 const NO_WORKS: WorkItem[] = [];
 
+/** 此站點的問答：題目上面那一句介紹、每一題 */
+export interface Qa {
+  intro: NonNullable<QaContent['intro']>;
+  items: QaItem[];
+}
+
+export const normalizeQa = (raw: QaContent): Qa => ({ intro: raw.intro ?? {}, items: raw.items ?? [] });
+
+export const qaContentQueryOptions = queryOptions({
+  queryKey: ['pages', 'qa'],
+  queryFn: async (): Promise<Qa> => {
+    const res = await fetch(apiUrl('/api/pages/qa'));
+    if (!res.ok) throw new Error(`GET /api/pages/qa ${res.status}`);
+    return normalizeQa((await res.json()) as QaContent);
+  },
+  staleTime: 5 * 60 * 1000,
+});
+
+const NO_QA: Qa = { intro: {}, items: [] };
+
+export function useQaContent(): Qa {
+  return useQuery(qaContentQueryOptions).data ?? NO_QA;
+}
+
 export function useWorksContent(enabled = true): WorkItem[] {
   return useQuery({ ...worksContentQueryOptions, enabled }).data ?? NO_WORKS;
 }
@@ -95,7 +121,7 @@ const CONTENT_OF: Record<string, (qc: QueryClient) => Promise<unknown>> = {
   about: (qc) => qc.query(aboutContentQueryOptions),
   history: (qc) => qc.query(logContentQueryOptions),
   portfolio: (qc) => qc.query(worksContentQueryOptions),
-  'about-site': (qc) => qc.query(worksContentQueryOptions),
+  'about-site': (qc) => Promise.all([qc.query(worksContentQueryOptions), qc.query(qaContentQueryOptions)]),
 };
 
 /** 這一頁有站長填的內容就先抓好；抓失敗不擋頁（照空狀態畫） */

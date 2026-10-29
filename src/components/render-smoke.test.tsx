@@ -63,6 +63,8 @@ const PROPS: Record<string, Record<string, unknown>> = {
     onSwiper: vi.fn(),
   },
   'media/FavoritesEditor.tsx': { favorites: [], onClose: vi.fn(), onChanged: vi.fn() },
+  // 此站點問答的答案：四種寫法各來一次（分段、程式碼、站內連結、單獨一段的網址＝文章卡）
+  'about/QaAnswer.tsx': { text: '前端採用 `React 19`，詳見[留言](/messages)。\n\nhttps://example.com/blog/1' },
   // 書櫃頁的子元件，書單由 Bookshelf 傳進來；給一本書讓它真的畫出一顆星
   'media/BookConstellation.tsx': {
     books: [{ id: 1, title: '測試書', reading_status: 'read', rating: 4, personal_notes: '筆記' }],
