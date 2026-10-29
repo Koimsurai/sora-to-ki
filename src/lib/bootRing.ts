@@ -9,7 +9,8 @@
 //     不是把線放進旋轉的圖層再反轉回來：合成器旋轉圖層時會重新取樣，1px 的線會糊（實測過）
 //   - 遮片的透明度在跨過 180°（前半圈用完）與畫滿時切掉，接縫兩端那兩小塊也是
 //   - 筆尖：沿橢圓取點，寫成 translate 的關鍵影格
-//   - 進度也寫進 <html> 的 --boot-p：不用筆畫的主題（海王星的弧一段段亮起來，index.css）照它走
+//   - 進度也寫進 <html> 的 --boot-p：不用筆畫的主題（海王星的弧一段段亮起來，index.css）照它走。
+//     它只往前不倒退：字型有時比 load 晚到，那一步是 0.65，照寫的話已經亮的弧會暗回去
 //
 // θ 是橢圓的參數角，由弧長的比例 p 反查（跟原本 pathLength = 1 的 dash 一樣照弧長走），所以兩種寫法
 // 在同一個 p 畫到同一個地方。這段要在 paint 之前跑、還沒有任何模組，只能是 head 裡的字串（BOOT_SCRIPT）。
@@ -47,7 +48,7 @@ if(ms){for(i=0;i<=24;i++)ps.push(from+(to-from)*i/24);if((from-0.5)*(to-0.5)<0)p
 var frames=ps.map(function(p,i){return parts(p,p===0.5&&ms?(i>0&&ps[i-1]===0.5?to<0.5:from<0.5):false);}),t=document.timeline.currentTime;
 var anims=els.map(function(el,j){return el.animate(frames.map(function(fr,i){var k={offset:ms?Math.min(1,Math.max(0,(ps[i]-from)/(to-from))):i},x;for(x in fr[j])k[x]=fr[j][x];return k;}),{duration:ms,easing:'cubic-bezier(0.22, 1, 0.36, 1)',fill:'forwards'});});
 if(t!=null)anims.forEach(function(x){x.startTime=t;});if(run)run.a.forEach(function(x){x.cancel();});run={f:from,t:to,a:anims};cur=to;};
-window.__bootP=function(p){if(!d.hasAttribute('data-boot'))return;if(p!=null)d.style.setProperty('--boot-p',String(p));
+window.__bootP=function(p){if(!d.hasAttribute('data-boot'))return;if(p!=null&&p>(Number(d.style.getPropertyValue('--boot-p'))||0))d.style.setProperty('--boot-p',String(p));
 if(!els){var b=d.querySelector('#boot');if(!b)return void(p!=null&&(cur=p));
 els=['.is-front .boot-arc-cover','.is-back .boot-arc-cover','.is-front .boot-arc-seam','.is-back .boot-arc-seam'].map(function(s){return b.querySelector(s);}).concat([].slice.call(b.querySelectorAll('.boot-pen i')));
 if(els.some(function(e){return !e;})||!els[0].animate){els=null;return;}go(cur,0);}

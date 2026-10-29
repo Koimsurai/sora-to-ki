@@ -1322,9 +1322,11 @@ html[data-boot="out"] .boot-pen {
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
   opacity: clamp(0, calc((var(--boot-p, 0) - var(--at)) * 20 + 1), 1);
-  transition: opacity var(--dur-400) var(--easing-out);
-  /* 載得快的時候幾個階段會同一刻到：照順序錯開一點，還是看得出一段接一段亮 */
-  transition-delay: calc((var(--at) - 0.12) * var(--dur-400));
+  transition: opacity var(--dur-250) var(--easing-out);
+  /* 載得快的時候幾個階段會同一刻到：照順序錯開一點，還是看得出一段接一段亮。
+     錯開的總長要短：最後一步是轉場推到 1，260ms 後就交棒（TransitionLayer 的 BOOT_CLOSE_MS），
+     拖太久的話後兩段來不及亮（實際發生過：只亮兩格） */
+  transition-delay: calc((var(--at) - 0.12) * var(--dur-100));
 }
 /* 不交棒的時候（別頁、沒有 3D、3D 等太久）：環收回中間那顆點裡，點再飛出去（layout/TransitionLayer 的
    BOOT_COLLAPSE_MS）。縮的是框的寬高，SVG 照新尺寸重畫，線一直是 1px；筆尖先退掉 */
