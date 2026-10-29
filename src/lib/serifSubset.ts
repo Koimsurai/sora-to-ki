@@ -21,10 +21,11 @@ export function isSerifFace(v: unknown): v is SerifFace {
 }
 
 /**
- * 字型的四種風格：宋體（站上的主字型）、黑體、手寫味（楷）、現代無襯線。文章的「字體」切換用後三種。
+ * 字型的風格：宋體（站上的主字型）、黑體、手寫味（楷）、現代無襯線，文章的「字體」切換用中間三種；
+ * hand 是 Sketch 區塊手繪圖裡的中日韓字（lib/mdx/sketchSvg.ts 直接組網址，不經過瀏覽器的裁字載入器）。
  * 每種在各語系配的是哪一支字，見伺服器的 server/routes/fonts/[style]/[weight]/[file].ts
  */
-const FONT_STYLES = ['serif', 'sans', 'kai', 'modern'] as const;
+const FONT_STYLES = ['serif', 'sans', 'kai', 'modern', 'hand'] as const;
 export type FontStyle = (typeof FONT_STYLES)[number];
 
 export function isFontStyle(v: unknown): v is FontStyle {
@@ -40,6 +41,7 @@ const STYLE_FAMILY: Record<FontStyle, string> = {
   sans: 'Koim Sans',
   kai: 'Koim Kai',
   modern: 'Koim Modern',
+  hand: 'Koim Hand',
 };
 
 /** 某種風格、某一套語系的字族名（繁中不加後綴，其他加 SC／JP／KR；同 SERIF_FACE_FAMILY 的規則） */
@@ -54,7 +56,7 @@ export function familyOf(style: FontStyle, face: SerifFace): string {
  * 備援從簡中那套裁，而且只裁繁中真的缺的字（網址帶 `x=tc`）。現代無襯線繁簡是同一支，不需要
  */
 export function fallbackFamilyOf(style: FontStyle): string | null {
-  return style === 'modern' ? null : `${STYLE_FAMILY[style]} Fallback`;
+  return style === 'modern' || style === 'hand' ? null : `${STYLE_FAMILY[style]} Fallback`;
 }
 
 /** 元素的 font-family 第一個字族 → 它是哪一種風格的裁字字型；不是裁字字型回 null */
