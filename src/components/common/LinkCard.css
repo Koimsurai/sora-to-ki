@@ -4,7 +4,7 @@
 .link-card-with-text > p {
   margin-bottom: var(--space-1-5);
   font-size: var(--fs-16);
-  color: var(--post-text);
+  color: inherit;
 }
 
 /* 四角框（index.css 的 --corner-frame）：跟文章摘要、文章裡其他區塊同一種框。
