@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
-import { recentPostsQueryOptions } from '@/data/blogList';
+import { recentPostsFullQueryOptions } from '@/data/blogList';
 import AdminLoading from './AdminLoading';
 import './AdminPicker.css';
 
@@ -28,8 +28,11 @@ const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 文章清單改由 TanStack Query 讀（開啟才抓）；reuse 公開 recentPostsQueryOptions(300)。
-  const { data: allPosts = [], isFetching: loading } = useQuery({ ...recentPostsQueryOptions(300), enabled: isOpen });
+  // 文章清單改由 TanStack Query 讀（開啟才抓）；reuse 公開 recentPostsFullQueryOptions(300)。
+  const { data: allPosts = [], isFetching: loading } = useQuery({
+    ...recentPostsFullQueryOptions(300),
+    enabled: isOpen,
+  });
   const posts = useMemo(() => allPosts.filter((p) => p.status === 'published' || !p.status), [allPosts]);
 
   useEffect(() => {
