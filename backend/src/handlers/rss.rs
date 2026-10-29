@@ -10,7 +10,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-use crate::handlers::posts::{locale_suffix, parse_locale};
+use crate::handlers::posts::{locale_available_sql, locale_suffix, parse_locale};
 use crate::state::AppState;
 use crate::util::{escape_html, js_date_to_utc_string, js_substring_prefix};
 
@@ -22,23 +22,22 @@ pub struct RssQuery {
 #[utoipa::path(get, path = "/rss", tag = "misc",
     responses((status = 200, description = "全站 RSS feed（XML）")))]
 pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) -> Response {
-    // ?lang=en|ja|ko|zh-CN → 出該語系的標題/摘要與 /<prefix>/blog/… 連結；認不得就退回 zh-TW。
-    let locale = parse_locale(q.lang.as_deref()).unwrap_or("zh-TW");
+    // ?lang=en|ja|ko|zh-CN|zh-TW → 出該語系的標題/摘要與 /<prefix>/blog/… 連結；沒帶或認不得就是站台的預設語系。
+    let default = crate::handlers::site_config::default_locale();
+    let locale = parse_locale(q.lang.as_deref()).or_else(|| parse_locale(Some(&default))).unwrap_or("zh-TW");
     let sfx = locale_suffix(locale);
+    // 每篇的原文語系不一定一樣：這個語系就是原文的那幾篇讀本體欄位，其他篇讀譯文欄位（沒有就退回本體）。
     // 欄位名由 allowlist 決定（parse_locale → locale_suffix），沒有使用者輸入進 SQL。
-    let (title_col, excerpt_col, content_col) = match sfx {
-        Some(s) => (
-            format!("COALESCE(NULLIF(p.title_{s}, ''), p.title)"),
-            format!("COALESCE(NULLIF(p.excerpt_{s}, ''), p.excerpt)"),
-            format!("COALESCE(NULLIF(p.content_{s}, ''), p.content)"),
-        ),
-        None => ("p.title".to_string(), "p.excerpt".to_string(), "p.content".to_string()),
+    let is_source = format!("COALESCE(p.source_language, 'zh-TW') = '{locale}'");
+    let pick = |col: &str| match sfx {
+        Some(s) => {
+            format!("CASE WHEN {is_source} THEN p.{col} ELSE COALESCE(NULLIF(p.{col}_{s}, ''), p.{col}) END")
+        }
+        None => format!("p.{col}"),
     };
-    // 沒有該語系譯文的文章不進該語系的 feed——訂閱日文卻收到中文全文，體感是壞掉的。
-    let lang_filter = match sfx {
-        Some(s) => format!(" AND NULLIF(p.content_{s}, '') IS NOT NULL"),
-        None => String::new(),
-    };
+    let (title_col, excerpt_col, content_col) = (pick("title"), pick("excerpt"), pick("content"));
+    // 這個語系看不到的文章（不是原文、也沒有譯文）不進 feed——訂閱日文卻收到中文全文，體感是壞掉的。
+    let lang_filter = format!(" AND {}", locale_available_sql(locale, "p"));
     // 網址前綴跟著站台設定的預設語系走（預設語系不帶前綴）
     let url_prefix = match crate::handlers::site_config::locale_prefix(locale) {
         p if p.is_empty() => p,

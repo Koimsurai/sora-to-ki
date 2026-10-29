@@ -2,6 +2,7 @@
 // 之後繼續往地底挖：地表是手上的東西，第一層是做過的事，最深的地心才是「Stay hungry, stay foolish.」。
 // 近景（掠過的細線、地平線與樹、返回艙、地層、高度計）畫在 fallSky。
 import { Fragment, useEffect, useRef } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useTranslation } from 'react-i18next';
 import { useAboutContent } from '@/data/pageContent';
 import { useSiteConfig } from '@/data/siteConfig';
@@ -49,7 +50,7 @@ const docTop = (el: HTMLElement) => {
 
 export default function AboutFall() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
   // 每一年、技能、經歷、地心那一句都是站長填的（後台「頁面」或 MCP）；沒填的區塊整塊不出現
   const about = useAboutContent();
   const { description } = useSiteConfig();

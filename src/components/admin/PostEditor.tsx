@@ -30,6 +30,7 @@ import {
 import { toast } from 'sonner';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import { defaultLocale } from '@/lib/locales';
 // 改名：這個檔已經有一個叫 format 的狀態（文章是 md 還是 mdx）
 import { format as formatDate } from 'date-fns';
 import AdminLoading, { BusyDot } from './AdminLoading';
@@ -124,6 +125,9 @@ const LOCALE_TABS = [
   { code: 'ja', label: '日本語', column: 'ja' },
   { code: 'ko', label: '한국어', column: 'ko' },
 ];
+
+/** 這篇能編哪幾個語系：原稿那個，加上有譯文欄的。繁中還沒有譯文欄，原稿不是繁中就不列 */
+const tabsFor = (source: string) => LOCALE_TABS.filter((t) => t.column !== null || t.code === source);
 /**
  * API 回來的值 → 表單要的字串。
  *
@@ -186,7 +190,7 @@ export default function PostEditor() {
     enabled: !!id,
   });
   const isLoading = !!id && postPending; // 編輯模式載入文章時的骨架 gate
-  const [activeLocale, setActiveLocale] = useState('zh-TW');
+  const [activeLocale, setActiveLocale] = useState<string>(defaultLocale);
   const [zenMode, setZenMode] = useState(false);
   // 推送電子報、覆蓋簡中之前問一句（後台樣式的對話框，不是瀏覽器的 confirm）
   const { confirm, confirmDialog } = useConfirm();
@@ -229,7 +233,7 @@ export default function PostEditor() {
       allow_comments: true,
       send_newsletter: false,
       // i18n
-      source_language: 'zh-TW',
+      source_language: defaultLocale() as PostFormInput['source_language'],
       title_en: '',
       content_en: '',
       summary_en: '',
@@ -248,7 +252,7 @@ export default function PostEditor() {
     },
   });
 
-  const sourceLanguage = form.watch('source_language') ?? 'zh-TW';
+  const sourceLanguage = form.watch('source_language') ?? defaultLocale();
   const publishAt = form.watch('publish_at') ?? '';
   const currentStatus = form.watch('status') ?? 'draft';
 
@@ -277,7 +281,7 @@ export default function PostEditor() {
     // 修正失效的 tab 選擇：LOCALE_TABS 由 sourceLanguage 推導，改動時舊的 activeLocale
     // 可能已不在清單裡。這是「校正外部變動造成的無效選擇」，不是可推導的衍生值。
     // eslint-disable-next-line @eslint-react/set-state-in-effect
-    if (!LOCALE_TABS.find((t) => t.code === activeLocale)) setActiveLocale(sourceLanguage);
+    if (!tabsFor(sourceLanguage).some((t) => t.code === activeLocale)) setActiveLocale(sourceLanguage);
   }, [activeLocale, sourceLanguage]);
 
   // ── localStorage 自動備份草稿（debounce 1.2s）──
@@ -342,9 +346,9 @@ export default function PostEditor() {
   const frameRef = useRef<HTMLDivElement>(null);
   const buildPreviewSnapshot = useCallback((): PostPreviewSnapshot => {
     const v = form.getValues();
-    const source = v.source_language ?? 'zh-TW';
+    const source = v.source_language ?? defaultLocale();
     const texts: Record<string, PreviewText> = {};
-    for (const t of LOCALE_TABS) {
+    for (const t of tabsFor(source)) {
       const pick = (base: 'title' | 'content' | 'summary') => {
         const value = v[fieldNameFor(base, t.code, source)];
         return typeof value === 'string' ? value : '';
@@ -448,7 +452,7 @@ export default function PostEditor() {
       // （第一次修完 category 又冒出 series_order），所以這裡改成統一走同一個函式。
       category: asText(postData.category),
       slug: asText(postData.slug),
-      source_language: postData.source_language ?? 'zh-TW',
+      source_language: postData.source_language ?? defaultLocale(),
       title_en: asText(postData.title_en),
       content_en: asText(postData.content_en),
       summary_en: asText(postData.excerpt_en),
@@ -471,7 +475,7 @@ export default function PostEditor() {
     form.reset(formattedData as PostFormInput);
     // 載入既有文章 → 把編輯器狀態同步成該篇的值。資料是非同步來的，render 期沒有。
     // eslint-disable-next-line @eslint-react/set-state-in-effect
-    setActiveLocale(postData.source_language ?? 'zh-TW');
+    setActiveLocale(postData.source_language ?? defaultLocale());
     // eslint-disable-next-line @eslint-react/set-state-in-effect
     setExcerptLinks(postData.excerpt_links);
     // reset 完成 → 讓下方 Select 依 key 重新 mount、以正確值初始化（此 set-state 是刻意的）
@@ -876,7 +880,7 @@ export default function PostEditor() {
               {/* Locale tabs */}
               {/* 語系分頁：正在編的是琥珀點、已經有內容的是墨點、還沒寫的是空心 */}
               <div className="pe-locales">
-                {LOCALE_TABS.map((t) => {
+                {tabsFor(sourceLanguage).map((t) => {
                   const isSource = t.code === sourceLanguage;
                   const titleVal = form.watch(fieldNameFor('title', t.code, sourceLanguage));
                   const hasContent = !!titleVal?.trim();
@@ -1198,7 +1202,7 @@ export default function PostEditor() {
                               field.onChange(v);
                               if (activeLocale === sourceLanguage) setActiveLocale(v);
                             }}
-                            value={field.value ?? 'zh-TW'}
+                            value={field.value ?? defaultLocale()}
                           >
                             <FormControl>
                               <SelectTrigger variant="glass" size="compact">

@@ -5,6 +5,7 @@
 // 換頁進來時琥珀點從正上方落在發射台，火箭垂直離地、一路爬到現在，穿過大氣層之後星空才浮出來；
 // 離開時火箭沿機身方向飛走，點跟著機鼻。
 import { useEffect, useMemo, useRef } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { codingNowQueryOptions, contributionsSinceQueryOptions, playingNowQueryOptions } from '@/data/logData';
@@ -40,7 +41,7 @@ const easeIn = (t: number) => t * t;
 
 export default function Log() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
   // 起點（站點誕生那一刻，帶時區）與里程碑是站長填的（後台「頁面」或 MCP）；起點沒填時後端給第一篇文章那天
   const content = useLogContent();
   const birthAt = content?.start ?? '';

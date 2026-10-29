@@ -420,7 +420,9 @@ pub async fn og_png(
     let Some(stem) = file.strip_suffix(".png") else {
         return text_resp(StatusCode::NOT_FOUND, "not found");
     };
-    let locale = parse_locale(q.l.as_deref()).unwrap_or("zh-TW");
+    // 沒帶 ?l= 就是站台的預設語系（分享圖的網址只有非預設語系才帶 ?l=）
+    let default = crate::handlers::site_config::default_locale();
+    let locale = parse_locale(q.l.as_deref()).or_else(|| parse_locale(Some(&default))).unwrap_or("zh-TW");
     let inm = headers.get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok()).map(String::from);
 
     // 位置、內容指紋、字那一層的 HTML、背景
@@ -484,12 +486,13 @@ async fn prepare_post(state: &AppState, id: i64, locale: &str) -> Option<Prepare
     .fetch_optional(&state.pool)
     .await
     .ok()??;
-    // 這個語系的手記清單裡有它就用它的譯名與位置；沒有（沒譯、還沒發布）就退回繁中的清單
+    // 這個語系的手記清單裡有它就用它的譯名與位置；沒有（沒譯、還沒發布）就退回預設語系的清單
     let mut list = sky_list(&state.pool, locale).await.unwrap_or_default();
     let mut text_locale = locale;
     if !list.iter().any(|p| p.0 == post_id) {
-        list = sky_list(&state.pool, "zh-TW").await.unwrap_or_default();
-        text_locale = "zh-TW";
+        let fallback = parse_locale(Some(&crate::handlers::site_config::default_locale())).unwrap_or("zh-TW");
+        list = sky_list(&state.pool, fallback).await.unwrap_or_default();
+        text_locale = fallback;
     }
     let found = list.iter().position(|p| p.0 == post_id);
     let lit = found.unwrap_or(0);

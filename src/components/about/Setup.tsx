@@ -3,6 +3,7 @@
 // 這裡是畫布外面的 DOM：頁首、箱子的標籤、零件表與標題欄、提示，以及給螢幕閱讀器的整份清單。
 // 零件表滑過一列，圖紙上那個零件就亮起來（零件編號圖見 scripts/setup-part-maps.ts）。
 import { useQuery } from '@tanstack/react-query';
+import { defaultLocale } from '@/lib/locales';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { postsListQueryOptions } from '@/data/blogList';
@@ -34,7 +35,7 @@ function landed(): Promise<void> {
 
 export default function Setup() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
   const locale = useLocale();
   // 四個貨艙與第五站是站長填的（後台「頁面」或 MCP）；圖紙在 setupSheets 與 custom/setup/
   const content = useSetupContent();

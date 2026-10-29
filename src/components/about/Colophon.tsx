@@ -3,6 +3,7 @@
 // （about/colophonToys：首頁的土星、照片的接收、作品的星，都一步一步拆開）。往下捲是航海日誌：原本的 Q&A（about/colophonQa）。
 // 換頁進來時琥珀點落在望遠鏡的鏡筒前端，視線從那裡拉到第一顆星；離開時點從正在測的那顆星飛走。
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useTranslation } from 'react-i18next';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { LocaleLink } from '@/i18n/locale-link';
@@ -63,7 +64,7 @@ const SKY_PAGES = [
 export default function Colophon() {
   const { t, i18n } = useTranslation();
   const site = useSiteConfig();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
   // 問答是站長填的（後台「頁面」或 MCP）；一題都沒有時，天上那顆「問答」星就不出現
   const { intro: qaIntro, items: qaList } = useQaContent();
   const stars = qaList.length > 0 ? STAR_KEYS : STAR_KEYS.filter((k) => k !== 'qa');

@@ -162,3 +162,43 @@ async fn 不認得的頁面與空白站名都回_400_而且不改動() {
     let (_, after) = get(&app, "/api/site/config").await;
     assert_eq!(before, after, "擋下來的請求不能改到任何東西");
 }
+
+/// 預設語系是英文的站：沒帶 ?lang 的 RSS 是英文 feed，英文原文的文章讀本體欄位；
+/// 繁中 feed 不會出現它（它沒有繁中）。新文章沒說原文是哪個語系，就是站台的預設語系
+#[tokio::test]
+async fn 預設英文的站_rss_與新文章都跟著預設語系() {
+    // SAFETY: nextest 每個測試一個行程
+    unsafe { std::env::set_var("SITE_DEFAULT_LOCALE", "en") };
+    let (app, pool) = test_app().await;
+    load_or_seed(&pool).await.unwrap();
+    sqlx::query(
+        "INSERT INTO posts (title, content, excerpt, status, source_language) \
+         VALUES ('An English post', 'Body', 'Short', 'published', 'en')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let (_, rss) = get(&app, "/rss").await;
+    let rss = rss.as_str().unwrap_or_default();
+    assert!(rss.contains("<title>An English post</title>"), "預設語系的 feed 要有英文原文的文章");
+    assert!(rss.contains("<language>en</language>"));
+    let (_, tw) = get(&app, "/rss?lang=zh-TW").await;
+    assert!(!tw.as_str().unwrap_or_default().contains("An English post"), "沒有繁中的文章不進繁中的 feed");
+
+    let token = owner_token(true);
+    let (status, v) = request(
+        &app,
+        "POST",
+        "/api/admin/posts",
+        Some(json!({ "title": "Hello", "content": "World", "status": "draft" })),
+        Some(&token),
+    )
+    .await;
+    assert!(status.is_success(), "{v}");
+    let (src,): (String,) = sqlx::query_as("SELECT source_language FROM posts WHERE title = 'Hello'")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(src, "en");
+}

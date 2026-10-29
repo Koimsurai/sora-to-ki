@@ -1,5 +1,6 @@
 import type { AdminPostFull } from '@koimsurai/api-types';
 import { format, isValid, parse } from 'date-fns';
+import { defaultLocale } from '@/lib/locales';
 
 // 後台各頁共用的純函式（不是元件，所以跟 AdminPage.tsx 分開放——同一個檔混著元件與函式，
 // fast refresh 就不能只換元件）。
@@ -106,14 +107,14 @@ export interface LocaleCoverage {
 }
 
 export function localeCoverage(post: LocalePost): LocaleCoverage[] {
-  const source = post.source_language ?? 'zh-TW';
+  const source = post.source_language ?? defaultLocale();
   return LOCALES.map(({ code, label, field }) => {
     const text = code === source ? post.title : field ? post[field] : null;
     return { code, label, has: Boolean(text?.trim()) };
   });
 }
 
-/** 分類、標籤這種「名稱＋各語系譯名」的資料：原名就是繁中，其他語系看各自的 name_* 欄 */
+/** 分類、標籤這種「名稱＋各語系譯名」的資料：原名是預設語系，其他語系看各自的 name_* 欄 */
 export interface LocaleNamed {
   name: string;
   name_en: string | null;
@@ -124,11 +125,12 @@ export interface LocaleNamed {
 
 export function nameCoverage(row: LocaleNamed): LocaleCoverage[] {
   const value: Record<string, string | null> = {
-    'zh-TW': row.name,
+    'zh-TW': null, // 繁中還沒有譯名欄：只有它是預設語系時才算有（就是原名）
     en: row.name_en,
     'zh-CN': row.name_zh_cn,
     ja: row.name_ja,
     ko: row.name_ko,
+    [defaultLocale()]: row.name,
   };
   return LOCALES.map(({ code, label }) => ({ code, label, has: Boolean(value[code]?.trim()) }));
 }

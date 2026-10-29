@@ -1,4 +1,5 @@
 import { useState, type MouseEvent } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import type { SetupBay, SetupContent, SetupPart } from '@koimsurai/api-types';
 
 import { setupContentQueryOptions } from '@/data/pageContent';
@@ -438,7 +439,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
 }
 
 export default function SetupEditor() {
-  const [lang, setLang] = useState('zh-TW');
+  const [lang, setLang] = useState<string>(defaultLocale);
   const [tab, setTab] = useState(0);
   const page = usePageDraft(
     setupContentQueryOptions,

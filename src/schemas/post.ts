@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { defaultLocale } from '@/lib/locales';
+
 // 關掉 zod 的 JIT。zod 4 第一次驗證時會用 `Function('')` 試探能不能 eval，能的話把 schema
 // 編譯成更快的函式。全站 CSP 沒有 'unsafe-eval'，試探一定失敗、zod 也會自己退回一般模式——
 // 功能沒差，但瀏覽器在擋下的那一刻就送出一筆 CSP 報告：GlitchTip 的「Blocked 'script' from ''」
@@ -34,7 +36,7 @@ export const postSchema = z.object({
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   // i18n：原文語言 + 其他語系的 title/content/summary 複本
-  source_language: z.enum(['zh-TW', 'zh-CN', 'en', 'ja', 'ko']).default('zh-TW'),
+  source_language: z.enum(['zh-TW', 'zh-CN', 'en', 'ja', 'ko']).default(() => defaultLocale() as 'zh-TW'),
   title_en: z.string().optional(),
   content_en: z.string().optional(),
   summary_en: z.string().optional(),

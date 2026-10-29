@@ -1459,7 +1459,7 @@ pub async fn admin_create_post(
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "缺少必填欄位: title, content" })))
             .into_response();
     }
-    // source_language：缺 → 'zh-TW'；有值但非合法 locale → 400（含 null → "null"）
+    // source_language：缺 → 站台的預設語系；有值但非合法 locale → 400（含 null → "null"）
     let source_language = if let Some(v) = b.get("source_language") {
         let s = v.as_str().unwrap_or("").to_string();
         if !I18N_LOCALES.contains(&s.as_str()) {
@@ -1475,7 +1475,7 @@ pub async fn admin_create_post(
         }
         s
     } else {
-        "zh-TW".to_string()
+        crate::handlers::site_config::default_locale()
     };
 
     let title = b.get("title").and_then(to_s);
