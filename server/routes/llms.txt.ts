@@ -1,5 +1,7 @@
 import { defineEventHandler, setHeader } from 'nitro/h3';
 
+import { disabledPaths } from '../disabledPaths';
+
 // /llms.txt —— 給 LLM / AI agent 的網站摘要（llmstxt.org 慣例：Markdown、單一 H1、blockquote 摘要、
 // 以 ## 分區列連結）。也是 Lighthouse「Agentic Browsing」稽核檢查的檔案。照 robots/sitemap 走 route
 // 而非 public/ 靜態檔：要吃 SITE_URL env、並即時列近期文章。
@@ -38,7 +40,11 @@ export default defineEventHandler(async (event) => {
     '多為繁體中文（部分另有 English / 日本語 / 한국어 / 简体中文）。\n\n';
 
   md += '## 主要頁面\n\n';
-  for (const [path, desc] of PAGES) md += `- [${SITE_URL}${path}](${SITE_URL}${path}): ${desc}\n`;
+  const off = await disabledPaths(BACKEND_URL);
+  for (const [path, desc] of PAGES) {
+    if (off.has(path)) continue;
+    md += `- [${SITE_URL}${path}](${SITE_URL}${path}): ${desc}\n`;
+  }
 
   md += '\n## 近期文章\n\n';
   for (const p of posts.slice(0, 20)) {

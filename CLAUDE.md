@@ -226,6 +226,10 @@ observability 網路、GlitchTip 的 source map secret、舊站 archive、站台
 「每個自架者都要」還是「只有這台」：後者寫進 override，不要寫回通用版。
 改完用 `docker compose config` 看疊完的結果。
 
+**站名、作者、介紹、哪幾頁關掉，以資料庫的 `site_settings` 為準**（後台或 MCP 的
+`koimsurai_update_site_config` 改）。override 裡的 `SITE_NAME` / `SITE_AUTHOR` / `SITE_DESCRIPTION`
+只在那張表還是空的時候寫進去一次，之後改它們**不會有任何效果**。`SITE_URL` 例外，它一直讀環境變數。
+
 **`VITE_RELEASE` 沒帶的話 SDK 不會帶版本標記**（功能仍正常，只是 GlitchTip 上的
 issue 歸不到某次部署）。要帶就 `VITE_RELEASE=$(git rev-parse --short HEAD) docker compose …`。
 

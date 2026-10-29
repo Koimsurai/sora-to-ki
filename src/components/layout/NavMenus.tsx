@@ -12,6 +12,7 @@ import { recentPostsQueryOptions } from '@/data/blogList';
 import { booksQueryOptions } from '@/data/bookshelfData';
 import { nowPlayingQueryOptions, recentlyPlayedQueryOptions } from '@/data/musicData';
 import { ABOUT_SECTIONS, type SiteSection } from '@/data/siteSections';
+import { useEnabledSections } from '@/data/siteConfig';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { latestAnimeQueryOptions, liveNowQueryOptions } from '@/data/watchData';
 import { WORKS, worksQueryOptions } from '@/data/works';
@@ -208,6 +209,7 @@ function CollectionPage({ armed }: { armed: boolean }) {
 
 function AboutPage({ label }: { label: (it: SiteSection) => string }) {
   const { t } = useTranslation();
+  const pages = useEnabledSections(ABOUT_SECTIONS);
   return (
     <Page
       lead={
@@ -223,7 +225,7 @@ function AboutPage({ label }: { label: (it: SiteSection) => string }) {
       }
       all={{ to: '/about', label: t('siteNav.aboutAll') }}
     >
-      {ABOUT_SECTIONS.map((it) => (
+      {pages.map((it) => (
         <Row key={it.key} to={it.to} title={label(it)} note={it.caps} />
       ))}
     </Page>

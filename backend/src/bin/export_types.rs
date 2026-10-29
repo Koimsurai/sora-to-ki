@@ -45,6 +45,7 @@ use koimsurai_web_backend::handlers::series::{
     SeriesDetailResponse, SeriesListResponse, SeriesPostRow, SeriesRow,
 };
 use koimsurai_web_backend::handlers::site::CountResponse;
+use koimsurai_web_backend::handlers::site_config::SiteConfig;
 use koimsurai_web_backend::handlers::spotify::{
     AudioFeature, AudioFeaturesResponse, NowPlayingResponse, RecentPlayItem, RecentlyPlayedResponse,
     SpotifyAlbum, SpotifyArtist, SpotifyExternalUrls, SpotifyImage, SpotifyTrack, TopGenre,
@@ -130,6 +131,7 @@ fn main() {
         .register::<PollOptionRow>()
         .register::<PollResponse>()
         .register::<CountResponse>()
+        .register::<SiteConfig>()
         .register::<Telemetry>()
         .register::<FriendPost>()
         .register::<FriendStar>()

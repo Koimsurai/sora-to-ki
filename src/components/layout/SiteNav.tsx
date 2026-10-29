@@ -16,6 +16,7 @@ import { SUPPORTED_LOCALES, LOCALE_PREFIX, type Locale } from '@/lib/locales';
 import { useAuth } from '@/contexts/auth';
 import { openCommandPalette } from '@/store/commandPaletteStore';
 import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS, type SiteSection } from '@/data/siteSections';
+import { useEnabledSections } from '@/data/siteConfig';
 import NavMenus, { type MenuKey } from './NavMenus';
 import './SiteNav.css';
 
@@ -39,6 +40,9 @@ export default function SiteNav() {
   const isHome = bare === '';
   const navigate = useNavigate();
   const { user, isLoggedIn, isAdmin, logout, providers, getGitHubAuthUrl, getGoogleAuthUrl } = useAuth();
+  // 選單裡列的只有站台設定沒關掉的頁面
+  const moreOn = useEnabledSections(MORE);
+  const aboutOn = useEnabledSections(ABOUT_SECTIONS);
 
   const [slim, setSlim] = useState(false);
   /** 收成點之後被點開了（首頁平常就是收著的） */
@@ -366,7 +370,7 @@ export default function SiteNav() {
             more={
               <>
                 <div className="snav-more-links">
-                  {MORE.map((it) => (
+                  {moreOn.map((it) => (
                     <LocaleLink
                       key={it.key}
                       to={it.to}
@@ -400,7 +404,7 @@ export default function SiteNav() {
           ))}
         </div>
         <div className="snav-menu-more">
-          {[...ABOUT_SECTIONS, ...MORE].map((it) => (
+          {[...aboutOn, ...moreOn].map((it) => (
             <LocaleLink
               key={it.key}
               to={it.to}

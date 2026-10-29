@@ -144,6 +144,9 @@ table reaction_events
 table site_counters
   CREATE TABLE site_counters ( key TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 
+table site_settings
+  CREATE TABLE site_settings ( key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')) )
+
 table sync_state
   CREATE TABLE sync_state ( key TEXT PRIMARY KEY, value TEXT, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 

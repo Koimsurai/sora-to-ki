@@ -128,6 +128,11 @@ async fn run() -> anyhow::Result<()> {
     // 對全新 DB / 測試 in-memory DB 建出完整 schema。
     sqlx::migrate!("./migrations").run(&pool).await?;
 
+    // 站台設定要在建第一個管理員之前：種子看 users 表是不是空的，判斷這是全新安裝還是既有的站
+    handlers::site_config::load_or_seed(&pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("載入站台設定失敗：{e:?}"))?;
+
     if let Some(username) = handlers::auth::bootstrap_admin(&pool).await? {
         tracing::info!(username = %username, "全新部署：已用 ADMIN_USERNAME / ADMIN_PASSWORD 建立第一個管理員");
     }

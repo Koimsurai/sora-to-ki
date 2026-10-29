@@ -715,6 +715,42 @@ export function makeTools(api: ApiClient): Tool[] {
       handler: () => api.request('GET', '/api/health', { auth: false }),
     },
 
+    // ── 站台設定 ───────────────────────────────────────────────
+    // 跟後台「站點設定」改的是同一份（資料庫）。金鑰不在這裡，在伺服器的環境變數。
+    {
+      name: 'koimsurai_get_site_config',
+      description:
+        '讀站台設定：網址（唯讀，部署時的 SITE_URL）、站名、作者、一句話介紹、關掉的頁面（disabled_pages）。改之前先讀一次看現況。',
+      inputSchema: EMPTY,
+      handler: () => api.request('GET', '/api/site/config', { auth: false }),
+    },
+    {
+      name: 'koimsurai_update_site_config',
+      description:
+        '改站台設定，只改有帶的欄位，回傳改完的整份。改完前台的快取會立刻清掉。' +
+        '\ndisabled_pages 是整份換掉不是增減：要多關一頁，先 koimsurai_get_site_config 拿現在的清單再加上去。' +
+        '\n能關的頁面：setup（設備）、log（航行日誌）、messages（留言）、photos（照片）、friends（朋友）、colophon（此站點）。' +
+        '手記、碎念、作品、收藏、關於這五個主要分區目前不能關。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: '站名（RSS 標題、信件、分享圖上的字），最多 60 字' },
+          author: { type: 'string', description: '作者名；給空字串＝跟站名一樣' },
+          description: { type: 'string', description: '一句話介紹（RSS 的描述），最多 300 字' },
+          disabled_pages: {
+            type: 'array',
+            items: { type: 'string', enum: ['setup', 'log', 'messages', 'photos', 'friends', 'colophon'] },
+            description: '要關掉的頁面（整份換掉）。給空陣列＝全部打開',
+          },
+        },
+        additionalProperties: false,
+      },
+      handler: (a) =>
+        api.request('PUT', '/api/admin/site/config', {
+          body: pick(a, ['name', 'author', 'description', 'disabled_pages']),
+        }),
+    },
+
     // ── 分類 ──────────────────────────────────────────────────
     {
       name: 'koimsurai_list_categories',
