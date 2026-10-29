@@ -84,10 +84,12 @@ const RUN_LIMIT_MS = 8000;
 /** 彗尾的塵埃多久熄掉 */
 const DUST_LIFE_MS = 900;
 /**
- * 海王星的尾巴：點身後的線斷成四段，長短與間隔照 Adams 環上那四段弧（lib/saturnSpec，開場亮起來的也是它們）。
- * 弧的角度換成離點多遠：1° 是 TAIL_ARC_PX 像素，最遠那段之後就沒有線
+ * 海王星的尾巴：點身後一條很淡的髮絲，上面四段亮的，長短與間隔照 Adams 環上那四段弧
+ * （lib/saturnSpec，開場亮起來的也是它們）。弧的角度換成離點多遠：1° 是 TAIL_ARC_PX 像素
  */
 const TAIL_ARC_PX = 3;
+/** 弧以外那條髮絲的濃度（Adams 環整圈很淡，只有弧亮） */
+const TAIL_FAINT = 0.22;
 const TAIL_ARCS = PLANETS.neptune.ring.arcs.map(([, from, to]) => [
   ((from * 180) / Math.PI) * TAIL_ARC_PX,
   ((to * 180) / Math.PI) * TAIL_ARC_PX,
@@ -386,14 +388,13 @@ export default function TransitionLayer() {
     };
 
     /**
-     * 彗尾：每一段照它畫下去多久了變淡，散完就不畫；回傳還有沒有沒散完的。
-     * 一小段一筆、平頭：圓頭的話相鄰兩筆的半透明端點疊在一起，接頭會亮成一串珠子。粗細也跟著淡：
-     * 靠點那頭粗、越舊越細，線才有筆鋒
+     * 彗尾：每一段照它畫下去多久了變淡，散完就不畫；回傳還有沒有沒散完的。線一律是 1px 的髮絲線（站上的線都是）。
+     * 一小段一筆、平頭：圓頭的話相鄰兩筆的半透明端點疊在一起，接頭會亮成一串珠子
      *
-     * 海王星斷成四段弧（TAIL_ARCS）：從點往回量，落在弧裡的那幾段才畫。每一段自己也是頭粗尾細、
-     * 頭亮尾淡，靠點那頭補一個圓點當筆頭，像四小截彗星，而不是一條虛線
+     * 海王星跟 3D 的 Adams 環同一個長相：一條很淡的髮絲，上面四段亮的（TAIL_ARCS，從點往回量）
      */
     const tail = (points: Run['trail'], now: number) => {
+      ctx.lineWidth = 1;
       ctx.lineCap = 'butt';
       let alive = false;
       let back = 0;
@@ -406,39 +407,27 @@ export default function TransitionLayer() {
         const k = 1 - (now - b.t) / TAIL_MS;
         if (k <= 0 || step === 0) continue;
         alive = true;
-        // 這一筆從 b（靠點那頭）量回 a 的哪一段：[u0, u1]，以及在它那段弧裡走到幾成（0 是弧頭）
-        const pieces: { u0: number; u1: number; along: number; head: boolean }[] = [];
+        const fade = Math.pow(k, 1.6);
+        // 這一筆從 b（靠點那頭）量回 a 的哪幾段、各多亮
+        const pieces: [u0: number, u1: number, alpha: number][] = [];
         if (THEME === 'neptune') {
+          let at = 0;
           for (const [s0, s1] of TAIL_ARCS) {
-            const lo = Math.max(s0, from);
-            const hi = Math.min(s1, back);
-            if (hi > lo)
-              pieces.push({
-                u0: (lo - from) / step,
-                u1: (hi - from) / step,
-                along: (lo - s0) / (s1 - s0),
-                head: from <= s0,
-              });
+            const lo = clamp((s0 - from) / step);
+            const hi = clamp((s1 - from) / step);
+            if (lo > at) pieces.push([at, lo, TAIL_FAINT * fade]);
+            if (hi > lo) pieces.push([lo, hi, 0.85 * fade]);
+            at = Math.max(at, hi);
           }
-        } else pieces.push({ u0: 0, u1: 1, along: 0, head: false });
-        for (const { u0, u1, along, head } of pieces) {
-          const fade = THEME === 'neptune' ? 1 - 0.7 * along : 1;
-          const width = THEME === 'neptune' ? (0.5 + 1.3 * fade) * (0.4 + 0.6 * k) : 0.5 + 0.9 * Math.pow(k, 0.8);
-          const alpha = (THEME === 'neptune' ? 0.9 : 0.75) * fade * Math.pow(k, 1.6);
-          const x0 = b.x + (a.x - b.x) * u0;
-          const y0 = b.y + (a.y - b.y) * u0;
+          if (at < 1) pieces.push([at, 1, TAIL_FAINT * fade]);
+        } else pieces.push([0, 1, 0.75 * fade]);
+        for (const [u0, u1, alpha] of pieces) {
+          if (u1 <= u0) continue;
           ctx.strokeStyle = `rgba(${INK}, ${alpha.toFixed(3)})`;
-          ctx.lineWidth = width;
           ctx.beginPath();
-          ctx.moveTo(x0, y0);
+          ctx.moveTo(b.x + (a.x - b.x) * u0, b.y + (a.y - b.y) * u0);
           ctx.lineTo(b.x + (a.x - b.x) * u1, b.y + (a.y - b.y) * u1);
           ctx.stroke();
-          if (head) {
-            ctx.fillStyle = ctx.strokeStyle;
-            ctx.beginPath();
-            ctx.arc(x0, y0, width / 2, 0, Math.PI * 2);
-            ctx.fill();
-          }
         }
       }
       return alive;

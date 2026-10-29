@@ -108,15 +108,22 @@ const BOOT_RINGS = THEMES.map((theme) => ({
 }));
 /**
  * 海王星的進度：Adams 環上的四段弧照載入的四個階段一段段亮起來（index.css 的 .boot-ring-arc，照 --boot-p）。
- * 擺在前半圈右下，點的前面。角度是橢圓的參數角
+ * 真實的四段弧只佔環上 40° 左右，原樣畫的話擠在一角、看不出進度走到哪。長短與間隔照原比例一起放大到繞滿一圈
+ * （最後一段之後留一段跟平均間隔差不多的空），從左端起順時針。角度是橢圓的參數角
  */
 const BOOT_ARC_STAGES = [0.12, 0.45, 0.65, 0.85];
-const BOOT_ARC_OFFSET = (40 * Math.PI) / 180;
+const BOOT_ARC_SPAN = (() => {
+  const arcs = PLANETS.neptune.ring.arcs;
+  const end = arcs.at(-1)?.[2] ?? 1;
+  const gaps = arcs.slice(1).map(([, from], i) => from - arcs[i][2]);
+  return end + gaps.reduce((x, y) => x + y, 0) / Math.max(1, gaps.length);
+})();
 const BOOT_ARCS = PLANETS.neptune.ring.arcs.map(([at, from, to], i) => {
   const r = (at * 26) / PLANETS.neptune.ring.outer;
-  const n = 12;
+  const scale = (Math.PI * 2) / BOOT_ARC_SPAN;
+  const n = 48;
   const d = Array.from({ length: n + 1 }, (_, k) => {
-    const a = BOOT_ARC_OFFSET + from + ((to - from) * k) / n;
+    const a = Math.PI + (from + ((to - from) * k) / n) * scale;
     return `${k ? 'L' : 'M'}${(r * Math.cos(a)).toFixed(2)} ${(r * BOOT_RING_FLAT * Math.sin(a)).toFixed(2)}`;
   }).join('');
   return { d, at: BOOT_ARC_STAGES[i] ?? 1 };
@@ -173,7 +180,7 @@ function BootRing({ half }: { half: 'back' | 'front' }) {
         <i className="boot-arc-seam" />
       </div>
       <BootRingLines half={half} kind="base" />
-      {half === 'front' && <BootRingLines half="front" kind="arc" />}
+      <BootRingLines half={half} kind="arc" />
     </div>
   );
 }

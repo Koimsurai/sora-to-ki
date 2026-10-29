@@ -421,9 +421,9 @@ function buildSaturn(
     tone = tone.mul(smoothstep(spec.pole[0], spec.pole[1], abs(lat)));
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
     const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
-    const row = n.y.mul(spec.rows).add(wave.mul(0.8));
+    const row = n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave));
     const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
-      .mul(0.45)
+      .mul(spec.stroke.swell)
       .add(1);
     const brush = smoothstep(-0.45, 0.15, mx_noise_float(vec3(n.x.mul(2.4), n.y.mul(48), n.z.mul(2.4))));
     // 環落在星球上的影子：從這一點往太陽看，視線穿過環的平面時落在環上，越密的環影子越深
@@ -435,7 +435,7 @@ function buildSaturn(
       lit
         .mul(tone)
         .mul(swell)
-        .mul(mix(float(0.05), float(1), brush))
+        .mul(mix(float(spec.stroke.floor), float(1), brush))
         .mul(shade)
         .clamp(0, 1),
       0.8,
