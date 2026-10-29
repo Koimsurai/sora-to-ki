@@ -314,6 +314,11 @@ const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2
 /** 帶一點回彈：衛星彈出來時稍微超過原本的大小再停穩 */
 const easeOutBack = (t: number) => 1 + 2.70158 * Math.pow(t - 1, 3) + 1.70158 * Math.pow(t - 1, 2);
 const span = (t: number, from: number, dur: number) => Math.min(1, Math.max(0, (t - from) / dur));
+/** 0–1 夾住後的 smoothstep */
+const smoothstep01 = (t: number) => {
+  const x = Math.min(1, Math.max(0, t));
+  return x * x * (3 - 2 * x);
+};
 
 /**
  * 「每幀往目標靠近 rate」換算成跟幀率無關的係數（rate 是以 60fps 為準的值）。
@@ -777,23 +782,34 @@ function buildSaturn(
    * 所以全部開著時（全是 1）畫面跟沒有這一層完全一樣。開機時直接是定值，之後改才有動畫
    */
   // 土衛二的冰噴泉（spec.plume）：衛星身後一串越來越淡、越來越小的冰粒，沿著軌道拖在後面（E 環就是這樣來的）
-  // 冰噴泉是非常細的冰晶：很多很小的點，散成一縷霧，靠衛星那頭密、越遠越稀疏越淡。
-  // 每一粒的位置是固定的亂數（離衛星多遠、往外與上下偏多少），所以那一縷的形狀穩定、不會閃
+  // 冰噴泉：土衛二南極的裂縫（虎紋）把冰晶噴出去。每一粒從衛星往南極方向（環平面的下方）噴出、帶一點錐狀的散開，
+  // 越飛越淡；衛星繼續往前走，噴出來的冰粒留在原本的軌道上，拖成一條尾巴——E 環就是這樣來的。
+  // 每一粒有自己的生命週期（life 從 0 到 1 一直循環，phase 錯開），所以看起來一直在噴
   const PLUME_N = 48;
+  const PLUME_CYCLE = 2.2;
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
   const plume =
     spec.plume === undefined
       ? []
       : Array.from({ length: PLUME_N }, () => {
-          const lag = rnd() ** 1.6;
+          const fade = uniform(0);
           const mat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
           mat.colorNode = vec3(INK.r, INK.g, INK.b);
-          mat.opacityNode = smoothstep(0.5, 0, uv().sub(0.5).length()).mul(0.7 * (1 - lag) * (0.4 + 0.6 * rnd()));
+          mat.opacityNode = smoothstep(0.5, 0, uv().sub(0.5).length()).mul(fade);
           const sprite = new THREE.Sprite(mat);
           sprite.scale.setScalar(0.0001);
           apses[spec.plume ?? 0].add(sprite);
-          return { sprite, lag, out: (rnd() - 0.5) * 2, up: (rnd() - 0.5) * 2, size: 0.018 + 0.02 * rnd() };
+          return {
+            sprite,
+            fade,
+            phase: rnd(),
+            bright: 0.45 + 0.55 * rnd(),
+            out: (rnd() - 0.5) * 2,
+            side: (rnd() - 0.5) * 2,
+            speed: 0.7 + 0.6 * rnd(),
+            size: 0.016 + 0.018 * rnd(),
+          };
         });
 
   /**
@@ -992,17 +1008,22 @@ function buildSaturn(
         if (i === spec.plume) {
           const shown = (satK[i] ?? 0) * (live[i] ?? 0);
           for (const p of plume) {
-            const behind = a - (0.04 + p.lag * 0.55) * s.dir;
+            const life = (clock / PLUME_CYCLE + p.phase) % 1;
+            // 噴出時衛星在的位置：衛星已經往前走了，冰粒留在後面
+            const born = a - life * 0.32 * s.dir;
             const target = p.sprite.position;
-            if (st) ellipseAt(st, behind, target);
-            else target.set(Math.cos(behind) * s.r, 0, Math.sin(behind) * s.r);
-            // 越遠散得越開：往軌道內外、上下偏（噴出去的冰粒不會剛好在軌道上）
-            const spread = 0.02 + 0.14 * p.lag;
-            const k = 1 + (p.out * spread) / Math.max(0.001, target.length());
+            if (st) ellipseAt(st, born, target);
+            else target.set(Math.cos(born) * s.r, 0, Math.sin(born) * s.r);
+            // 從南極往下噴（−y），帶錐狀的散開（往軌道內外、前後），越飛越慢
+            const travel = (1 - (1 - life) ** 2) * p.speed;
+            const k = 1 + (p.out * 0.12 * travel) / Math.max(0.001, target.length());
             target.x *= k;
             target.z *= k;
-            target.y += p.up * spread * 0.5;
-            p.sprite.scale.setScalar(Math.max(0.0001, p.size * shown));
+            target.y -= 0.32 * travel;
+            target.x += p.side * 0.05 * travel * Math.sin(born);
+            target.z -= p.side * 0.05 * travel * Math.cos(born);
+            p.fade.value = 0.8 * p.bright * smoothstep01(life / 0.08) * (1 - life) ** 1.5;
+            p.sprite.scale.setScalar(Math.max(0.0001, p.size * (1 + 0.6 * life) * shown));
           }
         }
         const target = glowTarget[i] ?? 0;
