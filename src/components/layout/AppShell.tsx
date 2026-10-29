@@ -25,7 +25,16 @@ function LoadedSpaceBackdropShell() {
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const ContextMenu = lazy(() => import('./ContextMenu'));
 const SerifFontLoader = lazy(() => import('./SerifFontLoader'));
-const TransitionLayer = lazy(() => import('./TransitionLayer'));
+
+// 換頁轉場與開場：跟上面的背景殼同一個理由，不用 React.lazy。開場要等它掛上才開始算「等完了沒」，
+// 而 React.lazy 的版本要等 React 接手整頁才開始下載、載好之後 Suspense 又再等約 300ms：
+// 文章頁實測（跨國網路、中階 CPU）chunk 在 2.9 秒才開始抓，開場程式 4.0 秒才跑。
+// 模組一載入就開始下載，React 接手完就能掛
+const transitionLayerChunk = typeof window === 'undefined' ? null : import('./TransitionLayer');
+let transitionLayer: ComponentType | null = null;
+function LoadedTransitionLayer() {
+  return transitionLayer ? createElement(transitionLayer) : null;
+}
 
 // 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):導覽列 / 背景 / chrome 包住路由內容(children = <Outlet/>)。
 // admin 隱藏導覽列/CommandPalette。
@@ -59,6 +68,21 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
         if (alive) setBackdropLoaded(true);
       })
       // chunk 載不到（剛部署完、舊的 hash 不在了）：留下 CSS 星空
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const [transitionLoaded, setTransitionLoaded] = useState(transitionLayer !== null);
+  useEffect(() => {
+    let alive = true;
+    transitionLayerChunk
+      ?.then((m) => {
+        transitionLayer = m.default;
+        if (alive) setTransitionLoaded(true);
+      })
+      // 載不到：沒有轉場，開場由 head 那段腳本 6 秒後自己收掉（lib/bootRing，同原本 lazy 失敗時）
       .catch(() => undefined);
     return () => {
       alive = false;
@@ -104,11 +128,9 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
         {!isAdminPage && <SiteNav />}
         <main style={{ flex: '1 0 auto' }}>{children}</main>
         {/* 換頁轉場：在內容容器裡、導覽列底下（見 TransitionLayer.css）。後台不演 */}
-        {!isAdminPage && (
+        {!isAdminPage && transitionLoaded && (
           <ClientOnly fallback={null}>
-            <Suspense fallback={null}>
-              <TransitionLayer />
-            </Suspense>
+            <LoadedTransitionLayer />
           </ClientOnly>
         )}
         {!isAdminPage && (
