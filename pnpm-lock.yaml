@@ -162,9 +162,6 @@ importers:
 
   .:
     dependencies:
-      '@animateicons/react':
-        specifier: ^0.4.3
-        version: 0.4.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@excalidraw/excalidraw':
         specifier: ^0.18.1
         version: 0.18.1(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(immer@11.1.18)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -324,9 +321,6 @@ importers:
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.7)(react@19.2.1)(supports-color@7.2.0)
-      react-scroll-parallax:
-        specifier: ^3.4.5
-        version: 3.5.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-zoom-pan-pinch:
         specifier: ^3.7.0
         version: 3.7.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -512,13 +506,6 @@ importers:
         version: 2.1.0
 
 packages:
-
-  '@animateicons/react@0.4.3':
-    resolution: {integrity: sha512-W0Fs4l4LnItJiNZLEBr/bqDy8Xu9ExVEtdr3t01jkXINqSiKUSzTTnp/+H6YGKT8BRniqmSGs9EjpTpjQOHODw==}
-    engines: {node: '>=18.17.0'}
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
 
   '@antfu/install-pkg@1.1.0':
     resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
@@ -4911,9 +4898,6 @@ packages:
     resolution: {integrity: sha512-bopVNp6ugyA150DDuZfPFdt1KZ5a94ZDiwX4hMgZDzF+GttD80lEy8kj98kbyhLXnPvhtIo93mdnLIjpCAeeOw==}
     engines: {node: '>=10.0.0'}
 
-  bezier-easing@2.1.0:
-    resolution: {integrity: sha512-gbIqZ/eslnUFC1tjEvtz0sgx+xTK20wDnYMIA27VA04R7w6xxXQPZDbibjA9DTWZRA2CXtwHykkVzlCaAJAZig==}
-
   bidi-js@1.0.3:
     resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
 
@@ -7239,10 +7223,6 @@ packages:
     engines: {node: '>=20.0.0'}
     hasBin: true
 
-  parallax-controller@1.7.1:
-    resolution: {integrity: sha512-facVMEBnUynzMN7hCSqyNpF6uyCpVIl4XAUyTR9D8q2JlhgyPY6bZtj/OkFk3+Cpka1TnYCppQb8BzDWHtSaZg==}
-    engines: {node: '>=12'}
-
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
@@ -7522,13 +7502,6 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
-
-  react-scroll-parallax@3.5.0:
-    resolution: {integrity: sha512-cUyBTFfTMA/4jweZB4j06LQnUQdZlGgVKX2hmZ5a/BuHZsnp85MEo6ygD2otCQH734VJ9xXPVZ3WfiAiF2TesQ==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      react: ^16.8.0-0 || >=17.0.1 || ^18.0.0 || ^19.0.0
-      react-dom: ^16.8.0-0 || >=17.0.1 || ^18.0.0 || ^19.0.0
 
   react-style-singleton@2.2.3:
     resolution: {integrity: sha512-b6jSvxvVnyptAiLjbkWLE/lOnR4lfTtDAl+eUC7RZy+QQWc6wRzIV2CE6xBuMmDxc2qIihtDCZD5NPOFl7fRBQ==}
@@ -8701,11 +8674,6 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
-
-  '@animateicons/react@0.4.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
-    dependencies:
-      react: 19.2.1
-      react-dom: 19.2.1(react@19.2.1)
 
   '@antfu/install-pkg@1.1.0':
     dependencies:
@@ -12540,8 +12508,6 @@ snapshots:
 
   basic-ftp@5.3.1: {}
 
-  bezier-easing@2.1.0: {}
-
   bidi-js@1.0.3:
     dependencies:
       require-from-string: 2.0.2
@@ -15407,10 +15373,6 @@ snapshots:
 
   pangu@9.1.0: {}
 
-  parallax-controller@1.7.1:
-    dependencies:
-      bezier-easing: 2.1.0
-
   parent-module@1.0.1:
     dependencies:
       callsites: 3.1.0
@@ -15696,12 +15658,6 @@ snapshots:
       use-sidecar: 1.1.3(@types/react@19.2.7)(react@19.2.1)
     optionalDependencies:
       '@types/react': 19.2.7
-
-  react-scroll-parallax@3.5.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
-    dependencies:
-      parallax-controller: 1.7.1
-      react: 19.2.1
-      react-dom: 19.2.1(react@19.2.1)
 
   react-style-singleton@2.2.3(@types/react@19.2.7)(react@19.2.1):
     dependencies:

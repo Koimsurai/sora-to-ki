@@ -5,7 +5,7 @@
 // 404 頁想給一個「搜尋看看」的按鈕，就必須有辦法從外面打開它。
 //
 // 用 `useSyncExternalStore` 而不是 jotai：這只是一個 boolean，加一個 Provider 與相依
-// 不划算；也跟 `scrollStore` 同一套寫法（見那個檔的說明）。
+// 不划算。
 //
 // ⚠ `subscribe` 與 `getSnapshot` 都必須是**模組層級的穩定參考**。每次 render 換一個新
 //   函式會讓 React 不斷重新訂閱，而症狀是「面板偶爾要按兩次才開」這種很難查的東西。
