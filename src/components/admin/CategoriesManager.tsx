@@ -18,7 +18,7 @@ import {
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading from './AdminLoading';
 import { NameDots, PageHead } from './AdminPage';
-import { LOCALE_NAME_FIELDS } from './adminFormat';
+import { localeNameFields } from './adminFormat';
 
 // 分類（2026-10 後台提案）：一張表，每個分類後面五顆語系點看譯名填了沒。
 // 表單分三段：名稱與網址、簡述與描述（前台文章頁分類的提示框）、各語系的譯名與譯文。
@@ -41,6 +41,9 @@ interface CategoryForm {
   short_description_ja: string;
   short_description_ko: string;
   short_description_zh_cn: string;
+  name_zh_tw: string;
+  description_zh_tw: string;
+  short_description_zh_tw: string;
 }
 
 /** 表單裡「描述類」譯文欄位的型別（給 keyof 索引用）。 */
@@ -63,6 +66,9 @@ const EMPTY: CategoryForm = {
   short_description_ja: '',
   short_description_ko: '',
   short_description_zh_cn: '',
+  name_zh_tw: '',
+  description_zh_tw: '',
+  short_description_zh_tw: '',
 };
 
 export default function CategoriesManager() {
@@ -105,6 +111,9 @@ export default function CategoriesManager() {
       short_description_ja: c.short_description_ja ?? '',
       short_description_ko: c.short_description_ko ?? '',
       short_description_zh_cn: c.short_description_zh_cn ?? '',
+      name_zh_tw: c.name_zh_tw ?? '',
+      description_zh_tw: c.description_zh_tw ?? '',
+      short_description_zh_tw: c.short_description_zh_tw ?? '',
     });
     setDialogOpen(true);
   };
@@ -265,7 +274,7 @@ export default function CategoriesManager() {
             <div className="adm-form-section">
               <span className="adm-caps">各語系的譯名 · 選填</span>
               <div className="adm-form-grid">
-                {LOCALE_NAME_FIELDS.map(({ key, label }) => (
+                {localeNameFields().map(({ key, label }) => (
                   <label key={key} className="adm-field">
                     <span className="adm-caps">{label}</span>
                     <input value={form[key]} onChange={(e) => set({ [key]: e.target.value })} />
@@ -276,7 +285,7 @@ export default function CategoriesManager() {
 
             <div className="adm-form-section">
               <span className="adm-caps">各語系的簡述與描述 · 選填</span>
-              {LOCALE_NAME_FIELDS.map(({ key, label }) => {
+              {localeNameFields().map(({ key, label }) => {
                 const shortKey = key.replace('name_', 'short_description_') as DescKey;
                 const descKey = key.replace('name_', 'description_') as DescKey;
                 return (

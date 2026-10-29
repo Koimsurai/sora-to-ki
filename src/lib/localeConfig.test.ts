@@ -10,7 +10,7 @@ import {
   stripLocalePrefix,
 } from '@/i18n/start-i18n';
 import { editLocales } from '@/components/admin/pageTabs';
-import { localeCoverage, nameCoverage } from '@/components/admin/adminFormat';
+import { localeCoverage, localeNameFields, missingTranslations, nameCoverage } from '@/components/admin/adminFormat';
 import { pickText } from './i18nText';
 import { setSiteIdentity } from './siteIdentity';
 import { defaultLocale, enabledLocales, localeOfPrefix, localePathname, prefixOf, setLocaleConfig } from './locales';
@@ -83,18 +83,36 @@ describe('站台設定改成預設英文、只開英文與日文', () => {
   it('後台：預設語系排第一、只列有開的；原名算預設語系的', () => {
     english();
     expect(editLocales().map((l) => l.key)).toEqual(['en', 'ja']);
-    const row = { name: 'Notes', name_en: null, name_ja: 'ノート', name_ko: null, name_zh_cn: null };
+    const row = { name: 'Notes', name_en: null, name_ja: 'ノート', name_ko: null, name_zh_cn: null, name_zh_tw: null };
     const has = Object.fromEntries(nameCoverage(row).map((c) => [c.code, c.has]));
-    expect(has).toMatchObject({ en: true, ja: true, 'zh-TW': false });
+    expect(has).toEqual({ en: true, ja: true });
+    expect(localeNameFields().map((f) => f.key)).toEqual(['name_ja']);
     const post = {
       title: 'Hi',
       title_en: null,
       title_zh_cn: null,
+      title_zh_tw: null,
       title_ja: null,
       title_ko: null,
       source_language: null,
     };
     expect(localeCoverage(post).find((c) => c.code === 'en')?.has).toBe(true);
+    expect(missingTranslations(post).map((c) => c.code)).toEqual(['ja']);
+  });
+
+  it('繁中預設、全開：譯名欄與待翻語系跟以前一樣', () => {
+    expect(localeNameFields().map((f) => f.key)).toEqual(['name_en', 'name_ja', 'name_ko', 'name_zh_cn']);
+    const post = {
+      title: '嗨',
+      title_en: 'Hi',
+      title_zh_cn: null,
+      title_zh_tw: null,
+      title_ja: null,
+      title_ko: null,
+      source_language: 'zh-TW',
+    };
+    expect(localeCoverage(post).map((c) => c.code)).toEqual(['zh-TW', 'en', 'zh-CN', 'ja', 'ko']);
+    expect(missingTranslations(post).map((c) => c.code)).toEqual(['ja', 'ko']);
   });
 
   it('站長沒填這個語系：退回預設語系的字', () => {

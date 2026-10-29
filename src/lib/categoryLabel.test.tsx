@@ -73,6 +73,20 @@ describe('useCategoryLabel：語系 → 譯名欄位', () => {
     expect(labelFor('zh-TW', [CAT])('技術')).toBe('技術');
   });
 
+  // 原名是站台預設語系的名稱：預設英文的站，英文讀原名、繁中讀繁中譯名
+  it('預設英文的站：en（含 en-US）回原名，zh-TW 取繁中譯名', async () => {
+    const { setLocaleConfig } = await import('./locales');
+    setLocaleConfig('en', undefined);
+    try {
+      const row = { name: 'Tech', name_en: 'stale', name_zh_tw: '技術' };
+      expect(labelFor('en', [row])('Tech')).toBe('Tech');
+      expect(labelFor('en-US', [row])('Tech')).toBe('Tech');
+      expect(labelFor('zh-TW', [row])('Tech')).toBe('技術');
+    } finally {
+      setLocaleConfig('zh-TW', undefined);
+    }
+  });
+
   // 地區碼是實際會出現的：i18n 的 resolvedLanguage 可能是 en-US / ja-JP
   it('帶地區碼的語系也認得（en-US / ja-JP / ko-KR）', () => {
     expect(labelFor('en-US', [CAT])('技術')).toBe('Tech');
