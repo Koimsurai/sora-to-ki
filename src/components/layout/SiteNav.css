@@ -275,8 +275,11 @@
   list-style: none;
 }
 
-.snav-page-list a {
+.snav-page-list a,
+.snav-page-list button {
   position: relative;
+  width: 100%;
+  text-align: left;
   display: grid;
   grid-template-columns: 4rem minmax(0, 1fr) auto;
   align-items: baseline;
@@ -285,7 +288,8 @@
 }
 
 /* 底下那條細線：選單打開時一條接一條畫出來（跟「更多」的格子同一個動作） */
-.snav-page-list a::after {
+.snav-page-list a::after,
+.snav-page-list button::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -296,17 +300,21 @@
   transition: width var(--dur-700) var(--easing-out);
 }
 
-.snav.is-more .snav-page.is-open .snav-page-list a::after {
+.snav.is-more .snav-page.is-open .snav-page-list a::after,
+.snav.is-more .snav-page.is-open .snav-page-list button::after {
   width: 100%;
 }
 
-.snav-page-list li:nth-child(2) a::after {
+.snav-page-list li:nth-child(2) a::after,
+.snav-page-list li:nth-child(2) button::after {
   transition-delay: calc(var(--dur-100) * 0.6);
 }
-.snav-page-list li:nth-child(3) a::after {
+.snav-page-list li:nth-child(3) a::after,
+.snav-page-list li:nth-child(3) button::after {
   transition-delay: calc(var(--dur-100) * 1.2);
 }
-.snav-page-list li:nth-child(4) a::after {
+.snav-page-list li:nth-child(4) a::after,
+.snav-page-list li:nth-child(4) button::after {
   transition-delay: calc(var(--dur-100) * 1.8);
 }
 
@@ -327,7 +335,8 @@
   transition: color var(--dur-200) ease;
 }
 
-.snav-page-list a:hover .snav-row-title {
+.snav-page-list a:hover .snav-row-title,
+.snav-page-list button:hover .snav-row-title {
   color: var(--ink);
 }
 
@@ -622,4 +631,50 @@
   .snav *::after {
     transition-duration: 0.01ms !important;
   }
+}
+
+/* 天體（換主題，layout/ThemeMenu）：導覽列最右邊那個小圖示，與手機選單裡的一排。圖示是髮絲線畫的 */
+.sky-glyph {
+  display: block;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+.sky-glyph * {
+  vector-effect: non-scaling-stroke;
+}
+.sky-glyph .is-faint {
+  stroke-opacity: 0.45;
+}
+.sky-glyph .is-solid {
+  fill: var(--ground);
+}
+.sky-glyph .is-dotted {
+  stroke-dasharray: 1 2;
+}
+.snav-row .snav-sky {
+  display: flex;
+  align-items: center;
+}
+.snav-page-sky .snav-row-stamp {
+  color: var(--ink-muted);
+}
+.snav-menu-sky {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.snav-menu-sky button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-13);
+  color: var(--ink-muted);
+}
+.snav-menu-sky button.is-on {
+  color: var(--ink);
 }

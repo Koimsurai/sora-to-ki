@@ -159,7 +159,7 @@ export interface PlanetSpec {
  * S 星的軌道：銀河系中心的黑洞（人馬座 A*）周圍那群恆星。根策爾與蓋茲兩個團隊追了三十年，
  * 靠它們的軌道證明那裡有四百萬倍太陽質量的黑洞（2020 年諾貝爾物理獎）。軌道是扁橢圓、黑洞在焦點上，
  * 各自傾斜、互相交錯；GRAVITY 2020 年量到 S2 的軌道在進動（史瓦西進動），整條橢圓慢慢繞著黑洞轉。
- * a 半長軸（星球半徑）、e 離心率、incl 傾角°、node 升交點經度°、peri 近點方向°、precess 進動（°/秒）
+ * a 半長軸（星球半徑）、e 離心率、incl 傾角°、node 升交點經度°、peri 近點方向°、precession 進動（°/秒）
  */
 export interface StarOrbit {
   a: number;
@@ -167,7 +167,7 @@ export interface StarOrbit {
   incl: number;
   node: number;
   peri: number;
-  precess: number;
+  precession: number;
 }
 
 const ringMid = (i: number): [number, number] => {
@@ -186,7 +186,7 @@ const SATURN_MOONS = [3.08, 3.95, 4.89, 6.26, 8.74].map((a) => ({
   incl: 0,
   node: 0,
   peri: 0,
-  precess: 0,
+  precession: 0,
 }));
 
 const SATURN: PlanetSpec = {
@@ -304,11 +304,11 @@ const NEPTUNE: PlanetSpec = {
   // 崔頓的軌道相對赤道傾斜 157°（逆行而且斜了 23°）；海衛二（Nereid）離心率 0.75，是太陽系已知軌道最扁的衛星——
   // 畫面放不下那麼扁，取 0.38（遠點 6.2、近點 2.8，還在 Adams 環外面）。不進動
   stars: [
-    { a: 2.9, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
-    { a: 3.55, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
-    { a: 4.25, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
-    { a: 4.95, e: 0, incl: 23, node: 40, peri: 0, precess: 0 },
-    { a: 4.5, e: 0.38, incl: 7, node: 200, peri: 120, precess: 0 },
+    { a: 2.9, e: 0, incl: 0, node: 0, peri: 0, precession: 0 },
+    { a: 3.55, e: 0, incl: 0, node: 0, peri: 0, precession: 0 },
+    { a: 4.25, e: 0, incl: 0, node: 0, peri: 0, precession: 0 },
+    { a: 4.95, e: 0, incl: 23, node: 40, peri: 0, precession: 0 },
+    { a: 4.5, e: 0.38, incl: 7, node: 200, peri: 120, precession: 0 },
   ],
 };
 
@@ -348,11 +348,11 @@ const BLACK_HOLE: PlanetSpec = {
   retrograde: [],
   // 近點都在吸積盤外（≥ 2.6），遠點不超過土星最外圈軌道太多（≤ 6），畫面才放得下
   stars: [
-    { a: 3.3, e: 0.18, incl: 8, node: 20, peri: 40, precess: 0.8 },
-    { a: 3.7, e: 0.3, incl: 24, node: 110, peri: 200, precess: 0.6 },
-    { a: 4.1, e: 0.24, incl: 14, node: 250, peri: 300, precess: 0.5 },
-    { a: 4.5, e: 0.33, incl: 32, node: 60, peri: 120, precess: 0.4 },
-    { a: 4.9, e: 0.2, incl: 18, node: 170, peri: 10, precess: 0.3 },
+    { a: 3.3, e: 0.18, incl: 8, node: 20, peri: 40, precession: 0.8 },
+    { a: 3.7, e: 0.3, incl: 24, node: 110, peri: 200, precession: 0.6 },
+    { a: 4.1, e: 0.24, incl: 14, node: 250, peri: 300, precession: 0.5 },
+    { a: 4.5, e: 0.33, incl: 32, node: 60, peri: 120, precession: 0.4 },
+    { a: 4.9, e: 0.2, incl: 18, node: 170, peri: 10, precession: 0.3 },
   ],
 };
 

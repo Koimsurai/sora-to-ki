@@ -1003,7 +1003,7 @@ function buildSaturn(
         if (st) {
           ellipseAt(st, a, s.sprite.position);
           // 軌道進動：整條橢圓繞著黑洞慢慢轉（GRAVITY 2020 年量到 S2 的軌道在進動）
-          apses[i].rotation.y = ((st.peri + clock * st.precess) * Math.PI) / 180;
+          apses[i].rotation.y = ((st.peri + clock * st.precession) * Math.PI) / 180;
         } else s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
         if (i === spec.plume) {
           const shown = (satK[i] ?? 0) * (live[i] ?? 0);

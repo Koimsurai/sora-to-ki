@@ -35,6 +35,10 @@
     "menu": "导航菜单"
   },
   "siteNav": {
+    "sky": "天体",
+    "skyLead": "换一颗主星，配色和换页的样子跟着换。",
+    "skyNames": {"saturn": "土星", "neptune": "海王星", "blackhole": "黑洞", "betelgeuse": "参宿四"},
+    "skyNotes": {"saturn": "北极有一个六边形的风暴", "neptune": "先被算出来，才被望远镜找到", "blackhole": "连光都逃不出去", "betelgeuse": "一颗正在呼吸的红超巨星"},
     "signIn": "登录",
     "notes": "手记",
     "moments": "碎念",

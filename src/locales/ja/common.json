@@ -35,6 +35,10 @@
     "menu": "ナビゲーション"
   },
   "siteNav": {
+    "sky": "天体",
+    "skyLead": "中心の天体を選ぶ。配色とページ遷移もあわせて変わる。",
+    "skyNames": {"saturn": "土星", "neptune": "海王星", "blackhole": "ブラックホール", "betelgeuse": "ベテルギウス"},
+    "skyNotes": {"saturn": "北極に六角形の嵐がある", "neptune": "望遠鏡より先に計算で見つかった", "blackhole": "光さえ抜け出せない", "betelgeuse": "呼吸する赤色超巨星"},
     "signIn": "ログイン",
     "notes": "ノート",
     "moments": "つぶやき",

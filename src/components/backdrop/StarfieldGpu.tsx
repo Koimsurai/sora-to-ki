@@ -19,6 +19,7 @@ const describeInit = (t?: InitTiming) =>
   `就緒於 ${Math.round(performance.now())} ms${t ? `（偵測 ${t.probe}・GPU ${t.device}・編譯 ${t.compile}・首幀 ${t.first}）` : ''}`;
 import { takeSpaceWorker } from './prewarm';
 import { isArriving } from '@/store/pageTransition';
+import { onShowcase, setShowcaseReady } from '@/store/themeShowcase';
 import { skyPan, subscribeSkyPan } from '@/store/skyPan';
 import {
   publishSatellites,
@@ -132,6 +133,30 @@ export default function StarfieldGpu({
   }, [sections]);
   // 頁面開著時換了主題（lib/theme）：主星收成一點、換成新的再長出來。新的配色在這一刻已經套上 :root 了
   useEffect(() => onTheme((theme) => controlRef.current?.theme(theme, palette())), []);
+  // 首頁以外換主題時新的主星出場一下（store/themeShowcase）：長出來、收回去、或被打斷直接藏。首頁本來就在顯示，不理它
+  const homeRef = useRef(isOnHomePage);
+  homeRef.current = isOnHomePage;
+  useEffect(() => {
+    let timer = 0;
+    const off = onShowcase((cmd) => {
+      if (homeRef.current) return;
+      window.clearTimeout(timer);
+      if (cmd === 'show') controlRef.current?.saturn(true, true);
+      else if (cmd === 'hide') {
+        controlRef.current?.saturn(true, false);
+        timer = window.setTimeout(() => controlRef.current?.saturn(false, false), SATURN_COLLAPSE_MS);
+      } else controlRef.current?.saturn(false, false);
+    });
+    return () => {
+      off();
+      window.clearTimeout(timer);
+    };
+  }, []);
+  // 能不能出場：3D 就緒、不是手機的精簡版（不畫主星）、沒有放棄 3D
+  useEffect(() => {
+    setShowcaseReady(backend !== BACKEND_PENDING && !liteRef.current && !failed);
+    return () => setShowcaseReady(false);
+  }, [backend, failed]);
   // ── GPU device / WebGL context 掉了之後的重建 ────────────────────────────
   //
   // 為什麼需要：device 掉了是永久的，three 只會 console.error 一行（在 worker 裡連那行都

@@ -35,6 +35,10 @@
     "menu": "Navigation menu"
   },
   "siteNav": {
+    "sky": "Sky",
+    "skyLead": "Pick the central body. Colors and page transitions follow.",
+    "skyNames": {"saturn": "Saturn", "neptune": "Neptune", "blackhole": "Black hole", "betelgeuse": "Betelgeuse"},
+    "skyNotes": {"saturn": "A hexagon storm on its north pole", "neptune": "Found by math before anyone saw it", "blackhole": "Not even light gets out", "betelgeuse": "A red supergiant that breathes"},
     "signIn": "Sign in",
     "notes": "Notes",
     "moments": "Murmurs",

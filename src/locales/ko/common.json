@@ -35,6 +35,10 @@
     "menu": "내비게이션"
   },
   "siteNav": {
+    "sky": "천체",
+    "skyLead": "중심 천체를 고른다. 색과 페이지 전환이 함께 바뀐다.",
+    "skyNames": {"saturn": "토성", "neptune": "해왕성", "blackhole": "블랙홀", "betelgeuse": "베텔게우스"},
+    "skyNotes": {"saturn": "북극에 육각형 폭풍이 있다", "neptune": "망원경보다 먼저 계산으로 찾았다", "blackhole": "빛조차 빠져나오지 못한다", "betelgeuse": "숨 쉬는 적색 초거성"},
     "signIn": "로그인",
     "notes": "노트",
     "moments": "혼잣말",

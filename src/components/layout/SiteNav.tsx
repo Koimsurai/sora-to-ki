@@ -18,6 +18,9 @@ import { openCommandPalette } from '@/store/commandPaletteStore';
 import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS, type SiteSection } from '@/data/siteSections';
 import { useEnabledSections } from '@/data/siteConfig';
 import NavMenus, { type MenuKey } from './NavMenus';
+import { SkyRow, ThemeGlyph } from './ThemeMenu';
+import { useTheme } from '@/hooks/useTheme';
+import { onTheme } from '@/lib/theme';
 import './SiteNav.css';
 
 const MORE = MORE_SECTIONS;
@@ -39,9 +42,10 @@ export default function SiteNav() {
   // 導覽列與選單裡列的只有站台設定沒關掉的頁面
   const MAIN = useEnabledSections(MAIN_SECTIONS);
   const moreOn = useEnabledSections(MORE);
+  const theme = useTheme();
   const aboutOn = useEnabledSections(ABOUT_SECTIONS);
   /** 導覽列上的順序：開著的主要分區，最後是「更多」 */
-  const MENU_KEYS: MenuKey[] = [...(MAIN.map((it) => it.key) as MenuKey[]), 'more'];
+  const MENU_KEYS: MenuKey[] = [...(MAIN.map((it) => it.key) as MenuKey[]), 'more', 'sky'];
 
   const [slim, setSlim] = useState(false);
   /** 收成點之後被點開了（首頁平常就是收著的） */
@@ -55,6 +59,15 @@ export default function SiteNav() {
   /** 開過一次選單之後才開始抓選單要的資料 */
   const [armed, setArmed] = useState(false);
   const moreOpen = open !== null;
+  // 選了一個天體（換主題）就把選單收起來：首頁以外會接著演新主星的出場（layout/ThemeSwitchDot），選單不要蓋在上面
+  useEffect(
+    () =>
+      onTheme(() => {
+        setOpen(null);
+        setMenuOpen(false);
+      }),
+    [],
+  );
   const setMoreOpen = (v: boolean) => setOpen(v ? 'more' : null);
   const [menuOpen, setMenuOpen] = useState(false);
   const linksRef = useRef<HTMLDivElement>(null);
@@ -337,6 +350,27 @@ export default function SiteNav() {
             >
               {t('siteNav.more')}
             </button>
+            {/* 天體（換主題）：畫的是現在這顆的縮小版（layout/ThemeMenu） */}
+            <button
+              type="button"
+              data-nav-item
+              className="snav-sky"
+              aria-label={t('siteNav.sky')}
+              aria-expanded={open === 'sky'}
+              aria-controls="snav-more"
+              onMouseEnter={() => {
+                moveDotTo(MAIN.length + 1);
+                hoverMenu('sky');
+              }}
+              onFocus={() => moveDotTo(MAIN.length + 1)}
+              onClick={() => {
+                cancelIntent();
+                if (open === 'sky') setOpen(null);
+                else openMenu('sky');
+              }}
+            >
+              <ThemeGlyph theme={theme} />
+            </button>
           </div>
         </nav>
 
@@ -414,6 +448,7 @@ export default function SiteNav() {
             </LocaleLink>
           ))}
         </div>
+        <SkyRow />
         {utilities}
       </div>
     </header>
