@@ -112,8 +112,10 @@ onTheme((theme) => {
 });
 /** 黑洞的時間膨脹：飛行拉長幾倍（後段越飛越慢，見 dilate） */
 const BH_DILATE = 1.35;
-/** 換主題之後接回這一頁（quiet）：點從中央直直飛回錨點要多久 */
+/** 換主題之後接回這一頁（quiet）：點飛回錨點最少要多久、最多多久、沿著頁面的線走的速度（px/ms） */
 const QUIET_MS = 650;
+const QUIET_MAX_MS = 1800;
+const QUIET_SPEED = 1.4;
 /**
  * 黑洞的重力波（LIGO 2015 年第一次偵測到的，兩個黑洞合併）：合併前是一聲「啁啾」，波越來越密、越來越強；
  * 合併（點落地）那一下最大；之後幾圈越來越弱的餘振。
@@ -385,7 +387,7 @@ function hermite(p0: Pt, m0: Pt, p1: Pt, m1: Pt, n: number): Pt[] {
   });
 }
 
-function pointAt(f: Flight, s: number): Pt {
+function pointAt(f: Pick<Flight, 'points' | 'cum'>, s: number): Pt {
   const { points, cum } = f;
   let i = 1;
   while (i < cum.length - 1 && cum[i] < s) i++;
@@ -998,13 +1000,21 @@ export default function TransitionLayer() {
 
       // 這一頁其實沒換（換主題之後接回來）：沒有鏡頭、頁面原地淡回來，點在畫面上直直飛向錨點。
       // 錨點每一幀重讀：會動的（作品頁的月亮、收藏頁轉著的地球上那一點）也追得上
+      // 頁面給了 rejoin（那條線，終點是它現在的那一點）的話，點先飛到線的起點、再順著線走完
       if (r.phase === 'fly' && r.quiet) {
         const page = currentPage();
-        const live = () => page.handle?.anchor?.() ?? defaultAnchor(r.main);
-        const u = clamp((now - r.launchAt) / QUIET_MS);
-        const target = live();
-        const k = smooth(0, 1, u);
-        r.pos = { x: r.from.x + (target.x - r.from.x) * k, y: r.from.y + (target.y - r.from.y) * k };
+        const line = page.handle?.rejoin?.() ?? null;
+        const live = () => page.handle?.rejoin?.()?.at(-1) ?? page.handle?.anchor?.() ?? defaultAnchor(r.main);
+        const route = [r.from, ...(line && line.length > 1 ? line : [live()])];
+        const cum = [0];
+        for (let i = 1; i < route.length; i++)
+          cum.push(cum[i - 1] + len({ x: route[i].x - route[i - 1].x, y: route[i].y - route[i - 1].y }));
+        const total = Math.max(1, cum.at(-1) ?? 1);
+        // 路越長走越久（沿著線走一次要看得清楚），但有上限
+        const dur = clamp(total / QUIET_SPEED, QUIET_MS, QUIET_MAX_MS);
+        const u = clamp((now - r.launchAt) / dur);
+        const target = route.at(-1) ?? r.from;
+        r.pos = pointAt({ points: route, cum }, smooth(0, 1, u) * total);
         const lastPt = r.trail.at(-1);
         if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos, t: now });
         r.main.style.opacity = String(smooth(0.3, 1, u));

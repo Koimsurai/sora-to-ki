@@ -84,6 +84,12 @@ export interface PageTransitionHandle {
   leave?: (ctx: LeaveContext) => Departure | null;
   /** 點落地、頁面露出來的那一刻（頁面的進場本來就等 isArriving() 變 false，多數頁面用不到它） */
   onGrow?: (ctx: GrowContext) => void;
+  /**
+   * 這一頁沒換、只是換了主題之後接回來（arriveFrom 的 quiet）：點要沿著走的那條線（視窗座標），
+   * 終點是這一頁「現在」的那一點（火箭的機鼻、天線、最新的那顆月亮）。換頁進來時線還沒畫，點落在起點（anchor）；
+   * 接回來時線早就畫好了，點順著它走到現在的位置才對。每一幀都會重讀，線在動也跟得上。不給就直直飛到 anchor
+   */
+  rejoin?: () => Pt[] | null;
 }
 
 let current: PageTransitionHandle | null = null;

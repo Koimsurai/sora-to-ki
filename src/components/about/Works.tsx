@@ -79,6 +79,19 @@ export default function Works() {
       const [x, y] = spiral.point(b.w, b.h, clockRef.current, 0);
       return { x: b.r.left + x, y: b.r.top + y };
     },
+    // 換主題之後接回來：點沿著航線從起點跑一次，停在最新那一件的月亮上
+    rejoin: () => {
+      const b = boxSize();
+      if (!b) return null;
+      const t = clockRef.current;
+      const pts = Array.from({ length: 121 }, (_, k) => {
+        const [x, y] = spiral.point(b.w, b.h, t, (spiral.tLast * k) / 120);
+        return { x: b.r.left + x, y: b.r.top + y };
+      });
+      const [mx, my] = spiral.moonOf(spiral.newest, b.w, b.h, t);
+      pts.push({ x: b.r.left + mx, y: b.r.top + my });
+      return pts;
+    },
     // 抵達的方向就是航線從起點出發的方向：點落地後不轉彎，直接順著畫下去
     arrive: () => {
       const b = boxSize();

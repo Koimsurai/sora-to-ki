@@ -77,6 +77,16 @@ export default function Messages() {
       return s ? { x: s.r.left, y: s.r.top + s.h / 2 } : null;
     },
     arrive: () => ({ tangent: { x: 1, y: 0 } }),
+    // 換主題之後接回來：點從頻道左端沿著電波一路跑進天線
+    rejoin: () => {
+      const s = strip();
+      if (!s) return null;
+      const c = channelOf(s.w, s.h);
+      return [
+        { x: s.r.left, y: s.r.top + c.y },
+        { x: s.r.left + c.end, y: s.r.top + c.y },
+      ];
+    },
     // 離場是倒過來：天線送出那道光，倒著沿頻道跑回起點，起點振一下，點從那裡往左飛走
     leave: () => {
       const s = strip();
