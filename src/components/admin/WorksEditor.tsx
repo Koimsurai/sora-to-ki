@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useQuery } from '@tanstack/react-query';
 import type { GithubReposResponse, WorkItem, WorkRepo, WorksContent, WorksResponse } from '@koimsurai/api-types';
 
@@ -50,7 +51,7 @@ function summary(s: WorkItem['snapshot'] | WorkRepo | null | undefined): string 
 }
 
 export default function WorksEditor() {
-  const [lang, setLang] = useState('zh-TW');
+  const [lang, setLang] = useState<string>(defaultLocale);
   const [paste, setPaste] = useState('');
   const { github } = useSiteConfig();
   const page = usePageDraft(

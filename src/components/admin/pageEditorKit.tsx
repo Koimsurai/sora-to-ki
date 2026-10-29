@@ -1,5 +1,6 @@
 import type { I18n } from './pageDraft';
-import { EDIT_LOCALES } from './pageTabs';
+import { defaultLocale } from '@/lib/locales';
+import { editLocales, localeLabel } from './pageTabs';
 
 // 後台「頁面」各分頁共用的畫面零件：語系切換、多語輸入框、列尾的上移下移刪除、儲存列（邏輯在 pageDraft.ts）。
 // 每一頁的編輯器只管自己的欄位長什麼樣子。
@@ -9,7 +10,7 @@ export function LangBar({ lang, onChange }: { lang: string; onChange: (lang: str
   return (
     <fieldset className="adm-tabs pg-langs">
       <legend className="sr-only">編輯哪個語系</legend>
-      {EDIT_LOCALES.map((l) => (
+      {editLocales().map((l) => (
         <button
           key={l.key}
           type="button"
@@ -21,12 +22,14 @@ export function LangBar({ lang, onChange }: { lang: string; onChange: (lang: str
           {l.label}
         </button>
       ))}
-      <span className="adm-meta">{lang === 'zh-TW' ? '繁中一定要填' : '留空就顯示繁中'}</span>
+      <span className="adm-meta">
+        {lang === defaultLocale() ? `${localeLabel(lang)}一定要填` : `留空就顯示${localeLabel(defaultLocale())}`}
+      </span>
     </fieldset>
   );
 }
 
-/** 一個會翻譯的輸入框：寫進目前的語系；非預設語系的提示字是繁中原文 */
+/** 一個會翻譯的輸入框：寫進目前的語系；非預設語系的提示字是預設語系的原文 */
 export function I18nInput({
   value,
   onChange,
@@ -43,7 +46,7 @@ export function I18nInput({
   const props = {
     'aria-label': `${label}（${lang}）`,
     value: value?.[lang] ?? '',
-    placeholder: lang === 'zh-TW' ? label : (value?.['zh-TW'] ?? ''),
+    placeholder: lang === defaultLocale() ? label : (value?.[defaultLocale()] ?? ''),
     onChange: (e: { target: { value: string } }) => onChange({ ...value, [lang]: e.target.value }),
   };
   return multiline ? <textarea rows={2} {...props} /> : <input {...props} />;

@@ -1,3 +1,5 @@
+import { defaultLocale, enabledLocales } from '@/lib/locales';
+
 // 後台「頁面」的分頁：一頁一個。路由（validateSearch）與管理頁共用，所以單獨一個檔
 export const PAGE_TABS = [
   { key: 'about', label: '關於' },
@@ -9,11 +11,18 @@ export const PAGE_TABS = [
 
 export type PageTab = (typeof PAGE_TABS)[number]['key'];
 
-/** 編輯時切換的語系：第一個是預設語系（必填），其他留空就顯示預設語系 */
-export const EDIT_LOCALES = [
-  { key: 'zh-TW', label: '繁中' },
-  { key: 'en', label: 'English' },
-  { key: 'ja', label: '日本語' },
-  { key: 'ko', label: '한국어' },
-  { key: 'zh-CN', label: '简中' },
-] as const;
+const LOCALE_LABELS: Record<string, string> = {
+  'zh-TW': '繁中',
+  en: 'English',
+  ja: '日本語',
+  ko: '한국어',
+  'zh-CN': '简中',
+};
+
+export const localeLabel = (key: string) => LOCALE_LABELS[key] ?? key;
+
+/** 編輯時切換的語系：站上有開的那幾個，第一個是預設語系（必填），其他留空就顯示預設語系 */
+export function editLocales(): { key: string; label: string }[] {
+  const first = defaultLocale();
+  return [first, ...enabledLocales().filter((l) => l !== first)].map((key) => ({ key, label: localeLabel(key) }));
+}

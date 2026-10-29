@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import type { LogContent } from '@koimsurai/api-types';
 
 import { logContentQueryOptions, normalizeLog } from '@/data/pageContent';
@@ -26,7 +27,7 @@ function localOffset(): string {
 }
 
 export default function LogEditor() {
-  const [lang, setLang] = useState('zh-TW');
+  const [lang, setLang] = useState<string>(defaultLocale);
   const page = usePageDraft(
     logContentQueryOptions,
     '/api/admin/pages/log',

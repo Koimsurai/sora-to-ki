@@ -9,6 +9,9 @@ import {
   pickLocaleFromAcceptLanguage,
   stripLocalePrefix,
 } from '@/i18n/start-i18n';
+import { editLocales } from '@/components/admin/pageTabs';
+import { localeCoverage, nameCoverage } from '@/components/admin/adminFormat';
+import { pickText } from './i18nText';
 import { setSiteIdentity } from './siteIdentity';
 import { defaultLocale, enabledLocales, localeOfPrefix, localePathname, prefixOf, setLocaleConfig } from './locales';
 
@@ -75,5 +78,27 @@ describe('站台設定改成預設英文、只開英文與日文', () => {
     setLocaleConfig('fr', []);
     expect(defaultLocale()).toBe('zh-TW');
     expect(enabledLocales()).toHaveLength(5);
+  });
+
+  it('後台：預設語系排第一、只列有開的；原名算預設語系的', () => {
+    english();
+    expect(editLocales().map((l) => l.key)).toEqual(['en', 'ja']);
+    const row = { name: 'Notes', name_en: null, name_ja: 'ノート', name_ko: null, name_zh_cn: null };
+    const has = Object.fromEntries(nameCoverage(row).map((c) => [c.code, c.has]));
+    expect(has).toMatchObject({ en: true, ja: true, 'zh-TW': false });
+    const post = {
+      title: 'Hi',
+      title_en: null,
+      title_zh_cn: null,
+      title_ja: null,
+      title_ko: null,
+      source_language: null,
+    };
+    expect(localeCoverage(post).find((c) => c.code === 'en')?.has).toBe(true);
+  });
+
+  it('站長沒填這個語系：退回預設語系的字', () => {
+    english();
+    expect(pickText({ en: 'Hello', 'zh-TW': '你好' }, 'ja')).toBe('Hello');
   });
 });

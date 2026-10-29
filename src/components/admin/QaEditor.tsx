@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import type { QaContent } from '@koimsurai/api-types';
 
 import { normalizeQa, qaContentQueryOptions } from '@/data/pageContent';
@@ -10,7 +11,7 @@ import { I18nInput, LangBar, RowActions, SaveBar } from './pageEditorKit';
 // 此站點的問答：六分儀那片天空裡的「問答」星。一題都沒有時那顆星不出現。
 
 export default function QaEditor() {
-  const [lang, setLang] = useState('zh-TW');
+  const [lang, setLang] = useState<string>(defaultLocale);
   const page = usePageDraft(
     qaContentQueryOptions,
     '/api/admin/pages/qa',

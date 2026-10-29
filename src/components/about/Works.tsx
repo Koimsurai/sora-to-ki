@@ -3,12 +3,13 @@
 // 換頁進來時琥珀點落在起點，接著當筆尖沿著航線往外畫，最後停在最新那一件，變成它的衛星；
 // 離開時航線從起點往外擦掉、收進那顆衛星，點順著航線往外飛走。
 import { useEffect, useMemo, useRef } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useTranslation } from 'react-i18next';
 import { statsOf, useWorkEntries, useWorkStats } from '@/data/works';
 import OwnerFillHint from '@/components/common/OwnerFillHint';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { parseServerDate } from '@/lib/serverDate';
-import { lookupOr } from '@/lib/tableLookup';
+import { pickText } from '@/lib/i18nText';
 import { after, isArriving } from '@/store/pageTransition';
 import FoldIndex from '@/components/common/FoldIndex';
 import { bodiesOf, createSpiral, frameOf, workStatsOf } from './worksSky';
@@ -32,7 +33,7 @@ const easeIn = (t: number) => t * t;
 
 export default function Works() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
   // 清單是站長填的（後台「頁面」或 MCP）；數據：GitHub 有就用 GitHub 的，沒有（私有 repo、沒設 token）就用最後量到的
   const entries = useWorkEntries();
   const live = useWorkStats(entries);
@@ -221,7 +222,7 @@ export default function Works() {
                   {w.origin && <em>{t('works.origin')}</em>}
                 </span>
                 <span className="wk-year">{w.year}</span>
-                <span className="wk-what">{lookupOr(w.what, lang, w.what['zh-TW'])}</span>
+                <span className="wk-what">{pickText(w.what, lang)}</span>
               </>
             );
             return (
@@ -260,7 +261,7 @@ export default function Works() {
                   {w.origin && <em>{t('works.origin')}</em>}
                 </span>
                 <span className="wk-index-year">{w.year}</span>
-                <span className="wk-index-what">{lookupOr(w.what, lang, w.what['zh-TW'])}</span>
+                <span className="wk-index-what">{pickText(w.what, lang)}</span>
               </>
             );
             const hover = {

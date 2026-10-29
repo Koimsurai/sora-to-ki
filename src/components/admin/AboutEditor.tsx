@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import type { AboutContent } from '@koimsurai/api-types';
 
 import { aboutContentQueryOptions, normalizeAbout } from '@/data/pageContent';
@@ -19,7 +20,7 @@ const splitItems = (s: string) =>
     .filter(Boolean);
 
 export default function AboutEditor() {
-  const [lang, setLang] = useState('zh-TW');
+  const [lang, setLang] = useState<string>(defaultLocale);
   const page = usePageDraft(
     aboutContentQueryOptions,
     '/api/admin/pages/about',
