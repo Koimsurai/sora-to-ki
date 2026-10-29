@@ -114,8 +114,7 @@ const GRANDFATHERED = new Set([
  * index.css 的 `--fs-*`。名字就是 px 值。
  *
  * ⚠ **不要改成 `--text-*`**：那是 Tailwind v4 生 utility 的 namespace，佔用它會改變
- * `text-sm` 產出什麼；而且這個專案的 `--text-primary` / `-secondary` / `-tertiary`
- * 已經是**顏色**。也不要直接 `var(--text-3xl)`——v4 會 tree-shake 掉沒被 utility
+ * `text-sm` 產出什麼。也不要直接 `var(--text-3xl)`——v4 會 tree-shake 掉沒被 utility
  * 用到的 theme 變數，實測產物裡只有 xs/sm/base/lg/xl/2xl/6xl，3xl/4xl/5xl 不存在，
  * 引用它會是未定義、字級直接退回繼承值。
  */

@@ -44,6 +44,10 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 `border-radius` / `transition` 的時間與曲線不准再寫字面值；`z-index` 的門檻是 1000。
 透明度另有一把 19 階的階梯（見下面）。
 
+**`var(--x)` 引用的變數也必須有定義**，同一道檢查在擋。打錯或不存在的 token（`var(--fs-15)`，
+尺上沒有 15）不會有錯誤訊息，宣告會靜靜失效、退回繼承值。定義算 CSS 的 `--x:`、TS/TSX 裡
+執行時寫入的 `'--x'`、Radix 與 Tailwind 自己的變數；帶備援值的 `var(--x, …)` 不查。
+
 **圓角的 token 叫 `--r-*` 不是 `--radius-*`**，跟 `--fs-*` 同一個理由，而且更嚴重：
 `--radius-*` 是 Tailwind v4 生 `rounded-*` 的 namespace，**這個專案已經有 shadcn 的
 `--radius` / `--radius-sm/md/lg` 掛在上面**（`index.css` 的 `@theme inline` 開頭），
@@ -179,24 +183,53 @@ dispatch resize 讓 monaco 重算）。`grep setTimeout` 就查得完。
 把 `backdrop-filter` 全部壓成 `none`。要驗就在瀏覽器裡 `classList.remove('no-gpu')` 之後
 再讀計算值。
 
-## 站點自己的品牌色：語意命名
+## 配色：紙、墨、琥珀（2026-10 翻新）
 
-`index.css` 的 `:root` 有 `--surface-0..3`（近黑背景，**依明度排，0 最深**：0 是頁面底、
-1–3 是疊上去的面板與卡片）、`--ink`（主文字 `#e5e5f5`）、`--lavender` / `--lavender-soft`、
-`--magenta` / `--magenta-deep`，**九個都配了 `-rgb`**（九個都有帶 alpha 的用法）。
+新寫的東西只用這一組，定義在 `index.css` 第二個 `:root`：
 
-跟下面那批 Tailwind 色票的差別：那批可以用客觀的色票名；這批不在任何公開色票上，只能靠語意命名。
+| token | 值 | 用途 |
+|---|---|---|
+| `--ground` | `#0a0a0c` | 底色（黑是紙） |
+| `--paper` | `#f1ece3` | 主文字（白是墨） |
+| `--paper-2` / `--paper-3` | 70% / 50% | 次要文字；副標、圖例、日期用 `--paper-3` |
+| `--paper-meta` | 55% | 後台的等寬小字 |
+| `--rule` | 15% | 分隔線 |
+| `--amber` | `#e9c17a` | 訊號 |
+| `--flare` | `#e3866c` | 只給「壞了」與「會刪東西」（後台） |
+| `--corner-frame` | | 四角框：文章摘要與文章裡的互動區塊（投票、數字、圖表…） |
 
-`--surface-0..3` 四層**真的有層次差別**，不要再往下併。
+**琥珀只出現在「一個點」上。** 前台是「你在這裡」（目錄、語言），後台是資料本身。
+不拿來當大面積的強調色，也不當按鈕或連結的顏色。
+
+**`--flare` 一定配叉號或點線框**，不單靠顏色分辨，色弱也要分得開。
+
+**`--paper-3` 的 50% 是小字的及格線**（約 4.6:1）。原本 0.4 只有 3.4:1，而手記清單有六成五的字
+是這個顏色，所以調上來了。要更淡的層次用 `--rule`（線）而不是更淡的字。
+
+墨的深淺用透明度分階：帶透明度寫 `rgba(var(--paper-rgb), a)`，`a` 在下面那把 19 階的梯子上。
+
+字：中文與中英混排一律 `--serif`（思源宋體，按頁裁字）；`--latin-display`（Instrument Serif）
+只給整段都是英文的大字（名字、Notes），它只有一個字重，不要加粗。
+
+### 翻新前的那組還在，但不要再用
+
+`--brand` / `--brand-rgb` / `--brand-light`、`--lavender-soft`、`--magenta`、`--surface-0-rgb` /
+`--surface-1-rgb`、Happy Hues 的 `--clr-headline` / `-paragraph` / `-button` / `-button-text`：
+還有元件引用，所以留著。`index.css` 最後那段覆寫在文章頁、後台、載入畫面、CSS 星空這些範圍裡
+把它們指到紙色；`:root` 那份還是舊的紫，全域 `button`、`a` 的基本樣式指著它。
+
+新程式碼不要引用它們。要把舊引用換成新配色時先確認畫面：在覆寫範圍外的那些地方，換了會變色。
 
 ## 調色盤：Tailwind v3 色票名
 
-`index.css` 的 `:root` 有 `--zinc-100…900`、`--purple-300/500`、`--violet-300/400/500`、
-`--amber-300/400`、`--red-300/400/500`、`--green-300/400/500`、`--pink-500`，各配一個
-`-rgb` 三元組（帶 alpha 時寫 `rgba(var(--zinc-100-rgb), a)`）。
+`index.css` 的 `:root` 有 `--zinc-100…900`、`--purple-200/300/400/500`、`--violet-300/400/500`、
+`--amber-300/400`、`--red-300/400/500/600`、`--green-300/400/500`、`--orange-300/400`、
+`--blue-300/400/500/600`、`--pink-500`、`--sky-300`。翻新後公開頁已經不用這批，現在主要是
+後台的 Tailwind class（`text-zinc-400` 這類）透過 `@theme` 在用。
 
-另有 `--sky-300` / `--blue-500` / `--blue-600` / `--red-600` / `--purple-200`。為什麼用色票名：
-站上的底色大多**一字不差**就是 Tailwind v3 色票，用它命名是客觀的，不用猜語意。
+`-rgb` 三元組只給真的有帶 alpha 用法的那幾個（`--purple-300-rgb`、`--red-300-rgb`、
+`--red-400-rgb`），要用時再補。為什麼用色票名：這批**一字不差**就是 Tailwind v3 色票，
+用它命名是客觀的，不用猜語意。
 
 **新增色票的門檻是用了 3 次以上**——低於這個數，token 只是多一層間接，還會把調色盤撐肥。
 例外是 `--sky-300`：它讓 `markdown-alert-note` 跟另外四種 alert 一致。
@@ -218,8 +251,7 @@ v4 的 oklch 不等於 v3 hex，而且 Tailwind 只輸出被 utility 用到的 s
 token 表是從 `index.css` 讀的，加新 token 不用改腳本。這條零誤判：值都相等了，
 寫字面值只剩「不知道有 token」一種原因。
 
-Happy Hues 那組只剩 `--clr-headline` / `-paragraph` / `-button` / `-button-text` / `-tertiary-rgb`
-還在用（全站連結滑過變綠發光那條在 2026-10 翻新拔掉了，`--clr-tertiary` 本身跟著刪）。`--brand-light` 指向 `var(--violet-300)`——它就是那個色票，不要另抄一份 hex。
+`--brand-light` 指向 `var(--violet-300)`——它就是那個色票，不要另抄一份 hex。
 
 ## 等寬字只有一套堆疊：`--mono-font`
 
@@ -243,14 +275,13 @@ Happy Hues 那組只剩 `--clr-headline` / `-paragraph` / `-button` / `-button-t
 `opacity` **不在 computed-style 的 PROPS 裡**（動畫元素上逐幀不同），所以這一條
 只有 `check:css-tokens` 在守，改它的時候不會有第二道保險。
 
-## 外部服務的品牌色：命名但**不能併值**
+## 別人的顏色：命名但**不能併值**
 
-`--svc-spotify` / `--svc-steam` / `--svc-youtube` / `--svc-instagram` / `--svc-bilibili`，
-各配 `-rgb`。另外 `--diff-add` / `--diff-del` 是 GitHub 的 diff 綠紅，同時用在程式碼
-diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github-*`。
+`--diff-add` / `--diff-del` 是 GitHub 的 diff 綠紅，同時用在程式碼 diff 與數據趨勢的升降，
+所以用**角色**命名。
 
-**這些的值不能動也不能貼到調色盤**——Spotify 的綠就是 Spotify 的綠，貼到
-`--green-500` 就不是那個品牌了。收成 token 的理由不是收斂，是**同一個 hex 散在多個檔案裡重複**。
+**這類的值不能動也不能貼到調色盤**：讀者靠「GitHub 的那個綠」認出這是 diff，貼到 `--green-500`
+就不是了。外部服務的品牌色（Spotify 的綠之類）同一個道理，要用時收成 `--svc-*`、值照品牌原樣。
 
 ## 有四類顏色刻意留成字面值，不要「順手」收掉
 
@@ -269,10 +300,8 @@ diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github
 不一致，不是破壞對稱。
 
 **判斷「能不能併」要算 Lab 色差，不要看 hex 長得像不像。** 兩個實例：
-`#8b7cf6` vs `--violet-500` `#8b5cf6` 只差一個字元，**ΔE 22.3**；
-`#dc3250` vs `--magenta` `#dc3278` 前四碼相同，**ΔE 23.2**。兩個都不能併，
-各自給了名字（`--iris` / `--crimson`）。真正接近的是 `#e2e0ea` 對 `--ink`（ΔE 3.6），
-那個併掉了。
+`#8b7cf6` vs `#8b5cf6` 只差一個字元，**ΔE 22.3**；`#dc3250` vs `#dc3278` 前四碼相同，
+**ΔE 23.2**。兩組都不能併。反過來，`#e2e0ea` 對 `#e5e5f5` 看起來差得多，ΔE 只有 3.6。
 
 ## 透明度也有一把尺：19 階，白／黑／品牌紫共用
 
@@ -291,9 +320,8 @@ diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github
 **底色／alpha 這類改動，截圖的像素差數字沒有判斷力**：全頁 gradient 的 stop alpha 動 0.05，
 每個像素都會超過一般的差異門檻。要把門檻拉到 >40 只看結構性變化，再對剩下的區塊逐一裁圖。
 
-**字級的 token 叫 `--fs-*` 不是 `--text-*`**，兩個理由都會咬人：
-`--text-*` 是 Tailwind v4 生 utility 的 namespace（佔用它會改變 `text-sm` 產出什麼），
-而且這個專案的 `--text-primary` / `-secondary` / `-tertiary` **已經是顏色**。
+**字級的 token 叫 `--fs-*` 不是 `--text-*`**：`--text-*` 是 Tailwind v4 生 utility 的
+namespace，佔用它會改變 `text-sm` 產出什麼。
 
 **也不要直接 `var(--text-3xl)`。** v4 會 tree-shake 掉沒被 utility 用到的 theme
 變數——沒有 utility 用到的（例如 3xl / 4xl / 5xl）**在建置產物裡根本不存在**，
