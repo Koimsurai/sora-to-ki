@@ -1538,7 +1538,7 @@ pub async fn admin_create_post(
     .bind(&excerpt)
     .bind(&category)
     .bind(&status)
-    .bind("Koimsurai")
+    .bind(crate::identity::site_author())
     .bind(&layout_type)
     .bind(&format)
     .bind(&source_language);

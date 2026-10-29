@@ -19,6 +19,7 @@
 pub mod auth;
 pub mod error;
 pub mod handlers;
+pub mod identity;
 pub mod net_guard;
 pub mod openapi;
 pub mod revalidate;

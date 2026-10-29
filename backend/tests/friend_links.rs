@@ -123,6 +123,10 @@ async fn 同一個網站不收第二份_www_與大小寫也算同一個() {
 
 #[tokio::test]
 async fn 欄位不對的不收() {
+    // 預設的站台網址是 localhost，那會先被「指到本機」擋掉、驗不到「這個站自己」那條，
+    // 所以這裡給一個公開的網域。
+    // SAFETY: nextest 每個測試一個 process，不會跟別的測試搶 env
+    unsafe { std::env::set_var("SITE_URL", "https://own-site.example") };
     let (app, _pool) = test_app().await;
     let cases = [
         (json!({ "url": "https://a.example" }), "沒有站名"),
@@ -130,7 +134,7 @@ async fn 欄位不對的不收() {
         (json!({ "name": "a", "url": "http://127.0.0.1:8080" }), "指到本機"),
         (json!({ "name": "a", "url": "http://192.168.1.1" }), "指到內網"),
         (json!({ "name": "a", "url": "https://a.example", "email": "nope" }), "信箱不對"),
-        (json!({ "name": "a", "url": "https://koimsurai.com" }), "這個站自己"),
+        (json!({ "name": "a", "url": "https://www.own-site.example/" }), "這個站自己"),
     ];
     for (body, why) in cases {
         let (st, v) = apply_from(&app, "203.0.113.10", body).await;

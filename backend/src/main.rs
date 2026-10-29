@@ -108,6 +108,8 @@ async fn run() -> anyhow::Result<()> {
         );
     }
 
+    koimsurai_web_backend::identity::warn_if_unset();
+
     // sqlite：WAL 讓讀寫可重疊；busy_timeout 避免 SQLITE_BUSY；
     // create_if_missing 讓全新部署由 migrations 從零建出 DB。
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

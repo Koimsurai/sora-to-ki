@@ -39,6 +39,7 @@ async fn mock_google(user: Value) -> MockServer {
     unsafe {
         std::env::set_var("GOOGLE_TOKEN_URL", format!("{}/token", server.uri()));
         std::env::set_var("GOOGLE_USER_URL", format!("{}/userinfo", server.uri()));
+        std::env::set_var("OWNER_EMAIL", OWNER_EMAIL);
     }
     server
 }
@@ -67,11 +68,13 @@ async fn mock_github(user: Value, emails: Option<Value>) -> MockServer {
         std::env::set_var("GITHUB_TOKEN_URL", format!("{}/token", server.uri()));
         std::env::set_var("GITHUB_USER_URL", format!("{}/user", server.uri()));
         std::env::set_var("GITHUB_EMAILS_URL", format!("{}/user/emails", server.uri()));
+        std::env::set_var("OWNER_EMAIL", OWNER_EMAIL);
     }
     server
 }
 
-const OWNER_EMAIL: &str = "timo9378@gmail.com";
+/// 站長信箱（`OWNER_EMAIL`），兩個 mock 都會把它設進環境變數
+const OWNER_EMAIL: &str = "owner@example.com";
 
 // ── 完整流程 ──────────────────────────────────────────────────────────────
 

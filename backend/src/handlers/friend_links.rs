@@ -323,9 +323,9 @@ pub async fn run_checks(
     (out, discovered)
 }
 
-/// 這個站的 host（PUBLIC_SITE_URL），找對方有沒有連回來用
+/// 這個站的 host（SITE_URL），找對方有沒有連回來用
 fn our_host() -> String {
-    host_of(&crate::handlers::mailer::public_site_url()).unwrap_or_default()
+    crate::identity::site_host()
 }
 
 // ── 公開：送出申請 ─────────────────────────────────────────────────────
@@ -729,11 +729,8 @@ pub async fn admin_update_friend(
     let mail = match (reply, before.email.as_deref()) {
         (Some(text), Some(to)) => {
             let subject = format!("關於「{}」的友鏈申請", app.name);
-            let (html, plain) = crate::handlers::mailer::render_friend_reply(
-                &crate::handlers::mailer::public_site_url(),
-                &app.name,
-                text,
-            );
+            let (html, plain) =
+                crate::handlers::mailer::render_friend_reply(&crate::identity::site_url(), &app.name, text);
             Some(match crate::handlers::mailer::send_one(&state, to, &subject, &plain, &html).await {
                 Ok(()) => json!({ "sent": true }),
                 Err(e) => json!({ "sent": false, "error": e }),

@@ -383,7 +383,7 @@ async fn unfurl_url(http: &reqwest::Client, url: &str) -> Option<Value> {
     let resp = http
         .get(url)
         .timeout(std::time::Duration::from_secs(6))
-        .header("User-Agent", "Mozilla/5.0 (compatible; koimsurai-bot/1.0; +https://koimsurai.com)")
+        .header("User-Agent", format!("Mozilla/5.0 (compatible; {})", crate::identity::user_agent("bot")))
         .send()
         .await
         .ok()?;
@@ -700,9 +700,10 @@ pub async fn thoughts_rss(State(state): State<AppState>) -> Response {
         )
             .into_response();
     };
+    let site_url = crate::identity::site_url();
     let mut items = String::new();
     for (id, content, ref_type, ref_url, ref_json, created_at) in &rows {
-        let link = format!("https://koimsurai.com/thinking/{id}");
+        let link = format!("{site_url}/thinking/{id}");
         // ref = safeParse(ref_json)：解析成功且 truthy 才算「有 ref」
         let ref_val: Option<Value> = ref_json.as_deref().and_then(|s| serde_json::from_str(s).ok());
         // desc = content || ''
@@ -754,7 +755,8 @@ pub async fn thoughts_rss(State(state): State<AppState>) -> Response {
         );
     }
     let xml = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\"><channel><title>碎念 · Koimsurai</title><link>https://koimsurai.com/thinking</link><description>想到什麼寫什麼</description>{items}</channel></rss>"
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\"><channel><title>碎念 · {}</title><link>{site_url}/thinking</link><description>想到什麼寫什麼</description>{items}</channel></rss>",
+        escape_html(&crate::identity::site_name()),
     );
     ([(axum::http::header::CONTENT_TYPE, "application/rss+xml; charset=utf-8")], xml).into_response()
 }

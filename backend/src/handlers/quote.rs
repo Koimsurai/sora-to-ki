@@ -48,7 +48,7 @@ async fn fetch_json(state: &AppState, url: &str) -> Option<Value> {
     let r = state
         .http
         .get(url)
-        .header("User-Agent", "koimsurai.com daily-quote")
+        .header("User-Agent", crate::identity::user_agent("daily-quote"))
         .timeout(std::time::Duration::from_secs(5))
         .send()
         .await

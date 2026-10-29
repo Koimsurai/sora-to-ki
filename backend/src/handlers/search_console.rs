@@ -6,7 +6,7 @@
 //! 設定（`.env.backend` 與 docker-compose）：
 //!   - `GSC_SERVICE_ACCOUNT_FILE`：服務帳號 JSON 金鑰檔在容器裡的路徑（compose 以唯讀掛進來）。
 //!     沒設的話回 `configured: false`，後台顯示怎麼設，不算錯誤。
-//!   - `GSC_SITE`：選填，預設 `sc-domain:koimsurai.com`（網域資源）。
+//!   - `GSC_SITE`：選填，預設 `sc-domain:<SITE_URL 的 host>`（網域資源）。
 //!
 //! 換來的存取權杖一小時有效，快取在記憶體裡，到期前一分鐘才重換。
 
@@ -32,7 +32,7 @@ fn site() -> String {
     std::env::var("GSC_SITE")
         .ok()
         .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| "sc-domain:koimsurai.com".into())
+        .unwrap_or_else(|| format!("sc-domain:{}", crate::identity::site_host()))
 }
 
 #[derive(Deserialize)]
