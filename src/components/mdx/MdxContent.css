@@ -218,8 +218,8 @@
   margin: var(--space-7) 0;
   padding: var(--space-5);
   border-radius: var(--r-6);
-  border: 1px dashed rgba(var(--red-300-rgb), 0.35);
-  color: rgba(var(--red-300-rgb), 0.8);
+  border: 1px dotted var(--danger);
+  color: var(--danger);
   font-size: var(--fs-14);
   text-align: center;
 }
@@ -550,9 +550,8 @@
   margin: var(--space-6) 0;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--r-6);
-  border: 1px dashed rgba(var(--red-300-rgb), 0.35);
-  background: rgba(var(--red-300-rgb), 0.06);
-  color: var(--red-300);
+  border: 1px dotted var(--danger);
+  color: var(--danger);
   font-size: var(--fs-14);
 }
 .mdx-sketch-error pre {
@@ -567,9 +566,8 @@
   margin: var(--space-6) 0;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--r-6);
-  border: 1px solid rgba(var(--red-300-rgb), 0.4);
-  background: rgba(var(--red-300-rgb), 0.06);
-  color: var(--red-300);
+  border: 1px dotted var(--danger);
+  color: var(--danger);
   font-size: var(--fs-14);
 }
 
