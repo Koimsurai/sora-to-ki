@@ -14,7 +14,7 @@
 // 由 lib/palette 的 onPalette 通知重讀。
 import { hex, paletteChanged, palette } from './palette';
 
-export const THEMES = ['saturn', 'neptune', 'blackhole'] as const;
+export const THEMES = ['saturn', 'neptune', 'blackhole', 'betelgeuse'] as const;
 export type Theme = (typeof THEMES)[number];
 
 const isTheme = (v: unknown): v is Theme => typeof v === 'string' && (THEMES as readonly string[]).includes(v);

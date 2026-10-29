@@ -182,6 +182,7 @@ function BootRing({ half }: { half: 'back' | 'front' }) {
       <BootRingLines half={half} kind="base" />
       <BootRingLines half={half} kind="arc" />
       {half === 'front' && <BootSwirl />}
+      {half === 'front' && <BootShells />}
     </div>
   );
 }
@@ -204,6 +205,25 @@ const SWIRL_ARMS = SWIRL_STAGES.map((at, i) => {
   return { d, at };
 });
 const PHOTON_R = (1.04 * 26) / PLANETS.blackhole.ring.outer;
+
+/**
+ * 參宿四的開場：中間那顆點外面一圈恆星的輪廓在呼吸（它是半規則變星，會脹縮），外面幾圈塵埃殼照載入的階段
+ * 一圈圈出現（它一直在往外拋物質，2019 年的大暗化就是其中一團）。殼是球殼、從哪個角度看都是圓的，不壓扁。
+ * 輪廓的半徑照 3D 恆星的比例縮（環外緣是 26px），交棒時貼著 3D 的恆星長（layout/TransitionLayer）
+ */
+const SHELL_STAGES = [0.12, 0.45, 0.65, 0.85];
+const STAR_R = 26 / PLANETS.betelgeuse.ring.outer;
+const SHELL_R = [1.2, 1.36, 1.52, 1.68].map((k) => k * STAR_R);
+function BootShells() {
+  return (
+    <svg viewBox="-40 -40 80 80" className="boot-shells">
+      <circle className="boot-star" r={STAR_R} />
+      {SHELL_R.map((r, i) => (
+        <circle key={r} className="boot-shell" r={r} style={{ '--at': SHELL_STAGES[i] } as CSSProperties} />
+      ))}
+    </svg>
+  );
+}
 function BootSwirl() {
   return (
     <>

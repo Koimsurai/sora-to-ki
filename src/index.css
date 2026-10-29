@@ -721,6 +721,19 @@ html.theme-switching * {
   --amber-rgb: 196, 135, 230;
 }
 
+/* 參宿四：赭紅，墨偏暖，夜色帶一點暖。危險色改玫瑰：原本的珊瑚紅跟赭紅只差 ΔE 8，刪除鈕會像「你在這裡」。
+   55% 的字 5.2:1，訊號色 5.6:1；訊號色與墨 ΔE 33.7、與土星的琥珀 ΔE 29.2 */
+:root[data-theme="betelgeuse"] {
+  --ground: #0c0a0a;
+  --ground-rgb: 12, 10, 10;
+  --paper: #efe5dc;
+  --paper-rgb: 239, 229, 220;
+  --amber: #d26a4c;
+  --amber-rgb: 210, 106, 76;
+  --flare: #e2708f;
+  --flare-rgb: 226, 112, 143;
+}
+
 /* ── 文章閱讀字體（右下角 FontSwitcher）──
  *
  * 為什麼字體棧放在 CSS 而不是 TSX：偏好存在 localStorage，server 讀不到，原本是在 BlogPost
@@ -1417,6 +1430,65 @@ html[data-boot-ring="go"] .boot-swirl {
   transition:
     opacity var(--dur-300) var(--easing-standard),
     scale var(--dur-300) var(--easing-standard);
+}
+/* 參宿四：不畫環，恆星的輪廓在呼吸、外面的塵埃殼照載入的階段一圈圈出現（__root.tsx 的 BootShells） */
+.boot-shells {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+:root[data-theme="betelgeuse"] {
+  .boot-rings-saturn,
+  .boot-lines-prog,
+  .boot-arc,
+  .boot-pen {
+    display: none;
+  }
+  .boot-shells {
+    display: block;
+  }
+}
+.boot-star,
+.boot-shell {
+  fill: none;
+  stroke: var(--ink);
+  vector-effect: non-scaling-stroke;
+}
+.boot-star {
+  stroke-width: 1.2;
+  stroke-opacity: 0.85;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: boot-star-breathe 2.4s ease-in-out infinite;
+}
+.boot-shell {
+  stroke-width: 1;
+  stroke-opacity: 0.35;
+  stroke-dasharray: 1 2.2;
+  opacity: clamp(0, calc((var(--boot-p, 0) - var(--at)) * 20 + 1), 1);
+  transition: opacity var(--dur-250) var(--easing-out);
+  transition-delay: calc((var(--at) - 0.12) * var(--dur-100));
+}
+@keyframes boot-star-breathe {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+/* 交棒：塵埃殼往外散開淡掉，輪廓貼著 3D 的恆星長、合起來之後淡掉（--boot-photon-a，layout/TransitionLayer） */
+html[data-boot-ring="go"] .boot-shell {
+  opacity: 0;
+  transition: opacity var(--dur-300) var(--easing-standard);
+}
+html[data-boot-ring="go"] .boot-star {
+  opacity: var(--boot-photon-a, 1);
+  animation: none;
 }
 /* 不交棒的時候（別頁、沒有 3D、3D 等太久）：環收回中間那顆點裡，點再飛出去（layout/TransitionLayer 的
    BOOT_COLLAPSE_MS）。縮的是框的寬高，SVG 照新尺寸重畫，線一直是 1px；筆尖先退掉 */

@@ -27,18 +27,19 @@ function planetOnScreen() {
  * 新的主星從它長出來時才淡掉。跟開場「點長成星球」是同一個動作
  */
 export default function ThemeSwitchDot() {
-  const [dot, setDot] = useState<{ x: number; y: number; on: boolean } | null>(null);
+  const [dot, setDot] = useState<{ x: number; y: number; on: boolean; nova: boolean } | null>(null);
   useEffect(() => {
     let raf = 0;
     let timer = 0;
-    const off = onTheme(() => {
+    const off = onTheme((theme) => {
       window.cancelAnimationFrame(raf);
       window.clearTimeout(timer);
       if (!planetOnScreen()) return;
       const since = performance.now();
       timer = window.setTimeout(() => {
         const c = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
-        setDot({ x: c.x, y: c.y, on: true });
+        // 切到參宿四：那一點先像超新星一樣猛然亮一下（它預計在十萬年內爆炸），參宿四再從那團光裡長出來
+        setDot({ x: c.x, y: c.y, on: true, nova: theme === 'betelgeuse' });
         const watch = () => {
           const g = latestSaturnGrow();
           const grown = g && g.at > since + SHOW_AFTER_MS && g.planet >= HANDOFF_AT;
@@ -62,6 +63,7 @@ export default function ThemeSwitchDot() {
     <i
       className="theme-switch-dot"
       data-on={dot.on ? '' : undefined}
+      data-nova={dot.nova ? '' : undefined}
       aria-hidden="true"
       style={{ left: dot.x, top: dot.y }}
       onTransitionEnd={() => {

@@ -145,6 +145,13 @@ const escape = (tau: number) => 1 - (1 - Math.cos(Math.PI * (1 - tau ** 2))) / 2
  * HOLE_SWIRL 是光被吞掉之前繞著它轉了多少（rad）；HOLE_PULL 是光多久被吞完（TAIL_MS 的幾倍）
  */
 const HOLE_R = 11;
+/**
+ * 參宿四的換頁：點一路甩出淡淡的塵埃殼（它一直在往外拋物質，2019 年的大暗化就是其中一團冷卻成的塵埃）。
+ * 每隔 SHELL_EVERY 毫秒甩一圈，往外擴 SHELL_SPEED px/ms、活 SHELL_LIFE 毫秒。點本身也在呼吸（變星）
+ */
+const SHELL_EVERY = 130;
+const SHELL_SPEED = 0.07;
+const SHELL_LIFE = 1400;
 const HOLE_SWIRL = 2.4;
 const HOLE_PULL = 1.3;
 /** 海王星的預言落點（predicted）：圈的半徑、外面那四道刻度的長度（px） */
@@ -254,6 +261,8 @@ interface Run {
   waves: { at: number; c: Pt; strength: number }[];
   /** 黑洞：離開的那一點變成的小黑洞（世界座標）與它出現的時間；沒有是 null */
   hole: { c: Pt; at: number } | null;
+  /** 參宿四：點飛過的路上甩出的塵埃殼（世界座標、出發的時間） */
+  shells: { c: Pt; at: number }[];
   chirp: number;
   cam: Pt;
   /** 點不用飛（已經在錨點上）：鏡頭不動 */
@@ -478,9 +487,36 @@ export default function TransitionLayer() {
       ctx.arc(p.x, p.y, 18, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = `rgba(${AMBER}, ${alpha})`;
+      // 參宿四：點在呼吸（它是會脹縮的變星）
+      const breathe = THEME === 'betelgeuse' ? 1 + 0.25 * Math.sin(performance.now() / 160) : 1;
       ctx.beginPath();
-      ctx.ellipse(p.x, p.y, radius * (1 + 3 * k), radius * (1 - 0.55 * k), stretch?.angle ?? 0, 0, Math.PI * 2);
+      ctx.ellipse(
+        p.x,
+        p.y,
+        radius * breathe * (1 + 3 * k),
+        radius * breathe * (1 - 0.55 * k),
+        stretch?.angle ?? 0,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
+    };
+
+    /** 參宿四的塵埃殼：一圈圈點線往外擴、淡掉。回傳還有沒有沒散完的 */
+    const dustShells = (r: Run, now: number) => {
+      if (!r.shells.length) return false;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 3]);
+      r.shells = r.shells.filter((sh) => now - sh.at < SHELL_LIFE);
+      for (const sh of r.shells) {
+        const age = (now - sh.at) / SHELL_LIFE;
+        ctx.strokeStyle = `rgba(${INK}, ${(0.65 * Math.pow(1 - age, 1.3)).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(sh.c.x, sh.c.y, 3 + (now - sh.at) * SHELL_SPEED, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      return r.shells.length > 0;
     };
 
     /**
@@ -1009,6 +1045,7 @@ export default function TransitionLayer() {
           drawDust(r, dt, 1);
           tail(r.trail, now, r.hole?.c);
           drawHole(r, now);
+          dustShells(r, now);
           gravityWaves(r, now);
           // 彈弓繞過的那顆星：點靠近時浮出來，繞過去之後淡掉
           if (r.focus) {
@@ -1039,6 +1076,10 @@ export default function TransitionLayer() {
             r.waves.push({ at: now, c: goal, strength: CHIRP[r.chirp][1] });
             r.chirp++;
           }
+        }
+        if (THEME === 'betelgeuse' && r.flight && !r.still && len(moved) > 0.2) {
+          const lastShell = r.shells.at(-1);
+          if (!lastShell || now - lastShell.at > SHELL_EVERY) r.shells.push({ c: { ...r.pos }, at: now });
         }
         dot(onScreen, 3, 1, stretch);
         if (r.phase === 'fly') return;
@@ -1076,6 +1117,7 @@ export default function TransitionLayer() {
       drawDust(r, Math.min(50, now - r.last), 1);
       const alive = tail(r.trail, now, r.hole?.c);
       drawHole(r, now);
+      const shedding = dustShells(r, now);
       const rippling = gravityWaves(r, now);
       ctx.restore();
       r.last = now;
@@ -1085,7 +1127,7 @@ export default function TransitionLayer() {
       if (THEME === 'neptune' && !r.still)
         predicted(landed, (0.45 + 0.4 * Math.sin(Math.PI * clamp(g * 2))) * (1 - g), 1 - easeOut(g));
       dot(landed, 3 * (1 - easeOut(g)), 1 - g);
-      if (g >= 1 && !r.dust.length && !alive && !rippling) {
+      if (g >= 1 && !r.dust.length && !alive && !rippling && !shedding) {
         cancelAnimationFrame(raf);
         // 正常跑完才上報（出錯、被下一次換頁打斷、元件卸載都不算）
         if (r.report) {
@@ -1143,10 +1185,10 @@ export default function TransitionLayer() {
         const { planet, ring } =
           reported && reported.at >= start ? reported : alone > 0 ? saturnGrowAt(alone) : { planet: 0, ring: 0 };
         const target = BOOT_RING_PERSPECTIVE * bootRingUnit * (1 + (RING_OUTER - 1) * ring);
-        // 黑洞：開場的光子環一直貼著 3D 光子環的實際大小——3D 那圈還比它小時它留在原處等，追上之後一起長
+        // 黑洞與參宿四：開場的光子環（恆星的輪廓）一直貼著 3D 那圈的實際大小——3D 還比它小時它留在原處等，追上之後一起長
         // （照吸積盤外緣的比例放大的話，交棒那一下畫面上會同時有兩圈光子環）
         const r =
-          THEME === 'blackhole'
+          PLANETS[THEME].kind !== 'planet'
             ? Math.max(BOOT_RING_R, BOOT_RING_PERSPECTIVE * bootRingUnit * RING_OUTER * planet)
             : BOOT_RING_R + (target - BOOT_RING_R) * clamp(planet / BOOT_RING_CATCH);
         boot.style.setProperty('--boot-ring-size', `${(r / BOOT_RING_R) * BOOT_RING_BOX}px`);
@@ -1236,6 +1278,7 @@ export default function TransitionLayer() {
         focus: null,
         waves: [],
         hole: null,
+        shells: [],
         chirp: 0,
         t0: now,
         from: center,
@@ -1345,6 +1388,7 @@ export default function TransitionLayer() {
           focus: null,
           waves: [],
           hole: null,
+          shells: [],
           chirp: 0,
           t0: performance.now(),
           from: departure.point,

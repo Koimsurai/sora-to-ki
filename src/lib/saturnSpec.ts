@@ -90,7 +90,7 @@ export interface PlanetSpec {
    * planet：有表面的星球（刻線畫的球）。blackhole：主星是一片陰影，沒有任何刻線；
    * 外面一圈光子環、被重力彎到陰影上下的盤影（lib/starfieldGpu 的 lens），吸積盤拆前後兩半夾住它
    */
-  kind: 'planet' | 'blackhole';
+  kind: 'planet' | 'blackhole' | 'star';
   /** 雲帶，南北已展開：[緯度°, 寬度°, 亮度增減] */
   bands: [lat: number, width: number, delta: number][];
   /** 底子的亮度（雲帶加減在它上面） */
@@ -140,6 +140,8 @@ export interface PlanetSpec {
   boot: [r: number, tone: number][];
   /** 反方向公轉的衛星（由內到外第幾顆，0 起算） */
   retrograde: number[];
+  /** 主星會脹縮（參宿四）：半徑變化多少（幾成）、脹縮一次幾秒 */
+  pulse?: { amp: number; period: number };
   /**
    * 每條軌道自己的形狀（黑洞的 S 星、海王星的崔頓與海衛二）：一條一筆，由內到外。
    * 沒給的話是同一個平面上的正圓（ORBITS）
@@ -328,7 +330,49 @@ const BLACK_HOLE: PlanetSpec = {
   ],
 };
 
-export const PLANETS: Record<Theme, PlanetSpec> = { saturn: SATURN, neptune: NEPTUNE, blackhole: BLACK_HOLE };
+/**
+ * 參宿四：獵戶座肩上的紅超巨星，放到太陽的位置表面會超過木星的軌道。它自己發光——沒有晨昏線，
+ * 亮度照邊緣變暗（中間亮、邊緣暗）；表面只有幾個巨大的對流胞（少數表面被直接拍到的恆星，VLT 與 ALMA 的影像）。
+ * 它是半規則變星，大約每 400 天脹縮一次（pulse，這裡縮成幾秒）。
+ * 2019–2020 年的大暗化：它暗到只剩三分之一，哈伯查出是南半球噴出一大團物質、冷卻成塵埃擋住了光（spots 裡那塊暗的）。
+ * 最內圈那顆是 2025 年確認的伴星 Siwarha，軌道有點扁、有點斜
+ */
+const BETELGEUSE: PlanetSpec = {
+  kind: 'star',
+  bands: [],
+  base: 0.62,
+  rows: 26,
+  cover: 0.72,
+  stroke: { wave: 0.5, swell: 0.3, floor: 0.35 },
+  tint: 0,
+  pole: [95, 94],
+  spots: [
+    // 大暗化的塵埃
+    [0.3, -35, 42, 22, -0.55],
+    // 表面的熱斑
+    [-0.8, 22, 16, 12, 0.3],
+    [2, -6, 20, 15, 0.25],
+  ],
+  ring: { segments: [], gaps: [], inner: 1.05, outer: 1.6, arcs: [], gain: 0, brushed: true, doppler: 0 },
+  // 開場不畫環：恆星的輪廓在呼吸，外面一圈圈塵埃殼照載入階段出現（__root.tsx 的 BootShells）
+  boot: [],
+  retrograde: [],
+  stars: [
+    { a: 2.9, e: 0.12, incl: 10, node: 60, peri: 30, precess: 0 },
+    { a: 3.55, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
+    { a: 4.25, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
+    { a: 4.95, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
+    { a: 5.7, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
+  ],
+  pulse: { amp: 0.035, period: 9 },
+};
+
+export const PLANETS: Record<Theme, PlanetSpec> = {
+  saturn: SATURN,
+  neptune: NEPTUNE,
+  blackhole: BLACK_HOLE,
+  betelgeuse: BETELGEUSE,
+};
 
 /**
  * 首頁土星佔的那一塊（CSS 像素）：中心與可用的寬高。3D 背景與換頁的錨點都照這個。

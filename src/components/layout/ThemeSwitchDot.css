@@ -16,3 +16,25 @@
   opacity: 1;
   animation: boot-breathe 1.6s ease-in-out infinite;
 }
+/* 切到參宿四：先像超新星一樣猛然亮一下、光暈炸開再收回，之後照常呼吸 */
+.theme-switch-dot[data-on][data-nova] {
+  animation:
+    theme-switch-nova 0.9s var(--easing-out),
+    boot-breathe 1.6s ease-in-out 0.9s infinite;
+}
+@keyframes theme-switch-nova {
+  0% {
+    box-shadow: 0 0 12px var(--signal);
+    scale: 1;
+  }
+  25% {
+    box-shadow:
+      0 0 40px 18px var(--signal),
+      0 0 120px 40px var(--signal);
+    scale: 2.4;
+  }
+  100% {
+    box-shadow: 0 0 12px var(--signal);
+    scale: 1;
+  }
+}

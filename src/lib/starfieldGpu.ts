@@ -40,6 +40,7 @@ import {
   uniform,
   dot,
   normalize,
+  normalView,
   max,
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
@@ -417,7 +418,8 @@ function buildSaturn(
     const n = normalize(positionLocal);
     const sun = normalize(sunInPlanet);
     // 晨昏線切得乾脆：參考圖背光那一面幾乎全黑
-    const lit = smoothstep(-0.12, 0.4, dot(n, sun));
+    // 恆星（參宿四）自己發光、沒有晨昏線：亮度照邊緣變暗，中間亮、越往邊緣越暗（看的方向跟表面的夾角）
+    const lit = spec.kind === 'star' ? normalView.z.max(0).pow(0.45) : smoothstep(-0.12, 0.4, dot(n, sun));
     // 雲帶照真實星球的緯度排（規格裡的 bands）
     const lat = asin(n.y.clamp(-1, 1)).mul(180 / Math.PI);
     let tone: FloatNode = float(spec.base);
@@ -439,11 +441,20 @@ function buildSaturn(
         tone = tone.add(exp(dl.div(wLon).pow(2).add(lat.sub(la).div(wLat).pow(2)).negate()).mul(d));
       }
     }
+    // 恆星表面只有幾個巨大的對流胞：很低頻的雜訊，一塊亮一塊暗
+    if (spec.kind === 'star')
+      tone = tone.mul(mix(float(0.55), float(1.25), smoothstep(-0.45, 0.45, mx_noise_float(n.mul(1.7)))));
     // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
     tone = tone.mul(smoothstep(spec.pole[0], spec.pole[1], abs(lat)));
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
     const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
-    const row = n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave));
+    // 恆星（參宿四）用畫面上水平的直線刻（版畫用平行直線排出球體明暗的刻法），不跟著自轉：
+    // 行星照緯度一列列刻（沿雲帶彎），恆星這樣刻就是一顆有雲帶的行星；以圓心刻一圈圈同心圓則像一個標靶（都試過）。
+    // 對流胞在線上一塊亮一塊暗地轉
+    const row =
+      spec.kind === 'star'
+        ? normalView.y.mul(spec.rows).add(wave.mul(spec.stroke.wave))
+        : n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave));
     const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
       .mul(spec.stroke.swell)
       .add(1);
@@ -574,7 +585,7 @@ function buildSaturn(
   } else ringPart(0, Math.PI * 2, 0);
   plane.add(ring);
 
-  // 黑洞的 lens：一張永遠面向鏡頭的薄板（在 group 裡、不在俯角那層，所以不跟著傾斜），畫光子環與
+  // lens：一張永遠面向鏡頭的薄板。黑洞的（在 group 裡、不在俯角那層，所以不跟著傾斜），畫光子環與
   // 被重力彎到陰影上下的盤影。疊的順序是「後半盤 → lens → 前半盤」（renderOrder 1、2、3）
   const lensFade = uniform(0);
   let lens: THREE.Mesh | null = null;
@@ -613,6 +624,31 @@ function buildSaturn(
     lens.renderOrder = 2;
     group.add(lens);
   }
+  // 參宿四的光暈：同一張面向鏡頭的薄板，畫恆星外面那層延伸很遠的大氣——一圈圈很淡的同心刻線，越往外越淡，
+  // 南邊那團（大暗化時噴出來的物質）多一點。恆星會發光，沒有這圈的話看起來像一顆氣態行星
+  if (spec.kind === 'star') {
+    const haloMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false });
+    haloMat.colorNode = paper;
+    haloMat.opacityNode = Fn(() => {
+      const x = positionLocal.x;
+      const y = positionLocal.y;
+      const d = vec3(x, y, 0).length();
+      const glow = smoothstep(1.75, 1.0, d).mul(smoothstep(0.98, 1.02, d));
+      const plume = smoothstep(-0.2, -0.9, y.div(d)).mul(0.35).add(1);
+      const breakup = smoothstep(-0.5, 0.4, mx_noise_float(vec3(x.mul(3), y.mul(3), d.mul(6))));
+      return strokes(
+        d.mul(RING_ROWS * 0.8),
+        glow
+          .mul(plume)
+          .mul(mix(float(0.35), float(1), breakup))
+          .mul(0.55),
+        0.5,
+      ).mul(lensFade);
+    })();
+    lens = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), haloMat);
+    lens.renderOrder = 2;
+    group.add(lens);
+  }
 
   // 每條軌道一個容器：S 星的軌道（黑洞）各自傾斜（holder：傾角與升交點），近點的方向與進動放在 apsis。
   // 土星、海王星的軌道沒有這些，容器是單位矩陣，跟直接放在 plane 上一樣
@@ -638,7 +674,18 @@ function buildSaturn(
   // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
   const CIRCLE_POINTS = 257;
   const circle = (i: number, radius: number, opacity: number) => {
-    const material = new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
+    // 參宿四：軌道畫成點線，像它周圍一層層拋出去的塵埃殼
+    const material =
+      spec.kind === 'star'
+        ? new THREE.LineDashedNodeMaterial({
+            color: INK,
+            transparent: true,
+            opacity,
+            depthWrite: false,
+            dashSize: 0.05,
+            gapSize: 0.09,
+          })
+        : new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
     const st = stars?.[i];
     const points = Array.from({ length: CIRCLE_POINTS }, (_, k) => {
       const a = (k / (CIRCLE_POINTS - 1)) * Math.PI * 2;
@@ -647,6 +694,7 @@ function buildSaturn(
         : new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius);
     });
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material);
+    if (spec.kind === 'star') line.computeLineDistances();
     apses[i].add(line);
     return { material, line };
   };
@@ -709,6 +757,7 @@ function buildSaturn(
       pos.setXYZ(k, v.x, v.y, v.z);
     }
     pos.needsUpdate = true;
+    if (spec.kind === 'star') line.computeLineDistances();
   };
   let sectionCount = initialSections;
   const live: number[] = ORBITS.map((_, i) => (i < sectionCount ? 1 : 0));
@@ -833,6 +882,12 @@ function buildSaturn(
         if (stageAt(stage.kind, stage.t)) stage = null;
         applyParts();
       } else if (reshaping) applyParts();
+      // 會脹縮的主星（參宿四）：每一幀照時鐘脹縮，光暈跟著
+      if (spec.pulse) {
+        const breath = 1 + spec.pulse.amp * Math.sin((2 * Math.PI * clock) / spec.pulse.period);
+        body.scale.setScalar(Math.max(0.0001, planetK) * breath);
+        lens?.scale.setScalar(Math.max(0.0001, planetK) * breath);
+      }
       if (glide && (stage || pivot)) glide = null;
       if (glide) {
         glide.t += dt;
