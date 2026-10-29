@@ -147,11 +147,8 @@
      0.88 / 0.9 / 0.92 / 0.95rem 全部同時存在，幾乎連續地塞在 10–18px 之間。
      光那一段就佔了全部用量的 **91%**——也就是「小字」這一個角色有六種尺寸。
 
-     ⚠️ **名字不能用 `--text-*`**，兩個理由：
-       1. 那是 Tailwind v4 生 utility 的 namespace，佔用它會改變 `text-sm` 產出什麼。
-       2. 這個專案的 `--text-primary` / `--text-secondary` / `--text-tertiary`
-          已經是**顏色**，跟字級擠在同一個前綴下只會更難讀。
-     所以叫 `--fs-*`。
+     ⚠️ **名字不能用 `--text-*`**：那是 Tailwind v4 生 utility 的 namespace，
+     佔用它會改變 `text-sm` 產出什麼。所以叫 `--fs-*`。
 
      ⚠️ 而且 Tailwind 的 `--text-*` **不能直接拿來用**：v4 會 tree-shake 掉沒被
      utility 用到的 theme 變數，實測建置產物裡只有 xs/sm/base/lg/xl/2xl/6xl，
@@ -493,16 +490,10 @@
     /* 更大的圓角 - 更現代 */
     --radius: 0.75rem;
 
-    /* ── 站點自己的品牌色 ──────────────────────────────────────────────────
-       下面那批 Tailwind 色票是「抄過來的」，這一批是這個站自己的顏色——不在任何
-       公開色票上，所以只能靠語意命名。值就是原本在用的 hex，零視覺變化。
-
-       `--surface-*` 依明度排（0 最深）：0 是頁面底，1–3 是疊在上面的面板與卡片。
-       這四個都是近黑，2026-09-08 的收斂已經把 56 個近黑併成 10 個，剩下的這四個
-       是**真的有層次差別**的那幾層，不要再往下併。
-
-       帶透明度時用 `rgba(var(--surface-0-rgb), a)`，跟 `--brand-rgb` 同一套寫法。
-       這九個**每一個都有帶 alpha 的用法**，所以九個都配了 -rgb。 */
+    /* ── 翻新前的品牌色 ────────────────────────────────────────────────────
+       2026-10 翻新後的配色是下面另一個 :root 的 --ground／--paper／--amber 那組。這幾個留著，
+       是因為還有元件引用：在文章頁、後台這些範圍裡，它們被指到紙色（見檔案最後那段覆寫）；
+       :root 這份還是舊的紫，全域 button、a 的基本樣式指著它。新寫的東西不要再用這組。 */
     /* ── 頁面外框的上下留白 ──────────────────────────────────────────────
        站台頂欄是 `position: fixed`，高 60px（≤480px 時 56px），所以每個頁面的最外層
        都得自己留出那段高度。在這之前 **10 個頁面各自編了一個數字**：桌機 90 / 100 /
@@ -518,24 +509,13 @@
     --page-top: var(--space-24); /* 96px */
     --page-bottom: var(--space-16); /* 64px */
 
-    --surface-0: #06050e; /* 頁面底 */
     --surface-0-rgb: 6, 5, 14;
-    --surface-1: #120e1e;
     --surface-1-rgb: 18, 14, 30;
-    --surface-2: #14141e;
-    --surface-2-rgb: 20, 20, 30;
-    --surface-3: #141226;
-    --surface-3-rgb: 20, 18, 38;
-    --ink: #e5e5f5; /* 主文字 */
-    --ink-rgb: 229, 229, 245;
-    --lavender: #c7b8ff;
     --lavender-rgb: 199, 184, 255;
     --lavender-soft: #e0c3fc;
     --lavender-soft-rgb: 224, 195, 252;
     --magenta: #dc3278;
     --magenta-rgb: 220, 50, 120;
-    --magenta-deep: #c8328c;
-    --magenta-deep-rgb: 200, 50, 140;
 
     /* ── 調色盤：Tailwind v3 色票 ──────────────────────────────────────────
        全站有 23 個底色、315 次使用是**一字不差**的 Tailwind v3 色票（purple-300 就用了
@@ -545,124 +525,60 @@
        跟 v3 的 hex 不相等，換過去就不是零變化；而且哪些 shade 有輸出取決於 utility
        用到誰（跟 `--text-3xl` 被 tree-shake 掉是同一個陷阱）。這裡自己定義。
 
-       帶透明度時用 `rgba(var(--zinc-100-rgb), a)`，跟 `--brand-rgb` 同一套寫法。 */
+       帶透明度時用 `rgba(var(--purple-300-rgb), a)`。-rgb 只給真的有帶 alpha 用法的那幾個，
+       需要時再補。 */
     --zinc-100: #f4f4f5;
-    --zinc-100-rgb: 244, 244, 245;
     --zinc-200: #e4e4e7;
-    --zinc-200-rgb: 228, 228, 231;
     --zinc-300: #d4d4d8;
-    --zinc-300-rgb: 212, 212, 216;
     --zinc-400: #a1a1aa;
-    --zinc-400-rgb: 161, 161, 170;
     --zinc-500: #71717a;
-    --zinc-500-rgb: 113, 113, 122;
     --zinc-600: #52525b;
-    --zinc-600-rgb: 82, 82, 91;
     --zinc-700: #3f3f46;
-    --zinc-700-rgb: 63, 63, 70;
     --zinc-800: #27272a;
-    --zinc-800-rgb: 39, 39, 42;
     --zinc-900: #18181b;
-    --zinc-900-rgb: 24, 24, 27;
     --purple-300: #d8b4fe;
     --purple-300-rgb: 216, 180, 254;
     --purple-500: #a855f7;
-    --purple-500-rgb: 168, 85, 247;
     --violet-300: #c4b5fd;
-    --violet-300-rgb: 196, 181, 253;
     --violet-400: #a78bfa;
-    --violet-400-rgb: 167, 139, 250;
     --violet-500: #8b5cf6;
-    --violet-500-rgb: 139, 92, 246;
     --amber-300: #fcd34d;
-    --amber-300-rgb: 252, 211, 77;
     --amber-400: #fbbf24;
-    --amber-400-rgb: 251, 191, 36;
     --red-300: #fca5a5;
     --red-300-rgb: 252, 165, 165;
     --red-400: #f87171;
     --red-400-rgb: 248, 113, 113;
     --red-500: #ef4444;
-    --red-500-rgb: 239, 68, 68;
     --green-300: #86efac;
-    --green-300-rgb: 134, 239, 172;
     --green-400: #4ade80;
-    --green-400-rgb: 74, 222, 128;
     --green-500: #22c55e;
-    --green-500-rgb: 34, 197, 94;
     --pink-500: #ec4899;
-    --pink-500-rgb: 236, 72, 153;
     --sky-300: #7dd3fc;
-    --sky-300-rgb: 125, 211, 252;
     --blue-500: #3b82f6;
-    --blue-500-rgb: 59, 130, 246;
     --blue-600: #2563eb;
-    --blue-600-rgb: 37, 99, 235;
     --red-600: #dc2626;
-    --red-600-rgb: 220, 38, 38;
     --purple-200: #e9d5ff;
-    --purple-200-rgb: 233, 213, 255;
     /* 2026-10 接上 @shadcn/lint 時補的，都是後台 TSX 裡原本寫 Tailwind 調色盤 class 的顏色。
        orange / blue 是留言審核的動作色碼（封鎖、編輯），跟色票裡任何一格的 ΔE 都在 8 以上，
        併不過去；purple-400 是「回覆」與文章側欄連結的 hover，剛好 3 次。 */
     --purple-400: #c084fc;
-    --purple-400-rgb: 192, 132, 252;
     --orange-300: #fdba74;
-    --orange-300-rgb: 253, 186, 116;
     --orange-400: #fb923c;
-    --orange-400-rgb: 251, 146, 60;
     --blue-300: #93c5fd;
-    --blue-300-rgb: 147, 197, 253;
     --blue-400: #60a5fa;
-    --blue-400-rgb: 96, 165, 250;
 
-    /* ── 站點自己的強調色（第二批）──────────────────────────────────────
-       跟 --lavender / --magenta 同一批，都不在任何公開色票上，值是原本在用的 hex。
-       收進來的門檻是**用了 3 次以上**：低於這個數，token 只是多一層間接。
-
-       ⚠️ 這四個看起來像既有 token 的親戚，實際上不是——hex 接近不代表顏色接近：
-         --iris    #8b7cf6  vs --violet-500 #8b5cf6   只差一個字元，但 **ΔE 22.3**
-         --crimson #dc3250  vs --magenta    #dc3278   前四碼相同，但 **ΔE 23.2**
-       判斷「能不能併」要算 Lab 色差，不要看 hex 長得像不像。 */
-    --coral: #ff4757; /* 浮動按鈕的 active、錯誤訊息、關閉鈕 hover */
-    --coral-rgb: 255, 71, 87;
-    --crimson: #dc3250; /* 破壞性動作：退訂按鈕 */
-    --crimson-rgb: 220, 50, 80;
-    --orchid: #ec7dd6; /* Hero 與技能區的漸層粉 */
-    --iris: #8b7cf6; /* 圖表提示框、步驟標記、播放鍵 focus */
-    --iris-rgb: 139, 124, 246;
-
-    /* ── 外部服務的品牌色 ────────────────────────────────────────────────
-       ⚠️ **這些的值不能動也不能併**——Spotify 的綠就是 Spotify 的綠，貼到
-       `--green-500` 就不是那個品牌了。收成 token 的理由不是收斂，是**同一個 hex
-       原本散在 2–3 個檔案裡重複**（Spotify 13 次、Steam 9 次）。
-
-       `--diff-add` / `--diff-del` 是 GitHub 的 diff 綠紅，同時用在程式碼 diff 與
-       數據趨勢的升降，所以用角色命名而不是 `--svc-github-*`。 */
-    --svc-spotify: #1db954;
-    --svc-spotify-rgb: 29, 185, 84;
-    --svc-steam: #90ba3c;
-    --svc-steam-rgb: 144, 186, 60;
-    --svc-youtube: #ff0000;
-    --svc-youtube-rgb: 255, 0, 0;
-    --svc-instagram: #e4405f;
-    --svc-instagram-rgb: 228, 64, 95;
-    --svc-bilibili: #00a1d6;
-    --svc-bilibili-rgb: 0, 161, 214;
+    /* `--diff-add` / `--diff-del` 是 GitHub 的 diff 綠紅，同時用在程式碼 diff 與數據趨勢的升降，
+       所以用角色命名。值不要併進色票：那是 GitHub 的顏色，讀者一眼認得出是 diff。 */
     --diff-add: #3fb950;
     --diff-add-rgb: 63, 185, 80;
     --diff-del: #f85149;
     --diff-del-rgb: 248, 81, 73;
 
-    /* Happy Hues 調色板的殘餘。原本 11 個，7 個引用 0 次（掃過 387 個 ts/tsx/css/js 檔）
-       已退役：--clr-bg-primary / -bg-secondary / -stroke / -secondary / -white / -light-gray /
-       --starlight。留下的這幾個還有人用，先不動名字。 */
+    /* Happy Hues 調色板的殘餘：還有人用，先不動名字 */
     --clr-headline: #fffffe;
     --clr-paragraph: #94a1b2;
-    --clr-paragraph-rgb: 148, 161, 178;
     --clr-button: var(--brand);
     --clr-button-text: var(--clr-headline);
-    --clr-tertiary-rgb: 44, 182, 125;
 
     /* 深空玻璃質感的共用 token。元件 CSS 用這裡的名字，不要各自複製一份。
 
@@ -681,11 +597,7 @@
     /* 2026-10 翻新：紫與綠全部收回暖白，琥珀只留給「你在哪裡」那一點（後台不用這一組） */
     --post-accent: var(--paper);
     --post-accent-glow: rgba(var(--paper-rgb), 0.2);
-    --post-green: var(--paper);
     --post-muted: var(--paper-3);
-    --post-card-bg: var(--white-02);
-    --post-card-border: var(--white-06);
-    --post-page-bg: var(--surface-0);
 
     /* ── 透明度階梯（白／黑共用同一把尺，19 階）──────────────────────────
          0.02 0.04 0.06 0.08 0.10 · 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 · 0.70 0.80 0.90 0.95
@@ -698,8 +610,7 @@
        的高端。**任何 alpha 都必須在這 19 階上**，scripts/check-css-tokens.ts 在擋。
 
        ⚠️ 名字用數字不用語意（不是 `--border-subtle` 這種），因為同一個 alpha 同時被
-       拿來當邊框、底色與文字色——套語意名會騙人。語意層是下面 `--glass-*`／
-       `--text-*` 那幾個，它們指向這裡的階梯。 */
+       拿來當邊框、底色與文字色——套語意名會騙人。 */
     --white-02: rgba(255, 255, 255, 0.02);
     --white-04: rgba(255, 255, 255, 0.04);
     --white-06: rgba(255, 255, 255, 0.06);
@@ -738,14 +649,6 @@
     --black-80: rgba(0, 0, 0, 0.8);
     --black-90: rgba(0, 0, 0, 0.9);
     --black-95: rgba(0, 0, 0, 0.95);
-
-    --glass-bg: var(--white-02);
-    --glass-border: var(--white-08);
-    --glass-hover-bg: var(--white-06);
-    --glass-hover-border: rgba(var(--brand-rgb), 0.35);
-    --text-primary: var(--clr-headline);
-    --text-secondary: var(--white-50);
-    --text-tertiary: var(--white-35);
   }
 
   /* 頁面外框留白的窄視窗值。只有這一個斷點——各頁自己的 media query 只管左右留白。 */
@@ -1568,7 +1471,6 @@ html[data-boot="out"][data-boot-ring="go"] .boot-ring.is-back {
 .admin-layout,
 .admin-mode {
   --brand: var(--paper);
-  --lavender: var(--paper);
   --purple-300-rgb: var(--paper-rgb);
   --brand-rgb: var(--paper-rgb);
   --brand-light: var(--paper);
@@ -1577,17 +1479,7 @@ html[data-boot="out"][data-boot-ring="go"] .boot-ring.is-back {
   --lavender-rgb: var(--paper-rgb);
   --lavender-soft: var(--paper);
   --lavender-soft-rgb: var(--paper-rgb);
-  --violet-300-rgb: var(--paper-rgb);
   --violet-400: var(--paper);
-  --violet-400-rgb: var(--paper-rgb);
-  --iris-rgb: var(--paper-rgb);
-  --clr-tertiary-rgb: var(--paper-rgb);
-  --surface-0: var(--ground);
   --surface-0-rgb: var(--ground-rgb);
-  --surface-1: var(--ground);
   --surface-1-rgb: var(--ground-rgb);
-  --surface-2: var(--ground);
-  --surface-2-rgb: var(--ground-rgb);
-  --surface-3: var(--ground);
-  --surface-3-rgb: var(--ground-rgb);
 }
