@@ -1117,6 +1117,10 @@ export type SiteConfig = {
 	description: string,
 	/**  關掉的頁面（data/siteSections 的 key） */
 	disabled_pages: string[],
+	/**  聯絡信箱；空字串＝沒有 */
+	email: string,
+	/**  GitHub 帳號名；空字串＝沒有 */
+	github: string,
 };
 
 /**  一個來源與從它進站時先看的那幾頁 */

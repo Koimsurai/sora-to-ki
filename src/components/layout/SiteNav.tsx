@@ -16,7 +16,7 @@ import { SUPPORTED_LOCALES, LOCALE_PREFIX, type Locale } from '@/lib/locales';
 import { useAuth } from '@/contexts/auth';
 import { openCommandPalette } from '@/store/commandPaletteStore';
 import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS, type SiteSection } from '@/data/siteSections';
-import { useEnabledSections } from '@/data/siteConfig';
+import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import NavMenus, { type MenuKey } from './NavMenus';
 import './SiteNav.css';
 
@@ -31,6 +31,7 @@ const OPEN_AFTER_MS = 280;
 const CLOSE_AFTER_MS = 320;
 export default function SiteNav() {
   const { t, i18n } = useTranslation();
+  const { author } = useSiteConfig();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const bare = stripLocalePrefix(pathname);
   const isHome = bare === '';
@@ -286,7 +287,7 @@ export default function SiteNav() {
     >
       <div className="snav-bar">
         <LocaleLink to="/" className="snav-name" aria-label={t('siteNav.home')}>
-          Koimsurai
+          {author}
         </LocaleLink>
 
         <nav className="snav-links" aria-label={t('nav.menu')}>

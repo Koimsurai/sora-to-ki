@@ -70,6 +70,34 @@ async fn 已經有設定就不再用種子蓋掉() {
     assert_eq!(s.disabled_pages, vec!["friends"]);
 }
 
+/// 信箱與 GitHub 是設定表建好之後才加的欄位：舊的那份裡沒有它們，要退回環境變數，
+/// 不然既有的站升級上來聯絡方式會整個消失；在後台改過（包括清空）之後就以設定為準
+#[tokio::test]
+async fn 舊設定裡沒有信箱與_github_時退回環境變數_改過之後以設定為準() {
+    // SAFETY: nextest 每個測試一個行程
+    unsafe {
+        std::env::set_var("SITE_EMAIL", "me@example.com");
+        std::env::set_var("SITE_GITHUB", "someone");
+    }
+    let (app, pool) = test_app().await;
+    sqlx::query("INSERT INTO site_settings (key, value) VALUES ('site', ?)")
+        .bind(json!({ "name": "升級上來的站", "disabled_pages": [] }).to_string())
+        .execute(&pool)
+        .await
+        .unwrap();
+    load_or_seed(&pool).await.unwrap();
+    let (_, v) = get(&app, "/api/site/config").await;
+    assert_eq!(v["email"], "me@example.com");
+    assert_eq!(v["github"], "someone");
+
+    let token = owner_token(true);
+    let (status, v) =
+        request(&app, "PUT", "/api/admin/site/config", Some(json!({ "email": "" })), Some(&token)).await;
+    assert_eq!(status, StatusCode::OK, "{v}");
+    assert_eq!(v["email"], "", "清空之後不能又退回環境變數");
+    assert_eq!(v["github"], "someone", "沒帶的欄位照舊");
+}
+
 #[tokio::test]
 async fn 改了之後讀得到_rss_的標題也跟著換() {
     let (app, _pool) = test_app().await;
@@ -91,7 +119,9 @@ async fn 改了之後讀得到_rss_的標題也跟著換() {
     assert_eq!(again["name"], "新的站名");
 
     let (_, rss) = get(&app, "/rss").await;
-    assert!(rss.as_str().unwrap_or_default().contains("<title>新的站名</title>"), "RSS 要用新的站名");
+    let rss = rss.as_str().unwrap_or_default();
+    assert!(rss.contains("<title>新的站名</title>"), "RSS 要用新的站名");
+    assert!(rss.contains("<generator>sora-to-ki</generator>"), "程式名是固定的，不跟站名走");
 }
 
 #[tokio::test]

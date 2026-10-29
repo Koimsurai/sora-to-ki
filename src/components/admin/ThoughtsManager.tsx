@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { adminBooksQueryOptions, adminCollectionQueryOptions, adminStatsQueryOptions } from '@/data/adminData';
+import { useSiteConfig } from '@/data/siteConfig';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { apiUrl } from '@/lib/api';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
@@ -105,6 +106,7 @@ async function send(method: string, path: string, body?: unknown) {
 
 export default function ThoughtsManager() {
   const queryClient = useQueryClient();
+  const { author } = useSiteConfig();
   const list = useQuery(thoughtsListQueryOptions);
   const stats = useQuery(adminStatsQueryOptions);
   const collection = useQuery(adminCollectionQueryOptions);
@@ -366,7 +368,7 @@ export default function ThoughtsManager() {
             <SectionHead id="th-preview-h">前台會長這樣</SectionHead>
             <div className="adm-th-preview">
               <span className="adm-th-preview-head">
-                <span>Koimsurai</span>
+                <span>{author}</span>
                 {verb && <span className="adm-th-verb-text">{VERB_LABEL[verb]}</span>}
                 <span className="adm-meta">{formatWhen(editing?.created_at ?? today, 'MM.dd')}</span>
               </span>

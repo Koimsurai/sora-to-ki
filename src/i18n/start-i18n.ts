@@ -1,4 +1,5 @@
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale, localePathname } from '@/lib/locales';
+import { siteUrl } from '@/lib/siteIdentity';
 import { createInstance, type i18n as I18nInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import zhTW from '@/locales/zh-TW/common.json';
@@ -84,11 +85,9 @@ export function pickLocaleFromAcceptLanguage(header: string | undefined | null):
 
 // bot 偵測搬到 lib/bot.ts（純函式、零相依，Web Vitals 上報也要用）。消費端直接從那裡 import。
 
-const SITE_URL = 'https://koimsurai.com';
-
 /** 某 locale 下、某邏輯路徑(無前綴,如 '' 或 'blog/39')的絕對 URL。 */
 export function localeUrl(locale: Locale, basePath = ''): string {
-  return `${SITE_URL}${localePathname(locale, basePath)}`;
+  return `${siteUrl()}${localePathname(locale, basePath)}`;
 }
 
 /**

@@ -6,6 +6,7 @@ import { useLocale } from '@/hooks/useLocale';
 import { recentPostsQueryOptions } from '@/data/blogList';
 import { thoughtDetailQueryOptions } from '@/data/thoughtData';
 import { postPath } from '@/lib/postPath';
+import { isOwnHost } from '@/lib/siteIdentity';
 import './LinkCard.css';
 
 // 卡片形狀的載入骨架（保留與真卡相同的高度/結構）→ 資料未到時佔位不塌、client 補上時不位移。
@@ -120,19 +121,19 @@ const getLinkMeta = (url: string): LinkMeta | null => {
 
     // Internal Blog Link Detection — 含語系前綴（/en/blog/、/ko/blog/…）
     const blogMatch = /^(?:\/(?:en|zh-cn|ja|ko))?\/blog\/([^/]+)$/.exec(u.pathname);
-    if (host.includes('koimsurai.com') && blogMatch) {
+    if (isOwnHost(host) && blogMatch) {
       const id = blogMatch[1];
       if (id && id !== 'blog') return { type: 'internal', id };
     }
 
     // 碎念 / 思考引用
-    if (host.includes('koimsurai.com') && u.pathname.startsWith('/thinking/')) {
+    if (isOwnHost(host) && u.pathname.startsWith('/thinking/')) {
       const tid = u.pathname.split('/').pop();
       if (tid && tid !== 'thinking') return { type: 'thought', id: tid };
     }
 
     // Internal Web Link Detection (non-blog pages)
-    if (host.includes('koimsurai.com')) {
+    if (isOwnHost(host)) {
       return {
         type: 'internal-page',
         icon: FaExternalLinkAlt,

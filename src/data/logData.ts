@@ -6,10 +6,10 @@ import type {
   WakatimeTodayResponse,
 } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
+import { siteGithub } from '@/lib/siteIdentity';
 
 // 航行日誌（about/Log）的資料：從站點誕生那天起每天的 GitHub 貢獻、今天寫了多久程式、這週的語言、最近在玩什麼。
 // 都是第三方的資料，拿不到就是 null（那一塊顯示「沒有收到」），不讓整頁進錯誤狀態。
-const GITHUB_USERNAME = 'Koimsurai';
 const STALE = 10 * 60 * 1000;
 /** 從哪一天開始畫（站點誕生） */
 export const LOG_START = '2025-04-01';
@@ -25,12 +25,15 @@ export const contributionsSinceQueryOptions = queryOptions({
   queryKey: ['log', 'contributions'],
   queryFn: async (): Promise<DayCount[] | null> => {
     try {
+      // 帳號是站台設定裡的 GitHub；沒填就跟拿不到一樣
+      const user = siteGithub();
+      if (!user) return null;
       const first = Number(LOG_START.slice(0, 4));
       const now = new Date();
       const years = Array.from({ length: now.getFullYear() - first + 1 }, (_, i) => first + i);
       const all = await Promise.all(
         years.map(async (y) => {
-          const res = await fetch(apiUrl(`/api/github/contributions/${GITHUB_USERNAME}?year=${y}`));
+          const res = await fetch(apiUrl(`/api/github/contributions/${user}?year=${y}`));
           const data = (await res.json()) as GithubContributionsResponse;
           if (data.error) throw new Error(data.error);
           return data.contributions;

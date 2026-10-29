@@ -54,6 +54,7 @@ import { isArriving } from '@/store/pageTransition';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath, postShareUrl } from '@/lib/postPath';
 import { lookup } from '@/lib/tableLookup';
+import { isOwnHost, siteName } from '@/lib/siteIdentity';
 import { visitHeaders } from '@/lib/visitContext';
 
 /// `GET /api/posts/:id` 的成功回應（型別由後端 Rust struct 生成），外加 client 端自己算的
@@ -374,7 +375,7 @@ export const CustomParagraph = ({
         host.includes('bilibili.com') ||
         host.includes('b23.tv') ||
         host.includes('spotify.com') ||
-        host.includes('koimsurai.com')
+        isOwnHost(host)
       );
     } catch {
       return false;
@@ -946,7 +947,7 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
               }}
               className="subscribe-form"
               toolname="subscribe_newsletter"
-              tooldescription="訂閱 koimsurai 電子報，有新文章時以 email 通知"
+              tooldescription={`訂閱 ${siteName()} 電子報，有新文章時以 email 通知`}
             >
               <label className="subscribe-field">
                 <span>{t('newsletter.fieldName')}</span>

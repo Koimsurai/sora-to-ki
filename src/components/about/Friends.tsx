@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAtt
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { friendsQueryOptions } from '@/data/friendsData';
+import { useSiteConfig } from '@/data/siteConfig';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { currentFold } from '@/lib/viewportFold';
 import { after, isArriving } from '@/store/pageTransition';
@@ -25,8 +26,6 @@ import {
 import './Friends.css';
 import { sameTitle } from '@/lib/pageTitle';
 
-const CONTACT = 'service@koimsurai.com';
-const SITE = { name: '宙と木', url: 'https://koimsurai.com', rss: 'https://koimsurai.com/rss.xml' };
 const ART = '/illustrations/docking.webp';
 
 /** 滑鼠離一顆星多近才算滑到它（CSS 像素） */
@@ -115,6 +114,7 @@ function dateOf(raw: string | null | undefined, now: number) {
 
 export default function Friends() {
   const { t } = useTranslation();
+  const site = useSiteConfig();
   const { data: live = [] } = useQuery(friendsQueryOptions);
   const friends = useMemo(() => {
     const now = Date.now();
@@ -702,7 +702,7 @@ export default function Friends() {
         <div className="fr-sky" ref={boxRef}>
           <canvas ref={canvasRef} aria-hidden="true" onClick={onSkyClick} />
           <span className="fr-center" ref={centerRef}>
-            {SITE.name}
+            {site.name}
           </span>
           <ul className="fr-labels">
             {friends.map((f, i) => {
@@ -869,11 +869,11 @@ export default function Friends() {
 
             <section className="fr-card" aria-labelledby="fr-card-title">
               <h2 id="fr-card-title">{t('friends.cardTitle')}</h2>
-              <b>{SITE.name}</b>
+              <b>{site.name}</b>
               <dl>
                 <div>
                   <dt>URL</dt>
-                  <dd>{SITE.url}</dd>
+                  <dd>{site.url}</dd>
                 </div>
                 <div>
                   <dt>DESC</dt>
@@ -881,11 +881,11 @@ export default function Friends() {
                 </div>
                 <div>
                   <dt>RSS</dt>
-                  <dd>{SITE.rss}</dd>
+                  <dd>{`${site.url}/rss.xml`}</dd>
                 </div>
                 <div>
                   <dt>ICON</dt>
-                  <dd>{`${SITE.url}/favicon.svg`}</dd>
+                  <dd>{`${site.url}/favicon.svg`}</dd>
                 </div>
               </dl>
             </section>
@@ -923,7 +923,8 @@ export default function Friends() {
               {sent && <output className="fr-sent">{t('friends.sent')}</output>}
               {failed && (
                 <output className="fr-sent fr-failed">
-                  {t('friends.sendFailed', { reason: failed })} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+                  {t('friends.sendFailed', { reason: failed })}{' '}
+                  {site.email && <a href={`mailto:${site.email}`}>{site.email}</a>}
                 </output>
               )}
             </form>

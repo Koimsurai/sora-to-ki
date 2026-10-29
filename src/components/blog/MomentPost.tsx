@@ -3,13 +3,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Heart, MessageCircle } from 'lucide-react';
+import { useSiteConfig } from '@/data/siteConfig';
 import { useThoughtReaction } from '@/hooks/useThoughtReaction';
 import { LocaleLink } from '@/i18n/locale-link';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { isThoughtVerb, thoughtCard } from '@/lib/thoughtRef';
 import type { Thought } from '@/types/thought';
-
-const MOMENT_AUTHOR = 'Koimsurai';
 
 /** 附的連結或作品：左邊一條點線；作品多一張小海報（歌是方的） */
 function Embed({ th }: { th: Thought }) {
@@ -48,6 +47,7 @@ function Embed({ th }: { th: Thought }) {
 
 export default function MomentPost({ th, detail = false }: { th: Thought; detail?: boolean }) {
   const { t } = useTranslation();
+  const { author } = useSiteConfig();
   const { likes, reacted, react } = useThoughtReaction(th);
   const date = parseServerDate(th.created_at);
   const [thisYear] = useState(() => new Date().getFullYear());
@@ -60,7 +60,7 @@ export default function MomentPost({ th, detail = false }: { th: Thought; detail
   return (
     <>
       <div className="mo-post-head">
-        <b>{MOMENT_AUTHOR}</b>
+        <b>{author}</b>
         {isThoughtVerb(th.verb) && <span className="mo-verb">{t(`thinking.verb.${th.verb}`)}</span>}
         {detail ? (
           <span className="mo-time">{time}</span>

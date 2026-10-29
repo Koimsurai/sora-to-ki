@@ -25,9 +25,6 @@ import { thoughtLine } from '@/lib/thoughtRef';
 
 export type MenuKey = 'notes' | 'moments' | 'works' | 'collection' | 'about' | 'more';
 
-const GITHUB = 'https://github.com/Koimsurai';
-const CONTACT = 'service@koimsurai.com';
-
 const short = (iso: string) => dotDate(parseServerDate(iso), true);
 
 /** 一頁的骨架：左邊副標與「全部」，右邊清單 */
@@ -210,17 +207,22 @@ function CollectionPage({ armed }: { armed: boolean }) {
 function AboutPage({ label }: { label: (it: SiteSection) => string }) {
   const { t } = useTranslation();
   const pages = useEnabledSections(ABOUT_SECTIONS);
+  const { github, email } = useSiteConfig();
   return (
     <Page
       lead={
         <>
           <p>{t('siteNav.aboutLead')}</p>
-          <p className="snav-page-contact">
-            <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-              <FaGithub aria-hidden="true" /> GitHub
-            </a>
-            <a href={`mailto:${CONTACT}`}>Email</a>
-          </p>
+          {(github || email) && (
+            <p className="snav-page-contact">
+              {github && (
+                <a href={`https://github.com/${github}`} target="_blank" rel="noopener noreferrer">
+                  <FaGithub aria-hidden="true" /> GitHub
+                </a>
+              )}
+              {email && <a href={`mailto:${email}`}>Email</a>}
+            </p>
+          )}
         </>
       }
       all={{ to: '/about', label: t('siteNav.aboutAll') }}

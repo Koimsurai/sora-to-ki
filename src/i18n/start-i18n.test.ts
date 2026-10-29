@@ -17,6 +17,20 @@ import {
 } from './start-i18n';
 import { isBotUserAgent } from '@/lib/bot';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@/lib/locales';
+import { setSiteIdentity } from '@/lib/siteIdentity';
+
+// 站台身分照正式站填，下面的網址與標題才是看得懂的樣子
+beforeAll(() => {
+  setSiteIdentity({
+    url: 'https://koimsurai.com',
+    name: '宙と木',
+    author: 'Koimsurai',
+    description: '',
+    disabled_pages: [],
+    email: '',
+    github: 'Koimsurai',
+  });
+});
 
 describe('localeFromPrefix', () => {
   it('無前綴 → 預設 zh-TW', () => {
