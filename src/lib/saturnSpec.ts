@@ -123,6 +123,8 @@ export interface PlanetSpec {
   };
   /** 開場那道小環畫哪幾圈：[半徑（星球半徑）, 亮度] */
   boot: [r: number, tone: number][];
+  /** 反方向公轉的衛星（由內到外第幾顆，0 起算） */
+  retrograde: number[];
 }
 
 const ringMid = (i: number): [number, number] => {
@@ -149,6 +151,7 @@ const SATURN: PlanetSpec = {
   },
   // B 環最亮的那段與 A 環，中間空出來的就是卡西尼縫
   boot: [ringMid(4), ringMid(7)],
+  retrograde: [],
 };
 
 /** 角度（°）→ rad */
@@ -211,6 +214,8 @@ const NEPTUNE: PlanetSpec = {
     [2.149, 0.6],
     [2.54, 0.5],
   ],
+  // 崔頓：太陽系唯一一顆反方向公轉的大衛星。最外圈那顆倒著繞，看久了才會發現
+  retrograde: [4],
 };
 
 export const PLANETS: Record<Theme, PlanetSpec> = { saturn: SATURN, neptune: NEPTUNE };

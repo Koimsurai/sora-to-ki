@@ -99,6 +99,9 @@ const { paper: INK, amber: AMBER } = palette();
  */
 const THEME = currentTheme();
 const RING_OUTER = PLANETS[THEME].ring.outer;
+/** 海王星的預言落點（predicted）：圈的半徑、外面那四道刻度的長度（px） */
+const PREDICT_R = 10;
+const PREDICT_TICK = 4;
 /** 海王星的彈弓：起步偏離直線幾 rad、起步與進場的切線是直飛那段的幾倍長（越長弧越大） */
 const SLING_TURN = 1.9;
 const SLING_OUT = 2.2;
@@ -384,11 +387,14 @@ export default function TransitionLayer() {
 
     /**
      * 彗尾：每一段照它畫下去多久了變淡，散完就不畫；回傳還有沒有沒散完的。
-     * 海王星斷成四段弧（TAIL_ARCS）：從點往回量，落在弧裡的那幾段才畫
+     * 一小段一筆、平頭：圓頭的話相鄰兩筆的半透明端點疊在一起，接頭會亮成一串珠子。粗細也跟著淡：
+     * 靠點那頭粗、越舊越細，線才有筆鋒
+     *
+     * 海王星斷成四段弧（TAIL_ARCS）：從點往回量，落在弧裡的那幾段才畫。每一段自己也是頭粗尾細、
+     * 頭亮尾淡，靠點那頭補一個圓點當筆頭，像四小截彗星，而不是一條虛線
      */
     const tail = (points: Run['trail'], now: number) => {
-      ctx.lineWidth = THEME === 'neptune' ? 1.4 : 1;
-      ctx.lineCap = THEME === 'neptune' ? 'butt' : 'round';
+      ctx.lineCap = 'butt';
       let alive = false;
       let back = 0;
       for (let i = points.length - 1; i > 0; i--) {
@@ -398,27 +404,68 @@ export default function TransitionLayer() {
         const from = back;
         back += step;
         const k = 1 - (now - b.t) / TAIL_MS;
-        if (k <= 0) continue;
+        if (k <= 0 || step === 0) continue;
         alive = true;
-        let ends: [number, number][] = [[0, 1]];
+        // 這一筆從 b（靠點那頭）量回 a 的哪一段：[u0, u1]，以及在它那段弧裡走到幾成（0 是弧頭）
+        const pieces: { u0: number; u1: number; along: number; head: boolean }[] = [];
         if (THEME === 'neptune') {
-          ends = [];
           for (const [s0, s1] of TAIL_ARCS) {
             const lo = Math.max(s0, from);
             const hi = Math.min(s1, back);
-            if (hi > lo && step > 0) ends.push([(lo - from) / step, (hi - from) / step]);
+            if (hi > lo)
+              pieces.push({
+                u0: (lo - from) / step,
+                u1: (hi - from) / step,
+                along: (lo - s0) / (s1 - s0),
+                head: from <= s0,
+              });
           }
-        }
-        ctx.strokeStyle = `rgba(${INK}, ${(0.75 * Math.pow(k, 1.6)).toFixed(3)})`;
-        for (const [u0, u1] of ends) {
-          // u 從 b（靠點那頭）量回 a
+        } else pieces.push({ u0: 0, u1: 1, along: 0, head: false });
+        for (const { u0, u1, along, head } of pieces) {
+          const fade = THEME === 'neptune' ? 1 - 0.7 * along : 1;
+          const width = THEME === 'neptune' ? (0.5 + 1.3 * fade) * (0.4 + 0.6 * k) : 0.5 + 0.9 * Math.pow(k, 0.8);
+          const alpha = (THEME === 'neptune' ? 0.9 : 0.75) * fade * Math.pow(k, 1.6);
+          const x0 = b.x + (a.x - b.x) * u0;
+          const y0 = b.y + (a.y - b.y) * u0;
+          ctx.strokeStyle = `rgba(${INK}, ${alpha.toFixed(3)})`;
+          ctx.lineWidth = width;
           ctx.beginPath();
-          ctx.moveTo(b.x + (a.x - b.x) * u0, b.y + (a.y - b.y) * u0);
+          ctx.moveTo(x0, y0);
           ctx.lineTo(b.x + (a.x - b.x) * u1, b.y + (a.y - b.y) * u1);
           ctx.stroke();
+          if (head) {
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath();
+            ctx.arc(x0, y0, width / 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       }
       return alive;
+    };
+
+    /**
+     * 海王星的預言落點：1846 年勒維耶先從天王星軌道的偏差算出海王星該在哪，加勒當晚往那裡一看，
+     * 就在預測的 1° 以內。飛到一半，目的地先浮出一個淡淡的細圈與四道刻度（算好的座標），
+     * 點落進去時圈亮一下、收進點裡
+     */
+    const predicted = (p: Pt, alpha: number, scale: number) => {
+      if (alpha <= 0.01 || scale <= 0.01) return;
+      const radius = PREDICT_R * scale;
+      ctx.strokeStyle = `rgba(${INK}, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        ctx.moveTo(p.x + dx * (radius + 3), p.y + dy * (radius + 3));
+        ctx.lineTo(p.x + dx * (radius + 3 + PREDICT_TICK * scale), p.y + dy * (radius + 3 + PREDICT_TICK * scale));
+      }
+      ctx.stroke();
     };
 
     /**
@@ -708,6 +755,13 @@ export default function TransitionLayer() {
         world(() => {
           drawDust(r, dt, 1);
           tail(r.trail, now);
+          // 預言的落點：點這一趟最後會停的地方（路的終點，世界座標）；飛過三成之後慢慢浮出來
+          const f = r.flight;
+          const goal = f?.points.at(-1);
+          if (THEME === 'neptune' && f && goal && !r.still) {
+            const progress = clamp((now - f.at - f.acquire) / f.dur);
+            predicted(goal, 0.45 * smooth(0.3, 0.6, progress), 1);
+          }
         });
         const onScreen = { x: r.pos.x - r.cam.x, y: r.pos.y - r.cam.y };
         track(r, onScreen, now);
@@ -744,6 +798,9 @@ export default function TransitionLayer() {
       r.last = now;
       const landed = r.follow && now < r.followUntil ? r.follow() : to;
       track(r, landed, now);
+      // 預言的落點：點落進去的那一下亮起來，再跟著點一起收掉
+      if (THEME === 'neptune' && !r.still)
+        predicted(landed, (0.45 + 0.4 * Math.sin(Math.PI * clamp(g * 2))) * (1 - g), 1 - easeOut(g));
       dot(landed, 3 * (1 - easeOut(g)), 1 - g);
       if (g >= 1 && !r.dust.length && !alive) {
         cancelAnimationFrame(raf);

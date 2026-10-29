@@ -524,7 +524,10 @@ function buildSaturn(
     sprite.scale.setScalar(0.24);
     plane.add(sprite);
     // 起始角度錯開，越外圈轉得越慢（克卜勒的味道就好，不必真的照比例）
-    return { sprite, g, r, phase: satellitePhase(i) };
+    // 反方向公轉的（海王星的崔頓）：角速度變號，它那條軌道也鏡像，長與收的時候線才會朝它走的方向畫
+    const dir = spec.retrograde.includes(i) ? -1 : 1;
+    orbitLines[i].line.scale.z = dir;
+    return { sprite, g, r, phase: satellitePhase(i), dir };
   });
   /**
    * 每條軌道還在不在（0 到 1）：站台設定關掉的分區，它那條軌道與衛星收起來。乘在長／收的進度上，
@@ -624,11 +627,11 @@ function buildSaturn(
           currentScale = fullScale;
           // 每條軌道從自己那顆衛星現在的位置開始畫（圈是對稱的，畫完之後轉了多少都一樣）
           for (const [i, s] of satellites.entries())
-            orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r));
+            orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r) * s.dir);
         } else {
           // 軌道收回各自衛星現在的位置：畫滿的整圈轉到從衛星那裡起算（看不出差別），收的時候尾端追回衛星
           for (const [i, s] of satellites.entries())
-            if ((orbitK[i] ?? 0) >= 1) orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r));
+            if ((orbitK[i] ?? 0) >= 1) orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r) * s.dir);
           collapseFrom.ring = ringK;
           collapseFrom.orbit = [...orbitK];
           collapseFrom.sat = [...satK];
@@ -666,7 +669,7 @@ function buildSaturn(
       if (!pivot) clock += dt;
       let glowing = false;
       for (const [i, s] of satellites.entries()) {
-        const a = s.phase + clock * satelliteSpeed(s.r);
+        const a = s.phase + clock * satelliteSpeed(s.r) * s.dir;
         s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
         const target = glowTarget[i] ?? 0;
         s.g.value += (target - s.g.value) * Math.min(1, dt * 8);
