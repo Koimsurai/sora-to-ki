@@ -39,6 +39,9 @@ services:
       - backend-rs
 
   frontend:
+    # 平常直接拉發版建好的映像（.github/workflows/release.yml）；`up --build` 則從原始碼自己建，
+    # 建好的也標成這個名字。要 Sentry、Plausible 這類建置時才烤進去的設定，就得自己建
+    image: ghcr.io/koimsurai/sora-to-ki/frontend:${SORA_TO_KI_VERSION:-latest}
     build:
       context: .
       dockerfile: Dockerfile
@@ -68,6 +71,7 @@ services:
         condition: service_healthy
 
   backend-rs:
+    image: ghcr.io/koimsurai/sora-to-ki/backend:${SORA_TO_KI_VERSION:-latest}
     build:
       context: .
       dockerfile: backend/Dockerfile

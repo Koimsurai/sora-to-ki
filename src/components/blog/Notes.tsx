@@ -331,7 +331,9 @@ function Notes() {
           )}
         </div>
 
-        {shown.length === 0 && <p className="nt-empty">{t('blog.emptyFiltered')}</p>}
+        {shown.length === 0 && (
+          <p className="nt-empty">{posts.length === 0 ? t('blog.emptyNone') : t('blog.emptyFiltered')}</p>
+        )}
 
         {groups.map((g, gi) => (
           <section key={g.year} className="nt-year" aria-label={String(g.year)}>

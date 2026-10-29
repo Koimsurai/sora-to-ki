@@ -54,3 +54,8 @@ export const siteAuthor = (): string => current.author;
 export const siteTitle = (): string =>
   current.author && current.author !== current.name ? `${current.name} · ${current.author}` : current.name;
 export const siteGithub = (): string => current.github;
+
+/** 這套程式（sora-to-ki）的 repo，不是站長的 */
+export const SOFTWARE_REPO = 'https://github.com/Koimsurai/sora-to-ki';
+/** 是不是原站：站台設定裡的 GitHub 就是這套程式的作者 */
+export const isOriginSite = (github: string): boolean => github.toLowerCase() === 'koimsurai';

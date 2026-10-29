@@ -419,5 +419,14 @@ export function seed(dbPath) {
     UNSUB_TOKEN,
   );
 
+  // ── 朋友 ───────────────────────────────────────────────────────
+  // 遷移 0022 寫的兩位，後端開機時 users 是空的（＝全新安裝）會被清掉；
+  // 朋友頁的煙霧測試與計算後樣式基準是照「有兩位朋友」量的，原樣補回去
+  run(
+    `INSERT OR IGNORE INTO friend_links (slug, name, url, description, feed_url, status, sort_order, reviewed_at) VALUES
+      ('doraeyi', 'Liam', 'https://blog.doraeyi.com', '前端工程師的偵探手記', 'https://blog.doraeyi.com/rss.xml', 'approved', 1, CURRENT_TIMESTAMP),
+      ('sao-x', '影の書庫', 'https://blog.sao-x.com', '潛伏於陰影中的書庫，收藏著程式、技術與日常的筆記。', 'https://blog.sao-x.com/rss.xml', 'approved', 2, CURRENT_TIMESTAMP)`,
+  );
+
   db.close();
 }

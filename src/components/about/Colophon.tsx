@@ -9,7 +9,9 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { LocaleLink } from '@/i18n/locale-link';
 import { palette } from '@/lib/palette';
 import { lookupOr } from '@/lib/tableLookup';
+import { useSiteConfig } from '@/data/siteConfig';
 import { sameTitle } from '@/lib/pageTitle';
+import { SOFTWARE_REPO } from '@/lib/siteIdentity';
 import { after, isArriving, transitionDot } from '@/store/pageTransition';
 import { COLOPHON_QA } from './colophonQa';
 import {
@@ -61,6 +63,7 @@ const stripNumber = (q: string) => q.replace(/^(\d+\.\s*|Q:\s*)/, '');
 
 export default function Colophon() {
   const { t, i18n } = useTranslation();
+  const site = useSiteConfig();
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const qa = lookupOr(COLOPHON_QA, lang, COLOPHON_QA['zh-TW']);
   /** 問答目前看的是第幾題 */
@@ -331,11 +334,11 @@ export default function Colophon() {
     type: (
       <ul className="cl-fonts">
         <li>
-          <b className="is-serif">宙と木</b>
+          <b className="is-serif">{site.name}</b>
           <span>{t('colophon.fontSerif')}</span>
         </li>
         <li>
-          <b className="is-latin">Koimsurai</b>
+          <b className="is-latin">{site.author}</b>
           <span>{t('colophon.fontLatin')}</span>
         </li>
         <li>
@@ -384,8 +387,8 @@ export default function Colophon() {
       </div>
     ),
     license: (
-      <a className="cl-repo" href="https://github.com/Koimsurai/sora-to-ki" target="_blank" rel="noopener noreferrer">
-        github.com/Koimsurai/sora-to-ki
+      <a className="cl-repo" href={SOFTWARE_REPO} target="_blank" rel="noopener noreferrer">
+        {SOFTWARE_REPO.replace(/^https:\/\//, '')}
       </a>
     ),
   };

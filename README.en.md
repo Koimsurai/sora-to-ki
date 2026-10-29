@@ -187,6 +187,27 @@ Every PR has to pass these before it can merge (the full list is in [`.github/wo
 - **Performance**: Lighthouse CI budgets
 - **Also** (manual, not in CI): mutation testing (Stryker, cargo-mutants) to find code that tests run through but don't actually check
 
+## 🛰️ Run your own site
+
+All you need is a machine with Docker and a domain pointing at it.
+
+```bash
+git clone https://github.com/Koimsurai/sora-to-ki.git
+cd sora-to-ki
+cp .env.example .env                  # URL, domain, site name, contact
+cp .env.backend.example .env.backend  # JWT_SECRET, the first admin's login
+docker compose up -d
+```
+
+- The images are built at release time ([GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)), so nothing compiles on your machine; add `--build` to build from source instead
+- Caddy is built in: put your domain in `CADDY_ADDRESS` in `.env` and HTTPS is set up automatically. To try it locally, use `:80` and open <http://localhost>
+- The admin is at `/admin`; sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env.backend`. The site name, description and which pages are on can all be changed there (or over MCP) afterwards
+- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.1.0` in `.env`
+- The database is backed up to `./backups` every day
+
+> **Still on the way**: the content of the works, log and setup pages is still hard-coded, so they start switched off on a new site.
+> The about page is in the same state; they will become templates you can fill with your own data, one page at a time.
+
 ## ⚙️ Local development
 
 You need **Node.js ≥ 26**, **pnpm 12** and **Rust stable** (edition 2024), or just Docker.
@@ -197,15 +218,7 @@ cd sora-to-ki
 pnpm install
 ```
 
-### Run everything with Docker (easiest)
-
-```bash
-cp backend/.env.example .env.backend   # fill in JWT_SECRET
-docker compose up -d --build
-# → http://localhost:13588
-```
-
-### Run frontend and backend separately (for development)
+### Run frontend and backend separately
 
 ```bash
 # Backend: reads backend/.env
@@ -283,11 +296,11 @@ Working notes for AI assistants (Claude Code and the like) live in [`CLAUDE.md`]
 
 ## 🍴 Borrowing or forking
 
-Feel free to borrow any of the code or fork it to run your own site. A few things first:
+Feel free to borrow any of the code. If you just want to run a site, follow "Run your own site" above; no fork needed. A few things first:
 
 - The code is **AGPL-3.0**: if you modify it and **run it as a public website**, you have to publish your modified source under the same licence
 - The site's **articles, photos, moments, avatar and logo are not covered by the licence** (see below); replace them with your own after forking
-- A lot of content is tied to my accounts: Steam / GitHub / WakaTime on the activity page, the Bahamut sync, the introductions on the home and about pages, and the hardware list on the setup page. Change these to your own or remove them
+- Pull requests are not accepted
 - If you want the pre-rebuild version, start from the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)
 - Questions and bug reports are welcome as [issues](https://github.com/Koimsurai/sora-to-ki/issues)
 

@@ -33,9 +33,11 @@ const KEY: &str = "site";
 pub const TOGGLEABLE_PAGES: [&str; 9] =
     ["moments", "works", "collection", "setup", "log", "messages", "photos", "friends", "colophon"];
 
-/// 全新安裝時預設關掉的頁面：設備頁要站長自己的手繪圖紙才有東西可看。
+/// 全新安裝時預設關掉的頁面（照 [`TOGGLEABLE_PAGES`] 的順序）：
+///   · 設備頁要站長自己的手繪圖紙才有東西可看
+///   · 作品頁與航行日誌的內容還寫在程式裡（原作者的作品與里程碑），做成範本之前先關著
 /// 既有的站升級上來不會被關掉任何一頁（見 [`load_or_seed`]）。
-const OFF_ON_FRESH_INSTALL: [&str; 1] = ["setup"];
+const OFF_ON_FRESH_INSTALL: [&str; 3] = ["works", "setup", "log"];
 
 const NAME_MAX: usize = 60;
 const DESCRIPTION_MAX: usize = 300;
@@ -90,6 +92,9 @@ fn set_current(s: SiteSettings) {
 ///   2. 沒設就看寫種子的當下 `users` 表有沒有人：有人＝既有的站升級上來，所有頁面照舊開著；
 ///      沒人＝全新安裝，關掉 [`OFF_ON_FRESH_INSTALL`]。
 ///      所以這支要排在 `auth::bootstrap_admin` 之前（它會在空的 users 表建第一個管理員）。
+///
+/// 全新安裝（同樣以 `users` 是空的判斷，不管有沒有設 `SITE_DISABLED_PAGES`）還會清掉
+/// 遷移寫進去的原作者朋友。
 pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
     if let Some(raw) = sqlx::query_scalar::<_, String>("SELECT value FROM site_settings WHERE key = ?")
         .bind(KEY)
@@ -101,13 +106,21 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         return Ok(s);
     }
 
+    let (users,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users").fetch_one(pool).await?;
+    let fresh = users == 0;
+    if fresh {
+        // 遷移 0022 把原作者的兩位朋友寫進了每一個資料庫；全新的站不該一開門就掛著別人的朋友。
+        // 只清那兩筆（還沒開機過，不會有別的）
+        sqlx::query("DELETE FROM friend_links WHERE slug IN ('doraeyi', 'sao-x')").execute(pool).await?;
+    }
     let disabled_pages = if let Ok(raw) = std::env::var("SITE_DISABLED_PAGES") {
         // 不認得的 key 直接略過：種子寫壞不該讓伺服器起不來，之後在後台改得回來
         let wanted: Vec<&str> = raw.split(',').map(str::trim).collect();
         TOGGLEABLE_PAGES.iter().filter(|p| wanted.contains(p)).map(|p| (*p).to_string()).collect()
+    } else if fresh {
+        OFF_ON_FRESH_INSTALL.iter().map(|p| (*p).to_string()).collect()
     } else {
-        let (users,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users").fetch_one(pool).await?;
-        if users == 0 { OFF_ON_FRESH_INSTALL.iter().map(|p| (*p).to_string()).collect() } else { Vec::new() }
+        Vec::new()
     };
     let seed = SiteSettings {
         name: crate::identity::env_site_name(),

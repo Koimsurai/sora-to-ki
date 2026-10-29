@@ -116,7 +116,7 @@
   },
   "home": {
     "orbit": {
-      "title": "Koimsurai: notes, murmurs, work and collections",
+      "title": "{{author}}: notes, murmurs, work and collections",
       "notesCount": "{{count}} posts · latest {{date}}",
       "momentsCount": "latest {{date}}",
       "worksCount": "{{count}} projects",
@@ -653,7 +653,8 @@
     "emptyText": "The first message will show up on this line.",
     "privatePre": "For something private, write to",
     "privateMid": ". Bug reports and feature ideas fit better in",
-    "privatePost": "."
+    "privatePost": ".",
+    "privateEnd": "."
   },
   "signal": {
     "formTitle": "Send a signal",
@@ -750,7 +751,7 @@
     "title_rule3": "Grown from data",
     "text_rule3": "Every star on the works spiral grows from the numbers of one repo. Adjust the numbers to make one, then watch it grow step by step.",
     "title_license": "License",
-    "text_license": "Code is open source under AGPL-3.0; posts, photos and other content are all rights reserved.",
+    "text_license": "This site runs on sora-to-ki, open source under AGPL-3.0; posts, photos and other content are all rights reserved.",
     "swatchGround": "Black is the paper",
     "swatchPaper": "White is the ink",
     "swatchAmber": "Amber is the signal",

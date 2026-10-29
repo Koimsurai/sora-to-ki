@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { LocaleLink } from '@/i18n/locale-link';
 import { MAIN_SECTIONS } from '@/data/siteSections';
-import { useEnabledSections } from '@/data/siteConfig';
+import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
 import { saturnFrame } from '@/lib/saturnSpec';
@@ -85,6 +85,7 @@ export default function HomeOrbit() {
   const indexRef = useRef<(HTMLLIElement | null)[]>([]);
   // 開著的主要分區，由內到外對應土星的軌道：關掉一個，最外圈那條收起來、後面的往內遞補（見 starfieldGpu 的 setSections）
   const main = useEnabledSections(MAIN_SECTIONS);
+  const { author } = useSiteConfig();
   // 摺起來（CSS 的 viewport-segments）：浮動字卡換成另一半的目錄（common/FoldIndex）
   const folded = useFoldPose() !== null;
   const [flat, setFlat] = useState(false);
@@ -405,7 +406,7 @@ export default function HomeOrbit() {
       aria-labelledby="horbit-title"
     >
       <h1 id="horbit-title" className="sr-only">
-        {t('home.orbit.title')}
+        {t('home.orbit.title', { author })}
       </h1>
       <nav className="horbit-labels" aria-labelledby="horbit-title">
         {main.map((s, i) => {

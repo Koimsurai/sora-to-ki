@@ -187,6 +187,27 @@ flowchart LR
 - **效能**：Lighthouse CI 的效能預算
 - **另外**（不在 CI，手動跑）：變異測試（Stryker、cargo-mutants），找出「測試有跑到、但其實沒在檢查」的地方
 
+## 🛰️ 架自己的站
+
+只需要一台裝了 Docker 的機器，和一個指向它的網域。
+
+```bash
+git clone https://github.com/Koimsurai/sora-to-ki.git
+cd sora-to-ki
+cp .env.example .env                  # 網址、網域、站名、聯絡方式
+cp .env.backend.example .env.backend  # JWT_SECRET、第一個管理員的帳密
+docker compose up -d
+```
+
+- 映像是發版時建好的（[GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)），不必在自己機器上編譯；要從原始碼建就加 `--build`
+- 內建 Caddy：`.env` 的 `CADDY_ADDRESS` 填網域會自動申請 HTTPS；在本機試跑就填 `:80`，打開 <http://localhost>
+- 後台在 `/admin`，用 `.env.backend` 的 `ADMIN_USERNAME`／`ADMIN_PASSWORD` 登入。站名、介紹、哪幾頁要開，之後都在後台（或 MCP）改
+- 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.1.0`
+- 資料庫每天自動備份到 `./backups`
+
+> **還在路上的**：作品、航行日誌、設備這三頁的內容還寫在程式裡，新站預設是關著的；
+> 關於頁同理，之後會一頁一頁做成可以填自己資料的範本。
+
 ## ⚙️ 本機開發
 
 需要 **Node.js ≥ 26**、**pnpm 12**、**Rust stable**（edition 2024），或者只要 Docker。
@@ -197,15 +218,7 @@ cd sora-to-ki
 pnpm install
 ```
 
-### 用 Docker 跑整套（最簡單）
-
-```bash
-cp backend/.env.example .env.backend   # 填上 JWT_SECRET
-docker compose up -d --build
-# → http://localhost:13588
-```
-
-### 分開跑前後端（開發用）
+### 分開跑前後端
 
 ```bash
 # 後端：讀 backend/.env
@@ -283,11 +296,11 @@ cargo clippy --all-targets -- -D warnings
 
 ## 🍴 想參考或拿去改
 
-歡迎參考任何寫法，或直接 fork 來架自己的站。幾件事先說：
+歡迎參考任何寫法。只是想架一個站的話，照上面「架自己的站」就好，不需要 fork。幾件事先說：
 
 - 程式碼採 **AGPL-3.0**：如果你改過之後**架成網站對外提供**，也要以相同授權公開修改後的原始碼
 - 站上的**文章、照片、碎念、頭像與 logo 都不在授權範圍內**（見下方），fork 之後請換成你自己的
-- 很多內容綁定我的帳號：動態頁的 Steam／GitHub／WakaTime、動畫瘋同步、首頁與關於頁的自我介紹、設備頁的硬體清單。這些都要改成你自己的，或者直接拿掉
+- 不接受 PR
 - 想要翻新前的版本，從 tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final) 開始
 - 有問題或發現 bug 都歡迎開 [issue](https://github.com/Koimsurai/sora-to-ki/issues)
 

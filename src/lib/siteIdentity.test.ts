@@ -2,7 +2,7 @@
 // 站內連結判斷）錯了都沒有任何症狀。
 import { describe, expect, it } from 'vite-plus/test';
 
-import { isOwnHost, isOwnUrl, setSiteIdentity, siteHost, siteTitle, siteUrl } from './siteIdentity';
+import { isOriginSite, isOwnHost, isOwnUrl, setSiteIdentity, siteHost, siteTitle, siteUrl } from './siteIdentity';
 
 const config = (over: Partial<Parameters<typeof setSiteIdentity>[0]> = {}) => ({
   url: 'https://www.example.com/',
@@ -50,5 +50,11 @@ describe('siteIdentity', () => {
     expect(isOwnUrl('https://example.com/blog/1')).toBe(true);
     expect(isOwnUrl('/blog/1')).toBe(false);
     expect(isOwnUrl('https://github.com/example.com')).toBe(false);
+  });
+
+  it('只有原站會把讀者導去這套程式的 Issues', () => {
+    expect(isOriginSite('Koimsurai')).toBe(true);
+    expect(isOriginSite('someone-else')).toBe(false);
+    expect(isOriginSite('')).toBe(false);
   });
 });
