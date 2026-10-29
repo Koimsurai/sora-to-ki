@@ -65,3 +65,25 @@ export function setTheme(next: Theme) {
   paletteChanged();
   for (const fn of listeners) fn(next);
 }
+
+/**
+ * 讀者按下換主題（頂欄的天體選單，layout/ThemeMenu）。有人接手排動畫（layout/ThemeSwitchDot）的話交給它：
+ * 舊的東西先收（首頁的主星、或這一頁收進一點），收完那一刻才 setTheme（點在那時才換色）、新的主星接著長出來。
+ * 沒有人接手（還沒掛上）就直接換
+ */
+let director: ((next: Theme) => void) | null = null;
+export function setThemeDirector(fn: ((next: Theme) => void) | null) {
+  director = fn;
+}
+const requestListeners = new Set<(next: Theme) => void>();
+/** 有人按了換主題（還沒換，動畫正要開始）：頂欄的選單在這時就收起來 */
+export function onThemeRequest(fn: (next: Theme) => void): () => void {
+  requestListeners.add(fn);
+  return () => requestListeners.delete(fn);
+}
+export function requestTheme(next: Theme) {
+  if (next === currentTheme()) return;
+  for (const fn of requestListeners) fn(next);
+  if (director) director(next);
+  else setTheme(next);
+}

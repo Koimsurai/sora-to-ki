@@ -139,6 +139,10 @@ export default function StarfieldGpu({
   useEffect(() => {
     let timer = 0;
     const off = onShowcase((cmd) => {
+      if (cmd === 'collapse') {
+        if (homeRef.current) controlRef.current?.saturn(true, false);
+        return;
+      }
       if (homeRef.current) return;
       window.clearTimeout(timer);
       if (cmd === 'show') controlRef.current?.saturn(true, true);

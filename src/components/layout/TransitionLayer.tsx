@@ -28,6 +28,7 @@ import {
   reportTransition,
   currentPage,
   markTransitionFrom,
+  setArrive,
   setTransitionDot,
   takeTransitionFrom,
   type Departure,
@@ -1215,6 +1216,66 @@ export default function TransitionLayer() {
       cancelAnimationFrame(bootRingRaf);
       bootRingRaf = requestAnimationFrame(step);
     };
+    /**
+     * 一趟「點從 center 出發、飛到這一頁的錨點、這一頁接手進場」：開場與主題出場之後（arriveFrom）都用它。
+     * 這一頁早就報到了（oldGeneration −1：當成「新的一頁已經在」），第一幀就排路線
+     */
+    const arrivalRun = (center: Pt, main: HTMLElement, now: number): Run => ({
+      phase: 'fly',
+      follow: null,
+      followUntil: 0,
+      residue: null,
+      focus: null,
+      waves: [],
+      hole: null,
+      shells: [],
+      chirp: 0,
+      t0: now,
+      from: center,
+      pos: center,
+      vel: { x: 0, y: 0 },
+      launchAt: now,
+      last: now,
+      flight: null,
+      trail: [{ ...center, t: now }],
+      to: null,
+      growAt: 0,
+      main,
+      oldFirst: null,
+      // 這一頁早就報到了：當成「新的一頁已經在」，第一幀就排路線
+      oldGeneration: -1,
+      resolvedAt: 0,
+      reach: 0,
+      offset: { x: 0, y: 0 },
+      cam: { x: 0, y: 0 },
+      still: false,
+      screen: { ...center },
+      screenVel: { x: 0, y: 0 },
+      trackAt: 0,
+      carried: true,
+      dust: [],
+      report: null,
+      prevFrame: 0,
+      frames: 0,
+      maxFrame: 0,
+      longFrames: 0,
+    });
+
+    // 主題出場之後接回這一頁（store/pageTransition 的 arriveFrom）：點從那一點飛回錨點、這一頁接手進場
+    setArrive((from) => {
+      const main = mainOf();
+      if (!main || run || reduce.matches) return false;
+      // 先藏起來再拿掉裁切：路線在下一幀才排（那時才設透明度），不然這一頁會整頁閃一下
+      main.style.transition = 'none';
+      main.style.opacity = '0';
+      main.style.clipPath = '';
+      run = arrivalRun(from, main, performance.now());
+      root.dataset.pt = 'fly';
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frame);
+      return true;
+    });
+
     const enter = async () => {
       if (!root.hasAttribute('data-boot')) return;
       const quick = root.dataset.boot === 'quick';
@@ -1281,47 +1342,7 @@ export default function TransitionLayer() {
       const dot = document.querySelector('.boot-dot')?.getBoundingClientRect();
       const center = { x: window.innerWidth / 2, y: dot ? dot.top + dot.height / 2 : window.innerHeight / 2 };
       bootOrigin = center;
-      const now = performance.now();
-      const r: Run = {
-        phase: 'fly',
-        follow: null,
-        followUntil: 0,
-        residue: null,
-        focus: null,
-        waves: [],
-        hole: null,
-        shells: [],
-        chirp: 0,
-        t0: now,
-        from: center,
-        pos: center,
-        vel: { x: 0, y: 0 },
-        launchAt: now,
-        last: now,
-        flight: null,
-        trail: [{ ...center, t: now }],
-        to: null,
-        growAt: 0,
-        main,
-        oldFirst: null,
-        // 這一頁早就報到了：當成「新的一頁已經在」，第一幀就排路線
-        oldGeneration: -1,
-        resolvedAt: 0,
-        reach: 0,
-        offset: { x: 0, y: 0 },
-        cam: { x: 0, y: 0 },
-        still: false,
-        screen: { ...center },
-        screenVel: { x: 0, y: 0 },
-        trackAt: 0,
-        carried: true,
-        dust: [],
-        report: null,
-        prevFrame: 0,
-        frames: 0,
-        maxFrame: 0,
-        longFrames: 0,
-      };
+      const r = arrivalRun(center, main, performance.now());
       run = r;
       if (handoff) {
         const ring = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold(), RING_OUTER);
@@ -1473,6 +1494,7 @@ export default function TransitionLayer() {
     });
 
     return () => {
+      setArrive(null);
       bootAbort.abort();
       window.clearTimeout(bootTimer);
       cancelAnimationFrame(bootRingRaf);

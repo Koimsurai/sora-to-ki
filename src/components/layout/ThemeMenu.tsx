@@ -3,7 +3,7 @@
 //   土星：圓加一道斜環　海王星：圓加一道很淡的細環　黑洞：實心的暗圓加光子環　參宿四：圓外一圈點線（拋出去的物質）
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
-import { THEMES, setTheme, type Theme } from '@/lib/theme';
+import { THEMES, requestTheme, type Theme } from '@/lib/theme';
 
 export function ThemeGlyph({ theme }: { theme: Theme }) {
   return (
@@ -49,7 +49,7 @@ export function SkyPage() {
       <ol className="snav-page-list">
         {THEMES.map((theme) => (
           <li key={theme} className={theme === now ? 'is-live' : undefined}>
-            <button type="button" aria-pressed={theme === now} onClick={() => setTheme(theme)}>
+            <button type="button" aria-pressed={theme === now} onClick={() => requestTheme(theme)}>
               <span className="snav-row-stamp">
                 <ThemeGlyph theme={theme} />
               </span>
@@ -76,7 +76,7 @@ export function SkyRow() {
           type="button"
           className={theme === now ? 'is-on' : undefined}
           aria-pressed={theme === now}
-          onClick={() => setTheme(theme)}
+          onClick={() => requestTheme(theme)}
         >
           <ThemeGlyph theme={theme} />
           {t(`siteNav.skyNames.${theme}`)}

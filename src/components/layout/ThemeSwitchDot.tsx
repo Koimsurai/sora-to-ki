@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useRouterState } from '@tanstack/react-router';
-import { onTheme, type Theme } from '@/lib/theme';
+import { setTheme, setThemeDirector, type Theme } from '@/lib/theme';
 import { saturnRingOnScreen } from '@/lib/saturnSpec';
 import { currentFold } from '@/lib/viewportFold';
 import { absNow, latestSaturnGrow, subscribeSatellites } from '@/store/homeOrbit';
+import { arriveFrom } from '@/store/pageTransition';
 import { showcase, showcaseReady } from '@/store/themeShowcase';
 import './ThemeSwitchDot.css';
 
-/** 點在換主題之後多久開始淡入：舊的主星還在收（lib/starfieldGpu 的收約 0.5 秒），兩個疊在一起交棒 */
-const SHOW_AFTER_MS = 220;
+/** 舊的主星收成一點要多久（lib/starfieldGpu 的收約 0.5 秒）；點在收到一半時亮起來，跟它交棒 */
+const PLANET_CLOSE_MS = 550;
+const DOT_IN_MS = 300;
+/** 點換了色（參宿四是超新星那一閃）之後多久，新的主星開始長 */
+const RECOLOR_MS = 260;
 /** 新的主星長到幾成，點就交棒淡掉 */
 const HANDOFF_AT = 0.15;
 /** 一直等不到新的主星長出來（3D 掉了之類）就自己收掉 */
 const GIVE_UP_MS = 4000;
-/** 首頁以外的出場：頁面收進點、新的主星長完之後停多久、收回去要多久、頁面撐開回來 */
+/** 首頁以外：這一頁收進點要多久、新的主星長完之後停多久 */
 const PAGE_CLOSE_MS = 400;
-const HOLD_MS = 800;
-const PLANET_CLOSE_MS = 550;
+const HOLD_MS = 1500;
 const PAGE_OPEN_MS = 480;
 
 const easeIn = (t: number) => t * t * t;
@@ -43,16 +46,16 @@ const coverRadius = (c: { x: number; y: number }) =>
   Math.hypot(Math.max(c.x, window.innerWidth - c.x), Math.max(c.y, window.innerHeight - c.y));
 
 /**
- * 頁面開著時換主題（lib/theme 的 setTheme）時的那一點。
+ * 換主題的導演（lib/theme 的 requestTheme 交給它）：舊的先收、收完那一刻才換色、新的主星再從那一點長出來。
  *
- * 首頁：主星先收成一點、再長成新的那顆（lib/starfieldGpu）。新的那顆第一次畫要先編譯，會空掉一下；
- * 這段時間主星的位置上亮著一顆訊號色的點在呼吸，新的主星從它長出來時才淡掉。
+ * 首頁：舊的主星收成一點（store/themeShowcase 的 collapse）→ 點在主星的位置亮起來 → 收完了才 setTheme
+ * （點換色；參宿四是超新星那一閃）→ 新的主星從點裡長出來（lib/starfieldGpu），點交棒淡掉。
  *
- * 其他頁：主星平常不在，換了看不出來。所以讓它出場一下：這一頁收進畫面中央的一點（換頁的收法）→
- * 點換成新的顏色在呼吸 → 新的主星從點裡長出來（store/themeShowcase）→ 停一下 → 收回成點 → 這一頁撐開回來。
- * 點一下、按 Esc、換頁都會直接跳到最後。要求減少動態的訪客不演，只有顏色淡入
+ * 其他頁：這一頁收進畫面中央的一點（換頁的收法）→ 點換色 → 新的主星從點長出來（show）→ 停一下 →
+ * 收回成點（hide）→ 點從中央飛回這一頁的錨點，這一頁接手自己的進場（store/pageTransition 的 arriveFrom），
+ * 跟開場是同一個動作。點一下、按 Esc、換頁都直接收尾。
  *
- * 切到參宿四時那一點先像超新星一樣閃一下（ThemeSwitchDot.css 的 data-nova）
+ * 要求減少動態、或沒有 3D：直接換，只有顏色淡入
  */
 export default function ThemeSwitchDot() {
   const [dot, setDot] = useState<{ x: number; y: number; on: boolean; nova: boolean } | null>(null);
@@ -61,15 +64,24 @@ export default function ThemeSwitchDot() {
   useEffect(() => {
     let raf = 0;
     let timer = 0;
-    /** 現在這一趟出場的收尾（被打斷時呼叫）；沒在出場是 null */
-    let stopShowcase: (() => void) | null = null;
-
-    /** 等新的主星長到交棒的那一成，點淡掉 */
+    let alive = true;
+    /** 現在這一趟的收尾（被打斷時呼叫）；沒在演是 null */
+    let stop: (() => void) | null = null;
+    const center = () => {
+      const c = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
+      return { x: c.x, y: c.y };
+    };
+    const later = (ms: number, fn: () => void) => {
+      timer = window.setTimeout(() => {
+        if (alive) fn();
+      }, ms);
+    };
+    /** 等新的主星長到交棒的那一成（或等太久），點淡掉 */
     const handoffWhenGrown = (since: number, then?: () => void) => {
       const watch = () => {
+        if (!alive) return;
         const g = latestSaturnGrow();
-        const grown = g && g.at > since && g.planet >= HANDOFF_AT;
-        if (grown || performance.now() - since > GIVE_UP_MS) {
+        if ((g && g.at > since && g.planet >= HANDOFF_AT) || performance.now() - since > GIVE_UP_MS) {
           setDot((d) => (d ? { ...d, on: false } : d));
           then?.();
           return;
@@ -78,23 +90,33 @@ export default function ThemeSwitchDot() {
       };
       raf = window.requestAnimationFrame(watch);
     };
-
-    const onHome = (theme: Theme) => {
-      const since = performance.now();
-      timer = window.setTimeout(() => {
-        const c = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
-        setDot({ x: c.x, y: c.y, on: true, nova: theme === 'betelgeuse' });
-        handoffWhenGrown(since);
-      }, SHOW_AFTER_MS);
+    /** 點換色、新的主星從點裡長出來 */
+    const recolor = (c: { x: number; y: number }, next: Theme, grow: () => void) => {
+      setTheme(next);
+      setDot({ ...c, on: true, nova: next === 'betelgeuse' });
+      later(RECOLOR_MS, grow);
     };
 
-    const elsewhere = (theme: Theme) => {
+    const onHome = (next: Theme) => {
+      const c = center();
+      showcase('collapse');
+      later(DOT_IN_MS, () => {
+        setDot({ ...c, on: true, nova: false });
+        later(PLANET_CLOSE_MS - DOT_IN_MS, () =>
+          // 收完了：換色，3D 收到新主題就換星、從點長出來（lib/starfieldGpu 的 setTheme）
+          recolor(c, next, () => handoffWhenGrown(performance.now())),
+        );
+      });
+    };
+
+    const elsewhere = (next: Theme) => {
       const main = mainOf();
-      if (!main) return;
-      const c = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
+      if (!main) {
+        setTheme(next);
+        return;
+      }
+      const c = center();
       const reach = coverRadius(c);
-      let alive = true;
-      // 打斷用的兩個監聽器：收尾時一起拿掉
       const listening = new AbortController();
       const tween = (ms: number, step: (k: number) => void, done: () => void) => {
         const t0 = performance.now();
@@ -107,86 +129,94 @@ export default function ThemeSwitchDot() {
         };
         raf = window.requestAnimationFrame(frame);
       };
-      const finish = () => {
-        alive = false;
-        window.cancelAnimationFrame(raf);
-        window.clearTimeout(timer);
-        main.style.clipPath = '';
+      const cleanup = () => {
         listening.abort();
-        stopShowcase = null;
+        stop = null;
       };
+      // 被打斷：主題照樣換好、主星藏起來、這一頁回來
       const interrupt = () => {
+        if (main.style.clipPath) setTheme(next);
         showcase('abort');
         setDot(null);
-        finish();
+        main.style.clipPath = '';
+        cleanup();
       };
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') interrupt();
+      window.addEventListener('pointerdown', interrupt, { capture: true, signal: listening.signal });
+      window.addEventListener(
+        'keydown',
+        (e) => {
+          if (e.key === 'Escape') interrupt();
+        },
+        { capture: true, signal: listening.signal },
+      );
+      stop = interrupt;
+
+      // 4. 收回成點之後：點飛回這一頁的錨點、這一頁接手進場。轉場沒接（沒載到、已有一趟在跑）就從點撐開回來
+      const comeBack = () => {
+        cleanup();
+        if (arriveFrom(c)) {
+          setDot(null);
+          return;
+        }
+        tween(
+          PAGE_OPEN_MS,
+          (k) => {
+            clipPage(main, c, reach * easeOut(k));
+            if (k > 0.3) setDot((d) => (d ? { ...d, on: false } : d));
+          },
+          () => {
+            main.style.clipPath = '';
+          },
+        );
       };
-      // 4. 收成點之後，這一頁從點撐開回來
-      const closePlanet = () => {
-        if (!alive) return;
-        showcase('hide');
-        setDot({ x: c.x, y: c.y, on: true, nova: false });
-        timer = window.setTimeout(() => {
-          tween(
-            PAGE_OPEN_MS,
-            (k) => {
-              clipPage(main, c, reach * easeOut(k));
-              if (k > 0.3) setDot((d) => (d ? { ...d, on: false } : d));
-            },
-            finish,
-          );
-        }, PLANET_CLOSE_MS);
-      };
-      // 3. 長完（星球與環、五條軌道）停一下，收回成點
+      // 3. 長完停一下，收回成點
       const holdThenClose = (since: number) => {
         const wait = () => {
           if (!alive) return;
           const g = latestSaturnGrow();
-          if (g && g.at > since && g.ring >= 1) {
-            timer = window.setTimeout(closePlanet, HOLD_MS + 700);
-            return;
-          }
-          if (performance.now() - since > GIVE_UP_MS) {
-            closePlanet();
+          if ((g && g.at > since && g.ring >= 1) || performance.now() - since > GIVE_UP_MS) {
+            later(HOLD_MS, () => {
+              showcase('hide');
+              later(DOT_IN_MS, () => setDot({ ...c, on: true, nova: false }));
+              later(PLANET_CLOSE_MS, comeBack);
+            });
             return;
           }
           raf = window.requestAnimationFrame(wait);
         };
         raf = window.requestAnimationFrame(wait);
       };
-
-      window.addEventListener('pointerdown', interrupt, { capture: true, signal: listening.signal });
-      window.addEventListener('keydown', onKey, { capture: true, signal: listening.signal });
-      stopShowcase = interrupt;
-      // 1. 這一頁收進中央那一點，點亮起來
+      // 1. 這一頁收進中央那一點（舊的顏色），點亮起來
       tween(
         PAGE_CLOSE_MS,
         (k) => {
           clipPage(main, c, reach * (1 - easeIn(k)));
-          if (k > 0.6) setDot((d) => d ?? { x: c.x, y: c.y, on: true, nova: theme === 'betelgeuse' });
+          if (k > 0.6) setDot((d) => d ?? { ...c, on: true, nova: false });
         },
-        () => {
-          // 2. 新的主星從點裡長出來
-          const since = performance.now();
-          showcase('show');
-          handoffWhenGrown(since, () => holdThenClose(since));
-        },
+        // 2. 收完了：點換色，新的主星從點長出來
+        () =>
+          recolor(c, next, () => {
+            const since = performance.now();
+            showcase('show');
+            handoffWhenGrown(since, () => holdThenClose(since));
+          }),
       );
     };
 
-    const off = onTheme((theme) => {
-      stopShowcase?.();
+    setThemeDirector((next) => {
+      stop?.();
       window.cancelAnimationFrame(raf);
       window.clearTimeout(timer);
-      if (planetOnScreen()) onHome(theme);
-      else if (showcaseReady() && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) elsewhere(theme);
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setTheme(next);
+      else if (planetOnScreen()) onHome(next);
+      else if (showcaseReady()) elsewhere(next);
+      else setTheme(next);
     });
     return () => {
-      off();
-      // 出場中換頁（pathname 變了）也走這裡：直接收尾
-      stopShowcase?.();
+      // 換頁（pathname 變了）或卸載：直接收尾
+      setThemeDirector(null);
+      stop?.();
+      alive = false;
       window.cancelAnimationFrame(raf);
       window.clearTimeout(timer);
     };

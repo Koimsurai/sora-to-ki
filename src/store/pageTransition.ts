@@ -200,3 +200,14 @@ export const isArriving = () => {
   const booting = root.hasAttribute('data-boot') && root.dataset.bootRing !== 'go';
   return pt === 'out' || pt === 'fly' || booting;
 };
+
+/**
+ * 「從這一點飛回這一頁」：點從 from（畫面座標）出發、落在這一頁的錨點，這一頁接手自己的進場——
+ * 跟開場一樣的動作（layout/TransitionLayer 註冊）。首頁以外換主題、新主星出場完之後用它接回這一頁
+ * （layout/ThemeSwitchDot）。轉場沒載到、或已經有一趟在跑，回傳 false，呼叫端自己收尾
+ */
+let arrive: ((from: Pt) => boolean) | null = null;
+export function setArrive(fn: ((from: Pt) => boolean) | null) {
+  arrive = fn;
+}
+export const arriveFrom = (from: Pt): boolean => arrive?.(from) ?? false;

@@ -20,7 +20,7 @@ import { useEnabledSections } from '@/data/siteConfig';
 import NavMenus, { type MenuKey } from './NavMenus';
 import { SkyRow, ThemeGlyph } from './ThemeMenu';
 import { useTheme } from '@/hooks/useTheme';
-import { onTheme } from '@/lib/theme';
+import { onThemeRequest } from '@/lib/theme';
 import './SiteNav.css';
 
 const MORE = MORE_SECTIONS;
@@ -59,10 +59,10 @@ export default function SiteNav() {
   /** 開過一次選單之後才開始抓選單要的資料 */
   const [armed, setArmed] = useState(false);
   const moreOpen = open !== null;
-  // 選了一個天體（換主題）就把選單收起來：首頁以外會接著演新主星的出場（layout/ThemeSwitchDot），選單不要蓋在上面
+  // 按了一個天體（換主題）就把選單收起來：接著要演舊的收、新主星出場（layout/ThemeSwitchDot），選單不要蓋在上面
   useEffect(
     () =>
-      onTheme(() => {
+      onThemeRequest(() => {
         setOpen(null);
         setMenuOpen(false);
       }),
