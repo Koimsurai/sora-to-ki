@@ -1,0 +1,20 @@
+/* 站長才看得到的「去填內容」：右下角一個點線框的小標籤。只用點與線，琥珀是因為它是「該你做的事」 */
+.owner-fill-hint {
+  position: fixed;
+  right: calc(var(--space-4) + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-chrome);
+  padding: var(--space-1) var(--space-2);
+  border: 1px dashed var(--signal);
+  color: var(--signal);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-4);
+  text-decoration: none;
+  background: var(--veil-2);
+}
+
+.owner-fill-hint:hover,
+.owner-fill-hint:focus-visible {
+  background: var(--signal-wash);
+}

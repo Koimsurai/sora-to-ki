@@ -1,0 +1,60 @@
+/* 後台「頁面」：一筆一列，欄位依寬度排；動作（上移、下移、刪除）在列尾。分隔只用點線 */
+.pg-editor {
+  gap: var(--space-4);
+}
+
+/* 語系切換是一組 fieldset：拿掉瀏覽器預設的框與內距，長得跟上面的分頁一樣 */
+.pg-langs {
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pg-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-4);
+  align-items: end;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px dotted var(--line);
+}
+
+.pg-row-chapter {
+  grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.pg-wide {
+  grid-column: 1 / -1;
+}
+
+.pg-row .adm-row-actions {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.pg-add {
+  align-self: flex-start;
+}
+
+.pg-save {
+  position: sticky;
+  bottom: 0;
+  align-items: center;
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--line);
+  background: var(--veil-3);
+}
+
+.pg-save .adm-meta {
+  margin-right: auto;
+}
+
+@media (max-width: 640px) {
+  .pg-row,
+  .pg-row-chapter {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

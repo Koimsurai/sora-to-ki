@@ -9,14 +9,17 @@ import KoimLoader from '@/components/common/KoimLoader';
 import { seoMetaFor } from '@/seo/pageSeo';
 import { blogListJsonLd } from '@/seo/seoMeta';
 import { isPageDisabled } from '@/data/siteConfig';
+import { prefetchPageContent } from '@/data/pageContent';
 
 interface PageGateContext {
   context: { queryClient: QueryClient };
 }
 
-/** 站台設定把這一頁關掉了 → 404（跟打錯網址一樣，不透露這裡曾經有一頁） */
+/** 站台設定把這一頁關掉了 → 404（跟打錯網址一樣，不透露這裡曾經有一頁）；
+ *  開著的話順便把站長填的內容抓好（關於、作品…），SSR 首幀就是填好的樣子 */
 async function gate({ context }: PageGateContext, basePath: string) {
   if (await isPageDisabled(context.queryClient, basePath)) throw notFound();
+  await prefetchPageContent(context.queryClient, basePath);
 }
 
 // 共用:把現有頁面元件包成 Start 路由 options(LocaleProvider 包覆 + 逐 locale hreflang)。
