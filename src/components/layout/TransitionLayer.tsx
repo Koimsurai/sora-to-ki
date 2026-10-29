@@ -112,10 +112,10 @@ onTheme((theme) => {
 /** 海王星的預言落點（predicted）：圈的半徑、外面那四道刻度的長度（px） */
 const PREDICT_R = 10;
 const PREDICT_TICK = 4;
-/** 海王星的彈弓：起步偏離直線幾 rad、起步與進場的切線是直飛那段的幾倍長（越長弧越大） */
-const SLING_TURN = 1.9;
-const SLING_OUT = 2.2;
-const SLING_IN = 1.4;
+/** 海王星的彈弓（flyby）：路線被那顆星彎了多少（rad）、近拱點到出口是直飛那段的幾倍長、那顆星畫多大（px） */
+const SLING_DEFLECT = (110 * Math.PI) / 180;
+const SLING_ARM = 0.75;
+const SLING_BODY_R = 8;
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 
@@ -204,6 +204,8 @@ interface Run {
   reach: number;
   /** 新的一頁在世界裡挪了多少；鏡頭現在的位移（畫面 = 世界 − cam） */
   offset: Pt;
+  /** 海王星的彈弓繞過的那顆星（世界座標）；沒有彈弓是 null */
+  focus: Pt | null;
   cam: Pt;
   /** 點不用飛（已經在錨點上）：鏡頭不動 */
   still: boolean;
@@ -266,6 +268,41 @@ function defaultLeave(main: HTMLElement, point: Pt, alive: () => boolean): Depar
     requestAnimationFrame(step);
   });
   return { point, done };
+}
+
+/**
+ * 海王星的重力彈弓：航海家 2 號 1989 年飛掠海王星，軌道被它拉彎——那是一條雙曲線，焦點就是那顆星。
+ * 直直進來、在離星最近的地方急轉、再直直出去，偏折 SLING_DEFLECT。
+ * 照真的雙曲線算（焦點在原點、p = 1：r = 1 / (1 + e cos ν)，偏折 δ 對應 e = 1 / sin(δ/2)），
+ * 轉到出去的方向是 outDir、縮放到近拱點離出口 SLING_ARM × L，再把入口挪到 start。
+ * side 決定往哪邊繞。回傳路上的點與那顆星（焦點）的位置
+ */
+function flyby(start: Pt, outDir: Pt, L: number, side: number): { points: Pt[]; focus: Pt } {
+  const e = 1 / Math.sin(SLING_DEFLECT / 2);
+  const nuMax = Math.acos(-1 / e) * 0.86;
+  const n = 64;
+  const raw = Array.from({ length: n + 1 }, (_, i) => {
+    const nu = -nuMax + (2 * nuMax * i) / n;
+    const radius = 1 / (1 + e * Math.cos(nu));
+    return { x: radius * Math.cos(nu), y: side * radius * Math.sin(nu) };
+  });
+  const last = raw[n];
+  const before = raw[n - 1];
+  const peri = raw[n / 2];
+  const turn = Math.atan2(outDir.y, outDir.x) - Math.atan2(last.y - before.y, last.x - before.x);
+  const k = (SLING_ARM * L) / Math.hypot(last.x - peri.x, last.y - peri.y);
+  const c = Math.cos(turn) * k;
+  const sn = Math.sin(turn) * k;
+  const place = (p: Pt): Pt => ({ x: p.x * c - p.y * sn, y: p.x * sn + p.y * c });
+  const first = place(raw[0]);
+  const move = { x: start.x - first.x, y: start.y - first.y };
+  return {
+    points: raw.map((p) => {
+      const q = place(p);
+      return { x: q.x + move.x, y: q.y + move.y };
+    }),
+    focus: move,
+  };
 }
 
 /** 三次 Hermite：從 p0（切向 m0）到 p1（切向 m1） */
@@ -549,32 +586,18 @@ export default function TransitionLayer() {
       const brake = clamp(len(toStop) * 1.1 + 160, 200, Math.min(w, h));
       // 頁面給了畫面外的那段路，鏡頭就沿著它跟拍：起頭的直線只要短短一段，把點接上那條路
       const L = join > 0 ? Math.min(w, h) * 0.2 : Math.max(Math.min(w, h) * TRAVEL, brake + 220);
-      // 世界裡：從點現在的位置沿 inDir 直直飛 L，終點就是（挪過的）那條線的起點
-      const end = { x: r.pos.x + inDir.x * L, y: r.pos.y + inDir.y * L };
+      const v0 = len(r.vel) > 0.05 ? unit(r.vel) : inDir;
+      // 世界裡：從點現在的位置沿 inDir 直直飛 L，終點就是（挪過的）那條線的起點；起步稍微帶一點點原本的方向。
+      // 海王星是重力彈弓（flyby）：沿雙曲線繞過一顆星，出去的方向接上那條線，終點由那條雙曲線決定
+      const m0 = unit({ x: inDir.x + 0.3 * v0.x, y: inDir.y + 0.3 * v0.y });
+      const sling = THEME === 'neptune' ? flyby(r.pos, inDir, L, v0.x * inDir.y - v0.y * inDir.x >= 0 ? -1 : 1) : null;
+      const end = sling ? (sling.points.at(-1) ?? r.pos) : { x: r.pos.x + inDir.x * L, y: r.pos.y + inDir.y * L };
+      r.focus = sling?.focus ?? null;
       const O = { x: end.x - target.x, y: end.y - target.y };
       const shift = (p: Pt): Pt => ({ x: p.x + O.x, y: p.y + O.y });
-      // 起步稍微帶一點點原本的方向，其餘是直的
-      const v0 = len(r.vel) > 0.05 ? unit(r.vel) : inDir;
-      let m0 = unit({ x: inDir.x + 0.3 * v0.x, y: inDir.y + 0.3 * v0.y });
-      let reach = { start: L, end: L };
-      // 海王星：重力彈弓（航海家 2 號 1989 年飛掠海王星，軌道被它拉彎）。起步被拉偏到原本速度的那一側，
-      // 繞一道大弧再順著頁面的線進來；土星是直的
-      if (THEME === 'neptune') {
-        const side = v0.x * inDir.y - v0.y * inDir.x >= 0 ? -1 : 1;
-        const turn = side * SLING_TURN;
-        m0 = {
-          x: inDir.x * Math.cos(turn) - inDir.y * Math.sin(turn),
-          y: inDir.x * Math.sin(turn) + inDir.y * Math.cos(turn),
-        };
-        reach = { start: L * SLING_OUT, end: L * SLING_IN };
-      }
-      const lead = hermite(
-        r.pos,
-        { x: m0.x * reach.start, y: m0.y * reach.start },
-        end,
-        { x: inDir.x * reach.end, y: inDir.y * reach.end },
-        64,
-      );
+      const lead = sling
+        ? sling.points
+        : hermite(r.pos, { x: m0.x * L, y: m0.y * L }, end, { x: inDir.x * L, y: inDir.y * L }, 48);
       const points = [...lead, ...(approach ? approach.slice(1).map(shift) : [])];
       const cum = [0];
       for (let i = 1; i < points.length; i++)
@@ -752,6 +775,18 @@ export default function TransitionLayer() {
         world(() => {
           drawDust(r, dt, 1);
           tail(r.trail, now);
+          // 彈弓繞過的那顆星：點靠近時浮出來，繞過去之後淡掉
+          if (r.focus) {
+            const d = len({ x: r.pos.x - r.focus.x, y: r.pos.y - r.focus.y });
+            const near = 1 - smooth(SLING_BODY_R * 6, SLING_BODY_R * 40, d);
+            if (near > 0.01) {
+              ctx.strokeStyle = `rgba(${INK}, ${(0.65 * near).toFixed(3)})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.arc(r.focus.x, r.focus.y, SLING_BODY_R, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+          }
           // 預言的落點：點這一趟最後會停的地方（路的終點，世界座標）；飛過三成之後慢慢浮出來
           const f = r.flight;
           const goal = f?.points.at(-1);
@@ -939,6 +974,7 @@ export default function TransitionLayer() {
         follow: null,
         followUntil: 0,
         residue: null,
+        focus: null,
         t0: now,
         from: center,
         pos: center,
@@ -1044,6 +1080,7 @@ export default function TransitionLayer() {
           follow: departure.follow ?? null,
           followUntil: performance.now() + (departure.followMs ?? 0),
           residue: departure.residue ?? null,
+          focus: null,
           t0: performance.now(),
           from: departure.point,
           pos: departure.point,
