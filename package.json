@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
-    "@excalidraw/mermaid-to-excalidraw": "^2.2.2",
+    "@excalidraw/mermaid-to-excalidraw": "^3.1.0",
     "@fontsource-variable/fira-code": "5.3.0",
     "@fontsource-variable/tasa-orbiter": "^5.3.0",
     "@fontsource/instrument-serif": "5.3.0",

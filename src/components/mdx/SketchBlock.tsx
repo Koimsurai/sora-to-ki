@@ -124,7 +124,8 @@ export default function SketchBlock({ chart = '', title }: SketchBlockProps) {
         const { parseMermaidToExcalidraw } = m2eMod as unknown as MermaidToExcalidrawApi;
         const { convertToExcalidrawElements, exportToSvg } = excalMod as unknown as ExcalidrawApi;
 
-        // mermaid → excalidraw skeleton（含 mermaid 自動排版算好的座標）
+        // mermaid 語法 → excalidraw skeleton（3.x 起排版由 pele 算，不再帶 mermaid 本體；
+        // 長的中日文標籤會在任意兩字之間斷，作者要自己用 <br/> 斷在詞與詞之間）
         const { elements, files } = await parseMermaidToExcalidraw(def);
         const built = convertToExcalidrawElements(elements);
 
