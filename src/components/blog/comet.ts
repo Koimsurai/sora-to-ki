@@ -6,11 +6,11 @@
 // 座標分兩種：版面座標以頁面容器左上角為原點（捲動不變），畫面座標是視窗座標。
 // 畫布固定在視窗上，每一幀把版面座標加上容器目前的位置（origin）。
 
+import { palette } from '@/lib/palette';
 import { currentFold, type Fold } from '@/lib/viewportFold';
 import type { Pt } from '@/store/pageTransition';
 
-const AMBER = '233, 193, 122';
-const INK = '241, 236, 227';
+const { paper: INK, amber: AMBER } = palette();
 
 /** 弧線一個來回的高度：大約一個半螢幕，捲著看會左右擺 */
 const PERIOD = 1300;

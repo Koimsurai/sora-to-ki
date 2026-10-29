@@ -11,6 +11,7 @@ import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 
 import { parseMermaidFrontmatter } from '@/lib/mdx/mermaidFrontmatter';
 import { mermaidKey } from '@/lib/mdx/mermaidFences';
 import { useMermaidSvgs } from '@/contexts/mermaidSvgs';
+import { palette } from '@/lib/palette';
 import { lookup } from '@/lib/tableLookup';
 // 圖表樣式跟著元件走（同名檔）。⚠ 這行會讓這份 CSS 排在 BlogPost.css **之前**——
 // BlogPost.tsx 的 import 清單裡 `./MermaidBlock` 在 `./BlogPost.css` 前面。
@@ -261,7 +262,7 @@ function downloadMermaidPng(ref: ReactZoomPanPinchRef | null): void {
   const w = vb.width || svg.getBoundingClientRect().width || 800;
   const h = vb.height || svg.getBoundingClientRect().height || 600;
   const scale = 2;
-  const background = getComputedStyle(svg).getPropertyValue('--mm-export-bg').trim() || '#0a0a0c';
+  const background = getComputedStyle(svg).getPropertyValue('--mm-export-bg').trim() || `rgb(${palette().ground})`;
   const data = new XMLSerializer().serializeToString(standaloneSvg(svg));
   const img = new Image();
   img.onload = () => {

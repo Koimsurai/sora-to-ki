@@ -6,11 +6,11 @@
 // 這裡只有畫圖，不碰 React。
 import type { OrbitGeom } from '@/lib/articleOrbit';
 import type { Pt } from '@/store/pageTransition';
+import { palette } from '@/lib/palette';
 import { currentFold, type Fold } from '@/lib/viewportFold';
 
 const TAU = Math.PI * 2;
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const { paper: INK, amber: AMBER } = palette();
 /** 背景的星（每一顆都拖著一道淡淡的軌跡） */
 const FIELD = 640;
 /** 再補一批只落在內圈的（離天極 INNER_REACH 以內）：面積均勻撒的話天極附近太空，像缺了一塊 */

@@ -4,9 +4,9 @@
 // 換頁時頻道起點振一下（像超聲波探頭），一道琥珀色的光沿頻道跑：進場跑進天線、離場從天線倒著跑回起點，
 // 頻道跟著它長出來、收回去。
 // 這裡只畫線與天線，狀態文字（RX／TX）是疊在上面的 DOM。
+import { palette } from '@/lib/palette';
 
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const { paper: INK, amber: AMBER } = palette();
 const TAU = Math.PI * 2;
 
 /** 收訊天線（public/illustrations/dsn-dish.webp，669×865）：饋源的位置（原圖比例）。

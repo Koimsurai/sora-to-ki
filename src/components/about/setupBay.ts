@@ -11,6 +11,7 @@
 //
 // 摺疊機摺起來（lib/viewportFold）：書本式太空梭在左半、老家那台在右半，圖紙的零件表那欄剛好在右半；
 // 筆電式俯視圖轉成機頭朝右放在上半，零件表從下半升起。
+import { DEFAULT_PALETTE } from '@/lib/palette';
 import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
 import { artSrc, BASE, partsSrc, PAYLOADS, type Payload, type Pt as Pct } from './setupPayloads';
 
@@ -178,9 +179,9 @@ export function createBay(opts: BayOptions) {
   const ctx: CanvasRenderingContext2D = maybe;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const css = getComputedStyle(root);
-  const INK = css.getPropertyValue('--paper-rgb').trim() || '241, 236, 227';
-  const AMB = css.getPropertyValue('--amber-rgb').trim() || '233, 193, 122';
-  const GROUND_RGB = css.getPropertyValue('--ground-rgb').trim() || '10, 10, 12';
+  const INK = css.getPropertyValue('--paper-rgb').trim() || DEFAULT_PALETTE.paper;
+  const AMB = css.getPropertyValue('--amber-rgb').trim() || DEFAULT_PALETTE.amber;
+  const GROUND_RGB = css.getPropertyValue('--ground-rgb').trim() || DEFAULT_PALETTE.ground;
   const GROUND = `rgb(${GROUND_RGB})`;
   const MONO = css.getPropertyValue('--mono-font').trim() || 'monospace';
   const ground = (a: number) => `rgba(${GROUND_RGB}, ${a})`;

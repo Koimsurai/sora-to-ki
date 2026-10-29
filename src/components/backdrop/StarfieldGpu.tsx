@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { InitTiming, PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
+import { palette } from '@/lib/palette';
 import { currentFold, subscribeFold } from '@/lib/viewportFold';
 
 /** 徽章上的一行：開頁多久之後就緒、各段各花多少（土星出來得慢時看是卡在哪一段） */
@@ -254,6 +255,7 @@ export default function StarfieldGpu({
             fold: currentFold(),
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
+            palette: palette(),
           },
           [offscreen],
         ),
@@ -341,6 +343,7 @@ export default function StarfieldGpu({
             fold: currentFold(),
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
+            palette: palette(),
             onPerf: setPerf,
             onDeviceLost: (message) => {
               if (!disposed) recover(message);

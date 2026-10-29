@@ -2,12 +2,14 @@
 // 在太空拍的照片要經過一趟傳輸才看得到：相機把畫面轉成 0 和 1，天線把訊號送回地球，
 // 地面站的巨型天線接住，再解碼、上色。這裡畫三樣東西：頁首的地面站與遠處的探測器、
 // 每個月收到幾張的接收紀錄、每一張照片進畫面時的接收過程。只有畫圖，不碰 React。
+import { palette } from '@/lib/palette';
 
 const TAU = Math.PI * 2;
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const COLORS = palette();
+const INK = COLORS.paper;
+const AMBER = COLORS.amber;
 /** 紙色（--ground）：整頁遮罩先鋪這一層，底下的內容才不會透出來 */
-const GROUND = '#0a0a0c';
+const GROUND = `rgb(${COLORS.ground})`;
 const rgba = (c: string, a: number) => `rgba(${c}, ${a.toFixed(3)})`;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
