@@ -25,10 +25,12 @@ import {
   SUN,
   TILT,
 } from '@/lib/saturnSpec';
-import { channels, palette } from '@/lib/palette';
+import { channels, onPalette, palette } from '@/lib/palette';
 
 const TAU = Math.PI * 2;
 const COLORS = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => Object.assign(COLORS, p));
 /** 逐像素混色用的三個數字；畫線與點用下面的字串 */
 const INK = channels(COLORS.paper);
 const GROUND = channels(COLORS.ground);

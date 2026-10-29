@@ -1,10 +1,14 @@
 // 404 的畫面：一個繫繩斷掉的太空人在黑裡慢慢漂、慢慢翻滾，偶爾往前漂近一點又退回去。
 // 斷掉的那一端還在閃，也還在發訊號，但每一道都斷在半路。
 // 星空是全站背景在畫（這裡不畫星），這裡只畫太空人、斷端與斷掉的訊號。
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 import { isShortLandscape } from '@/lib/viewportShape';
 
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+});
 const TAU = Math.PI * 2;
 
 /** 太空人線稿（public/illustrations/404-astronaut.webp，731×727）：繫繩斷端的位置與它朝的方向（原圖） */

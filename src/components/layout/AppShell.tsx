@@ -4,6 +4,7 @@ import { stripLocalePrefix } from '@/i18n/start-i18n';
 import SiteNav from './SiteNav';
 import ScrollToTop from './ScrollToTop';
 import ThemePreviewSwitch from './ThemePreviewSwitch';
+import ThemeSwitchDot from './ThemeSwitchDot';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
 import { loadSpaceBackdropShell } from '@/components/backdrop/prewarm';
 import type * as TransitionLayerModule from './TransitionLayer';
@@ -158,6 +159,12 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
           <Suspense fallback={null}>
             <ContextMenu />
           </Suspense>
+        </ClientOnly>
+      )}
+      {/* 換主題時主星收成的那一點（lib/theme）：只在首頁的 3D 主星在畫面上時出現 */}
+      {!isAdminPage && (
+        <ClientOnly fallback={null}>
+          <ThemeSwitchDot />
         </ClientOnly>
       )}
       {/* 主題預覽的切換：只在 dev 出現（lib/theme） */}

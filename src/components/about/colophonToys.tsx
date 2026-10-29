@@ -10,11 +10,15 @@ import { useTranslation } from 'react-i18next';
 import { RX_PHASES } from '@/components/gallery/downlink';
 import { WORKS, worksQueryOptions } from '@/data/works';
 import { loadPhotosManifest } from '@/lib/manifestLoader';
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 import { createTrails, drawOrbits, renderSaturn, satelliteAt, SATURN_STEPS } from './colophonSaturn';
 import { bodiesOf, createSpiral, drawBody, drawGlyph, workStatsOf, type WorkStats } from './worksSky';
 
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+});
 const TAU = Math.PI * 2;
 
 /** 畫布跟著容器的大小、清掉、設好像素比；回傳 CSS 像素的寬高 */

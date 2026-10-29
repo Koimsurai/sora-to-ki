@@ -18,9 +18,9 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import { isBotUserAgent } from '@/lib/bot';
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 import { PLANETS, saturnGrowAt, saturnRingOnScreen } from '@/lib/saturnSpec';
-import { currentTheme } from '@/lib/theme';
+import { currentTheme, onTheme } from '@/lib/theme';
 import { currentFold, offCrease } from '@/lib/viewportFold';
 import {
   after,
@@ -94,13 +94,21 @@ const TAIL_ARCS = PLANETS.neptune.ring.arcs.map(([, from, to]) => [
   ((from * 180) / Math.PI) * TAIL_ARC_PX,
   ((to * 180) / Math.PI) * TAIL_ARC_PX,
 ]);
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+});
 /**
- * 主題（lib/theme）：編排全站一份，畫法跟著主題換——收（defaultLeave）、尾巴（tail）、開場交棒的環。
- * 跟配色一樣在模組載入時讀一次：主題在 paint 之前就掛上了，比這支早
+ * 主題（lib/theme）：編排全站一份，畫法跟著主題換——尾巴（tail）、彈弓、預言的落點、開場交棒的環。
+ * 跟配色一樣在模組載入時讀一次（主題在 paint 之前就掛上了，比這支早），頁面開著時換了由 onTheme 更新
  */
-const THEME = currentTheme();
-const RING_OUTER = PLANETS[THEME].ring.outer;
+let THEME = currentTheme();
+let RING_OUTER = PLANETS[THEME].ring.outer;
+onTheme((theme) => {
+  THEME = theme;
+  RING_OUTER = PLANETS[theme].ring.outer;
+});
 /** 海王星的預言落點（predicted）：圈的半徑、外面那四道刻度的長度（px） */
 const PREDICT_R = 10;
 const PREDICT_TICK = 4;

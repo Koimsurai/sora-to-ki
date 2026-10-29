@@ -114,6 +114,11 @@ export interface StarfieldRunner {
   setPan(x: number, y: number): void;
   /** 開著幾個主要分區：土星留下幾條軌道（站台設定改了就呼叫，多的收起來、少的長出來） */
   setSections(count: number): void;
+  /**
+   * 頁面開著時換了主題（lib/theme 的 setTheme）：主星顯示中的話先收成一點，在點的那一刻換成新主題的主星，
+   * 再從那一點長出來；沒顯示的話直接換掉
+   */
+  setTheme(theme: Theme, palette: Palette): void;
   dispose(): void;
 }
 
@@ -469,17 +474,37 @@ function buildSaturn(
     const along = dot(p, sun).negate();
     const closest = p.add(sun.mul(along));
     const shade = select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.12), float(1));
-    // 環上的弧（海王星的 Adams 環）：跟著環轉，所以角度用轉過的 q
-    let tone = ringTone(r);
-    if (ringSpec.arcs.length) {
-      const a = atan(q.z, q.x);
-      for (const [at, from, to, value] of ringSpec.arcs) {
-        const along = smoothstep(from - 0.02, from + 0.02, a).mul(smoothstep(to + 0.02, to - 0.02, a));
-        tone = tone.add(along.mul(smoothstep(0.012, 0.004, abs(r.sub(at)))).mul(value));
+    if (!ringSpec.brushed) {
+      // 細環（海王星）：每一道畫成至少一個像素寬的髮絲。比一個像素還細的照比例變淡，而不是照原寬去取樣——
+      // 那樣線有時落在像素上、有時沒有，整圈會斷成虛線（實際發生過）
+      const px = fwidth(r).max(0.00001);
+      const hairline = (at: number, half: number) => {
+        const reach = px.mul(0.5).max(half);
+        const cover = reach
+          .add(px.mul(0.5))
+          .sub(abs(r.sub(at)))
+          .div(px)
+          .clamp(0, 1);
+        return cover.mul(
+          float(half * 2)
+            .div(px)
+            .min(1),
+        );
+      };
+      let thin: FloatNode = float(0);
+      for (const [inner, outer, value] of ringSpec.segments)
+        thin = thin.add(hairline((inner + outer) / 2, (outer - inner) / 2).mul(value));
+      // 環上的弧（Adams 環）：跟著環轉，所以角度用轉過的 q；弧比環亮、也寬一點
+      if (ringSpec.arcs.length) {
+        const a = atan(q.z, q.x);
+        for (const [at, from, to, value] of ringSpec.arcs) {
+          const along = smoothstep(from - 0.02, from + 0.02, a).mul(smoothstep(to + 0.02, to - 0.02, a));
+          thin = thin.add(along.mul(hairline(at, 0.012)).mul(value));
+        }
       }
+      return thin.mul(ringSpec.gain).mul(shade).clamp(0, 1);
     }
-    if (!ringSpec.brushed) return tone.mul(shade).clamp(0, 1);
-    const ink = tone
+    const ink = ringTone(r)
       .mul(ringlets)
       .mul(mix(float(0.4), float(1), brush))
       .mul(shade)
@@ -832,20 +857,31 @@ export async function createStarfieldRunner(
   const saturnCam = new THREE.PerspectiveCamera(SATURN_FOV, aspect0, 1, 200);
   saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
   // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
-  const colors = init.palette ?? DEFAULT_PALETTE;
-  const saturn = buildSaturn(
-    new THREE.Vector3(...SUN).multiplyScalar(10),
-    {
-      INK: threeColor(colors.paper),
-      GROUND: threeColor(colors.ground),
-      AMBER: threeColor(colors.amber),
-    },
-    init.sections ?? ORBITS.length,
-    PLANETS[init.theme ?? 'saturn'],
-  );
+  let sections = init.sections ?? ORBITS.length;
+  const planetFor = (theme: Theme, colors: Palette) =>
+    buildSaturn(
+      new THREE.Vector3(...SUN).multiplyScalar(10),
+      {
+        INK: threeColor(colors.paper),
+        GROUND: threeColor(colors.ground),
+        AMBER: threeColor(colors.amber),
+      },
+      sections,
+      PLANETS[theme],
+    );
+  let saturn = planetFor(init.theme ?? 'saturn', init.palette ?? DEFAULT_PALETTE);
   saturn.setView(init.width, init.height, init.fold ?? null);
   let viewW = init.width;
   let viewH = init.height;
+  let viewFold = init.fold ?? null;
+  let glowNow: number[] = [];
+  /**
+   * 換主題：舊的收成一點之後才建新的（commitTheme）。新的第一次畫到時會同步編譯 shader、停一下，
+   * 那一刻畫面上只剩一個點，看不出來。
+   * ⚠️ 不要在背景先 saturnPass.compileAsync：畫面還在畫同一個 pass 的時候編它，WebGPU 判定
+   *   「output 這張貼圖同時被寫又被讀」，接著整個 device 掉了（實際發生過，3D 被迫重建）
+   */
+  let pendingTheme: { theme: Theme; palette: Palette } | null = null;
   let saturnVisible = false;
   let saturnAnimate = true;
   let scrollY = 0;
@@ -974,6 +1010,8 @@ export async function createStarfieldRunner(
       const s = saturn.update(delta, scrollY, saturnAnimate);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
+      // 換主題：收成一點了（不再動）才換
+      if (pendingTheme && !saturnAnimate && !s.moving) commitTheme();
       // 附上算出位置的時間（跟主執行緒共用的時基），首頁的字照它推算到自己那一幀（store/homeOrbit）
       init.onSatellites?.(saturn.project(saturnCam, viewW, viewH), performance.timeOrigin + performance.now());
       if (s.grow) init.onSaturnGrow?.(s.grow);
@@ -1028,6 +1066,39 @@ export async function createStarfieldRunner(
   };
   void renderer.setAnimationLoop(loop);
 
+  /** 拿掉一顆主星：從場景移除、釋放幾何與材質 */
+  function disposeRig(rig: SaturnRig) {
+    saturnScene.remove(rig.group);
+    rig.group.traverse((o) => {
+      // Sprite 的 quad geometry 是 three 內部共享的，不能 dispose（同 dispose() 那段），只釋放材質
+      if (o instanceof THREE.Mesh || o instanceof THREE.Line) (o.geometry as THREE.BufferGeometry).dispose();
+      if (o instanceof THREE.Mesh || o instanceof THREE.Line || o instanceof THREE.Sprite) {
+        const mats = o.material as THREE.Material | THREE.Material[];
+        for (const m of Array.isArray(mats) ? mats : [mats]) m.dispose();
+      }
+    });
+  }
+
+  /** 拿掉舊的主星，換上 pendingTheme 的，從一點長出來。舊的這時已經收成一點，看不出換的那一下 */
+  function commitTheme() {
+    const want = pendingTheme;
+    if (!want) return;
+    pendingTheme = null;
+    const visible = saturn.group.visible;
+    disposeRig(saturn);
+    saturn = planetFor(want.theme, want.palette);
+    saturn.setView(viewW, viewH, viewFold);
+    saturn.setGlow(glowNow);
+    saturn.collapse();
+    saturn.group.visible = visible;
+    saturnScene.add(saturn.group);
+    saturnAnimate = true;
+    // 先走一次長的第 0 秒，各部分套上「從一點開始」的大小：不然這一幀畫的是建好時的原尺寸，
+    // 整圈環會先閃一下（實際發生過）
+    if (saturnVisible) saturn.update(0, scrollY, true);
+    markActive();
+  }
+
   return {
     backend,
     timing: { probe, device, compile, first },
@@ -1036,6 +1107,7 @@ export async function createStarfieldRunner(
         markActive();
         viewW = width;
         viewH = height;
+        viewFold = fold ?? null;
         saturn.setView(width, height, fold ?? null);
         camera.aspect = width / height;
         saturnCam.aspect = camera.aspect;
@@ -1052,6 +1124,8 @@ export async function createStarfieldRunner(
         if (saturnVisible && !visible) init.onSatellites?.([], performance.timeOrigin + performance.now());
         // 每次重新出現都從一點撐開（換頁轉場的「長」）
         if (!saturnVisible && visible) saturn.collapse();
+        // 換主題收到一半就離開首頁：不等收完，直接換
+        if (pendingTheme && !visible) commitTheme();
         saturnVisible = visible;
         darkDrawn = false;
         saturnAnimate = animate;
@@ -1060,6 +1134,7 @@ export async function createStarfieldRunner(
       },
       setSatelliteGlow(glow) {
         markActive();
+        glowNow = glow;
         saturn.setGlow(glow);
       },
       setStars(visible) {
@@ -1080,7 +1155,15 @@ export async function createStarfieldRunner(
       },
       setSections(count) {
         markActive();
+        sections = count;
         saturn.setSections(count);
+      },
+      setTheme(theme, palette) {
+        markActive();
+        pendingTheme = { theme, palette };
+        // 顯示中：收成一點，loop 看到收完了才換；沒顯示：直接換（下次出現時本來就從一點長）
+        if (saturnVisible) saturnAnimate = false;
+        else commitTheme();
       },
       setRunning(running) {
         if (running && !broken) {

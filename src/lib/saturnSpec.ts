@@ -211,17 +211,15 @@ const NEPTUNE: PlanetSpec = {
     [3.6, -36, 30, 0.8, 0.6],
     [-2.6, 41, 22, 0.7, 0.5],
   ],
-  // 由內到外：Galle（寬、很淡）、Le Verrier（細）、Lassell（淡的一片）、Arago（細）、Adams（細，上面有弧）
+  // 真實的海王星環由內到外是 Galle、Le Verrier、Lassell、Arago、Adams，但 Galle 與 Lassell 是很淡、很寬的一片，
+  // 畫出來像一塊髒汙。只留最清楚的兩道細環：Le Verrier 與 Adams（上面有弧），跟開場那道小環是同一組，交棒時接得上
   ring: {
     segments: [
-      [1.66, 1.74, 0.03],
-      [2.142, 2.156, 0.22],
-      [2.156, 2.3, 0.015],
-      [2.306, 2.316, 0.1],
-      [2.532, 2.548, 0.16],
+      [2.142, 2.156, 0.45],
+      [2.532, 2.548, 0.35],
     ],
     gaps: [],
-    inner: 1.6,
+    inner: 2,
     outer: 2.6,
     // Adams 環上的弧，照順序是 Courage、Liberté、Égalité、Fraternité（實際只佔 40° 左右，這裡拉長一點才看得見）
     arcs: [

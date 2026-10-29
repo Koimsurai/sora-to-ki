@@ -701,6 +701,15 @@
   --amber-rgb: 126, 174, 230;
 }
 
+/* 頁面開著時換主題（lib/theme 的 setTheme）：字、線、底在這段時間淡到新的顏色。只在換的那一下掛上，
+   平常不影響任何元素自己的過渡 */
+html.theme-switching,
+html.theme-switching * {
+  transition-property: color, background-color, border-color, fill, stroke;
+  transition-duration: var(--dur-700);
+  transition-timing-function: var(--easing-standard);
+}
+
 /* ── 文章閱讀字體（右下角 FontSwitcher）──
  *
  * 為什麼字體棧放在 CSS 而不是 TSX：偏好存在 localStorage，server 讀不到，原本是在 BlogPost

@@ -8,8 +8,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { InitTiming, PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
-import { palette } from '@/lib/palette';
-import { currentTheme } from '@/lib/theme';
+import { palette, type Palette } from '@/lib/palette';
+import { currentTheme, onTheme, type Theme } from '@/lib/theme';
 import { currentFold, subscribeFold } from '@/lib/viewportFold';
 import { MAIN_SECTIONS } from '@/data/siteSections';
 import { useEnabledSections } from '@/data/siteConfig';
@@ -119,6 +119,7 @@ export default function StarfieldGpu({
     stars(visible: boolean): void;
     pan(x: number, y: number): void;
     sections(count: number): void;
+    theme(theme: Theme, palette: Palette): void;
   } | null>(null);
 
   const liteRef = useRef(lite);
@@ -129,6 +130,8 @@ export default function StarfieldGpu({
     sectionsRef.current = sections;
     controlRef.current?.sections(sections);
   }, [sections]);
+  // 頁面開著時換了主題（lib/theme）：主星收成一點、換成新的再長出來。新的配色在這一刻已經套上 :root 了
+  useEffect(() => onTheme((theme) => controlRef.current?.theme(theme, palette())), []);
   // ── GPU device / WebGL context 掉了之後的重建 ────────────────────────────
   //
   // 為什麼需要：device 掉了是永久的，three 只會 console.error 一行（在 worker 裡連那行都
@@ -288,6 +291,7 @@ export default function StarfieldGpu({
         stars: (visible) => worker.postMessage({ type: 'stars', visible }),
         pan: (x, y) => worker.postMessage({ type: 'pan', x, y }),
         sections: (count) => worker.postMessage({ type: 'sections', count }),
+        theme: (theme, colors) => worker.postMessage({ type: 'theme', theme, palette: colors }),
       };
       const onMsg = (
         e: MessageEvent<{
@@ -385,6 +389,7 @@ export default function StarfieldGpu({
             stars: (visible) => runner.setStars(visible),
             pan: (x, y) => runner.setPan(x, y),
             sections: (count) => runner.setSections(count),
+            theme: (theme, colors) => runner.setTheme(theme, colors),
           };
           setBackend(`${be} · main`);
           setInitInfo(describeInit(timing));

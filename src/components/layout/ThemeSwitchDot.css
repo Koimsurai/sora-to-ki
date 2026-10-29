@@ -1,0 +1,18 @@
+/* 換主題時主星收成的那一點（ThemeSwitchDot）：跟開場那顆一樣（index.css 的 .boot-dot），在呼吸 */
+.theme-switch-dot {
+  position: fixed;
+  z-index: var(--z-chrome);
+  width: 6px;
+  height: 6px;
+  translate: -50% -50%;
+  border-radius: var(--r-full);
+  background: var(--signal);
+  box-shadow: 0 0 12px var(--signal);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-300) var(--easing-standard);
+}
+.theme-switch-dot[data-on] {
+  opacity: 1;
+  animation: boot-breathe 1.6s ease-in-out infinite;
+}

@@ -6,11 +6,15 @@
 // 座標分兩種：版面座標以頁面容器左上角為原點（捲動不變），畫面座標是視窗座標。
 // 畫布固定在視窗上，每一幀把版面座標加上容器目前的位置（origin）。
 
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 import { currentFold, type Fold } from '@/lib/viewportFold';
 import type { Pt } from '@/store/pageTransition';
 
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+});
 
 /** 弧線一個來回的高度：大約一個半螢幕，捲著看會左右擺 */
 const PERIOD = 1300;

@@ -22,7 +22,7 @@ import {
   takeOrbitHandoff,
   type OrbitGeom,
 } from '@/lib/articleOrbit';
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 import { currentFold, subscribeFold } from '@/lib/viewportFold';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { peekRetune } from './useRetune';
@@ -36,7 +36,11 @@ export interface TocHeading {
   level: number;
 }
 
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+});
 const TAU = Math.PI * 2;
 /** 從頂端往下長出來的時間（秒） */
 const GROW_S = 1.4;
