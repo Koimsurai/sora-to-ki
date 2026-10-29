@@ -244,7 +244,7 @@
 
 .pe-board-link[aria-pressed="true"],
 .pe-board-link:focus-visible {
-  background: rgba(var(--amber-rgb), 0.2);
+  background: var(--signal-wash);
   outline: none;
 }
 
@@ -297,7 +297,7 @@
 
 .pe-board-chapters button:hover:not(:disabled),
 .pe-board-chapters button:focus-visible {
-  background: rgba(var(--paper-rgb), 0.06);
+  background: var(--wash);
 }
 
 /* 還沒選一段字的時候章節只是看的，淡一點 */

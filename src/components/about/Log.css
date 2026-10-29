@@ -56,7 +56,7 @@
   gap: var(--space-px);
   padding: var(--space-1) var(--space-2);
   font-size: var(--fs-13);
-  background: rgba(var(--ground-rgb), 0.9);
+  background: var(--veil-3);
   border: 1px solid var(--line);
   transition: opacity var(--dur-150) ease;
 }
@@ -139,7 +139,7 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-6) var(--lg-edge) var(--space-6);
-  background: linear-gradient(rgba(var(--ground-rgb), 0), var(--ground) 40%);
+  background: linear-gradient(transparent, var(--ground) 40%);
 }
 
 .lg-legend {
@@ -467,7 +467,7 @@
     align-content: start;
     padding-top: var(--space-6);
     /* 下半整片是讀數排：地面的線不要從字後面穿過去 */
-    background: rgba(var(--ground-rgb), 0.9);
+    background: var(--veil-3);
   }
 
   .lg-legend {

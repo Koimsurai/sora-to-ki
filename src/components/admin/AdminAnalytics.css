@@ -53,13 +53,13 @@
 }
 
 .adm-an-col:hover {
-  background: rgba(var(--paper-rgb), 0.04);
+  background: var(--wash);
 }
 
 .adm-an-bar {
   width: min(100%, 28px);
   min-height: 1px;
-  background: rgba(var(--amber-rgb), 0.7);
+  background: var(--signal);
   border-radius: var(--r-4) var(--r-4) 0 0;
   transition: background var(--dur-150) var(--easing-standard);
 }
@@ -102,7 +102,7 @@
   gap: var(--space-4);
   min-height: 36px;
   padding: 0 var(--space-2-5);
-  background: linear-gradient(to right, rgba(var(--amber-rgb), 0.1) var(--w), transparent var(--w)) no-repeat;
+  background: linear-gradient(to right, var(--signal-wash) var(--w), transparent var(--w)) no-repeat;
   border-bottom: 1px dotted var(--line);
   font-size: var(--fs-13);
   color: var(--ink-muted);

@@ -214,7 +214,7 @@
   padding: var(--space-1) var(--space-2);
   font-size: var(--fs-12);
   color: var(--ink);
-  background: rgba(var(--ground-rgb), 0.8);
+  background: var(--veil-2);
   border: 1px solid var(--line);
   opacity: 0;
   pointer-events: none;
@@ -240,7 +240,7 @@
   max-height: 80%;
   padding: var(--space-5);
   overflow-y: auto;
-  background: rgba(var(--ground-rgb), 0.8);
+  background: var(--veil-2);
   border: 1px solid var(--line);
   outline: none;
   visibility: hidden;
@@ -431,7 +431,7 @@
   padding: var(--page-top) var(--space-6) var(--space-8);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: rgba(var(--ground-rgb), 0.96);
+  background: var(--veil-3);
   border-left: 1px solid var(--line);
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
@@ -740,7 +740,7 @@
     padding: var(--space-3) var(--space-5);
     translate: -50% 0;
     writing-mode: horizontal-tb;
-    background: rgba(var(--ground-rgb), 0.96);
+    background: var(--veil-3);
     border: 1px solid var(--line);
     border-bottom: 0;
   }

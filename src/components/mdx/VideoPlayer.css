@@ -69,7 +69,7 @@
      底下墊一層很淡的夜色，亮的畫面上才看得到 */
   border: 1px solid var(--ink-muted);
   border-radius: var(--r-round);
-  background: rgba(var(--ground-rgb), 0.35);
+  background: var(--veil-1);
   color: var(--signal);
   font-size: var(--fs-14);
   cursor: pointer;
@@ -94,7 +94,7 @@
 .vp-bigplay:hover,
 .vp-bigplay:focus,
 .vp-bigplay:focus-visible {
-  background: rgba(var(--ground-rgb), 0.55);
+  background: var(--veil-1);
   border-color: var(--ink);
   box-shadow: none;
   outline: none;
@@ -104,7 +104,7 @@
   inset: calc(-1 * var(--space-1-5));
 }
 .vp-bigplay:focus:not(:focus-visible) {
-  background: rgba(var(--ground-rgb), 0.35);
+  background: var(--veil-1);
   border-color: var(--ink-muted);
 }
 
@@ -120,7 +120,7 @@
   gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--r-2);
-  background: rgba(var(--ground-rgb), 0.78);
+  background: var(--veil-2);
   border: 1px solid var(--line);
   line-height: var(--lh-100);
   opacity: 0;
@@ -334,10 +334,10 @@ a.vp-btn:focus-visible {
   padding: var(--space-3);
   max-height: 22rem;
   overflow: auto;
-  border: 1px solid var(--white-15);
+  border: 1px solid var(--line);
   border-radius: var(--r-8);
-  background: var(--black-55);
-  color: var(--white-80);
+  background: var(--veil-1);
+  color: var(--ink-body);
   font-size: var(--fs-11);
   line-height: var(--lh-150);
   white-space: pre-wrap;

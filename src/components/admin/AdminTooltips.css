@@ -6,7 +6,7 @@
   box-sizing: border-box;
   max-width: 320px;
   padding: var(--space-1-5) var(--space-2-5);
-  background: rgba(var(--ground-rgb), 0.95);
+  background: var(--veil-3);
   border: 1px solid var(--line);
   color: var(--ink-muted);
   font-family: var(--serif);

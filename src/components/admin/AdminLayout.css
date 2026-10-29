@@ -316,7 +316,7 @@ html.adm-vt::view-transition-old(adm-main) {
     inset: 0;
     z-index: 39;
     padding: 0;
-    background: rgba(var(--ground-rgb), 0.7);
+    background: var(--veil-2);
     border: none;
     cursor: default;
   }

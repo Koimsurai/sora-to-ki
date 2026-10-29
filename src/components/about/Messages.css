@@ -101,7 +101,7 @@
   z-index: 2;
   padding: 0 var(--space-10) var(--space-3);
   margin: var(--space-8) calc(-1 * var(--space-10)) 0;
-  background: rgba(var(--ground-rgb), 0.9);
+  background: var(--veil-3);
   backdrop-filter: blur(var(--blur-12));
 }
 
@@ -182,7 +182,7 @@
     height: calc(100dvh - env(viewport-segment-top 0 1));
     padding-top: var(--space-6);
     overflow-y: auto;
-    border-top: 1px solid rgba(var(--paper-rgb), 0.15);
+    border-top: 1px solid var(--line);
     /* 下半整片是發送台，不透出底下捲過去的瀑布圖 */
     background: rgb(var(--ground-rgb));
   }

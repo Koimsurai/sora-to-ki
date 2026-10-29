@@ -6,7 +6,7 @@
   z-index: var(--z-ctx-menu);
   min-width: 13rem;
   padding: var(--space-1) 0 var(--space-1-5);
-  background: rgba(var(--ground-rgb), 0.96);
+  background: var(--veil-3);
   border: 1px solid var(--line);
   animation: ctx-in var(--dur-150) var(--easing-out);
   user-select: none;

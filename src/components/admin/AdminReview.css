@@ -36,7 +36,7 @@
 
 .adm-review-item:hover,
 .adm-review-item[aria-pressed="true"] {
-  background: rgba(var(--paper-rgb), 0.04);
+  background: var(--wash);
 }
 
 .adm-review-item > .adm-tab-dot {

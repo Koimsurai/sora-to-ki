@@ -198,7 +198,7 @@ html[data-pt] .orbit-toc-list {
   max-height: 62vh;
   padding: var(--space-4) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
-  background: rgba(var(--ground-rgb), 0.96);
+  background: var(--veil-3);
   overflow-y: auto;
   overscroll-behavior: contain;
   /* 收起時一定要 visibility: hidden，只靠透明不夠：章節按鈕自己是 pointer-events: auto，

@@ -63,7 +63,7 @@
   min-width: var(--radix-select-trigger-width);
   max-height: var(--radix-select-content-available-height);
   padding: var(--space-1) 0;
-  background: rgba(var(--ground-rgb), 0.95);
+  background: var(--veil-3);
   border: 1px solid var(--line);
   animation: adm-pop-in var(--dur-200) var(--easing-out);
 }
@@ -83,7 +83,7 @@
 }
 
 .adm-select-item[data-highlighted] {
-  background: rgba(var(--paper-rgb), 0.06);
+  background: var(--wash);
   color: var(--ink);
 }
 
@@ -160,7 +160,7 @@
 .adm-cal-pop {
   z-index: var(--z-menu);
   padding: var(--space-3) var(--space-4) var(--space-4);
-  background: rgba(var(--ground-rgb), 0.95);
+  background: var(--veil-3);
   border: 1px solid var(--line);
   outline: none;
   animation: adm-pop-in var(--dur-200) var(--easing-out);

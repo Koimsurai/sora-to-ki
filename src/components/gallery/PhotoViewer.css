@@ -54,7 +54,7 @@
   padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-round);
-  background: rgba(var(--ground-rgb), 0.35);
+  background: var(--veil-1);
   color: var(--ink-muted);
   cursor: pointer;
   box-shadow: none;
@@ -82,7 +82,7 @@
 .action-btn:hover,
 .action-btn:focus-visible {
   border-color: var(--ink);
-  background: rgba(var(--ground-rgb), 0.55);
+  background: var(--veil-1);
   color: var(--ink);
   box-shadow: none;
 }
@@ -171,7 +171,7 @@
 .custom-swiper-button-prev:hover,
 .custom-swiper-button-next:hover {
   border-color: var(--ink);
-  background: rgba(var(--ground-rgb), 0.55);
+  background: var(--veil-1);
   color: var(--ink);
   opacity: 1;
 }
@@ -207,7 +207,7 @@
   z-index: 20;
   padding: var(--space-1) var(--space-2-5);
   border: 1px solid var(--line);
-  background: rgba(var(--ground-rgb), 0.7);
+  background: var(--veil-2);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-weight: 400;

@@ -641,7 +641,7 @@
 
 .adm-hit:hover,
 .adm-hit:focus-visible {
-  background: rgba(var(--paper-rgb), 0.04);
+  background: var(--wash);
 }
 
 /* 帳號：頭像（圓形，只有這裡用圓） */

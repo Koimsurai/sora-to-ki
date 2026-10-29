@@ -208,7 +208,7 @@
   align-items: baseline;
   column-gap: var(--space-3);
   padding: var(--space-2-5) 0;
-  border-bottom: 1px dotted rgba(var(--paper-rgb), 0.15);
+  border-bottom: 1px dotted var(--line);
   color: var(--ink-muted);
   transition: color var(--dur-200) ease;
 }

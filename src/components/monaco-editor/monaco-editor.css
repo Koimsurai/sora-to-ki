@@ -80,7 +80,7 @@
 
 /* 懸停提示、建議框：跟後台其他浮層一樣，夜色底、細框、直角、不浮陰影 */
 .monaco-frame :is(.monaco-hover, .suggest-widget) {
-  background: rgba(var(--ground-rgb), 0.95);
+  background: var(--veil-3);
   border: 1px solid var(--line);
   border-radius: 0;
   box-shadow: none;
@@ -90,7 +90,7 @@
 .monaco-drop-active {
   outline: 1px dashed var(--signal);
   outline-offset: -4px;
-  background: rgba(var(--amber-rgb), 0.06);
+  background: var(--signal-wash);
   transition: background-color var(--dur-150) ease;
 }
 
