@@ -80,5 +80,33 @@
   "removeTitle": "Delete \"{{name}}\"?",
   "removeApproved": "It will disappear from the Friends page. To keep a record, reject it instead.",
   "removePending": "This application will be deleted entirely. To keep a record, reject it instead.",
-  "keep": "Keep"
+  "keep": "Keep",
+  "check": {
+    "label": {
+      "reachable": "Site is reachable",
+      "https": "HTTPS",
+      "feed": "RSS works",
+      "recent": "Updated in the last three months",
+      "backlink": "Links back here"
+    },
+    "detail": {
+      "reachable_status": "{{status}} · {{ms}} ms",
+      "fetch_bad_url": "Can't fetch this URL",
+      "fetch_timeout": "Timed out",
+      "fetch_unreachable": "Can't connect",
+      "fetch_private": "Points to a private network",
+      "https_no": "Not HTTPS",
+      "https_ok": "Valid certificate, connection OK",
+      "https_unknown": "Can't connect, can't tell",
+      "feed_missing": "No RSS link on the home page",
+      "feed_empty": "Can't fetch it, or it has no posts",
+      "feed_count": "{{count}} posts",
+      "feed_count_latest": "{{count}} posts · latest {{date}}",
+      "recent_unknown": "Can't tell when the latest post was",
+      "backlink_home": "On the home page",
+      "backlink_page": "On {{path}}",
+      "backlink_mx": "In their mx-space friends list",
+      "backlink_missing": "{{host}} isn't on the home page, /friends or /links"
+    }
+  }
 }

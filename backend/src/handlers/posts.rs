@@ -9,7 +9,7 @@ use serde_json::json;
 use sqlx::FromRow;
 
 use crate::{
-    error::AppError,
+    error::{AppError, Problem},
     handlers::excerpt_links::{self, ExcerptLink},
     state::AppState,
 };
@@ -869,11 +869,9 @@ pub async fn patch_post_status(
 ) -> Response {
     let status = b.status.unwrap_or_default();
     if status != "published" && status != "draft" {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({ "error": "無效的狀態值，必須是 published 或 draft" })),
-        )
-            .into_response();
+        return Problem::new("status_invalid", "Status must be published or draft")
+            .param("status", status)
+            .respond(StatusCode::BAD_REQUEST);
     }
     match sqlx::query("UPDATE posts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
         .bind(&status)
@@ -883,7 +881,9 @@ pub async fn patch_post_status(
     {
         Err(e) => crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) if r.rows_affected() == 0 => {
-            (StatusCode::NOT_FOUND, Json(json!({ "message": "找不到文章" }))).into_response()
+            // 這支一直用 message key（不是 error），維持原樣
+            (StatusCode::NOT_FOUND, Json(json!({ "message": "Post not found", "code": "post_missing" })))
+                .into_response()
         }
         Ok(r) => {
             // 直接改成發佈／草稿：原本的排程時間與回收紀錄都作廢
@@ -897,7 +897,7 @@ pub async fn patch_post_status(
             {
                 return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
             }
-            Json(json!({ "message": "狀態更新成功", "status": status, "changes": r.rows_affected() }))
+            Json(json!({ "message": "Status updated", "status": status, "changes": r.rows_affected() }))
                 .into_response()
         }
     }

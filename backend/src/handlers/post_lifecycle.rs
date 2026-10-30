@@ -21,6 +21,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::SqlitePool;
 use tokio::task::JoinHandle;
 
+use crate::error::Problem;
 use crate::state::AppState;
 
 /// 回收桶裡放多久才真的刪
@@ -74,17 +75,32 @@ pub struct Lifecycle {
 /// - status 不在 [`WRITABLE_STATUSES`] 裡 → 錯（`trashed` 也是：丟回收要走刪除）
 /// - `scheduled` 沒給時間、時間解不出來、或時間已經過了 → 錯。
 ///   「過了就直接發佈」看起來體貼，但會讓一篇本來要明天發的文章因為時區寫錯而今天就出去
-pub fn lifecycle(status: &str, publish_at: Option<&str>, send_newsletter: bool) -> Result<Lifecycle, String> {
+pub fn lifecycle(
+    status: &str,
+    publish_at: Option<&str>,
+    send_newsletter: bool,
+) -> Result<Lifecycle, Problem> {
     if !WRITABLE_STATUSES.contains(&status) {
-        return Err(format!("無效的狀態：{status}（只能是 draft、published 或 scheduled）"));
+        return Err(Problem::new(
+            "status_invalid",
+            format!("Invalid status: {status} (draft, published or scheduled)"),
+        )
+        .param("status", status));
     }
     if status != "scheduled" {
         return Ok(Lifecycle { status: status.to_string(), publish_at: None, newsletter_pending: false });
     }
-    let raw = publish_at.map(str::trim).filter(|s| !s.is_empty()).ok_or("排程發佈需要 publish_at")?;
-    let at = parse_publish_at(raw).ok_or_else(|| format!("看不懂的排程時間：{raw}"))?;
+    let raw = publish_at
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| Problem::new("schedule_time_required", "Scheduling needs publish_at"))?;
+    let at = parse_publish_at(raw).ok_or_else(|| {
+        Problem::new("schedule_time_invalid", format!("Can't read the schedule time: {raw}"))
+            .param("time", raw)
+    })?;
     if at <= now_db() {
-        return Err(format!("排程時間已經過了：{at}（UTC）"));
+        return Err(Problem::new("schedule_time_past", format!("The schedule time has passed: {at} (UTC)"))
+            .param("time", at));
     }
     Ok(Lifecycle { status: "scheduled".into(), publish_at: Some(at), newsletter_pending: send_newsletter })
 }
@@ -280,10 +296,13 @@ mod tests {
 
     #[test]
     fn 排程要有未來的時間() {
-        assert!(lifecycle("scheduled", None, false).unwrap_err().contains("publish_at"));
+        assert_eq!(lifecycle("scheduled", None, false).unwrap_err().code, "schedule_time_required");
         assert!(lifecycle("scheduled", Some("  "), false).is_err());
-        assert!(lifecycle("scheduled", Some("明天"), false).unwrap_err().contains("看不懂"));
-        assert!(lifecycle("scheduled", Some("2000-01-01 00:00"), false).unwrap_err().contains("已經過了"));
+        assert_eq!(lifecycle("scheduled", Some("明天"), false).unwrap_err().code, "schedule_time_invalid");
+        assert_eq!(
+            lifecycle("scheduled", Some("2000-01-01 00:00"), false).unwrap_err().code,
+            "schedule_time_past"
+        );
         let lc = lifecycle("scheduled", Some("2099-01-01T08:00:00+08:00"), true).unwrap();
         assert_eq!(lc.publish_at.as_deref(), Some("2099-01-01 00:00:00"));
         assert!(lc.newsletter_pending);

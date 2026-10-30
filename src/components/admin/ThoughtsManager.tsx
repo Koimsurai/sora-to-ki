@@ -16,7 +16,8 @@ import {
 import { adminBooksQueryOptions, adminCollectionQueryOptions, adminStatsQueryOptions } from '@/data/adminData';
 import { useSiteConfig } from '@/data/siteConfig';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
-import { useAdminT } from '@/i18n/admin-i18n';
+import { at, useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import { apiUrl } from '@/lib/api';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import {
@@ -91,8 +92,7 @@ async function send(method: string, path: string, body?: unknown) {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
-    const out = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(out.error ?? `${res.status}`);
+    throw new Error(apiErrorText(await res.json().catch(() => ({})), at, 'errors', `${res.status}`));
   }
 }
 

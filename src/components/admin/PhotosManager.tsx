@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { adminPhotosQueryOptions } from '@/data/adminData';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import { frameOf } from '@/components/gallery/frames';
-import { useAdminT } from '@/i18n/admin-i18n';
+import { at, useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import AdminLoading, { BusyDot } from './AdminLoading';
 import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
@@ -41,9 +42,9 @@ async function patchPhoto(id: string, body: Record<string, unknown>): Promise<Ad
     headers: jsonAuthHeaders(),
     body: JSON.stringify(body),
   });
-  const out = (await res.json().catch(() => ({}))) as AdminPhoto & { error?: string };
-  if (!res.ok) throw new Error(out.error ?? `${res.status}`);
-  return out;
+  const out: unknown = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(apiErrorText(out, at, 'errors', `${res.status}`));
+  return out as AdminPhoto;
 }
 
 export default function PhotosManager() {

@@ -157,7 +157,7 @@ fn finish(state: &AppState, provider: &str, user: &OauthUser) -> Response {
     let Ok(token) =
         encode(&Header::default(), &claims, &EncodingKey::from_secret(state.jwt_secret.as_bytes()))
     else {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "登入失敗" }))).into_response();
+        return err_500();
     };
     Json(json!({
         "token": token,
@@ -174,7 +174,7 @@ fn finish(state: &AppState, provider: &str, user: &OauthUser) -> Response {
 }
 
 fn err_500() -> Response {
-    (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "登入失敗" }))).into_response()
+    crate::error::Problem::new("sign_in_failed", "Sign-in failed").respond(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
 /// `POST /api/auth/google/callback`

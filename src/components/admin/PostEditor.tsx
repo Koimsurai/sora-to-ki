@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, useParams } from '@tanstack/react-router';
+import { apiErrorText } from '@/lib/apiError';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import { defaultLocale } from '@/lib/locales';
 // 改名：這個檔已經有一個叫 format 的狀態（文章是 md 還是 mdx）
@@ -683,8 +684,7 @@ export default function PostEditor() {
         void navigate({ to: '/admin/posts' });
       } else {
         // 排程時間不對之類的 400 會帶理由，照實顯示
-        const err = (await response.json().catch(() => ({}))) as { error?: string };
-        toast.error(err.error ?? tr('editor.publishFailed'));
+        toast.error(apiErrorText(await response.json().catch(() => ({})), at, 'errors', tr('editor.publishFailed')));
       }
     } catch (error) {
       console.error('發佈失敗:', error); // i18n-ignore：開發者看的 console，不是介面
@@ -731,8 +731,8 @@ export default function PostEditor() {
         headers: authHeaders(),
       });
       if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? tr('editor.apiError', { status: res.status }));
+        const fallback = tr('editor.apiError', { status: res.status });
+        throw new Error(apiErrorText(await res.json().catch(() => ({})), at, 'errors', fallback));
       }
       const data = (await res.json()) as {
         title_zh_cn?: string;

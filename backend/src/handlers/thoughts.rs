@@ -243,7 +243,7 @@ pub async fn get_thought(
     match row {
         Some(r) => Ok(Json(ThoughtDetailResponse { message: "success", thought: r.into() })),
         // Express 回 404 + {"error":"not found"}；用 AppError 之外的明確分支處理
-        None => Err(AppError::not_found("not found")),
+        None => Err(AppError::not_found("thought_missing", "not found")),
     }
 }
 

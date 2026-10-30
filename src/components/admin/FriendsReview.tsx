@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AdminFriendRow } from '@koimsurai/api-types';
+import type { AdminFriendRow, FriendCheck } from '@koimsurai/api-types';
 import { toast } from 'sonner';
 
 import { adminFriendsQueryOptions } from '@/data/adminData';
 import { at, useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -37,6 +38,13 @@ const TABS: readonly View[] = ['queue', 'approved', 'rejected'];
 const hostOf = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
 /** 清單上的一行摘要：「4 / 5 · 還沒連回來」，沒檢查過就說沒檢查過 */
+/** 檢查項目的名字：後端給的 key 換成站長的語言；認不得的 key 用存著的字 */
+const checkLabel = (c: FriendCheck) => at(`friends.check.label.${c.key}`, { defaultValue: c.label });
+
+/** 檢查的說明：有 code 就照站長的語言填 params；舊的紀錄（存在資料庫裡、沒有 code）照原樣 */
+const checkDetail = (c: FriendCheck) =>
+  c.code ? at(`friends.check.detail.${c.code}`, { ...c.params, defaultValue: c.detail }) : c.detail;
+
 function checkSummary(f: AdminFriendRow): { text: string; bad: boolean } {
   if (f.checks.length === 0) return { text: at('friends.checkNone'), bad: false };
   const passed = f.checks.filter((c) => c.ok).length;
@@ -44,7 +52,7 @@ function checkSummary(f: AdminFriendRow): { text: string; bad: boolean } {
   const total = f.checks.length;
   return {
     text: firstBad
-      ? at('friends.checkSumBad', { passed, total, label: firstBad.label })
+      ? at('friends.checkSumBad', { passed, total, label: checkLabel(firstBad) })
       : at('friends.checkSum', { passed, total }),
     bad: Boolean(firstBad),
   };
@@ -93,7 +101,7 @@ export default function FriendsReview() {
       error?: string;
       mail?: { sent: boolean; error?: string } | null;
     };
-    if (!res.ok) throw new Error(out.error ?? `${res.status}`);
+    if (!res.ok) throw new Error(apiErrorText(out, at, 'errors', `${res.status}`));
     return out;
   };
 
@@ -158,8 +166,8 @@ export default function FriendsReview() {
           headers: jsonAuthHeaders(),
           body: JSON.stringify(form),
         });
-        const out = (await res.json().catch(() => ({}))) as { error?: string };
-        if (!res.ok) throw new Error(out.error ?? `${res.status}`);
+        const out: unknown = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(apiErrorText(out, at, 'errors', `${res.status}`));
         toast.success(t('friends.added', { name: form.name }));
       } else {
         await patch(editing.id, { ...form });
@@ -338,10 +346,10 @@ export default function FriendsReview() {
                               {c.ok ? '✓' : '×'}
                             </span>
                             <span>
-                              {c.label}
+                              {checkLabel(c)}
                               <span className="sr-only">{c.ok ? t('friends.checkPass') : t('friends.checkFail')}</span>
                             </span>
-                            <span className="adm-meta">{c.detail}</span>
+                            <span className="adm-meta">{checkDetail(c)}</span>
                           </li>
                         ))}
                       </ul>

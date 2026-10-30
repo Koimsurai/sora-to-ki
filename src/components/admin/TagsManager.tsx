@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import { useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import AdminLoading from './AdminLoading';
 import { NameDots, PageHead } from './AdminPage';
 import { localeNameFields } from './adminFormat';
@@ -91,7 +92,7 @@ export default function TagsManager() {
         setDialogOpen(false);
         void invalidateTags();
       } else {
-        toast.error(t('taxonomy.actionFailed'));
+        toast.error(apiErrorText(await response.json().catch(() => ({})), t, 'errors', t('taxonomy.actionFailed')));
       }
     } catch (error) {
       console.error('保存標籤失敗:', error); // i18n-ignore：開發者看的 console，不是介面文字

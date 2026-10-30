@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::error::Problem;
 use crate::handlers::posts::I18N_LOCALES;
 
 /// 摘要裡的一句話，連到 `to` 那一章（`05` 是第五個大節，`05.4` 是它底下第四個小節）。
@@ -45,27 +46,45 @@ fn valid_target(to: &str) -> bool {
     digits(major, &[2]) && minor.is_none_or(|m| digits(m, &[1, 2]))
 }
 
-fn parse_links(locale: &str, v: &Value) -> Result<Vec<ExcerptLink>, String> {
+fn parse_links(locale: &str, v: &Value) -> Result<Vec<ExcerptLink>, Problem> {
+    let shape = || {
+        Problem::new("excerpt_shape", format!("excerpt_links.{locale} must be an array of {{ text, to }}"))
+            .param("lang", locale)
+    };
     let Value::Array(items) = v else {
-        return Err(format!("excerpt_links.{locale} 要是陣列"));
+        return Err(shape());
     };
     if items.len() > MAX_PER_LOCALE {
-        return Err(format!("excerpt_links.{locale} 最多 {MAX_PER_LOCALE} 句"));
+        return Err(Problem::new(
+            "excerpt_too_many",
+            format!("excerpt_links.{locale}: at most {MAX_PER_LOCALE} sentences"),
+        )
+        .param("lang", locale)
+        .param("max", MAX_PER_LOCALE));
     }
     items
         .iter()
         .map(|item| {
-            let link: ExcerptLink = serde_json::from_value(item.clone())
-                .map_err(|_| format!("excerpt_links.{locale} 的每一筆要是 {{ text, to }}"))?;
+            let link: ExcerptLink = serde_json::from_value(item.clone()).map_err(|_| shape())?;
             let text = link.text.trim().to_string();
             if text.is_empty() || text.chars().count() > MAX_TEXT_CHARS {
-                return Err(format!("excerpt_links.{locale} 的 text 要是 1 到 {MAX_TEXT_CHARS} 字"));
+                return Err(Problem::new(
+                    "excerpt_text_length",
+                    format!("excerpt_links.{locale}: text must be 1 to {MAX_TEXT_CHARS} characters"),
+                )
+                .param("lang", locale)
+                .param("max", MAX_TEXT_CHARS));
             }
             if !valid_target(&link.to) {
-                return Err(format!(
-                    "excerpt_links.{locale} 的 to 要是章節編號（如 05 或 05.4），收到 {}",
-                    link.to
-                ));
+                return Err(Problem::new(
+                    "excerpt_target",
+                    format!(
+                        "excerpt_links.{locale}: to must be a section number (like 05 or 05.4), got {}",
+                        link.to
+                    ),
+                )
+                .param("lang", locale)
+                .param("target", link.to.as_str()));
             }
             Ok(ExcerptLink { text, to: link.to })
         })
@@ -80,14 +99,20 @@ fn to_stored(map: &LinkMap) -> Option<String> {
 ///
 /// - `null`：整欄清掉
 /// - 物件：有帶到的語系整組換掉，`null` 或 `[]` 刪掉那個語系；沒帶到的語系不動
-pub fn merge_input(stored: Option<&str>, input: &Value) -> Result<Option<String>, String> {
+pub fn merge_input(stored: Option<&str>, input: &Value) -> Result<Option<String>, Problem> {
     let Value::Object(by_locale) = input else {
-        return if input.is_null() { Ok(None) } else { Err("excerpt_links 要是物件或 null".into()) };
+        return if input.is_null() {
+            Ok(None)
+        } else {
+            Err(Problem::new("excerpt_shape", "excerpt_links must be an object or null"))
+        };
     };
     let mut map = parse_stored(stored);
     for (locale, v) in by_locale {
         if !I18N_LOCALES.contains(&locale.as_str()) {
-            return Err(format!("excerpt_links 不認得的語系：{locale}"));
+            return Err(Problem::new("unknown_locale", format!("excerpt_links: unknown language {locale}"))
+                .param("field", "excerptLinks")
+                .param("lang", locale.as_str()));
         }
         let links = if v.is_null() { Vec::new() } else { parse_links(locale, v)? };
         if links.is_empty() {

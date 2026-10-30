@@ -286,7 +286,7 @@ async fn 標籤與分類重複時回_409_不是_500() {
     // 500 會讓後台顯示「伺服器錯誤」，使用者不知道其實只是名字被用過了
     let (status, body) = adm(&app, "POST", "/api/admin/tags", Some(json!({ "name": "rust" }))).await;
     assert_eq!(status, 409, "得到 {body}");
-    assert!(body["error"].as_str().unwrap().contains("已存在"));
+    assert!(body["code"].as_str().unwrap().ends_with("_exists"), "得到 {body}");
 
     let (status, _) = adm(&app, "POST", "/api/admin/tags", Some(json!({ "name": "另一個" }))).await;
     assert_eq!(status, 201);

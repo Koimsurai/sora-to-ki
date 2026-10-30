@@ -14,7 +14,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { siteConfigQueryOptions } from '@/data/siteConfig';
-import { useAdminT } from '@/i18n/admin-i18n';
+import { at, useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { setLocaleConfig } from '@/lib/locales';
 import AdminLoading from '../AdminLoading';
@@ -57,7 +58,7 @@ export default function SiteSettings() {
       });
       const body = (await res.json().catch(() => ({}))) as SiteConfig & { error?: string };
       if (!res.ok) {
-        toast.error(body.error ?? t('common.saveFailed', { status: res.status }));
+        toast.error(apiErrorText(body, at, 'errors', t('common.saveFailed', { status: res.status })));
         return;
       }
       queryClient.setQueryData(siteConfigQueryOptions.queryKey, body);

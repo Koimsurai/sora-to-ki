@@ -374,7 +374,7 @@ async fn query(state: &AppState, key: &str, body: Value) -> Result<Value, String
         .json(&body)
         .send()
         .await
-        .map_err(|e| format!("連不到 Plausible：{e}"))?;
+        .map_err(|e| format!("Can't reach Plausible: {e}"))?;
     let status = resp.status();
     if !status.is_success() {
         // Plausible 的錯誤訊息很具體（key 不對、site_id 不對、參數不認得），帶回去給站長看
@@ -383,9 +383,9 @@ async fn query(state: &AppState, key: &str, body: Value) -> Result<Value, String
             .ok()
             .and_then(|v| v["error"].as_str().map(str::to_string))
             .unwrap_or_else(|| text.chars().take(200).collect());
-        return Err(format!("Plausible 回了 {status}：{detail}"));
+        return Err(format!("Plausible returned {status}: {detail}"));
     }
-    resp.json::<Value>().await.map_err(|e| format!("Plausible 的回應讀不懂：{e}"))
+    resp.json::<Value>().await.map_err(|e| format!("Can't read Plausible's response: {e}"))
 }
 
 /// v1 的即時人數（v2 沒有對應的查詢）。回應本體就是一個數字

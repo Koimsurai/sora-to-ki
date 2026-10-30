@@ -520,7 +520,7 @@ pub async fn tmdb_search(
         return Json(TmdbSearchResponse { message: "success", results: vec![] }).into_response();
     }
     let Some(token) = crate::util::tmdb_token() else {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "TMDB_API_TOKEN 未設定" })))
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "TMDB_API_TOKEN is not set" })))
             .into_response();
     };
     let r: Result<Value, String> = async {
@@ -619,7 +619,7 @@ pub async fn create_favorite(
     crate::error::JsonBody(b): crate::error::JsonBody<Map<String, Value>>,
 ) -> Response {
     if !js_truthy(b.get("tmdbId")) {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "tmdbId 必填" }))).into_response();
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "tmdbId is required" }))).into_response();
     }
     let tmdb_id = b.get("tmdbId").cloned().unwrap_or(Value::Null);
     let kind = if b.get("kind").and_then(|v| v.as_str()) == Some("tv") { "tv" } else { "film" };
@@ -675,7 +675,7 @@ pub async fn update_favorite(
         sets.push("sort_order = ?");
     }
     if sets.is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "無可更新欄位" }))).into_response();
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Nothing to update" }))).into_response();
     }
     let sql = format!("UPDATE watch_favorites SET {} WHERE id = ?", sets.join(", "));
     let mut q = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()));

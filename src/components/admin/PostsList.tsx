@@ -5,7 +5,8 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 import { adminPostsQueryOptions } from '@/data/adminData';
-import { useAdminT } from '@/i18n/admin-i18n';
+import { at, useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import { authHeaders } from '@/lib/authToken';
 import {
   AlertDialog,
@@ -92,8 +93,7 @@ export default function PostsList() {
   const send = async (path: string, method: 'POST' | 'DELETE') => {
     const res = await fetch(path, { method, headers: authHeaders() });
     if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { error?: string };
-      throw new Error(err.error ?? `${res.status}`);
+      throw new Error(apiErrorText(await res.json().catch(() => ({})), at, 'errors', `${res.status}`));
     }
   };
 

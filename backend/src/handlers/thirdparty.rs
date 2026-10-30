@@ -241,14 +241,14 @@ pub async fn github_contributions(
         Json(GithubContributionsResponse { error: Some(m), ..Default::default() }).into_response()
     };
     let Some(token) = std::env::var("GITHUB_TOKEN").ok().filter(|s| !s.is_empty()) else {
-        return err("GITHUB_TOKEN 未設定（GraphQL 一定要認證）".into());
+        return err("GITHUB_TOKEN is not set (GraphQL requires auth)".into());
     };
     // year 只接受四位數字：它會被拼進 GraphQL 的 ISO 時間字串
     let range = match q.year.as_deref().filter(|y| *y != "last") {
         Some(y) if y.len() == 4 && y.bytes().all(|b| b.is_ascii_digit()) => {
             Some((format!("{y}-01-01T00:00:00Z"), format!("{y}-12-31T23:59:59Z")))
         }
-        Some(_) => return err("year 格式不正確".into()),
+        Some(_) => return err("year must be four digits or last".into()),
         // 不帶 from/to：GraphQL 預設就是最近一年
         None => None,
     };
@@ -404,7 +404,7 @@ async fn works_for(state: &AppState, repos: &[(String, String)]) -> Response {
             .into_response()
     };
     let Some(token) = std::env::var("GITHUB_TOKEN").ok().filter(|s| !s.is_empty()) else {
-        return fail("GITHUB_TOKEN 未設定（GraphQL 一定要認證）".into());
+        return fail("GITHUB_TOKEN is not set (GraphQL requires auth)".into());
     };
     // owner / name 來自伺服器設定、而且 work_repos 已經濾過字元，可以直接拼進查詢
     let fields = repos
@@ -678,7 +678,7 @@ fn waka_auth(key: &str) -> String {
 /// 前端看 `error` 欄位決定不顯示那一塊（data/logData.ts），跟 spotify 的 now-playing 同一個做法
 const UNCONFIGURED: StatusCode = StatusCode::OK;
 
-const WAKA_UNCONFIGURED: &str = "WakaTime 沒有設定（在 .env.backend 填 WAKATIME_API_KEY）";
+const WAKA_UNCONFIGURED: &str = "WakaTime isn't set up (set WAKATIME_API_KEY in .env.backend)";
 
 /// WakaTime 的 `grand_total`（前端只用 text，total_seconds 一起帶著方便日後算）。
 #[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
@@ -893,7 +893,7 @@ fn steam_env() -> Option<(String, String)> {
     Some((key, id))
 }
 
-const STEAM_UNCONFIGURED: &str = "Steam 沒有設定（在 .env.backend 填 STEAM_API_KEY 與 STEAM_ID）";
+const STEAM_UNCONFIGURED: &str = "Steam isn't set up (set STEAM_API_KEY and STEAM_ID in .env.backend)";
 const STEAM_PARSE_ERR: &str = "Failed to parse Steam API response";
 const STEAM_FETCH_ERR: &str = "Failed to fetch Steam data";
 
@@ -1108,22 +1108,22 @@ async fn search_google_books(http: &reqwest::Client, base: &str, q: &str) -> Res
         url.push_str("&key=");
         url.push_str(&encode_uri_component(&key));
     }
-    let resp = http.get(&url).send().await.map_err(|e| format!("Google Books 連不上：{e}"))?;
+    let resp = http.get(&url).send().await.map_err(|e| format!("Can't reach Google Books: {e}"))?;
     let status = resp.status();
-    let body = resp.text().await.map_err(|e| format!("Google Books 回應讀取失敗：{e}"))?;
+    let body = resp.text().await.map_err(|e| format!("Couldn't read the Google Books response: {e}"))?;
     if !status.is_success() {
         let reason = serde_json::from_str::<Value>(&body)
             .ok()
             .and_then(|v| v.pointer("/error/errors/0/reason").and_then(|r| r.as_str()).map(String::from))
             .unwrap_or_default();
         return Err(if status == StatusCode::TOO_MANY_REQUESTS {
-            format!("Google Books 額度用完（{status} {reason}）——檢查 GOOGLE_BOOKS_API_KEY")
+            format!("Google Books quota exceeded ({status} {reason}); check GOOGLE_BOOKS_API_KEY")
         } else {
-            format!("Google Books 回 {status} {reason}")
+            format!("Google Books returned {status} {reason}")
         });
     }
     let mut data: Value =
-        serde_json::from_str(&body).map_err(|e| format!("Google Books 回應不是 JSON：{e}"))?;
+        serde_json::from_str(&body).map_err(|e| format!("Google Books didn't return JSON: {e}"))?;
     crate::util::js_normalize_numbers(&mut data);
     let Some(items) = data.get("items").and_then(|i| i.as_array()) else { return Ok(vec![]) };
     Ok(items
@@ -1290,7 +1290,8 @@ pub async fn books_search_external(
     let query = q.query.filter(|s| !s.is_empty());
     let isbn = q.isbn.filter(|s| !s.is_empty());
     let Some(input) = isbn.clone().or(query) else {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "請提供書名或 ISBN" }))).into_response();
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "A title or ISBN is required" })))
+            .into_response();
     };
     let no_space: String = input.chars().filter(|c| !c.is_whitespace()).collect();
     static ISBN_RE: std::sync::LazyLock<regex::Regex> =
@@ -2584,7 +2585,7 @@ mod tests {
                 .await,
             )
             .await;
-            assert_eq!(v["error"], "year 格式不正確", "year={bad:?} 應該被擋下");
+            assert_eq!(v["error"], "year must be four digits or last", "year={bad:?} 應該被擋下");
         }
         assert!(server.received_requests().await.unwrap().is_empty(), "格式不對就不該送出查詢");
 
@@ -3100,7 +3101,7 @@ mod tests {
         )
         .await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-        assert_eq!(body_of(resp).await["error"], "請提供書名或 ISBN");
+        assert_eq!(body_of(resp).await["error"], "A title or ISBN is required");
         assert!(server.received_requests().await.unwrap().is_empty());
     }
 
@@ -3294,7 +3295,7 @@ mod tests {
         let w = v["warnings"].as_array().unwrap();
         assert_eq!(w.len(), 1, "Google 失敗要留下一筆 warning：{v}");
         let msg = w[0].as_str().unwrap();
-        assert!(msg.contains("額度") && msg.contains("rateLimitExceeded"), "訊息要講出原因：{msg}");
+        assert!(msg.contains("quota") && msg.contains("rateLimitExceeded"), "訊息要講出原因：{msg}");
         assert_eq!(v["books"][0]["title"], "補位找到的書", "Google 失敗仍要退回 OpenLibrary");
     }
 

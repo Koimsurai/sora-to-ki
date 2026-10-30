@@ -347,7 +347,7 @@ pub async fn tw_search(State(state): State<AppState>, Query(p): Query<TwSearchQu
     } else if let Some(q) = p.q.as_deref().filter(|s| !s.trim().is_empty()) {
         search(&state.pool, q, limit).await.iter().map(to_search_json).collect()
     } else {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "請提供 isbn 或 q" }))).into_response();
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "isbn or q is required" }))).into_response();
     };
     Json(json!({ "message": "success", "books": books })).into_response()
 }

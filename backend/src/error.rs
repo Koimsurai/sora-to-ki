@@ -75,6 +75,53 @@ where
     }
 }
 
+/// 給人看的錯誤：讀者送表單、站長在後台存東西時會被擋下來的那種。
+///
+/// - `code`：固定的英文代號，前端拿它換成讀者或站長正在用的語言
+///   （前台 `locales/<語系>/common.json` 的 `apiError.<code>`、後台 `admin/errors.json` 的 `errors.<code>`）
+/// - `error`：英文說明。MCP、curl、前端還沒有那句翻譯時看到的就是它
+/// - `params`：要填進翻譯裡的值（上限幾個字、哪個欄位…）
+///
+/// 回應是 `{ "error", "code", "params"? }`。初次設定精靈（handlers/init.rs）最早用這個形狀。
+/// 只有架站的人在 log 或除錯時才會看到的（第三方整合連不上之類）不必用這個，寫英文字串就好
+#[derive(Debug, Clone, PartialEq)]
+pub struct Problem {
+    pub code: &'static str,
+    pub error: String,
+    pub params: serde_json::Map<String, Value>,
+}
+
+impl Problem {
+    pub fn new(code: &'static str, error: impl Into<String>) -> Self {
+        Self { code, error: error.into(), params: serde_json::Map::new() }
+    }
+
+    #[must_use]
+    pub fn param(mut self, key: &str, value: impl Into<Value>) -> Self {
+        self.params.insert(key.to_string(), value.into());
+        self
+    }
+
+    /// 回應的 body。說明放在 `key` 底下：多數端點是 `error`，auth 對齊 Express 用 `message`
+    fn body(&self, key: &str) -> Value {
+        let mut body = json!({ key: self.error, "code": self.code });
+        if !self.params.is_empty() {
+            body["params"] = Value::Object(self.params.clone());
+        }
+        body
+    }
+
+    pub fn respond(&self, status: StatusCode) -> Response {
+        (status, Json(self.body("error"))).into_response()
+    }
+}
+
+impl std::fmt::Display for Problem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.error)
+    }
+}
+
 /// 服務層錯誤。回應形狀刻意對齊 Express：多數端點 `{ "error": ... }`，
 /// 但 auth（requireAdmin）用 `{ "message": ... }`，故分變體決定 body key。
 #[derive(Debug)]
@@ -82,24 +129,24 @@ pub enum AppError {
     Database(sqlx::Error),
     /// 代理回 Express 時的上游錯誤（連線失敗等）。
     Upstream(reqwest::Error),
-    /// 404，回應 `{"error": "<msg>"}`，對齊 Express 的 `res.status(404).json({error})`。
-    NotFound(String),
-    /// 401，回應 `{"message": "<msg>"}`，對齊 Express requireAdmin。
-    Unauthorized(String),
-    /// 403，回應 `{"message": "<msg>"}`，對齊 Express requireAdmin。
-    Forbidden(String),
+    /// 404，回應 `{"error": "<msg>", "code"}`，對齊 Express 的 `res.status(404).json({error})`。
+    NotFound(Problem),
+    /// 401，回應 `{"message": "<msg>", "code"}`，對齊 Express requireAdmin。
+    Unauthorized(Problem),
+    /// 403，回應 `{"message": "<msg>", "code"}`，對齊 Express requireAdmin。
+    Forbidden(Problem),
     Anyhow(anyhow::Error),
 }
 
 impl AppError {
-    pub fn not_found(msg: impl Into<String>) -> Self {
-        Self::NotFound(msg.into())
+    pub fn not_found(code: &'static str, error: impl Into<String>) -> Self {
+        Self::NotFound(Problem::new(code, error))
     }
-    pub fn unauthorized(msg: impl Into<String>) -> Self {
-        Self::Unauthorized(msg.into())
+    pub fn unauthorized(code: &'static str, error: impl Into<String>) -> Self {
+        Self::Unauthorized(Problem::new(code, error))
     }
-    pub fn forbidden(msg: impl Into<String>) -> Self {
-        Self::Forbidden(msg.into())
+    pub fn forbidden(code: &'static str, error: impl Into<String>) -> Self {
+        Self::Forbidden(Problem::new(code, error))
     }
 }
 
@@ -135,9 +182,9 @@ impl IntoResponse for AppError {
             Self::Upstream(e) => {
                 (StatusCode::BAD_GATEWAY, json!({ "error": "Upstream error" }), Some(e.to_string()))
             }
-            Self::NotFound(msg) => (StatusCode::NOT_FOUND, json!({ "error": msg }), None),
-            Self::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, json!({ "message": msg }), None),
-            Self::Forbidden(msg) => (StatusCode::FORBIDDEN, json!({ "message": msg }), None),
+            Self::NotFound(p) => (StatusCode::NOT_FOUND, p.body("error"), None),
+            Self::Unauthorized(p) => (StatusCode::UNAUTHORIZED, p.body("message"), None),
+            Self::Forbidden(p) => (StatusCode::FORBIDDEN, p.body("message"), None),
             Self::Anyhow(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 json!({ "error": "Internal server error" }),
@@ -207,19 +254,33 @@ mod tests {
     /// `message` key 不是 `error`——前端的錯誤處理靠這個分辨。
     #[tokio::test]
     async fn 自己的訊息要顯示_而且_auth_用_message_key() {
-        let (status, _, body) = parts_of(AppError::not_found("找不到文章").into_response()).await;
+        let (status, _, body) =
+            parts_of(AppError::not_found("post_missing", "Post not found").into_response()).await;
         assert_eq!(status, StatusCode::NOT_FOUND);
-        assert_eq!(body["error"], "找不到文章", "404 用 error key");
+        assert_eq!(body["error"], "Post not found", "404 用 error key");
+        assert_eq!(body["code"], "post_missing", "前端靠 code 換成看的人的語言");
         assert!(body.get("message").is_none());
 
-        let (status, _, body) = parts_of(AppError::unauthorized("需要登入").into_response()).await;
+        let (status, _, body) =
+            parts_of(AppError::unauthorized("sign_in_required", "Sign in required").into_response()).await;
         assert_eq!(status, StatusCode::UNAUTHORIZED);
-        assert_eq!(body["message"], "需要登入", "401 用 message key（對齊 Express requireAdmin）");
+        assert_eq!(body["message"], "Sign in required", "401 用 message key（對齊 Express requireAdmin）");
         assert!(body.get("error").is_none());
 
-        let (status, _, body) = parts_of(AppError::forbidden("權限不足").into_response()).await;
+        let (status, _, body) = parts_of(AppError::forbidden("forbidden", "Forbidden").into_response()).await;
         assert_eq!(status, StatusCode::FORBIDDEN);
-        assert_eq!(body["message"], "權限不足");
+        assert_eq!(body["message"], "Forbidden");
+    }
+
+    #[tokio::test]
+    async fn problem_帶參數時才有_params() {
+        let (status, _, body) =
+            parts_of(Problem::new("too_long", "Too long").param("max", 40).respond(StatusCode::BAD_REQUEST))
+                .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert_eq!(body, json!({ "error": "Too long", "code": "too_long", "params": { "max": 40 } }));
+        let (_, _, body) = parts_of(Problem::new("x", "X").respond(StatusCode::BAD_REQUEST)).await;
+        assert!(body.get("params").is_none());
     }
 
     #[tokio::test]

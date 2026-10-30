@@ -15,10 +15,13 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_json::json;
 use sqlx::SqlitePool;
 
-use crate::{auth::AdminAuth, error::AppError, error::JsonBody, state::AppState};
+use crate::{
+    auth::AdminAuth,
+    error::{AppError, JsonBody, Problem},
+    state::AppState,
+};
 
 /// 前台的五個語系（`src/lib/locales.ts`）
 const LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
@@ -34,30 +37,54 @@ const TEXT_MAX: usize = 600;
 const SYNC_KEY: &str = "_src";
 const SYNC_MAX: usize = 200;
 
-fn check_i18n(field: &str, v: &I18n) -> Result<(), String> {
+// 驗證錯誤的 `field` 是欄位的英文 key（`chapterTitle`…）：後台照它換成站長的語言（admin/errors.json 的
+// `errors.field.<key>`），英文說明裡就直接寫它
+
+fn check_i18n(field: &'static str, v: &I18n) -> Result<(), Problem> {
     for (lang, text) in v {
         if lang == SYNC_KEY {
             if text.chars().count() > SYNC_MAX {
-                return Err(format!("{field}：{SYNC_KEY} 太長"));
+                return Err(Problem::new("sync_too_long", format!("{field}: {SYNC_KEY} is too long"))
+                    .param("field", field));
             }
             continue;
         }
         if !LOCALES.contains(&lang.as_str()) {
-            return Err(format!("{field}：不認得的語系 {lang}"));
+            return Err(Problem::new("unknown_locale", format!("{field}: unknown language {lang}"))
+                .param("field", field)
+                .param("lang", lang.as_str()));
         }
         if text.chars().count() > TEXT_MAX {
-            return Err(format!("{field}（{lang}）超過 {TEXT_MAX} 字"));
+            return Err(Problem::new(
+                "text_too_long_in",
+                format!("{field} ({lang}) is over {TEXT_MAX} characters"),
+            )
+            .param("field", field)
+            .param("lang", lang.as_str())
+            .param("max", TEXT_MAX));
         }
     }
     Ok(())
 }
 
-fn check_text(field: &str, v: &str, max: usize) -> Result<(), String> {
-    if v.chars().count() > max { Err(format!("{field} 超過 {max} 字")) } else { Ok(()) }
+fn check_text(field: &'static str, v: &str, max: usize) -> Result<(), Problem> {
+    if v.chars().count() > max {
+        Err(Problem::new("text_too_long", format!("{field} is over {max} characters"))
+            .param("field", field)
+            .param("max", max))
+    } else {
+        Ok(())
+    }
 }
 
-fn check_count<T>(field: &str, v: &[T], max: usize) -> Result<(), String> {
-    if v.len() > max { Err(format!("{field} 最多 {max} 筆")) } else { Ok(()) }
+fn check_count<T>(field: &'static str, v: &[T], max: usize) -> Result<(), Problem> {
+    if v.len() > max {
+        Err(Problem::new("too_many", format!("{field}: at most {max}"))
+            .param("field", field)
+            .param("max", max))
+    } else {
+        Ok(())
+    }
 }
 
 // ── 關於 ─────────────────────────────────────────────────────────────
@@ -115,31 +142,31 @@ pub struct AboutQuote {
 }
 
 impl AboutContent {
-    fn validate(&self) -> Result<(), String> {
-        check_count("章節", &self.chapters, 40)?;
+    fn validate(&self) -> Result<(), Problem> {
+        check_count("chapters", &self.chapters, 40)?;
         for c in &self.chapters {
-            check_text("年份", &c.year, 20)?;
-            check_i18n("章節標題", &c.title)?;
-            check_i18n("章節副標", &c.subtitle)?;
-            check_i18n("章節那一句", &c.line)?;
+            check_text("year", &c.year, 20)?;
+            check_i18n("chapterTitle", &c.title)?;
+            check_i18n("chapterSubtitle", &c.subtitle)?;
+            check_i18n("chapterLine", &c.line)?;
         }
-        check_count("技能分組", &self.skills, 20)?;
+        check_count("skillGroups", &self.skills, 20)?;
         for g in &self.skills {
-            check_i18n("分組名稱", &g.label)?;
-            check_count("技能", &g.items, 80)?;
+            check_i18n("skillGroupName", &g.label)?;
+            check_count("skills", &g.items, 80)?;
             for s in &g.items {
-                check_text("技能", s, 60)?;
+                check_text("skill", s, 60)?;
             }
         }
-        check_count("經歷", &self.jobs, 30)?;
+        check_count("jobs", &self.jobs, 30)?;
         for j in &self.jobs {
-            check_text("期間", &j.period, 40)?;
-            check_i18n("職稱", &j.title)?;
-            check_i18n("單位", &j.role)?;
+            check_text("jobPeriod", &j.period, 40)?;
+            check_i18n("jobTitle", &j.title)?;
+            check_i18n("jobRole", &j.role)?;
         }
         if let Some(q) = &self.quote {
-            check_text("引言", &q.text, 300)?;
-            check_text("出處", &q.cite, 80)?;
+            check_text("quote", &q.text, 300)?;
+            check_text("quoteCite", &q.cite, 80)?;
         }
         Ok(())
     }
@@ -187,16 +214,17 @@ pub struct WorkSnapshot {
 }
 
 impl WorksContent {
-    fn validate(&self) -> Result<(), String> {
-        check_count("作品", &self.items, 40)?;
+    fn validate(&self) -> Result<(), Problem> {
+        check_count("works", &self.items, 40)?;
         for w in &self.items {
             if crate::handlers::thirdparty::parse_repo(&w.repo).is_none() {
-                return Err(format!("repo 要寫成 owner/name：{}", w.repo));
+                return Err(Problem::new("repo_format", format!("repo must be owner/name: {}", w.repo))
+                    .param("repo", w.repo.as_str()));
             }
-            check_text("名稱", &w.name, 80)?;
-            check_i18n("介紹", &w.what)?;
+            check_text("workName", &w.name, 80)?;
+            check_i18n("workWhat", &w.what)?;
             if let Some(s) = &w.snapshot {
-                check_count("語言", &s.languages, 20)?;
+                check_count("languages", &s.languages, 20)?;
             }
         }
         Ok(())
@@ -345,62 +373,63 @@ pub async fn setup_uses_white_build(pool: &SqlitePool) -> Result<bool, AppError>
     Ok(setup.bays.first().is_some_and(|b| b.on && b.sheet == "white-build"))
 }
 
-fn check_pct(field: &str, p: Option<[f64; 2]>) -> Result<(), String> {
+fn check_pct(field: &'static str, p: Option<[f64; 2]>) -> Result<(), Problem> {
     match p {
         Some([x, y]) if !(0.0..=100.0).contains(&x) || !(0.0..=100.0).contains(&y) => {
-            Err(format!("{field} 要在 0–100 之間"))
+            Err(Problem::new("percent_range", format!("{field} must be between 0 and 100"))
+                .param("field", field))
         }
         _ => Ok(()),
     }
 }
 
 impl SetupContent {
-    fn validate(&self) -> Result<(), String> {
-        check_count("貨艙", &self.bays, 4)?;
+    fn validate(&self) -> Result<(), Problem> {
+        check_count("bays", &self.bays, 4)?;
         for bay in &self.bays {
-            check_text("圖紙", &bay.sheet, 60)?;
-            check_text("英文小字", &bay.eyebrow, 40)?;
-            check_i18n("分類名", &bay.label)?;
-            check_i18n("說明", &bay.lede)?;
+            check_text("sheet", &bay.sheet, 60)?;
+            check_text("eyebrow", &bay.eyebrow, 40)?;
+            check_i18n("bayLabel", &bay.label)?;
+            check_i18n("bayLede", &bay.lede)?;
             if let Some(img) = &bay.image {
-                check_text("圖的網址", &img.url, 500)?;
+                check_text("imageUrl", &img.url, 500)?;
                 if !(img.ratio.is_finite() && img.ratio > 0.05 && img.ratio < 20.0) {
-                    return Err("圖的比例不對".into());
+                    return Err(Problem::new("image_ratio", "The image's aspect ratio is off"));
                 }
             }
-            check_count("部件", &bay.parts, 40)?;
+            check_count("parts", &bay.parts, 40)?;
             for p in &bay.parts {
-                check_text("部件 key", &p.key, 60)?;
-                check_text("部件名稱", &p.name, 120)?;
-                check_text("規格", &p.spec, 200)?;
-                check_pct("落點", p.at)?;
-                check_pct("編號圈", p.b)?;
+                check_text("partKey", &p.key, 60)?;
+                check_text("partName", &p.name, 120)?;
+                check_text("spec", &p.spec, 200)?;
+                check_pct("partAt", p.at)?;
+                check_pct("partBadge", p.b)?;
             }
-            check_count("零件表", &bay.extra, 40)?;
+            check_count("extras", &bay.extra, 40)?;
             for e in &bay.extra {
-                check_text("名稱", &e.name, 120)?;
-                check_text("規格", &e.spec, 200)?;
+                check_text("extraName", &e.name, 120)?;
+                check_text("spec", &e.spec, 200)?;
             }
-            check_i18n("裝置的標題", &bay.devices_title)?;
-            check_count("裝置", &bay.devices, 30)?;
+            check_i18n("devicesTitle", &bay.devices_title)?;
+            check_count("devices", &bay.devices, 30)?;
             for d in &bay.devices {
-                check_text("裝置名稱", &d.name, 120)?;
-                check_i18n("用途", &d.role)?;
-                check_count("文章", &d.posts, 20)?;
+                check_text("deviceName", &d.name, 120)?;
+                check_i18n("deviceRole", &d.role)?;
+                check_count("posts", &d.posts, 20)?;
             }
-            check_count("家電", &bay.appliances, 30)?;
+            check_count("appliances", &bay.appliances, 30)?;
             for a in &bay.appliances {
-                check_text("家電", &a.name, 80)?;
-                check_i18n("家電種類", &a.kind)?;
+                check_text("applianceName", &a.name, 80)?;
+                check_i18n("applianceKind", &a.kind)?;
             }
-            check_count("文章", &bay.records, 20)?;
+            check_count("posts", &bay.records, 20)?;
         }
-        check_i18n("第五站的名字", &self.base.label)?;
-        check_i18n("第五站的說明", &self.base.lede)?;
-        check_count("規格", &self.base.specs, 7)?;
+        check_i18n("baseLabel", &self.base.label)?;
+        check_i18n("baseLede", &self.base.lede)?;
+        check_count("specs", &self.base.specs, 7)?;
         for s in &self.base.specs {
-            check_text("規格名", &s.label, 60)?;
-            check_text("規格", &s.value, 120)?;
+            check_text("specName", &s.label, 60)?;
+            check_text("spec", &s.value, 120)?;
         }
         Ok(())
     }
@@ -431,16 +460,26 @@ pub struct QaItem {
 const ANSWER_MAX: usize = 2000;
 
 impl QaContent {
-    fn validate(&self) -> Result<(), String> {
-        check_i18n("問答的介紹", &self.intro)?;
-        check_count("問答", &self.items, 30)?;
+    fn validate(&self) -> Result<(), Problem> {
+        check_i18n("qaIntro", &self.intro)?;
+        check_count("questions", &self.items, 30)?;
         for it in &self.items {
-            check_i18n("問題", &it.q)?;
+            check_i18n("question", &it.q)?;
             for (lang, text) in &it.a {
                 if !LOCALES.contains(&lang.as_str()) {
-                    return Err(format!("答案：不認得的語系 {lang}"));
+                    return Err(Problem::new("unknown_locale", format!("answer: unknown language {lang}"))
+                        .param("field", "answer")
+                        .param("lang", lang.as_str()));
                 }
-                check_text(&format!("答案（{lang}）"), text, ANSWER_MAX)?;
+                if text.chars().count() > ANSWER_MAX {
+                    return Err(Problem::new(
+                        "text_too_long_in",
+                        format!("answer ({lang}) is over {ANSWER_MAX} characters"),
+                    )
+                    .param("field", "answer")
+                    .param("lang", lang.as_str())
+                    .param("max", ANSWER_MAX));
+                }
             }
         }
         Ok(())
@@ -476,19 +515,26 @@ fn is_date(s: &str) -> bool {
 }
 
 impl LogContent {
-    fn validate(&self) -> Result<(), String> {
+    fn validate(&self) -> Result<(), Problem> {
         if !self.start.is_empty() && chrono::DateTime::parse_from_rfc3339(&self.start).is_err() {
-            return Err("起點要是帶時區的時間（例如 2025-04-01T00:00:00+08:00），或留空".into());
+            return Err(Problem::new(
+                "log_start_invalid",
+                "start must be a time with a timezone (e.g. 2025-04-01T00:00:00+08:00), or empty",
+            ));
         }
-        check_count("里程碑", &self.milestones, 200)?;
+        check_count("milestones", &self.milestones, 200)?;
         for m in &self.milestones {
             if !is_date(&m.date) {
-                return Err(format!("里程碑的日期要是 YYYY-MM-DD：{}", m.date));
+                return Err(Problem::new(
+                    "milestone_date",
+                    format!("Milestone dates must be YYYY-MM-DD: {}", m.date),
+                )
+                .param("date", m.date.as_str()));
             }
             if m.level > 2 {
-                return Err("里程碑的等級只有 0、1、2".into());
+                return Err(Problem::new("milestone_level", "Milestone level must be 0, 1 or 2"));
             }
-            check_i18n("里程碑", &m.text)?;
+            check_i18n("milestone", &m.text)?;
         }
         Ok(())
     }
@@ -547,8 +593,8 @@ async fn save<T: Serialize>(pool: &SqlitePool, key: &str, value: &T) -> Result<(
     Ok(())
 }
 
-fn bad_request(msg: &str) -> Response {
-    (StatusCode::BAD_REQUEST, Json(json!({ "error": msg }))).into_response()
+fn bad_request(p: &Problem) -> Response {
+    p.respond(StatusCode::BAD_REQUEST)
 }
 
 /// `GET /api/pages/about` —— 公開：關於頁的內容。沒填過是空的那一份
@@ -697,9 +743,9 @@ mod tests {
     fn 譯文的原文指紋可以存_太長才擋() {
         let mut v = tw("出生");
         v.insert(SYNC_KEY.into(), "en:1a2b3c4d,ja:5e6f7a8b".into());
-        assert_eq!(check_i18n("章節標題", &v), Ok(()));
+        assert_eq!(check_i18n("chapterTitle", &v), Ok(()));
         v.insert(SYNC_KEY.into(), "x".repeat(SYNC_MAX + 1));
-        assert!(check_i18n("章節標題", &v).is_err());
+        assert!(check_i18n("chapterTitle", &v).is_err());
     }
 
     #[test]
@@ -715,7 +761,11 @@ mod tests {
         };
         assert_eq!(c.validate(), Ok(()));
         c.chapters[0].line = BTreeMap::from([("fr".to_string(), "x".to_string())]);
-        assert!(c.validate().unwrap_err().contains("fr"));
+        let e = c.validate().unwrap_err();
+        assert_eq!(
+            (e.code, e.params["field"].as_str(), e.params["lang"].as_str()),
+            ("unknown_locale", Some("chapterLine"), Some("fr"))
+        );
         c.chapters[0].line = tw(&"字".repeat(TEXT_MAX + 1));
         assert!(c.validate().is_err());
     }

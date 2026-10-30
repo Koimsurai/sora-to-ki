@@ -183,7 +183,8 @@ pub async fn create_book(
     crate::error::JsonBody(body): crate::error::JsonBody<Map<String, Value>>,
 ) -> Response {
     if !js_truthy(body.get("title")) {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "書名為必填欄位" }))).into_response();
+        return crate::error::Problem::new("book_title_required", "Title is required")
+            .respond(StatusCode::BAD_REQUEST);
     }
     let mut q = sqlx::query(
         "INSERT INTO books (isbn, title, authors, publisher, published_date, description, \

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/auth';
 import { at, useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { lookup, lookupOr } from '../../lib/tableLookup';
 import AdminLoading from './AdminLoading';
@@ -61,8 +62,8 @@ export default function UsersManager() {
         toast.success(t('users.roleChanged', { name: target.display_name ?? '', role: roleLabel(role) }));
         void invalidateUsers();
       } else {
-        const data = (await res.json()) as { error?: string };
-        toast.error(data.error ?? t('users.roleChangeFailed'));
+        const data: unknown = await res.json().catch(() => ({}));
+        toast.error(apiErrorText(data, at, 'errors', t('users.roleChangeFailed')));
       }
     } catch {
       toast.error(t('users.roleChangeFailed'));

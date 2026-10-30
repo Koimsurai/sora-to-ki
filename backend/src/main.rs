@@ -131,7 +131,7 @@ async fn run() -> anyhow::Result<()> {
     // 站台設定要在建第一個管理員之前：種子看 users 表是不是空的，判斷這是全新安裝還是既有的站
     handlers::site_config::load_or_seed(&pool)
         .await
-        .map_err(|e| anyhow::anyhow!("載入站台設定失敗：{e:?}"))?;
+        .map_err(|e| anyhow::anyhow!("couldn't load site settings: {e:?}"))?;
 
     if let Some(username) = handlers::auth::bootstrap_admin(&pool).await? {
         tracing::info!(username = %username, "全新部署：已用 ADMIN_USERNAME / ADMIN_PASSWORD 建立第一個管理員");
@@ -139,7 +139,7 @@ async fn run() -> anyhow::Result<()> {
 
     // 還沒有站長：把認領用的設定碼印在 log（後台的 /admin/init 精靈要它）
     revalidate::ensure_secret_file();
-    handlers::init::announce(&pool).await.map_err(|e| anyhow::anyhow!("初次設定的設定碼：{e:?}"))?;
+    handlers::init::announce(&pool).await.map_err(|e| anyhow::anyhow!("first-time setup code: {e:?}"))?;
 
     let http = reqwest::Client::builder().timeout(Duration::from_secs(30)).build()?;
 

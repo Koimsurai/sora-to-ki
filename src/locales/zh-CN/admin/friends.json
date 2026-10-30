@@ -80,5 +80,33 @@
   "removeTitle": "删除《{{name}}》？",
   "removeApproved": "会从朋友页上消失。想保留记录的话，改成退回就好。",
   "removePending": "这份申请会被整个删除。想保留记录的话，改成退回就好。",
-  "keep": "保留"
+  "keep": "保留",
+  "check": {
+    "label": {
+      "reachable": "网站访问得到",
+      "https": "HTTPS",
+      "feed": "RSS 抓得到",
+      "recent": "最近三个月有更新",
+      "backlink": "对方站上有链回这里"
+    },
+    "detail": {
+      "reachable_status": "{{status}} · {{ms}} ms",
+      "fetch_bad_url": "网址不能抓取",
+      "fetch_timeout": "超时",
+      "fetch_unreachable": "连不上",
+      "fetch_private": "指向内网",
+      "https_no": "不是 HTTPS",
+      "https_ok": "证书有效、连接正常",
+      "https_unknown": "连不上，看不出来",
+      "feed_missing": "首页上找不到 RSS",
+      "feed_empty": "抓不到或里面没有文章",
+      "feed_count": "{{count}} 篇",
+      "feed_count_latest": "{{count}} 篇 · 最新 {{date}}",
+      "recent_unknown": "看不出最新一篇的日期",
+      "backlink_home": "首页上有",
+      "backlink_page": "{{path}} 上有",
+      "backlink_mx": "mx-space 的友链列表里有",
+      "backlink_missing": "首页与 /friends、/links 都找不到 {{host}}"
+    }
+  }
 }

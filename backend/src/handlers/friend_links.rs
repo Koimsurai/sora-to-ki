@@ -8,6 +8,7 @@
 //! **送出時不去抓對方的網站**：那會讓任何人都能叫這台機器去連任意網址。
 //! 自動檢查（[`run_checks`]）由站長在後台按下去才跑，而且一樣過 `net_guard`。
 
+use std::collections::BTreeMap;
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 
@@ -23,6 +24,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{FromRow, SqlitePool};
 
+use crate::error::Problem;
 use crate::handlers::friends::{FriendPost, recent_posts};
 use crate::state::AppState;
 
@@ -55,15 +57,16 @@ pub struct Application {
 }
 
 /// 網址要是 http(s)、不能指到內網，長度有上限。根路徑的結尾斜線拿掉（`https://a.com/` → `https://a.com`）
-pub fn clean_url(raw: &str) -> Result<String, String> {
+pub fn clean_url(raw: &str) -> Result<String, Problem> {
     let s = raw.trim();
     if s.is_empty() {
-        return Err("網址是空的".into());
+        return Err(Problem::new("url_empty", "URL is empty"));
     }
     if s.chars().count() > URL_MAX {
-        return Err("網址太長".into());
+        return Err(Problem::new("url_too_long", "URL is too long").param("max", URL_MAX));
     }
-    let (url, _) = crate::net_guard::validate_url(s).ok_or("網址要是 http(s) 開頭、連得到的公開網站")?;
+    let (url, _) = crate::net_guard::validate_url(s)
+        .ok_or_else(|| Problem::new("url_invalid", "URL must be a public site starting with http(s)"))?;
     Ok(url
         .strip_suffix('/')
         .filter(|u| u.matches('/').count() == 2)
@@ -80,9 +83,11 @@ fn trimmed(v: Option<&str>) -> Option<String> {
     v.map(str::trim).filter(|s| !s.is_empty()).map(String::from)
 }
 
-fn within(field: &str, v: Option<String>, max: usize) -> Result<Option<String>, String> {
+fn within(code: &'static str, field: &str, v: Option<String>, max: usize) -> Result<Option<String>, Problem> {
     match v {
-        Some(s) if s.chars().count() > max => Err(format!("{field}最多 {max} 個字")),
+        Some(s) if s.chars().count() > max => {
+            Err(Problem::new(code, format!("{field} can be at most {max} characters")).param("max", max))
+        }
         other => Ok(other),
     }
 }
@@ -95,21 +100,26 @@ pub fn validate(
     feed_url: Option<&str>,
     email: Option<&str>,
     message: Option<&str>,
-) -> Result<Application, String> {
-    let name = within("站名", trimmed(name), NAME_MAX)?.ok_or("站名是空的")?;
+) -> Result<Application, Problem> {
+    let name = within("name_too_long", "Site name", trimmed(name), NAME_MAX)?
+        .ok_or_else(|| Problem::new("name_empty", "Site name is empty"))?;
     let url = clean_url(url.unwrap_or_default())?;
-    let description = within("介紹", trimmed(description), DESC_MAX)?.unwrap_or_default();
-    let feed_url = trimmed(feed_url).map(|f| clean_url(&f)).transpose().map_err(|e| format!("RSS：{e}"))?;
-    let email = within("信箱", trimmed(email), EMAIL_MAX)?;
+    let description =
+        within("description_too_long", "Description", trimmed(description), DESC_MAX)?.unwrap_or_default();
+    let feed_url = trimmed(feed_url)
+        .map(|f| clean_url(&f))
+        .transpose()
+        .map_err(|e| Problem::new("feed_url_invalid", format!("RSS: {e}")))?;
+    let email = within("email_too_long", "Email", trimmed(email), EMAIL_MAX)?;
     if let Some(e) = &email {
         let ok =
             e.split_once('@').is_some_and(|(a, d)| !a.is_empty() && d.contains('.') && !d.starts_with('.'))
                 && !e.chars().any(char::is_whitespace);
         if !ok {
-            return Err("信箱看起來不對".into());
+            return Err(Problem::new("email_invalid", "Email doesn't look right"));
         }
     }
-    let message = within("想說的話", trimmed(message), MESSAGE_MAX)?;
+    let message = within("message_too_long", "Message", trimmed(message), MESSAGE_MAX)?;
     Ok(Application { name, url, description, feed_url, email, message })
 }
 
@@ -126,15 +136,66 @@ pub fn slug_for(url: &str) -> Option<String> {
 /// 一項自動檢查的結果
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
 pub struct FriendCheck {
-    /// reachable | https | feed | recent | backlink
+    /// reachable | https | feed | recent | backlink（後台照它換成站長的語言，`label` 是英文的備用）
     pub key: String,
     pub label: String,
     pub ok: bool,
+    /// 英文說明；`code` 有值時後台換成站長的語言（`errors.friendCheck.<code>`），`params` 填進去
     pub detail: String,
+    /// 舊的檢查結果（存在資料庫裡的）沒有這兩欄
+    #[serde(default)]
+    pub code: String,
+    #[serde(default)]
+    pub params: BTreeMap<String, String>,
 }
 
-fn check(key: &str, label: &str, ok: bool, detail: impl Into<String>) -> FriendCheck {
-    FriendCheck { key: key.into(), label: label.into(), ok, detail: detail.into() }
+fn check(key: &str, label: &str, ok: bool, detail: Detail) -> FriendCheck {
+    FriendCheck {
+        key: key.into(),
+        label: label.into(),
+        ok,
+        detail: detail.english,
+        code: detail.code.into(),
+        params: detail.params,
+    }
+}
+
+/// 一項檢查的說明：英文一份、代號一個、要填進翻譯的值
+struct Detail {
+    code: &'static str,
+    english: String,
+    params: BTreeMap<String, String>,
+}
+
+fn detail(code: &'static str, english: impl Into<String>) -> Detail {
+    Detail { code, english: english.into(), params: BTreeMap::new() }
+}
+
+impl Detail {
+    fn with(mut self, key: &str, value: impl std::fmt::Display) -> Self {
+        self.params.insert(key.into(), value.to_string());
+        self
+    }
+}
+
+/// 抓不到一頁的原因
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FetchFail {
+    BadUrl,
+    Timeout,
+    Unreachable,
+    PrivateNetwork,
+}
+
+impl FetchFail {
+    fn detail(self) -> Detail {
+        match self {
+            Self::BadUrl => detail("fetch_bad_url", "Can't fetch this URL"),
+            Self::Timeout => detail("fetch_timeout", "Timed out"),
+            Self::Unreachable => detail("fetch_unreachable", "Can't connect"),
+            Self::PrivateNetwork => detail("fetch_private", "Points to a private network"),
+        }
+    }
 }
 
 struct Page {
@@ -145,8 +206,8 @@ struct Page {
 
 /// 安全地抓一頁：過 net_guard、連線後再驗一次實際的 IP（擋 DNS rebinding 與轉址進內網）、
 /// 只讀前 [`PAGE_MAX_BYTES`]
-async fn fetch_page(http: &reqwest::Client, raw: &str) -> Result<Page, String> {
-    let (url, _) = crate::net_guard::validate_url(raw).ok_or("網址不能抓")?;
+async fn fetch_page(http: &reqwest::Client, raw: &str) -> Result<Page, FetchFail> {
+    let (url, _) = crate::net_guard::validate_url(raw).ok_or(FetchFail::BadUrl)?;
     let started = Instant::now();
     let mut resp = http
         .get(&url)
@@ -154,11 +215,11 @@ async fn fetch_page(http: &reqwest::Client, raw: &str) -> Result<Page, String> {
         .timeout(FETCH_TIMEOUT)
         .send()
         .await
-        .map_err(|e| if e.is_timeout() { "逾時".to_string() } else { "連不到".to_string() })?;
+        .map_err(|e| if e.is_timeout() { FetchFail::Timeout } else { FetchFail::Unreachable })?;
     if let Some(addr) = resp.remote_addr()
         && crate::net_guard::is_blocked_ip(&addr.ip())
     {
-        return Err("指到內網".into());
+        return Err(FetchFail::PrivateNetwork);
     }
     let ms = started.elapsed().as_millis();
     let status = resp.status().as_u16();
@@ -233,8 +294,15 @@ pub async fn run_checks(
 
     let reachable = matches!(&home, Ok(p) if (200..300).contains(&p.status));
     out.push(match &home {
-        Ok(p) => check("reachable", "網站連得到", reachable, format!("{} · {} ms", p.status, p.ms)),
-        Err(e) => check("reachable", "網站連得到", false, e.clone()),
+        Ok(p) => check(
+            "reachable",
+            "Site is reachable",
+            reachable,
+            detail("reachable_status", format!("{} · {} ms", p.status, p.ms))
+                .with("status", p.status)
+                .with("ms", p.ms),
+        ),
+        Err(e) => check("reachable", "Site is reachable", false, e.detail()),
     });
 
     let https = url.starts_with("https://");
@@ -243,11 +311,11 @@ pub async fn run_checks(
         "HTTPS",
         https && reachable,
         if !https {
-            "不是 HTTPS"
+            detail("https_no", "Not HTTPS")
         } else if reachable {
-            "憑證有效、連線正常"
+            detail("https_ok", "Valid certificate, connection OK")
         } else {
-            "連不上，看不出來"
+            detail("https_unknown", "Can't connect, can't tell")
         },
     ));
 
@@ -263,28 +331,45 @@ pub async fn run_checks(
     };
     let latest = latest_date(&posts);
     out.push(match (&feed, posts.len()) {
-        (None, _) => check("feed", "RSS 抓得到", false, "首頁上找不到 RSS"),
-        (Some(_), 0) => check("feed", "RSS 抓得到", false, "抓不到或裡面沒有文章"),
+        (None, _) => {
+            check("feed", "RSS works", false, detail("feed_missing", "No RSS link on the home page"))
+        }
+        (Some(_), 0) => {
+            check("feed", "RSS works", false, detail("feed_empty", "Can't fetch it, or it has no posts"))
+        }
         (Some(_), n) => check(
             "feed",
-            "RSS 抓得到",
+            "RSS works",
             true,
-            latest.map_or_else(|| format!("{n} 篇"), |d| format!("{n} 篇 · 最新 {}", d.format("%Y.%m.%d"))),
+            match latest {
+                None => detail("feed_count", format!("{n} posts")).with("count", n),
+                Some(d) => {
+                    let date = d.format("%Y.%m.%d");
+                    detail("feed_count_latest", format!("{n} posts · latest {date}"))
+                        .with("count", n)
+                        .with("date", date)
+                }
+            },
         ),
     });
 
     out.push(match latest {
         Some(d) => check(
             "recent",
-            "最近三個月有更新",
+            "Updated in the last three months",
             (now - d).num_days() <= RECENT_DAYS,
-            d.format("%Y.%m.%d").to_string(),
+            detail("", d.format("%Y.%m.%d").to_string()),
         ),
-        None => check("recent", "最近三個月有更新", false, "看不出最新一篇的日期"),
+        None => check(
+            "recent",
+            "Updated in the last three months",
+            false,
+            detail("recent_unknown", "Can't tell when the latest post was"),
+        ),
     });
 
     // 首頁沒有就看友鏈頁常見的位置（同一個站底下）
-    let mut back = links_back(html, our_host).then(|| "首頁上有".to_string());
+    let mut back = links_back(html, our_host).then(|| detail("backlink_home", "On the home page"));
     if back.is_none()
         && reachable
         && let Ok(base) = reqwest::Url::parse(url)
@@ -295,7 +380,7 @@ pub async fn run_checks(
                 && (200..300).contains(&page.status)
                 && links_back(&page.body, our_host)
             {
-                back = Some(format!("{p} 上有"));
+                back = Some(detail("backlink_page", format!("On {p}")).with("path", p));
                 break;
             }
         }
@@ -308,15 +393,16 @@ pub async fn run_checks(
         && (200..300).contains(&page.status)
         && links_back(&page.body, our_host)
     {
-        back = Some("mx-space 的友鏈清單裡有".to_string());
+        back = Some(detail("backlink_mx", "In their mx-space friends list"));
     }
     out.push(match back {
-        Some(where_) => check("backlink", "對方站上有連回這裡", true, where_),
+        Some(where_) => check("backlink", "Links back here", true, where_),
         None => check(
             "backlink",
-            "對方站上有連回這裡",
+            "Links back here",
             false,
-            format!("首頁與 /friends、/links 都找不到 {our_host}"),
+            detail("backlink_missing", format!("{our_host} isn't on the home page, /friends or /links"))
+                .with("host", our_host),
         ),
     });
 
@@ -367,10 +453,9 @@ pub async fn apply(
     headers: HeaderMap,
     crate::error::JsonBody(b): crate::error::JsonBody<ApplyBody>,
 ) -> Response {
-    let err = |code: StatusCode, msg: &str| (code, Json(json!({ "error": msg }))).into_response();
     // 機器人：假裝收到了，不存、也不告訴它哪裡露餡
     if b.website.as_deref().is_some_and(|w| !w.trim().is_empty()) {
-        return (StatusCode::CREATED, Json(json!({ "message": "收到了" }))).into_response();
+        return (StatusCode::CREATED, Json(json!({ "message": "Received" }))).into_response();
     }
     let app = match validate(
         b.name.as_deref(),
@@ -381,10 +466,10 @@ pub async fn apply(
         b.message.as_deref(),
     ) {
         Ok(a) => a,
-        Err(e) => return err(StatusCode::BAD_REQUEST, &e),
+        Err(e) => return e.respond(StatusCode::BAD_REQUEST),
     };
     if host_of(&app.url).is_some_and(|h| h == our_host()) {
-        return err(StatusCode::BAD_REQUEST, "這是這個站自己的網址");
+        return Problem::new("own_site", "That's this site's own URL").respond(StatusCode::BAD_REQUEST);
     }
 
     let ip = crate::handlers::comments::client_ip(&headers);
@@ -394,7 +479,10 @@ pub async fn apply(
         .fetch_optional(pool)
         .await;
     match blocked {
-        Ok(Some(_)) => return err(StatusCode::FORBIDDEN, "這個網路目前不能送出申請"),
+        Ok(Some(_)) => {
+            return Problem::new("network_blocked", "Applications can't be sent from this network right now")
+                .respond(StatusCode::FORBIDDEN);
+        }
         Ok(None) => {}
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
@@ -407,14 +495,18 @@ pub async fn apply(
         .await;
         match today {
             Ok(n) if n >= APPLY_PER_IP_PER_DAY => {
-                return err(StatusCode::TOO_MANY_REQUESTS, "今天送了好幾份了，明天再試");
+                return Problem::new("too_many_today", "Too many applications today, try again tomorrow")
+                    .respond(StatusCode::TOO_MANY_REQUESTS);
             }
             Ok(_) => {}
             Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         }
     }
     match duplicate_of(pool, &app.url).await {
-        Ok(true) => return err(StatusCode::CONFLICT, "這個網站已經在名單上，或還在審"),
+        Ok(true) => {
+            return Problem::new("already_listed", "This site is already listed or under review")
+                .respond(StatusCode::CONFLICT);
+        }
         Ok(false) => {}
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
@@ -433,7 +525,7 @@ pub async fn apply(
     .execute(pool)
     .await;
     match r {
-        Ok(r) => (StatusCode::CREATED, Json(json!({ "message": "收到了", "id": r.last_insert_rowid() })))
+        Ok(r) => (StatusCode::CREATED, Json(json!({ "message": "Received", "id": r.last_insert_rowid() })))
             .into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
@@ -605,7 +697,7 @@ pub async fn admin_create_friend(
         None,
     ) {
         Ok(a) => a,
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+        Err(e) => return e.respond(StatusCode::BAD_REQUEST),
     };
     let id = match sqlx::query(
         "INSERT INTO friend_links (name, url, description, feed_url, status, reviewed_at) \
@@ -660,18 +752,17 @@ pub async fn admin_update_friend(
     crate::error::PathParam(id): crate::error::PathParam<i64>,
     crate::error::JsonBody(b): crate::error::JsonBody<UpdateFriendBody>,
 ) -> Response {
-    let bad = |e: String| (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response();
     let before = match load(&state.pool, id).await {
         Ok(Some(r)) => r,
-        Ok(None) => {
-            return (StatusCode::NOT_FOUND, Json(json!({ "error": "找不到這份申請" }))).into_response();
-        }
+        Ok(None) => return friend_missing(),
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     if let Some(s) = &b.status
         && !STATUSES.contains(&s.as_str())
     {
-        return bad(format!("無效的狀態：{s}"));
+        return Problem::new("status_invalid", format!("Invalid status: {s}"))
+            .param("status", s.as_str())
+            .respond(StatusCode::BAD_REQUEST);
     }
     // 有帶的欄位跟原本的合起來再驗一次，規則跟申請表單一樣
     let feed = match b.feed_url.as_deref() {
@@ -688,11 +779,12 @@ pub async fn admin_update_friend(
         None,
     ) {
         Ok(a) => a,
-        Err(e) => return bad(e),
+        Err(e) => return e.respond(StatusCode::BAD_REQUEST),
     };
     let reply = b.reply.as_deref().map(str::trim).filter(|r| !r.is_empty());
     if reply.is_some() && before.email.is_none() {
-        return bad("對方沒有留信箱，不能回信".into());
+        return Problem::new("reply_no_email", "They didn't leave an email, so you can't reply")
+            .respond(StatusCode::BAD_REQUEST);
     }
     let status = b.status.clone().unwrap_or_else(|| before.status.clone());
     let status_changed = status != before.status;
@@ -756,7 +848,7 @@ pub async fn admin_delete_friend(
 ) -> Response {
     let was_friend = match load(&state.pool, id).await {
         Ok(Some(r)) => r.status == "approved",
-        Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "找不到" }))).into_response(),
+        Ok(None) => return friend_missing(),
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     if let Err(e) = sqlx::query("DELETE FROM friend_links WHERE id = ?").bind(id).execute(&state.pool).await {
@@ -765,7 +857,11 @@ pub async fn admin_delete_friend(
     if was_friend {
         tokio::spawn(crate::revalidate::fire());
     }
-    Json(json!({ "message": "已刪除" })).into_response()
+    Json(json!({ "message": "Deleted" })).into_response()
+}
+
+fn friend_missing() -> Response {
+    Problem::new("friend_missing", "Application not found").respond(StatusCode::NOT_FOUND)
 }
 
 /// `POST /api/admin/friends/:id/check` —— 跑一次自動檢查並存起來
@@ -779,7 +875,7 @@ pub async fn admin_check_friend(
 ) -> Response {
     let row = match load(&state.pool, id).await {
         Ok(Some(r)) => r,
-        Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "找不到" }))).into_response(),
+        Ok(None) => return friend_missing(),
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let (checks, discovered) =
@@ -844,8 +940,9 @@ mod tests {
 
     #[test]
     fn 必填與長度() {
-        assert!(
-            validate(None, Some("https://a.example"), None, None, None, None).unwrap_err().contains("站名")
+        assert_eq!(
+            validate(None, Some("https://a.example"), None, None, None, None).unwrap_err().code,
+            "name_empty"
         );
         assert!(validate(Some("  "), Some("https://a.example"), None, None, None, None).is_err());
         assert!(validate(Some(&"名".repeat(41)), Some("https://a.example"), None, None, None, None).is_err());
@@ -880,7 +977,7 @@ mod tests {
             with("https://a.example/rss.xml").unwrap().feed_url.as_deref(),
             Some("https://a.example/rss.xml")
         );
-        assert!(with("http://192.168.0.1/rss").unwrap_err().starts_with("RSS"));
+        assert_eq!(with("http://192.168.0.1/rss").unwrap_err().code, "feed_url_invalid");
     }
 
     #[test]

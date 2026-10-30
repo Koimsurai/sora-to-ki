@@ -9,7 +9,7 @@ use serde_json::{Value, json};
 
 use crate::{
     auth::{bearer_token, verify_jwt},
-    error::AppError,
+    error::{AppError, Problem},
     handlers::posts::{CommentRow, CommentsResponse},
     state::AppState,
 };
@@ -85,7 +85,7 @@ async fn create_comment(
     if !is_oauth && let Some(captcha) = &body.captcha {
         let answer = body.captcha_answer.clone().unwrap_or(Value::Null);
         if !js_loose_eq(captcha, &answer) {
-            return (StatusCode::BAD_REQUEST, Json(json!({ "error": "驗證碼錯誤" }))).into_response();
+            return Problem::new("captcha_wrong", "Wrong captcha answer").respond(StatusCode::BAD_REQUEST);
         }
     }
 
@@ -99,7 +99,8 @@ async fn create_comment(
         .ok()
         .flatten();
     if blocked.is_some() {
-        return (StatusCode::FORBIDDEN, Json(json!({ "error": "您的留言權限已被限制" }))).into_response();
+        return Problem::new("comment_blocked", "Commenting is restricted for you")
+            .respond(StatusCode::FORBIDDEN);
     }
 
     // 關鍵字過濾：第一個命中的 filter 決定 action（DB rowid 序，無 ORDER BY）
@@ -117,8 +118,8 @@ async fn create_comment(
         }
     }
     if matched.as_deref() == Some("reject") {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "留言內容包含不允許的詞彙" })))
-            .into_response();
+        return Problem::new("comment_rejected", "The comment contains words that aren't allowed")
+            .respond(StatusCode::BAD_REQUEST);
     }
     let status = if matched.as_deref() == Some("spam") {
         "spam"

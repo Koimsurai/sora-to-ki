@@ -166,7 +166,7 @@ async fn 建書沒有書名是_400_回應原樣帶回_body() {
     for body in [json!({}), json!({ "title": "" }), json!({ "title": null }), json!({ "isbn": "1" })] {
         let (st, v) = admin(&app, "POST", "/api/books", Some(body.clone())).await;
         assert_eq!(st, StatusCode::BAD_REQUEST, "{body}");
-        assert_eq!(v["error"], "書名為必填欄位");
+        assert_eq!(v["code"], "book_title_required");
     }
 
     // 成功時回應是 `{id, ...req.body}`——原樣把送進來的欄位帶回去

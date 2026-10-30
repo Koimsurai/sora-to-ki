@@ -42,9 +42,11 @@ pub async fn login(
 
     // Express: `if (!username || !password)` —— 空字串也算缺。
     if username.is_empty() || password.is_empty() {
-        return Ok(
-            (StatusCode::BAD_REQUEST, Json(json!({ "message": "請提供用戶名和密碼" }))).into_response()
-        );
+        return Ok((
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "message": "Username and password are required" })),
+        )
+            .into_response());
     }
 
     // 查使用者。DB 錯 → 500 {"message":"伺服器錯誤"}（對齊 Express，非 AppError 的 error key）
@@ -55,13 +57,13 @@ pub async fn login(
     .fetch_optional(&state.pool)
     .await
     else {
-        return Ok(
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "message": "伺服器錯誤" }))).into_response()
-        );
+        return Ok((StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "message": "Internal server error" })))
+            .into_response());
     };
 
-    let invalid =
-        || (StatusCode::UNAUTHORIZED, Json(json!({ "message": "用戶名或密碼錯誤" }))).into_response();
+    let invalid = || {
+        (StatusCode::UNAUTHORIZED, Json(json!({ "message": "Wrong username or password" }))).into_response()
+    };
     let Some((id, uname, hash, role)) = user else {
         return Ok(invalid());
     };
@@ -88,7 +90,7 @@ pub async fn login(
     .map_err(|e| AppError::Anyhow(anyhow::anyhow!("sign jwt: {e}")))?;
 
     Ok(Json(json!({
-        "message": "登入成功",
+        "message": "Signed in",
         "token": token,
         "user": { "id": id, "username": uname, "role": role },
     }))
@@ -255,9 +257,11 @@ pub async fn reset_admin(
     // bcrypt cost-10 hash ≈ 數十 ms 純 CPU → spawn_blocking
     let pw = password.clone();
     let Ok(Ok(hash)) = tokio::task::spawn_blocking(move || bcrypt::hash(&pw, 10)).await else {
-        return Ok(
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "message": "密碼處理失敗" }))).into_response()
-        );
+        return Ok((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": "Couldn't hash the password" })),
+        )
+            .into_response());
     };
 
     let updated = match sqlx::query("UPDATE users SET password_hash = ? WHERE username = ?")
@@ -268,7 +272,10 @@ pub async fn reset_admin(
     {
         Ok(r) => r.rows_affected(),
         Err(_) => {
-            return Ok((StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "message": "更新密碼失敗" })))
+            return Ok((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "message": "Couldn't update the password" })),
+            )
                 .into_response());
         }
     };
@@ -280,13 +287,18 @@ pub async fn reset_admin(
             .await
             .is_err()
         {
-            return Ok((StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "message": "創建用戶失敗" })))
+            return Ok((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "message": "Couldn't create the user" })),
+            )
                 .into_response());
         }
-        return Ok(Json(json!({ "message": format!("管理員用戶 {username} 已創建"), "username": username }))
-            .into_response());
+        return Ok(Json(
+            json!({ "message": format!("Admin user {username} created"), "username": username }),
+        )
+        .into_response());
     }
-    Ok(Json(json!({ "message": format!("管理員 {username} 密碼已重置"), "username": username }))
+    Ok(Json(json!({ "message": format!("Password reset for admin {username}"), "username": username }))
         .into_response())
 }
 

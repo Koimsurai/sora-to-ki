@@ -308,7 +308,11 @@ fn render_overlay(html: &str, locale: &str) -> anyhow::Result<Vec<u8>> {
         .build();
     let image = takumi::render(options).map_err(|e| anyhow::anyhow!("takumi render: {e}"))?;
     let raw = image.into_raw();
-    anyhow::ensure!(raw.len() == apng::W * apng::H * 4, "takumi 畫出來的尺寸不對（{} bytes）", raw.len());
+    anyhow::ensure!(
+        raw.len() == apng::W * apng::H * 4,
+        "takumi rendered the wrong size ({} bytes)",
+        raw.len()
+    );
     Ok(raw)
 }
 

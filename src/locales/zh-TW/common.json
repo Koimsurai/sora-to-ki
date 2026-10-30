@@ -23,6 +23,25 @@
     "minutesAgo": "{{count}} 分鐘前",
     "hoursAgo": "{{count}} 小時前"
   },
+  "apiError": {
+    "url_empty": "網址是空的",
+    "url_too_long": "網址太長（最多 {{max}} 字）",
+    "url_invalid": "網址要是 http(s) 開頭、連得到的公開網站",
+    "name_empty": "站名是空的",
+    "name_too_long": "站名最多 {{max}} 個字",
+    "description_too_long": "介紹最多 {{max}} 個字",
+    "email_too_long": "信箱最多 {{max}} 個字",
+    "email_invalid": "信箱看起來不對",
+    "message_too_long": "想說的話最多 {{max}} 個字",
+    "feed_url_invalid": "RSS 的網址不對",
+    "own_site": "這是這個站自己的網址",
+    "network_blocked": "這個網路目前不能送出申請",
+    "too_many_today": "今天送了好幾份了，明天再試",
+    "already_listed": "這個網站已經在名單上，或還在審",
+    "captcha_wrong": "驗證碼錯誤",
+    "comment_blocked": "您的留言權限已被限制",
+    "comment_rejected": "留言內容包含不允許的詞彙"
+  },
   "nav": {
     "home": "首頁",
     "notes": "手記",

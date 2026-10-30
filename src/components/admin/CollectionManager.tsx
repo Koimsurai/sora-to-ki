@@ -6,8 +6,9 @@ import { toast } from 'sonner';
 
 import { adminBahamutStatusQueryOptions, adminCollectionQueryOptions } from '@/data/adminData';
 import { watchFavoritesQueryOptions } from '@/data/watchData';
+import { apiErrorText } from '@/lib/apiError';
 import { jsonAuthHeaders } from '@/lib/authToken';
-import { useAdminT } from '@/i18n/admin-i18n';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
@@ -35,8 +36,7 @@ async function send(method: string, path: string, body?: unknown) {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
-    const out = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(out.error ?? `${res.status}`);
+    throw new Error(apiErrorText(await res.json().catch(() => ({})), at, 'errors', `${res.status}`));
   }
 }
 

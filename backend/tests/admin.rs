@@ -622,7 +622,7 @@ async fn 更新不存在的文章是_404() {
     let (st, body) =
         admin(&app, "PUT", "/api/admin/posts/999999", Some(json!({ "title": "改一個不存在的" }))).await;
     assert_eq!(st, StatusCode::NOT_FOUND, "得到 {body}");
-    assert_eq!(body["error"], "文章不存在");
+    assert_eq!(body["code"], "post_missing");
 }
 
 // ── 繁→簡自動轉換（generate-zh-cn）─────────────────────────────────────────

@@ -9,7 +9,7 @@ use serde_json::{Map, Value, json};
 use sqlx::FromRow;
 
 use crate::{
-    error::AppError,
+    error::{AppError, Problem},
     handlers::{
         excerpt_links, post_lifecycle,
         posts::{PostRow, available_locales_with_source},
@@ -714,8 +714,7 @@ pub async fn create_tag(
 ) -> Response {
     let name = body.name.unwrap_or_default();
     if name.is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(ErrorResponse { error: "標籤名稱為必填".into() }))
-            .into_response();
+        return Problem::new("tag_name_required", "Tag name is required").respond(StatusCode::BAD_REQUEST);
     }
     match sqlx::query(
         "INSERT INTO tags (name, name_en, name_ja, name_ko, name_zh_cn, name_zh_tw, created_at) \
@@ -733,7 +732,7 @@ pub async fn create_tag(
         Ok(r) => (StatusCode::CREATED, Json(TagCreated { id: r.last_insert_rowid(), name, post_count: 0 }))
             .into_response(),
         Err(e) if is_unique_violation(&e) => {
-            (StatusCode::CONFLICT, Json(ErrorResponse { error: "標籤已存在".into() })).into_response()
+            Problem::new("tag_exists", "Tag already exists").respond(StatusCode::CONFLICT)
         }
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
@@ -759,8 +758,7 @@ pub async fn update_tag(
 ) -> Response {
     let name = body.name.unwrap_or_default();
     if name.is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(ErrorResponse { error: "標籤名稱為必填".into() }))
-            .into_response();
+        return Problem::new("tag_name_required", "Tag name is required").respond(StatusCode::BAD_REQUEST);
     }
     match sqlx::query(
         "UPDATE tags SET name = ?, name_en = ?, name_ja = ?, name_ko = ?, name_zh_cn = ?, name_zh_tw = ? WHERE id = ?",
@@ -776,12 +774,12 @@ pub async fn update_tag(
     .await
     {
         Ok(r) if r.rows_affected() == 0 => {
-            (StatusCode::NOT_FOUND, Json(ErrorResponse { error: "標籤不存在".into() })).into_response()
+            Problem::new("tag_missing", "Tag not found").respond(StatusCode::NOT_FOUND)
         }
         Ok(r) => Json(TagUpdated { id, name, updated: i64::try_from(r.rows_affected()).unwrap_or(i64::MAX) })
             .into_response(),
         Err(e) if is_unique_violation(&e) => {
-            (StatusCode::CONFLICT, Json(ErrorResponse { error: "標籤名稱已存在".into() })).into_response()
+            Problem::new("tag_exists", "Tag already exists").respond(StatusCode::CONFLICT)
         }
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
@@ -806,9 +804,9 @@ pub async fn delete_tag(
     }
     match sqlx::query("DELETE FROM tags WHERE id = ?").bind(id).execute(&state.pool).await {
         Ok(r) if r.rows_affected() == 0 => {
-            (StatusCode::NOT_FOUND, Json(ErrorResponse { error: "標籤不存在".into() })).into_response()
+            Problem::new("tag_missing", "Tag not found").respond(StatusCode::NOT_FOUND)
         }
-        Ok(_) => Json(MessageResponse { message: "標籤已刪除".into() }).into_response(),
+        Ok(_) => Json(MessageResponse { message: "Tag deleted".into() }).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
@@ -903,8 +901,8 @@ pub async fn create_category(
 ) -> Response {
     let name = body.name.clone().unwrap_or_default();
     if name.is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(ErrorResponse { error: "分類名稱為必填".into() }))
-            .into_response();
+        return Problem::new("category_name_required", "Category name is required")
+            .respond(StatusCode::BAD_REQUEST);
     }
     let slug = resolve_slug(body.slug.as_deref(), &name);
     let description = body.description.clone().unwrap_or_default();
@@ -949,8 +947,8 @@ pub async fn create_category(
         )
             .into_response(),
         Err(e) if is_unique_violation(&e) => {
-            (StatusCode::CONFLICT, Json(ErrorResponse { error: "分類名稱或 slug 已存在".into() }))
-                .into_response()
+            Problem::new("category_exists", "A category with this name or slug already exists")
+                .respond(StatusCode::CONFLICT)
         }
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
@@ -976,8 +974,8 @@ pub async fn update_category(
 ) -> Response {
     let name = body.name.clone().unwrap_or_default();
     if name.is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(ErrorResponse { error: "分類名稱為必填".into() }))
-            .into_response();
+        return Problem::new("category_name_required", "Category name is required")
+            .respond(StatusCode::BAD_REQUEST);
     }
     // 先取舊名（判斷是否需同步 posts.category）
     let old_name = match sqlx::query_scalar::<_, String>("SELECT name FROM categories WHERE id = ?")
@@ -987,8 +985,7 @@ pub async fn update_category(
     {
         Ok(Some(n)) => n,
         Ok(None) => {
-            return (StatusCode::NOT_FOUND, Json(ErrorResponse { error: "分類不存在".into() }))
-                .into_response();
+            return Problem::new("category_missing", "Category not found").respond(StatusCode::NOT_FOUND);
         }
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
@@ -1024,8 +1021,8 @@ pub async fn update_category(
     {
         Ok(r) => r.rows_affected(),
         Err(e) if is_unique_violation(&e) => {
-            return (StatusCode::CONFLICT, Json(ErrorResponse { error: "分類名稱或 slug 已存在".into() }))
-                .into_response();
+            return Problem::new("category_exists", "A category with this name or slug already exists")
+                .respond(StatusCode::CONFLICT);
         }
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
@@ -1062,8 +1059,7 @@ pub async fn delete_category(
     {
         Ok(Some(n)) => n,
         Ok(None) => {
-            return (StatusCode::NOT_FOUND, Json(ErrorResponse { error: "分類不存在".into() }))
-                .into_response();
+            return Problem::new("category_missing", "Category not found").respond(StatusCode::NOT_FOUND);
         }
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
@@ -1077,7 +1073,7 @@ pub async fn delete_category(
     };
     match sqlx::query("DELETE FROM categories WHERE id = ?").bind(id).execute(&state.pool).await {
         Ok(_) => Json(CategoryDeleted {
-            message: "分類已刪除".into(),
+            message: "Category deleted".into(),
             affected_posts: i64::try_from(affected).unwrap_or(i64::MAX),
         })
         .into_response(),
@@ -1481,8 +1477,8 @@ pub async fn admin_create_post(
     let want_newsletter = js_truthy(b.get("send_newsletter")) && status_str.as_deref() == Some("published");
 
     if !js_truthy(b.get("title")) || !js_truthy(b.get("content")) {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "缺少必填欄位: title, content" })))
-            .into_response();
+        return Problem::new("post_fields_required", "title and content are required")
+            .respond(StatusCode::BAD_REQUEST);
     }
     // source_language：缺 → 站台的預設語系；有值但非合法 locale → 400（含 null → "null"）
     let source_language = if let Some(v) = b.get("source_language") {
@@ -1492,11 +1488,9 @@ pub async fn admin_create_post(
                 Value::String(x) => x.clone(),
                 other => other.to_string(),
             };
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({ "error": format!("無效的 source_language: {disp}") })),
-            )
-                .into_response();
+            return Problem::new("source_language_invalid", format!("Invalid source_language: {disp}"))
+                .param("lang", disp)
+                .respond(StatusCode::BAD_REQUEST);
         }
         s
     } else {
@@ -1514,7 +1508,7 @@ pub async fn admin_create_post(
         js_truthy(b.get("send_newsletter")),
     ) {
         Ok(lc) => lc,
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+        Err(e) => return e.respond(StatusCode::BAD_REQUEST),
     };
     let status = Some(lifecycle.status.clone());
     let layout_type = if b.contains_key("layout_type") {
@@ -1537,7 +1531,7 @@ pub async fn admin_create_post(
     let excerpt_links = match b.get("excerpt_links").map(|v| excerpt_links::merge_input(None, v)) {
         None => None,
         Some(Ok(v)) => v,
-        Some(Err(e)) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+        Some(Err(e)) => return e.respond(StatusCode::BAD_REQUEST),
     };
 
     // 網址 slug：呼叫端沒給就由英文標題（或原標題）自動產生，並確保唯一。
@@ -1655,7 +1649,7 @@ pub async fn admin_update_post(
             js_truthy(b.get("send_newsletter")),
         ) {
             Ok(lc) => Some(lc),
-            Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+            Err(e) => return e.respond(StatusCode::BAD_REQUEST),
         },
     };
 
@@ -1666,11 +1660,9 @@ pub async fn admin_update_post(
                 Value::String(x) => x.clone(),
                 other => other.to_string(),
             };
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({ "error": format!("無效的 source_language: {disp}") })),
-            )
-                .into_response();
+            return Problem::new("source_language_invalid", format!("Invalid source_language: {disp}"))
+                .param("lang", disp)
+                .respond(StatusCode::BAD_REQUEST);
         }
     }
 
@@ -1720,7 +1712,7 @@ pub async fn admin_update_post(
                 };
             match excerpt_links::merge_input(stored.as_deref(), v) {
                 Ok(next) => (1, next),
-                Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+                Err(e) => return e.respond(StatusCode::BAD_REQUEST),
             }
         }
     };
@@ -1825,7 +1817,7 @@ pub async fn admin_update_post(
     match q.execute(&state.pool).await {
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(r) if r.rows_affected() == 0 => {
-            return (StatusCode::NOT_FOUND, Json(json!({ "error": "文章不存在" }))).into_response();
+            return Problem::new("post_missing", "Post not found").respond(StatusCode::NOT_FOUND);
         }
         Ok(_) => {}
     }
@@ -1892,7 +1884,7 @@ pub async fn admin_delete_post(
         .await
     {
         Ok(Some(s)) => s,
-        Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "文章不存在" }))).into_response(),
+        Ok(None) => return Problem::new("post_missing", "Post not found").respond(StatusCode::NOT_FOUND),
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let permanent = matches!(q.permanent.as_deref(), Some("true" | "1"));
@@ -1900,21 +1892,21 @@ pub async fn admin_delete_post(
     if !permanent {
         return match post_lifecycle::trash(&state.pool, id).await {
             Ok(true) => Json(json!({
-                "message": "已丟進回收桶",
+                "message": "Moved to trash",
                 "status": "trashed",
                 "keep_days": post_lifecycle::TRASH_KEEP_DAYS,
             }))
             .into_response(),
-            Ok(false) => Json(json!({ "message": "已經在回收桶裡", "status": "trashed" })).into_response(),
+            Ok(false) => Json(json!({ "message": "Already in trash", "status": "trashed" })).into_response(),
             Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         };
     }
     if status != "trashed" {
-        return (StatusCode::CONFLICT, Json(json!({ "error": "只能永久刪除回收桶裡的文章，請先丟進回收" })))
-            .into_response();
+        return Problem::new("delete_needs_trash", "Only posts in the trash can be deleted permanently")
+            .respond(StatusCode::CONFLICT);
     }
     match post_lifecycle::delete_permanently(&state.pool, id).await {
-        Ok(n) => Json(json!({ "message": "文章已永久刪除", "deleted": n })).into_response(),
+        Ok(n) => Json(json!({ "message": "Post deleted permanently", "deleted": n })).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
@@ -1934,8 +1926,10 @@ pub async fn admin_restore_post(
     crate::error::PathParam(id): crate::error::PathParam<i64>,
 ) -> Response {
     match post_lifecycle::restore(&state.pool, id).await {
-        Ok(Some(status)) => Json(json!({ "message": "已還原", "status": status })).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "error": "回收桶裡沒有這篇" }))).into_response(),
+        Ok(Some(status)) => Json(json!({ "message": "Restored", "status": status })).into_response(),
+        Ok(None) => {
+            Problem::new("not_in_trash", "This post is not in the trash").respond(StatusCode::NOT_FOUND)
+        }
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
@@ -2074,15 +2068,15 @@ pub async fn admin_update_user_role(
 ) -> Response {
     let role = body.get("role").and_then(|v| v.as_str()).unwrap_or("");
     if !matches!(role, "USER" | "ADMIN" | "OWNER") {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "無效的角色，允許值：USER, ADMIN, OWNER" })))
-            .into_response();
+        return Problem::new("role_invalid", "Invalid role (USER, ADMIN or OWNER)")
+            .respond(StatusCode::BAD_REQUEST);
     }
     // req.user.dbUser.id === parseInt(userId)（legacy token 無 dbUser → 跳過）
     // （原本走 js_parse_int_opt——路徑參數已是 i64，那層轉換不再需要）
     if let Some(db_id) = owner.db_user_id
         && db_id == id
     {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "不能修改自己的角色" }))).into_response();
+        return Problem::new("own_role", "You can't change your own role").respond(StatusCode::BAD_REQUEST);
     }
     match sqlx::query("UPDATE oauth_users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
         .bind(role)
@@ -2091,9 +2085,9 @@ pub async fn admin_update_user_role(
         .await
     {
         Ok(r) if r.rows_affected() == 0 => {
-            (StatusCode::NOT_FOUND, Json(json!({ "error": "用戶不存在" }))).into_response()
+            Problem::new("user_missing", "User not found").respond(StatusCode::NOT_FOUND)
         }
-        Ok(_) => Json(json!({ "message": "角色更新成功", "role": role })).into_response(),
+        Ok(_) => Json(json!({ "message": "Role updated", "role": role })).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }

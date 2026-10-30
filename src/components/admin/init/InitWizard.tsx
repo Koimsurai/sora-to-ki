@@ -6,6 +6,7 @@ import type { InitStatus } from '@koimsurai/api-types';
 import { useAuth, type User } from '@/contexts/auth';
 import { siteConfigQueryOptions } from '@/data/siteConfig';
 import { adminLang, useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { SUPPORTED_LOCALES } from '@/lib/locales';
 import AdminLangSwitch from '../AdminLangSwitch';
@@ -172,8 +173,7 @@ export default function InitWizard() {
         body: JSON.stringify(draft),
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(body.error ?? t('init.networkError'));
+        setError(apiErrorText(await res.json().catch(() => ({})), t, 'errors', t('init.networkError')));
         return;
       }
       await queryClient.invalidateQueries({ queryKey: siteConfigQueryOptions.queryKey });
