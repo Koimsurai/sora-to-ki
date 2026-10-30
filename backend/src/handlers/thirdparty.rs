@@ -1046,7 +1046,8 @@ pub async fn steam_owned_games(State(state): State<AppState>) -> Response {
 }
 
 fn steam_unconfigured() -> Response {
-    (UNCONFIGURED, Json(json!({ "error": STEAM_UNCONFIGURED }))).into_response()
+    // 前台沒在用（achievements、profile），留 500：200 的形狀是宣告好的型別，塞一個只有 error 的物件會對不上
+    (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": STEAM_UNCONFIGURED }))).into_response()
 }
 
 /// ⚠️ 這支**刻意留原樣代理**：站上沒有任何地方消費它，要 typed 就得替一份沒人看的
@@ -1569,7 +1570,7 @@ async fn refresh_steam_profile(state: &AppState, key: &str, id: &str) -> Result<
               (status = 503, description = "首抓失敗且無快取")))]
 pub async fn steam_profile(State(state): State<AppState>) -> Response {
     let Some((key, id)) = steam_env() else {
-        return (UNCONFIGURED, Json(json!({ "error": STEAM_UNCONFIGURED }))).into_response();
+        return steam_unconfigured();
     };
     let now = now_ms();
     let cached = state.steam.cache.lock().clone();
@@ -1721,7 +1722,7 @@ mod tests {
         )
         .await
         .expect("未配置時不該去等鎖");
-        assert_eq!(resp.status(), UNCONFIGURED);
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     /// 塑形這一步是這批改動唯一會出錯的地方（抓取本身走網路，測不到）。
@@ -2789,7 +2790,7 @@ mod tests {
         assert_eq!(body_of(resp).await["error"], STEAM_UNCONFIGURED);
 
         let resp = steam_achievements(axum::extract::State(st), axum::extract::Path("440".into())).await;
-        assert_eq!(resp.status(), UNCONFIGURED);
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
         assert_eq!(body_of(resp).await["error"], STEAM_UNCONFIGURED);
 
         assert!(server.received_requests().await.unwrap().is_empty(), "沒金鑰就不該對外發請求");
