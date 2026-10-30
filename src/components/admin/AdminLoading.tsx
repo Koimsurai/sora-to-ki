@@ -1,3 +1,4 @@
+import { adminReady, at } from '@/i18n/admin-i18n';
 import './AdminLoading.css';
 
 // 後台的載入狀態（2026-10 後台提案）：一顆琥珀點在呼吸，旁邊一行等寬小字。
@@ -8,7 +9,9 @@ import './AdminLoading.css';
  * 一整塊的載入中；`label` 換成要說的那件事，例如「看看有什麼事」。
  * `page`：整頁還沒出來（路由的 Suspense fallback），內距對齊頁面的 .adm-page。
  */
-export default function AdminLoading({ label = '載入中', page = false }: { label?: string; page?: boolean }) {
+export default function AdminLoading({ label, page = false }: { label?: string; page?: boolean }) {
+  // 路由第一次載入後台時字串還沒到（它們跟版面一起等），那一格只有呼吸的點
+  label ??= adminReady() ? at('common.loading') : '';
   return (
     // <output> 本身就是 role="status"：報讀器會念出「載入中」，不用另外加 role
     <output className="adm-loading" data-page={page || undefined}>

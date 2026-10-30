@@ -1,0 +1,26 @@
+{
+  "loading": "加载中",
+  "save": "保存",
+  "saving": "保存中",
+  "revert": "还原",
+  "delete": "删除",
+  "status": {
+    "published": "已发布",
+    "draft": "草稿",
+    "scheduled": "定时",
+    "trashed": "回收站"
+  },
+  "localeShort": {
+    "zh-TW": "繁",
+    "en": "EN",
+    "zh-CN": "简",
+    "ja": "日",
+    "ko": "韩"
+  },
+  "localesHave": "语言：{{list}}",
+  "localesNone": "语言：还没有任何语言",
+  "listSep": "、",
+  "openCalendar": "{{label}}：打开日历",
+  "saveFailed": "保存失败（{{status}}）",
+  "offline": "连不上服务器，还没保存"
+}

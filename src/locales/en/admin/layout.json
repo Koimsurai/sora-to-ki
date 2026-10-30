@@ -1,0 +1,31 @@
+{
+  "controlRoom": "Control room · Admin",
+  "navLabel": "Admin",
+  "toSite": "Back to site ↗",
+  "owner": "Owner",
+  "admin": "Admin",
+  "logout": "Sign out",
+  "closeMenu": "Close menu",
+  "backToPosts": "← Posts",
+  "saveDraft": "Save draft",
+  "saveAndExit": "Save & back to list",
+  "schedule": "Schedule",
+  "publish": "Publish",
+  "collapse": "Close",
+  "menu": "Menu",
+  "language": "Admin language",
+  "languageShort": {
+    "zh-TW": "繁",
+    "zh-CN": "简",
+    "en": "EN",
+    "ja": "日",
+    "ko": "한"
+  },
+  "languageName": {
+    "zh-TW": "繁體中文",
+    "zh-CN": "简体中文",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어"
+  }
+}

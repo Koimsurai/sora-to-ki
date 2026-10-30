@@ -81,3 +81,22 @@ test.describe('後台每一頁都打得開', () => {
     });
   }
 });
+
+test.describe('後台的介面語言', () => {
+  test('側欄切成英文、重新整理還是英文；切回繁中', async ({ page }) => {
+    await signIn(page);
+    await gotoAdminUntil(page, '/admin/dashboard', (pg) => pg.locator('.adm-side'));
+    const side = page.locator('.adm-side');
+    await expect(side.getByRole('link', { name: '手記' })).toBeVisible();
+
+    await side.getByRole('button', { name: 'EN' }).click();
+    await expect(side.getByRole('link', { name: 'Posts' })).toBeVisible();
+    await expect(side.getByRole('button', { name: 'EN' })).toHaveAttribute('aria-pressed', 'true');
+
+    await page.reload();
+    await expect(page.locator('.adm-side').getByRole('link', { name: 'Posts' })).toBeVisible({ timeout: 15_000 });
+
+    await page.locator('.adm-side').getByRole('button', { name: '繁' }).click();
+    await expect(page.locator('.adm-side').getByRole('link', { name: '手記' })).toBeVisible();
+  });
+});

@@ -1,0 +1,23 @@
+{
+  "group": {
+    "now": "此刻",
+    "write": "寫 · Write",
+    "keep": "收 · Keep",
+    "reply": "回 · Reply",
+    "station": "站 · Station"
+  },
+  "dashboard": "總覽",
+  "analytics": "流量",
+  "posts": "手記",
+  "thoughts": "碎念",
+  "categories": "分類",
+  "tags": "標籤",
+  "collection": "收藏",
+  "books": "書架",
+  "photos": "照片",
+  "comments": "留言",
+  "friends": "友鏈",
+  "subscribers": "電子報",
+  "pages": "頁面",
+  "users": "帳號"
+}

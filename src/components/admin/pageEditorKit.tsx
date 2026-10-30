@@ -1,5 +1,6 @@
 import type { I18n } from './pageDraft';
 import { defaultLocale } from '@/lib/locales';
+import { at } from '@/i18n/admin-i18n';
 import { editLocales, localeLabel } from './pageTabs';
 
 // 後台「頁面」各分頁共用的畫面零件：語系切換、多語輸入框、列尾的上移下移刪除、儲存列（邏輯在 pageDraft.ts）。
@@ -9,7 +10,7 @@ import { editLocales, localeLabel } from './pageTabs';
 export function LangBar({ lang, onChange }: { lang: string; onChange: (lang: string) => void }) {
   return (
     <fieldset className="adm-tabs pg-langs">
-      <legend className="sr-only">編輯哪個語系</legend>
+      <legend className="sr-only">{at('pages.whichLocale')}</legend>
       {editLocales().map((l) => (
         <button
           key={l.key}
@@ -23,7 +24,9 @@ export function LangBar({ lang, onChange }: { lang: string; onChange: (lang: str
         </button>
       ))}
       <span className="adm-meta">
-        {lang === defaultLocale() ? `${localeLabel(lang)}一定要填` : `留空就顯示${localeLabel(defaultLocale())}`}
+        {lang === defaultLocale()
+          ? at('pages.required', { lang: localeLabel(lang) })
+          : at('pages.fallsBack', { lang: localeLabel(defaultLocale()) })}
       </span>
     </fieldset>
   );
@@ -71,7 +74,7 @@ export function RowActions({
       <button
         type="button"
         className="adm-icon-btn"
-        aria-label={`${name}往上`}
+        aria-label={at('pages.moveUp', { name })}
         disabled={index === 0}
         onClick={() => onMove(-1)}
       >
@@ -80,14 +83,19 @@ export function RowActions({
       <button
         type="button"
         className="adm-icon-btn"
-        aria-label={`${name}往下`}
+        aria-label={at('pages.moveDown', { name })}
         disabled={index === length - 1}
         onClick={() => onMove(1)}
       >
         ↓
       </button>
-      <button type="button" className="adm-icon-btn adm-icon-btn-flare" aria-label={`刪除${name}`} onClick={onRemove}>
-        刪除
+      <button
+        type="button"
+        className="adm-icon-btn adm-icon-btn-flare"
+        aria-label={at('pages.remove', { name })}
+        onClick={onRemove}
+      >
+        {at('common.delete')}
       </button>
     </div>
   );
@@ -107,12 +115,12 @@ export function SaveBar({
 }) {
   return (
     <div className="adm-form-actions pg-save">
-      <span className="adm-meta">{dirty ? '還沒存' : '跟前台一樣'}</span>
+      <span className="adm-meta">{dirty ? at('pages.unsaved') : at('pages.inSync')}</span>
       <button type="button" className="adm-btn" disabled={!dirty || saving} onClick={onReset}>
-        還原
+        {at('common.revert')}
       </button>
       <button type="button" className="adm-btn adm-btn-primary" disabled={!dirty || saving} onClick={onSave}>
-        {saving ? '儲存中' : '儲存'}
+        {saving ? at('common.saving') : at('common.save')}
       </button>
     </div>
   );

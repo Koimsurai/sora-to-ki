@@ -1,0 +1,27 @@
+{
+  "title": "페이지",
+  "meta": "사이트 각 페이지에 직접 채우는 내용",
+  "sectionLabel": "페이지 내용",
+  "tab": {
+    "about": "소개",
+    "works": "작업",
+    "log": "항해 일지",
+    "qa": "이 사이트 Q&A",
+    "setup": "장비"
+  },
+  "localeName": {
+    "zh-TW": "번체 중국어",
+    "en": "영어",
+    "ja": "일본어",
+    "ko": "한국어",
+    "zh-CN": "간체 중국어"
+  },
+  "whichLocale": "편집할 언어",
+  "required": "{{lang}}은(는) 필수입니다",
+  "fallsBack": "비워 두면 {{lang}}로 표시",
+  "moveUp": "{{name}} 위로",
+  "moveDown": "{{name}} 아래로",
+  "remove": "{{name}} 삭제",
+  "unsaved": "저장 안 됨",
+  "inSync": "사이트와 같음"
+}

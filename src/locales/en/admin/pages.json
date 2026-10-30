@@ -1,0 +1,27 @@
+{
+  "title": "Pages",
+  "meta": "What you fill into the site’s pages",
+  "sectionLabel": "Page content",
+  "tab": {
+    "about": "About",
+    "works": "Works",
+    "log": "Logbook",
+    "qa": "Site Q&A",
+    "setup": "Setup"
+  },
+  "localeName": {
+    "zh-TW": "Traditional Chinese",
+    "en": "English",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "zh-CN": "Simplified Chinese"
+  },
+  "whichLocale": "Language to edit",
+  "required": "{{lang}} is required",
+  "fallsBack": "Leave empty to show {{lang}}",
+  "moveUp": "Move {{name}} up",
+  "moveDown": "Move {{name}} down",
+  "remove": "Delete {{name}}",
+  "unsaved": "Unsaved",
+  "inSync": "Same as the live site"
+}

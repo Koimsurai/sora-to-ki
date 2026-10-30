@@ -1,0 +1,26 @@
+{
+  "loading": "読み込み中",
+  "save": "保存",
+  "saving": "保存中",
+  "revert": "元に戻す",
+  "delete": "削除",
+  "status": {
+    "published": "公開済み",
+    "draft": "下書き",
+    "scheduled": "予約",
+    "trashed": "ゴミ箱"
+  },
+  "localeShort": {
+    "zh-TW": "繁",
+    "en": "EN",
+    "zh-CN": "简",
+    "ja": "日",
+    "ko": "韓"
+  },
+  "localesHave": "言語：{{list}}",
+  "localesNone": "言語：まだありません",
+  "listSep": "、",
+  "openCalendar": "{{label}}：カレンダーを開く",
+  "saveFailed": "保存できませんでした（{{status}}）",
+  "offline": "サーバーに接続できません。まだ保存されていません"
+}

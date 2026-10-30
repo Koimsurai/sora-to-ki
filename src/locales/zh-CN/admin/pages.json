@@ -1,0 +1,27 @@
+{
+  "title": "页面",
+  "meta": "前台那几页由你填写的内容",
+  "sectionLabel": "页面内容",
+  "tab": {
+    "about": "关于",
+    "works": "作品",
+    "log": "航行日志",
+    "qa": "本站问答",
+    "setup": "设备"
+  },
+  "localeName": {
+    "zh-TW": "繁中",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어",
+    "zh-CN": "简中"
+  },
+  "whichLocale": "编辑哪种语言",
+  "required": "{{lang}}必填",
+  "fallsBack": "留空则显示{{lang}}",
+  "moveUp": "{{name}}上移",
+  "moveDown": "{{name}}下移",
+  "remove": "删除{{name}}",
+  "unsaved": "尚未保存",
+  "inSync": "与前台一致"
+}

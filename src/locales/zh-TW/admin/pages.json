@@ -1,0 +1,27 @@
+{
+  "title": "頁面",
+  "meta": "前台那幾頁由你填的內容",
+  "sectionLabel": "頁面內容",
+  "tab": {
+    "about": "關於",
+    "works": "作品",
+    "log": "航行日誌",
+    "qa": "此站點的問答",
+    "setup": "設備"
+  },
+  "localeName": {
+    "zh-TW": "繁中",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어",
+    "zh-CN": "简中"
+  },
+  "whichLocale": "編輯哪個語系",
+  "required": "{{lang}}一定要填",
+  "fallsBack": "留空就顯示{{lang}}",
+  "moveUp": "{{name}}往上",
+  "moveDown": "{{name}}往下",
+  "remove": "刪除{{name}}",
+  "unsaved": "還沒存",
+  "inSync": "跟前台一樣"
+}

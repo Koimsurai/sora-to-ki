@@ -19,7 +19,7 @@ import {
 import { postPath } from '../../lib/postPath';
 import AdminLoading from './AdminLoading';
 import { LocaleDots, PageHead, TabPanel } from './AdminPage';
-import { STATUS_LABEL, TRASH_KEEP_DAYS, formatWhen, missingTranslations, trashDaysLeft } from './adminFormat';
+import { TRASH_KEEP_DAYS, formatWhen, missingTranslations, statusLabel, trashDaysLeft } from './adminFormat';
 
 // 手記列表（2026-10 後台提案）：狀態用分頁切、可以只看缺譯文的，每篇後面五顆語系點。
 // 篩選放在網址上（routes/admin/posts/index.tsx 的 validateSearch），總覽的「等你處理」直接連得進來。
@@ -262,7 +262,7 @@ export default function PostsList() {
                       </td>
                       <td>
                         <span className="adm-status" data-status={post.status}>
-                          {STATUS_LABEL[post.status] ?? post.status}
+                          {statusLabel(post.status)}
                         </span>
                       </td>
                       <td>

@@ -1,0 +1,26 @@
+{
+  "loading": "載入中",
+  "save": "儲存",
+  "saving": "儲存中",
+  "revert": "還原",
+  "delete": "刪除",
+  "status": {
+    "published": "已發佈",
+    "draft": "草稿",
+    "scheduled": "排程",
+    "trashed": "回收"
+  },
+  "localeShort": {
+    "zh-TW": "繁",
+    "en": "EN",
+    "zh-CN": "简",
+    "ja": "日",
+    "ko": "韓"
+  },
+  "localesHave": "語系：{{list}}",
+  "localesNone": "語系：還沒有任何語系",
+  "listSep": "、",
+  "openCalendar": "{{label}}：開月曆",
+  "saveFailed": "存不進去（{{status}}）",
+  "offline": "連不上伺服器，還沒存"
+}

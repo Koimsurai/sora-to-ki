@@ -4,6 +4,8 @@ import { Link, Outlet, useLocation, useNavigate, useRouter, type LinkProps } fro
 import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from '../../contexts/auth';
 import { useEditorScheduledAt } from '@/store/editorScheduleStore';
+import { setAdminLang, useAdminT } from '@/i18n/admin-i18n';
+import { SUPPORTED_LOCALES } from '@/lib/locales';
 import AdminScrollbars from './AdminScrollbars';
 import AdminTooltips from './AdminTooltips';
 import './AdminTheme.css';
@@ -17,13 +19,14 @@ import './AdminLayout.css';
 type AdminPath = NonNullable<LinkProps['to']>;
 
 interface NavItem {
-  label: string;
+  /** admin.json 的 `nav.*` */
+  key: string;
   path: AdminPath;
   ownerOnly?: boolean;
 }
 
 interface NavGroup {
-  label: string;
+  key: string;
   items: NavItem[];
 }
 
@@ -31,42 +34,42 @@ interface NavGroup {
 // 不先放一個點進去是空頁的入口。
 const NAV: NavGroup[] = [
   {
-    label: '此刻',
+    key: 'now',
     items: [
-      { label: '總覽', path: '/admin/dashboard' },
-      { label: '流量', path: '/admin/analytics' },
+      { key: 'dashboard', path: '/admin/dashboard' },
+      { key: 'analytics', path: '/admin/analytics' },
     ],
   },
   {
-    label: '寫 · Write',
+    key: 'write',
     items: [
-      { label: '手記', path: '/admin/posts' },
-      { label: '碎念', path: '/admin/thoughts' },
-      { label: '分類', path: '/admin/categories' },
-      { label: '標籤', path: '/admin/tags' },
+      { key: 'posts', path: '/admin/posts' },
+      { key: 'thoughts', path: '/admin/thoughts' },
+      { key: 'categories', path: '/admin/categories' },
+      { key: 'tags', path: '/admin/tags' },
     ],
   },
   {
-    label: '收 · Keep',
+    key: 'keep',
     items: [
-      { label: '收藏', path: '/admin/collection' },
-      { label: '書架', path: '/admin/books' },
-      { label: '照片', path: '/admin/photos' },
+      { key: 'collection', path: '/admin/collection' },
+      { key: 'books', path: '/admin/books' },
+      { key: 'photos', path: '/admin/photos' },
     ],
   },
   {
-    label: '回 · Reply',
+    key: 'reply',
     items: [
-      { label: '留言', path: '/admin/comments' },
-      { label: '友鏈', path: '/admin/friends' },
-      { label: '電子報', path: '/admin/subscribers' },
+      { key: 'comments', path: '/admin/comments' },
+      { key: 'friends', path: '/admin/friends' },
+      { key: 'subscribers', path: '/admin/subscribers' },
     ],
   },
   {
-    label: '站 · Station',
+    key: 'station',
     items: [
-      { label: '頁面', path: '/admin/pages' },
-      { label: '帳號', path: '/admin/users', ownerOnly: true },
+      { key: 'pages', path: '/admin/pages' },
+      { key: 'users', path: '/admin/users', ownerOnly: true },
     ],
   },
 ];
@@ -86,7 +89,30 @@ function isActive(pathname: string, path: string): boolean {
 const clickEditorButton = (id: 'save-draft-btn' | 'save-exit-btn' | 'publish-btn') =>
   document.getElementById(id)?.click();
 
+/** 側欄底下的語言切換：五個短名排一列，現在的那個是墨色 */
+function LangSwitch() {
+  const { t, i18n } = useAdminT();
+  return (
+    <fieldset className="adm-lang" aria-label={t('layout.language')}>
+      {SUPPORTED_LOCALES.map((l) => (
+        <button
+          key={l}
+          type="button"
+          className="adm-lang-option"
+          aria-pressed={i18n.language === l}
+          lang={l}
+          title={t(`layout.languageName.${l}`)}
+          onClick={() => void setAdminLang(l)}
+        >
+          {t(`layout.languageShort.${l}`)}
+        </button>
+      ))}
+    </fieldset>
+  );
+}
+
 const AdminLayout = () => {
+  const { t } = useAdminT();
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -134,8 +160,8 @@ const AdminLayout = () => {
   }, [router]);
 
   const close = () => setMenuOpen(false);
-  const name = user?.displayName ?? user?.name ?? '站長';
-  const role = user?.role === 'OWNER' ? '站長' : '管理員';
+  const name = user?.displayName ?? user?.name ?? t('layout.owner');
+  const role = user?.role === 'OWNER' ? t('layout.owner') : t('layout.admin');
 
   return (
     <div className="admin-layout">
@@ -167,16 +193,16 @@ const AdminLayout = () => {
             <Link to="/admin/dashboard" className="adm-wordmark" onClick={close}>
               sora to ki
             </Link>
-            <span className="adm-caps">管制室 · Admin</span>
+            <span className="adm-caps">{t('layout.controlRoom')}</span>
           </div>
 
-          <nav className="adm-nav" aria-label="後台">
+          <nav className="adm-nav" aria-label={t('layout.navLabel')}>
             {NAV.map((group) => {
               const items = group.items.filter((item) => !item.ownerOnly || isOwner);
               if (items.length === 0) return null;
               return (
-                <div key={group.label} className="adm-group">
-                  <span className="adm-caps adm-group-label">{group.label}</span>
+                <div key={group.key} className="adm-group">
+                  <span className="adm-caps adm-group-label">{t(`nav.group.${group.key}`)}</span>
                   <ul>
                     {items.map((item) => {
                       const active = isActive(pathname, item.path);
@@ -189,7 +215,7 @@ const AdminLayout = () => {
                             onClick={close}
                           >
                             <span className="adm-dot" aria-hidden="true" />
-                            {item.label}
+                            {t(`nav.${item.key}`)}
                           </Link>
                         </li>
                       );
@@ -202,41 +228,42 @@ const AdminLayout = () => {
 
           <div className="adm-foot">
             <Link to="/" className="adm-foot-link">
-              回到前台 ↗
+              {t('layout.toSite')}
             </Link>
+            <LangSwitch />
             <div className="adm-who">
               <span>
                 {name} · {role}
               </span>
               <button type="button" className="adm-btn adm-btn-small" onClick={handleLogout}>
-                登出
+                {t('layout.logout')}
               </button>
             </div>
           </div>
         </aside>
       )}
 
-      {menuOpen && <button type="button" className="adm-scrim" aria-label="收起選單" onClick={close} />}
+      {menuOpen && <button type="button" className="adm-scrim" aria-label={t('layout.closeMenu')} onClick={close} />}
 
       <div className="adm-body" data-editor={editor || undefined}>
         {editor ? (
           <header className="adm-editbar">
             <Link to="/admin/posts" className="adm-back">
-              ← 手記
+              {t('layout.backToPosts')}
             </Link>
             <div className="adm-editbar-actions">
               <button type="button" className="adm-btn" onClick={() => clickEditorButton('save-draft-btn')}>
-                儲存草稿
+                {t('layout.saveDraft')}
               </button>
               <button type="button" className="adm-btn" onClick={() => clickEditorButton('save-exit-btn')}>
-                存並回列表
+                {t('layout.saveAndExit')}
               </button>
               <button
                 type="button"
                 className="adm-btn adm-btn-primary"
                 onClick={() => clickEditorButton('publish-btn')}
               >
-                {scheduledAt ? '排程發佈' : '發佈文章'}
+                {scheduledAt ? t('layout.schedule') : t('layout.publish')}
               </button>
             </div>
           </header>
@@ -249,7 +276,7 @@ const AdminLayout = () => {
               aria-controls="adm-side"
               onClick={() => setMenuOpen((open) => !open)}
             >
-              {menuOpen ? '收起' : '選單'}
+              {menuOpen ? t('layout.collapse') : t('layout.menu')}
             </button>
             <Link to="/admin/dashboard" className="adm-wordmark">
               sora to ki

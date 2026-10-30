@@ -35,7 +35,7 @@ import { defaultLocale } from '@/lib/locales';
 import { format as formatDate } from 'date-fns';
 import AdminLoading, { BusyDot } from './AdminLoading';
 import { AdminDateField, AdminTimeField } from './AdminFields';
-import { STATUS_LABEL, formatWhen, localInputToIso, toLocalInput } from './adminFormat';
+import { formatWhen, localInputToIso, statusLabel, toLocalInput } from './adminFormat';
 import { setEditorScheduledAt } from '@/store/editorScheduleStore';
 import { useConfirm } from '@/hooks/useConfirm';
 import './AdminPage.css';
@@ -1152,7 +1152,7 @@ export default function PostEditor() {
                     <p className="pe-state">
                       <span className="adm-caps">現在</span>
                       <span className="adm-status" data-status={currentStatus}>
-                        {STATUS_LABEL[currentStatus] ?? currentStatus}
+                        {statusLabel(currentStatus)}
                       </span>
                     </p>
 

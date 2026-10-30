@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient, type QueryKey, type UseQueryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { at } from '@/i18n/admin-i18n';
 import { jsonAuthHeaders } from '@/lib/authToken';
 
 // 後台「頁面」各分頁共用的邏輯：草稿與儲存、列表的挪動。畫面零件在 pageEditorKit.tsx
@@ -49,14 +50,14 @@ export function usePageDraft<T, K extends QueryKey>(
       const res = await fetch(url, { method: 'PUT', headers: jsonAuthHeaders(), body: JSON.stringify(body0) });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        toast.error(body.error ?? `存不進去（${res.status}）`);
+        toast.error(body.error ?? at('common.saveFailed', { status: res.status }));
         return;
       }
       queryClient.setQueryData<T>(options.queryKey, normalize(body));
       setEdited(null);
       toast.success(savedMessage);
     } catch {
-      toast.error('連不上伺服器，還沒存');
+      toast.error(at('common.offline'));
     } finally {
       setSaving(false);
     }
