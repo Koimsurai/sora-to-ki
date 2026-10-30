@@ -14,6 +14,7 @@ const config = (disabled: string[]) => ({
   github: '',
   default_locale: 'zh-TW',
   locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+  theme: 'saturn',
 });
 
 describe('siteConfig', () => {

@@ -776,6 +776,12 @@ export function makeTools(api: ApiClient): Tool[] {
             items: { type: 'string', enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'] },
             description: '有開的語系（整份換掉）；預設語系一定算在裡面。只開一個時語系選單不出現，沒開的語系網址是 404',
           },
+          theme: {
+            type: 'string',
+            enum: ['saturn', 'neptune', 'blackhole', 'betelgeuse'],
+            description:
+              '預設天體（土星、海王星、黑洞、參宿四）：讀者沒在頂欄選過時看到的那顆，分享圖也畫這顆。讀者自己選過的不受影響',
+          },
         },
         additionalProperties: false,
       },
@@ -790,6 +796,7 @@ export function makeTools(api: ApiClient): Tool[] {
             'github',
             'default_locale',
             'locales',
+            'theme',
           ]),
         }),
     },

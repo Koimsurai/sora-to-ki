@@ -72,10 +72,27 @@ pub struct SiteSettings {
     /// 有開的語系（一定包含預設語系）。規則同 `email`，退路是 `SITE_LOCALES`（逗號分隔），再退回全部
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locales: Option<Vec<String>>,
+    /// 預設天體（主題）：讀者沒在頂欄選過時看到的那顆，分享圖也畫這顆。`None`＝土星
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme: Option<String>,
 }
 
 /// 站上支援的語系（介面有翻譯的那五個），順序就是語系選單的順序。前端在 src/lib/locales.ts
 pub const SUPPORTED_LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
+
+/// 能選的天體（主題），順序就是頂欄天體選單的順序。前端在 src/lib/theme.ts
+pub const THEMES: [&str; 4] = ["saturn", "neptune", "blackhole", "betelgeuse"];
+
+/// 預設天體（分享圖用）
+pub fn theme() -> &'static str {
+    current().and_then(|s| theme_of(s.theme.as_deref())).unwrap_or(THEMES[0])
+}
+
+/// 字串 → 能選的天體（大小寫不拘）
+fn theme_of(t: Option<&str>) -> Option<&'static str> {
+    let t = t?.trim();
+    THEMES.iter().copied().find(|s| s.eq_ignore_ascii_case(t))
+}
 
 /// 字串 → 支援的語系（大小寫不拘）
 fn supported(l: &str) -> Option<&'static str> {
@@ -182,6 +199,7 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         github: None,
         default_locale: None,
         locales: None,
+        theme: None,
     };
     // OR IGNORE：兩個程序同時開機的話，以先寫進去的那份為準
     sqlx::query("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)")
@@ -222,6 +240,8 @@ pub struct SiteConfig {
     pub default_locale: String,
     /// 有開的語系，照語系選單的順序；一定含預設語系
     pub locales: Vec<String>,
+    /// 預設天體（saturn、neptune、blackhole、betelgeuse）：讀者沒選過時看到的那顆
+    pub theme: String,
 }
 
 impl From<SiteSettings> for SiteConfig {
@@ -238,6 +258,7 @@ impl From<SiteSettings> for SiteConfig {
             github: or_env(s.github, "SITE_GITHUB"),
             default_locale,
             locales,
+            theme: theme_of(s.theme.as_deref()).unwrap_or(THEMES[0]).to_string(),
         }
     }
 }
@@ -259,6 +280,8 @@ pub struct SiteConfigUpdate {
     pub default_locale: Option<String>,
     /// 有開的語系（整份換掉）；預設語系一定會在裡面
     pub locales: Option<Vec<String>>,
+    /// 預設天體（saturn、neptune、blackhole、betelgeuse）
+    pub theme: Option<String>,
 }
 
 /// 把 body 套到現有的設定上。錯誤訊息直接給後台與 MCP 顯示，所以寫成人看得懂的句子
@@ -279,6 +302,11 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
                 .map(|l| (*l).to_string())
                 .collect(),
         );
+    }
+    if let Some(t) = &body.theme {
+        let t = theme_of(Some(t))
+            .ok_or_else(|| format!("沒有「{t}」這個天體，能選的是：{}", THEMES.join("、")))?;
+        s.theme = Some(t.to_string());
     }
     if let Some(name) = body.name {
         let name = name.trim();
@@ -396,7 +424,19 @@ mod tests {
             github: None,
             default_locale: None,
             locales: None,
+            theme: None,
         }
+    }
+
+    #[test]
+    fn 天體只收認得的_沒設過是土星() {
+        assert_eq!(SiteConfig::from(base()).theme, "saturn");
+        let s =
+            apply(base(), SiteConfigUpdate { theme: Some("Neptune".into()), ..Default::default() }).unwrap();
+        assert_eq!(s.theme.as_deref(), Some("neptune"), "大小寫不拘，存成標準寫法");
+        assert_eq!(SiteConfig::from(s).theme, "neptune");
+        let err = apply(base(), SiteConfigUpdate { theme: Some("mars".into()), ..Default::default() });
+        assert!(err.unwrap_err().contains("mars"));
     }
 
     #[test]

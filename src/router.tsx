@@ -5,6 +5,7 @@ import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query
 import { siteConfigQueryOptions } from '@/data/siteConfig';
 import { setLocaleConfig } from '@/lib/locales';
 import { setSiteIdentity } from '@/lib/siteIdentity';
+import { setDefaultTheme } from '@/lib/theme';
 import { routeTree } from './routeTree.gen';
 
 export function getRouter() {
@@ -28,6 +29,7 @@ export function getRouter() {
     if (!data) return;
     setSiteIdentity(data);
     setLocaleConfig(data.default_locale, data.locales);
+    setDefaultTheme(data.theme);
   });
   return router;
 }

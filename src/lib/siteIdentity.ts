@@ -18,6 +18,7 @@ let current: SiteConfig = {
   github: '',
   default_locale: 'zh-TW',
   locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+  theme: 'saturn',
 };
 
 /** root 的 beforeLoad 用：後端回來的設定。站名是空的（後端連不上時的退路）就不採用 */
