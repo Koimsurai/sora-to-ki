@@ -76,6 +76,36 @@ export interface SkyFrame {
   dot?: boolean;
   /** 離開這頁時從台灣發出去的那道波前：0 到 1 */
   launch?: number;
+  /** 畫不畫背景（光霧、銀河、遠方的星、閃爍的星）：交給 GPU 畫時是 false（media/gpuBackdrop） */
+  backdrop?: boolean;
+}
+
+/** 背景交給 GPU 畫時要的東西（media/gpuBackdrop）：點的資料照 2D 畫的順序排好，透明度也照 2D 的算法先算好 */
+export interface GpuBackdropData {
+  /** 每一點 8 個數：方向 x、y、z，邊長（CSS 像素），透明度，閃爍的速度與相位（不閃的是 0、0），出畫面就不畫（1 是） */
+  rects: Float32Array;
+  /** 每一團 5 個數：方向 x、y、z，大小（乘上 diag × 0.055 是半徑），濃度 */
+  haze: Float32Array;
+  /**
+   * 歐特雲與兩條小行星帶，每一點 6 個數：位置 x、y、z（光秒；小行星帶是相對太陽的），透明度，
+   * 離地球多遠（光秒，只有歐特雲用來算淡入淡出），哪一群（0 歐特雲、1 小行星帶、2 柯伊伯帶）
+   */
+  points: Float32Array;
+  /** 光霧那張柔光圖 */
+  sprite: () => HTMLCanvasElement;
+}
+
+/** 鏡頭：投影到畫面上要的參數（見 createSignalSky 的 skyAt 與 project） */
+export interface SkyView {
+  ex: number;
+  ey: number;
+  diag: number;
+  /** 一光秒是幾個像素 */
+  k: number;
+  cosP: number;
+  sinP: number;
+  sinE: number;
+  cosE: number;
 }
 
 export interface Projected {
@@ -246,6 +276,13 @@ interface SkyDot {
   size: number;
 }
 const LEVELS = 8;
+/** 銀河、遠方的星最亮那一階的透明度；光霧一團的半徑是畫面對角線的幾成；閃爍的星多大 */
+const GALAXY_MAX = 0.42;
+const FIELD_MAX = 0.55;
+const HAZE_BLOB = 0.055;
+const TWINKLE_SIZE = 1.5;
+/** 第 level 階的透明度。跟 2D 用的 rgba() 一樣取到小數三位（rgba 字串就是這樣寫的），GPU 那邊才會一樣亮 */
+const levelAlpha = (max: number, level: number) => Number(((max * (level + 1)) / LEVELS).toFixed(3));
 
 /** 銀河：照銀道面的真實方向撒點，越靠銀心越密 */
 function milkyWay(count: number): SkyDot[][] {
@@ -440,6 +477,32 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
     return { d: { x: Math.cos(phi) * c, y: Math.sin(phi) * c, z }, tw: 0.5 + trand() * 1.5, ph: trand() * TAU };
   });
 
+  // 背景交給 GPU 畫的時候用的資料（media/gpuBackdrop）：順序跟 draw 裡一樣——銀河的八階、遠方的星的八階、
+  // 閃爍的星（每顆照 2D 的疊法一顆蓋一顆，順序不同半透明的重疊處就不同）
+  const gpuBackdrop: GpuBackdropData = (() => {
+    const rows: number[] = [];
+    for (const [levels, max] of [
+      [galaxy, GALAXY_MAX],
+      [field, FIELD_MAX],
+    ] as const)
+      levels.forEach((list, level) => {
+        // 2D 的 fillStyle 會把顏色的透明度存成 8 位元（設 0.053 讀回來是 0.05），這裡照樣量化，亮度才一樣
+        const a = Math.round(levelAlpha(max, level) * 255) / 255;
+        for (const s of list) rows.push(s.d.x, s.d.y, s.d.z, s.size, a, 0, 0, 1);
+      });
+    for (const s of twinklers) rows.push(s.d.x, s.d.y, s.d.z, TWINKLE_SIZE, 1, s.tw, s.ph, 0);
+    return {
+      rects: new Float32Array(rows),
+      haze: new Float32Array(haze.flatMap((c) => [c.d.x, c.d.y, c.d.z, c.size, c.weight])),
+      points: new Float32Array([
+        ...oort.flatMap((o) => [o.p.x, o.p.y, o.p.z, o.a, o.r, 0]),
+        ...asteroids.flatMap((d) => [d.x, d.y, d.z, d.a, 0, 1]),
+        ...kuiper.flatMap((d) => [d.x, d.y, d.z, d.a, 0, 2]),
+      ]),
+      sprite: hazeImage,
+    };
+  })();
+
   const stars = STARS.map((s) => {
     const d = direction(s.ra, s.dec);
     const r = s.ly * LIGHT_YEAR;
@@ -527,7 +590,7 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
   };
 
   /** 半徑 r 像素的東西看不看得到：太小擠在地球上、太大整個出了畫面 */
-  const fade = (v: View, r: number) => clamp01((r - 4) / 14) * clamp01((v.diag * 1.4 - r) / (v.diag * 0.5));
+  const fade = (v: { diag: number }, r: number) => clamp01((r - 4) / 14) * clamp01((v.diag * 1.4 - r) / (v.diag * 0.5));
 
   /** 一道訊號現在離地球多遠（光秒） */
   const distOf = (s: Signal, now: number) =>
@@ -627,7 +690,7 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
     // ── 背景：銀河與遠方的星（無限遠，跟著鏡頭轉） ──
     const backdrop = (levels: SkyDot[][], max: number) => {
       levels.forEach((list, level) => {
-        ctx.fillStyle = rgba(INK, (max * (level + 1)) / LEVELS);
+        ctx.fillStyle = rgba(INK, levelAlpha(max, level));
         for (const s of list) {
           const p = skyAt(v, s.d);
           if (!p || p.x < 0 || p.x > w || p.y < 0 || p.y > h) continue;
@@ -635,30 +698,33 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
         }
       });
     };
-    // 銀河的白帶：先鋪光霧，點再疊上去
-    const sprite = hazeImage();
-    const blob = v.diag * 0.055;
-    for (const c of haze) {
-      const p = skyAt(v, c.d);
-      if (!p) continue;
-      const r = blob * c.size;
-      if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
-      ctx.globalAlpha = 0.03 * c.weight;
-      ctx.drawImage(sprite, p.x - r, p.y - r, r * 2, r * 2);
+    // 背景交給 GPU 畫的時候（media/gpuBackdrop）這一段跳過；那邊照同樣的順序、同樣的透明度畫
+    if (f.backdrop !== false) {
+      // 銀河的白帶：先鋪光霧，點再疊上去
+      const sprite = hazeImage();
+      const blob = v.diag * HAZE_BLOB;
+      for (const c of haze) {
+        const p = skyAt(v, c.d);
+        if (!p) continue;
+        const r = blob * c.size;
+        if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+        ctx.globalAlpha = 0.03 * c.weight;
+        ctx.drawImage(sprite, p.x - r, p.y - r, r * 2, r * 2);
+      }
+      ctx.globalAlpha = 1;
+      backdrop(galaxy, GALAXY_MAX);
+      backdrop(field, FIELD_MAX);
+      // 一顆一個透明度的點（閃爍的星、歐特雲、小行星帶）：顏色只設一次，每顆改 globalAlpha。
+      // 每顆組一個 rgba() 字串的話，瀏覽器每次都要重新解析顏色，拉遠時一幀有上千顆
+      ctx.fillStyle = `rgb(${INK})`;
+      for (const s of twinklers) {
+        const p = skyAt(v, s.d);
+        if (!p) continue;
+        ctx.globalAlpha = 0.5 + 0.4 * Math.sin(t * s.tw + s.ph);
+        ctx.fillRect(p.x, p.y, TWINKLE_SIZE, TWINKLE_SIZE);
+      }
+      ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = 1;
-    backdrop(galaxy, 0.42);
-    backdrop(field, 0.55);
-    // 一顆一個透明度的點（閃爍的星、歐特雲、小行星帶）：顏色只設一次，每顆改 globalAlpha。
-    // 每顆組一個 rgba() 字串的話，瀏覽器每次都要重新解析顏色，拉遠時一幀有上千顆
-    ctx.fillStyle = `rgb(${INK})`;
-    for (const s of twinklers) {
-      const p = skyAt(v, s.d);
-      if (!p) continue;
-      ctx.globalAlpha = 0.5 + 0.4 * Math.sin(t * s.tw + s.ph);
-      ctx.fillRect(p.x, p.y, 1.5, 1.5);
-    }
-    ctx.globalAlpha = 1;
 
     // ── 刻度圈 ──
     ctx.setLineDash([2, 6]);
@@ -697,7 +763,7 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
     }
     ctx.setLineDash([]);
 
-    // ── 歐特雲 ──
+    // ── 歐特雲 ──（點交給 GPU 畫的時候這裡只算它的名字該多亮）
     let oortA = 0;
     ctx.fillStyle = `rgb(${INK})`;
     for (const o of oort) {
@@ -706,6 +772,7 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
       const a = o.a * fade(v, r);
       if (a < 0.01) continue;
       oortA = Math.max(oortA, fade(v, r));
+      if (f.backdrop === false) continue;
       const p = project(v, o.p);
       ctx.globalAlpha = a;
       ctx.fillRect(p.x, p.y, 1, 1);
@@ -725,13 +792,16 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
       const rx = v.k * outer * AU;
       const a = fade(v, v.k * inner * AU) * fade(v, rx);
       if (a <= 0.01) return;
-      ctx.fillStyle = `rgb(${INK})`;
-      for (const d of list) {
-        const p = project(v, { x: d.x + sunC.x, y: d.y + sunC.y, z: d.z });
-        ctx.globalAlpha = d.a * a;
-        ctx.fillRect(p.x, p.y, 1, 1);
+      // 點交給 GPU 畫的時候（media/gpuBackdrop）這裡只放名字
+      if (f.backdrop !== false) {
+        ctx.fillStyle = `rgb(${INK})`;
+        for (const d of list) {
+          const p = project(v, { x: d.x + sunC.x, y: d.y + sunC.y, z: d.z });
+          ctx.globalAlpha = d.a * a;
+          ctx.fillRect(p.x, p.y, 1, 1);
+        }
+        ctx.globalAlpha = 1;
       }
-      ctx.globalAlpha = 1;
       const r = ((inner + outer) / 2) * AU;
       const p = project(v, { x: sunC.x - r * 0.72, y: sunC.y - r * 0.69, z: 0 });
       marks.push({
@@ -1077,6 +1147,15 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
 
   return {
     draw,
+    /** 背景交給 GPU 畫時要的資料與鏡頭（media/gpuBackdrop） */
+    gpuBackdrop,
+    viewOf: (f: SkyFrame): SkyView => view(f),
+    /** 歐特雲與小行星帶在這一幀要的：太陽在哪（小行星帶繞著它），兩條帶各多亮（跟 draw 裡 beltDots 同一個式子） */
+    gpuScene: (f: SkyFrame, v: SkyView) => {
+      const earth = helio(EARTH, (f.now - J2000) / DAY_MS);
+      const belt = ([inner, outer]: readonly [number, number]) => fade(v, v.k * inner * AU) * fade(v, v.k * outer * AU);
+      return { sun: { x: -earth.x, y: -earth.y, z: 0 }, belts: [belt(ASTEROID_AU), belt(KUIPER_AU)] as const };
+    },
     /** 琥珀點在畫面上的位置（換頁轉場的點落在這裡、離開時從這裡發射） */
     earth: (f: SkyFrame) => homeDot(view(f), f.now),
     /** 地球中心在畫面上的位置（發射的方向從這裡往台灣指出去） */
