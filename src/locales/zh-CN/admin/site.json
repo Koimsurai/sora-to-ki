@@ -1,0 +1,82 @@
+{
+  "settings": {
+    "title": "站点设置",
+    "latin": "Site",
+    "meta": "站名、语言与要开的页面",
+    "identityHead": "身份",
+    "localesHead": "语言",
+    "pagesHead": "页面",
+    "pagesNote": "关掉的页面连同首页上它的轨道一起拿掉，读者看不到入口。内容会留着，开回来就在。",
+    "saved": "站点设置保存好了",
+    "invalid": "有字段要先改好",
+    "confirmTitle": "换掉默认语言？",
+    "confirmDesc": "默认语言会从{{from}}换成{{to}}。不带前缀的网址（例如 {{host}}/blog）会改显示{{to}}，已经分享出去的{{from}}链接打开也会变成{{to}}；{{from}}改到 /{{fromPrefix}}/ 底下。原本 /{{toPrefix}}/ 开头的网址会自动转到不带前缀的那一条。搜索引擎要一阵子才会重新收录。",
+    "confirmOk": "换掉并保存",
+    "cancel": "先不要"
+  },
+  "lang": {
+    "defaultLabel": "默认语言",
+    "othersLabel": "也开放这些语言",
+    "warn": "开站之后再换默认语言，全站的网址会整批改掉：已经分享出去、不带前缀的链接，打开会变成新的默认语言。",
+    "single": "只开一个语言的话，前台不会出现语言菜单。"
+  },
+  "identity": {
+    "name": "站名",
+    "author": "作者",
+    "authorHint": "空着就跟站名一样",
+    "url": "网址",
+    "description": "一句话介绍",
+    "email": "公开邮箱",
+    "github": "GitHub 用户名",
+    "optional": "选填",
+    "shareCard": "分享出去长这样",
+    "errors": {
+      "nameRequired": "站名不能是空的",
+      "nameTooLong": "站名最多 {{max}} 个字",
+      "authorTooLong": "作者名最多 {{max}} 个字",
+      "descriptionTooLong": "介绍最多 {{max}} 个字",
+      "email": "邮箱的格式不对",
+      "github": "GitHub 用户名只能有英文、数字与连字符，最多 39 个字"
+    }
+  },
+  "pages": {
+    "groupOrbit": "首页的轨道",
+    "groupAbout": "「关于」菜单",
+    "groupMore": "「更多」菜单",
+    "alwaysOn": "手记与关于一直都在。",
+    "groupOrbitNote": "关掉的那一条从首页轨道与导航栏拿掉。手记与关于一直都在。",
+    "groupAboutNote": "导航栏「关于」底下的几页。",
+    "groupMoreNote": "导航栏「更多」底下的几页。",
+    "name": {
+      "moments": "碎念",
+      "works": "作品",
+      "collection": "收藏",
+      "setup": "设备",
+      "log": "航行日志",
+      "messages": "留言",
+      "photos": "照片",
+      "friends": "朋友",
+      "colophon": "此站点"
+    },
+    "desc": {
+      "moments": "短短的一句话",
+      "works": "做过的东西，一件一条时间线",
+      "collection": "在看、在读、在听",
+      "setup": "手绘图纸，或用内置的几张",
+      "log": "从某一年到现在的里程碑",
+      "messages": "留言板",
+      "photos": "要接 NAS 或上传文件夹",
+      "friends": "别人的站与申请表单",
+      "colophon": "这个站怎么做的、问答"
+    }
+  },
+  "sky": {
+    "preview": "预览",
+    "standby": "等待点火",
+    "yourHome": "你的首页",
+    "note": "每走一步，这里就长出一点：站长、语言、站名、轨道。最后看到的就是读者打开首页的样子。",
+    "menuAbout": "关于",
+    "menuMore": "更多",
+    "off": "关"
+  }
+}

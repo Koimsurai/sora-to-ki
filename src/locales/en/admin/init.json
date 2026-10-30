@@ -75,64 +75,17 @@
   "lang": {
     "title": "Languages",
     "latin": "Languages",
-    "lede": "Readers see the default language at the plain address; every other language gets its own prefix.",
-    "defaultLabel": "Default language",
-    "othersLabel": "Also offer",
-    "warn": "Changing the default language after launch changes every address on the site, and every link already shared has to redirect once. Best to decide now.",
-    "single": "With only one language on, the site shows no language menu."
+    "lede": "Readers see the default language at the plain address; every other language gets its own prefix."
   },
   "site": {
     "title": "Site",
     "latin": "Identity",
-    "lede": "Shown on the home page, in the RSS feed and on share cards. All of it can be changed in the admin later.",
-    "name": "Site name",
-    "author": "Author",
-    "authorHint": "leave empty to use the site name",
-    "url": "Address",
-    "description": "One-line description",
-    "email": "Public email",
-    "github": "GitHub username",
-    "optional": "optional",
-    "shareCard": "What a shared link looks like",
-    "errors": {
-      "nameRequired": "The site name can't be empty",
-      "nameTooLong": "The site name can be at most {{max}} characters",
-      "authorTooLong": "The author name can be at most {{max}} characters",
-      "descriptionTooLong": "The description can be at most {{max}} characters",
-      "email": "That email address doesn't look right",
-      "github": "A GitHub username only has letters, digits and hyphens, up to 39 characters"
-    }
+    "lede": "Shown on the home page, in the RSS feed and on share cards. All of it can be changed in the admin later."
   },
   "pages": {
     "title": "Pages",
     "latin": "Pages",
-    "lede": "The chart is your home page. A page you turn off takes its orbit with it, and you can turn it back on in the admin any time.",
-    "groupOrbit": "Orbits on the home page",
-    "groupAbout": "\"About\" menu",
-    "groupMore": "\"More\" menu",
-    "alwaysOn": "Notes and About are always there.",
-    "name": {
-      "moments": "Murmurs",
-      "works": "Work",
-      "collection": "Collection",
-      "setup": "Setup",
-      "log": "Log",
-      "messages": "Messages",
-      "photos": "Photos",
-      "friends": "Friends",
-      "colophon": "This site"
-    },
-    "desc": {
-      "moments": "Short notes, a line at a time",
-      "works": "Things you've made, each on a timeline",
-      "collection": "Watching, reading, listening",
-      "setup": "Hand-drawn sheets, or the built-in ones",
-      "log": "Milestones from one year to now",
-      "messages": "A guestbook",
-      "photos": "Needs a NAS or an uploaded folder",
-      "friends": "Other people's sites and a request form",
-      "colophon": "How this site is made, with a Q&A"
-    }
+    "lede": "The chart is your home page. A page you turn off takes its orbit with it, and you can turn it back on in the admin any time."
   },
   "done": {
     "kicker": "Done",
@@ -156,14 +109,5 @@
     "latin": "Already set up",
     "lede": "It already has an owner, so first-time setup won't open again. The owner signs in to the admin from the site with GitHub or Google.",
     "home": "Back to the home page"
-  },
-  "sky": {
-    "preview": "Preview",
-    "standby": "Standing by",
-    "yourHome": "Your home page",
-    "note": "Each step adds something here: the owner, the languages, the name, the orbits. What you end up with is what readers see when they open the home page.",
-    "menuAbout": "About",
-    "menuMore": "More",
-    "off": "OFF"
   }
 }

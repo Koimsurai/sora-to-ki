@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { siteProblems, type Draft } from './initSession';
+import { siteProblems, type Draft } from './siteDraft';
 
 const base: Draft = {
   default_locale: 'zh-TW',

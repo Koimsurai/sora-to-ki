@@ -1,0 +1,82 @@
+{
+  "settings": {
+    "title": "站台設定",
+    "latin": "Site",
+    "meta": "站名、語系與要開的頁面",
+    "identityHead": "身分",
+    "localesHead": "語系",
+    "pagesHead": "頁面",
+    "pagesNote": "關掉的頁面連同首頁上它的軌道一起拿掉，讀者看不到入口。內容會留著，開回來就在。",
+    "saved": "站台設定存好了",
+    "invalid": "有欄位要先改好",
+    "confirmTitle": "換掉預設語系？",
+    "confirmDesc": "預設語系會從{{from}}換成{{to}}。不帶前綴的網址（例如 {{host}}/blog）會改顯示{{to}}，已經分享出去的{{from}}連結打開也會變成{{to}}；{{from}}改到 /{{fromPrefix}}/ 底下。原本 /{{toPrefix}}/ 開頭的網址會自動轉到不帶前綴的那一條。搜尋引擎要一陣子才會重新收錄。",
+    "confirmOk": "換掉並儲存",
+    "cancel": "先不要"
+  },
+  "lang": {
+    "defaultLabel": "預設語系",
+    "othersLabel": "也開放這些語系",
+    "warn": "開站之後再換預設語系，全站的網址會整批改掉：已經分享出去、不帶前綴的連結，打開會變成新的預設語系。",
+    "single": "只開一個語系的話，前台不會出現語言選單。"
+  },
+  "identity": {
+    "name": "站名",
+    "author": "作者",
+    "authorHint": "空著就跟站名一樣",
+    "url": "網址",
+    "description": "一句話介紹",
+    "email": "公開信箱",
+    "github": "GitHub 帳號名",
+    "optional": "選填",
+    "shareCard": "分享出去長這樣",
+    "errors": {
+      "nameRequired": "站名不能是空的",
+      "nameTooLong": "站名最多 {{max}} 個字",
+      "authorTooLong": "作者名最多 {{max}} 個字",
+      "descriptionTooLong": "介紹最多 {{max}} 個字",
+      "email": "信箱的格式不對",
+      "github": "GitHub 帳號名只能有英數字與連字號，最多 39 個字"
+    }
+  },
+  "pages": {
+    "groupOrbit": "首頁的軌道",
+    "groupAbout": "「關於」選單",
+    "groupMore": "「更多」選單",
+    "alwaysOn": "手記與關於一直都在。",
+    "groupOrbitNote": "關掉的那一條從首頁軌道與導覽列拿掉。手記與關於一直都在。",
+    "groupAboutNote": "導覽列「關於」底下的幾頁。",
+    "groupMoreNote": "導覽列「更多」底下的幾頁。",
+    "name": {
+      "moments": "碎念",
+      "works": "作品",
+      "collection": "收藏",
+      "setup": "設備",
+      "log": "航行日誌",
+      "messages": "留言",
+      "photos": "照片",
+      "friends": "朋友",
+      "colophon": "此站點"
+    },
+    "desc": {
+      "moments": "短短的一句話",
+      "works": "做過的東西，一件一條時間線",
+      "collection": "在看、在讀、在聽",
+      "setup": "手繪圖紙，或用內建的幾張",
+      "log": "從某一年到現在的里程碑",
+      "messages": "留言板",
+      "photos": "要接 NAS 或上傳資料夾",
+      "friends": "別人的站與申請表單",
+      "colophon": "這個站怎麼做的、問答"
+    }
+  },
+  "sky": {
+    "preview": "預覽",
+    "standby": "等待點火",
+    "yourHome": "你的首頁",
+    "note": "每走一步，這裡就長出一點：站長、語系、站名、軌道。最後看到的就是讀者打開首頁的樣子。",
+    "menuAbout": "關於",
+    "menuMore": "更多",
+    "off": "關"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "settings": {
+    "title": "Site settings",
+    "latin": "Site",
+    "meta": "Name, languages and which pages to show",
+    "identityHead": "Identity",
+    "localesHead": "Languages",
+    "pagesHead": "Pages",
+    "pagesNote": "A page you turn off takes its orbit on the home page with it, and readers lose the way in. The content stays; turn it back on and it's there.",
+    "saved": "Site settings saved",
+    "invalid": "Fix the highlighted fields first",
+    "confirmTitle": "Change the default language?",
+    "confirmDesc": "The default language goes from {{from}} to {{to}}. Addresses without a prefix (like {{host}}/blog) will show {{to}}, so {{from}} links you've already shared will open in {{to}}; {{from}} moves under /{{fromPrefix}}/. Addresses starting with /{{toPrefix}}/ will redirect to the same page without the prefix. Search engines will take a while to catch up.",
+    "confirmOk": "Change and save",
+    "cancel": "Not now"
+  },
+  "lang": {
+    "defaultLabel": "Default language",
+    "othersLabel": "Also offer",
+    "warn": "Changing the default language after launch changes every address on the site: links you've already shared without a prefix will open in the new default language.",
+    "single": "With only one language on, the site shows no language menu."
+  },
+  "identity": {
+    "name": "Site name",
+    "author": "Author",
+    "authorHint": "leave empty to use the site name",
+    "url": "Address",
+    "description": "One-line description",
+    "email": "Public email",
+    "github": "GitHub username",
+    "optional": "optional",
+    "shareCard": "What a shared link looks like",
+    "errors": {
+      "nameRequired": "The site name can't be empty",
+      "nameTooLong": "The site name can be at most {{max}} characters",
+      "authorTooLong": "The author name can be at most {{max}} characters",
+      "descriptionTooLong": "The description can be at most {{max}} characters",
+      "email": "That email address doesn't look right",
+      "github": "A GitHub username only has letters, digits and hyphens, up to 39 characters"
+    }
+  },
+  "pages": {
+    "groupOrbit": "Orbits on the home page",
+    "groupAbout": "\"About\" menu",
+    "groupMore": "\"More\" menu",
+    "alwaysOn": "Notes and About are always there.",
+    "groupOrbitNote": "One you turn off leaves the home page orbits and the top bar. Notes and About are always there.",
+    "groupAboutNote": "The pages under \"About\" in the top bar.",
+    "groupMoreNote": "The pages under \"More\" in the top bar.",
+    "name": {
+      "moments": "Murmurs",
+      "works": "Work",
+      "collection": "Collection",
+      "setup": "Setup",
+      "log": "Log",
+      "messages": "Messages",
+      "photos": "Photos",
+      "friends": "Friends",
+      "colophon": "This site"
+    },
+    "desc": {
+      "moments": "Short notes, a line at a time",
+      "works": "Things you've made, each on a timeline",
+      "collection": "Watching, reading, listening",
+      "setup": "Hand-drawn sheets, or the built-in ones",
+      "log": "Milestones from one year to now",
+      "messages": "A guestbook",
+      "photos": "Needs a NAS or an uploaded folder",
+      "friends": "Other people's sites and a request form",
+      "colophon": "How this site is made, with a Q&A"
+    }
+  },
+  "sky": {
+    "preview": "Preview",
+    "standby": "Standing by",
+    "yourHome": "Your home page",
+    "note": "Each step adds something here: the owner, the languages, the name, the orbits. What you end up with is what readers see when they open the home page.",
+    "menuAbout": "About",
+    "menuMore": "More",
+    "off": "OFF"
+  }
+}
