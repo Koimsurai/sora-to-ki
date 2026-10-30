@@ -26,7 +26,7 @@ use std::f64::consts::{PI, TAU};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, Rgba, amber, ink};
+use super::super::canvas::{Ctx, Gradient, Rgba, amber, ground, ink};
 
 const FRAMES: usize = 150;
 const FRAME_MS: u32 = 100;
@@ -558,7 +558,7 @@ fn draw_glyph(ctx: &mut Ctx, x: f64, y: f64, rc: f64, b: &Body, spin: f64, moon_
     moons(ctx, false);
     // 星球本身擋住後面的東西（環的後半、航線）
     let (cx, cy) = (x as f32, y as f32);
-    ctx.set_fill(Rgba(GROUND, 1.0));
+    ctx.set_fill(Rgba(ground(), 1.0));
     ctx.begin_path();
     ctx.arc(cx, cy, rc as f32, 0.0, std::f32::consts::TAU, false);
     ctx.fill();
@@ -642,7 +642,7 @@ impl Works {
         let n = bodies.len();
         let t_last = (n - 1) as f64 * STEP;
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
         let p = |th: f64, off: f64| place(t_last, th, off);
         // 航線：走過的是線，再往外（還沒做的）是虛點
         ctx.set_stroke(ink(0.26));

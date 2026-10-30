@@ -22,7 +22,7 @@ use std::f32::consts::{PI, TAU};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink, load_image_sized};
+use super::super::canvas::{Ctx, Gradient, amber, ground, ink, load_image_sized};
 
 const FRAMES: usize = 160;
 const FRAME_MS: u32 = 100;
@@ -221,7 +221,7 @@ impl Colophon {
         let to_target = cum[target_at];
 
         let mut back = Ctx::new(W as u32, H as u32);
-        back.clear(GROUND);
+        back.clear(ground());
 
         // 六分儀：翻過來、繞著中心轉到對準的角度（先縮到要畫的大小，見 `load_image_sized`）
         let (iw, ih) = (SEX_SIZE, SEX_SIZE * RATIO);

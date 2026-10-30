@@ -23,7 +23,7 @@ use std::f32::consts::{PI, TAU};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink};
+use super::super::canvas::{Ctx, Gradient, amber, ground, ink};
 use super::starfield::{self, Twinkle, rng};
 
 const FRAMES: usize = 150;
@@ -109,7 +109,7 @@ impl Moments {
         let span = y_end - HEAD_Y;
 
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
         // 背景星：只有彗核附近那一塊的星會閃（跟彗髮擠在同一個外框裡），彗尾上的不閃
         // （閃的星畫在塵埃上面會蓋掉塵埃）
         let (hx, hy) = (arc_x(HEAD_Y), HEAD_Y);

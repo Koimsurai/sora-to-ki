@@ -22,8 +22,6 @@ pub const H: usize = 630;
 /// 給 takumi 的 viewport
 pub const SIZE: (u32, u32) = (W as u32, H as u32);
 
-const GROUND: [f32; 3] = [10.0, 10.0, 12.0];
-
 /// 字底下的那片漸層：左邊壓暗到幾成（往右漸淡，過了 66% 寬就沒有）。讓背景的線與星
 /// 在字底下淡掉，字才讀得清楚
 fn veil(x: usize) -> f32 {
@@ -39,6 +37,7 @@ fn veil(x: usize) -> f32 {
 /// 在這裡用浮點數直接往底色壓就沒有這個問題。
 pub fn compose(back: &Pixmap, overlay: &[u8]) -> Vec<u8> {
     let data = back.data();
+    let ground = super::canvas::ground().map(f32::from);
     let mut out = Vec::with_capacity(W * H * 4);
     for i in 0..W * H {
         let o = &overlay[i * 4..i * 4 + 4];
@@ -46,7 +45,7 @@ pub fn compose(back: &Pixmap, overlay: &[u8]) -> Vec<u8> {
         let v = veil(i % W);
         for ch in 0..3 {
             let p = f32::from(data[i * 4 + ch]);
-            let b = p + (GROUND[ch] - p) * v;
+            let b = p + (ground[ch] - p) * v;
             out.push((f32::from(o[ch]) * a + b * (1.0 - a)).round().clamp(0.0, 255.0) as u8);
         }
         out.push(255);

@@ -24,7 +24,7 @@ use std::f32::consts::{PI, TAU};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink, load_image_sized};
+use super::super::canvas::{Ctx, Gradient, amber, ground, ink, load_image_sized};
 
 const FRAMES: usize = 150;
 const FRAME_MS: u32 = 100;
@@ -104,7 +104,7 @@ impl Photos {
         let feed = (DISH_X + dish_w * DISH_FEED.0, DISH_Y + DISH_H * DISH_FEED.1);
 
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
 
         // 星：多數很淡很小，少數亮一點（同首頁分享圖）。右半邊每四顆有一顆會閃，
         // 壓在插圖底下的不閃（逐格畫的時候它會跑到插圖上面）

@@ -23,7 +23,7 @@ use std::f32::consts::TAU;
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink};
+use super::super::canvas::{Ctx, Gradient, amber, ground, ink};
 use super::starfield::{self, Twinkle};
 
 const FRAMES: usize = 150;
@@ -198,7 +198,7 @@ impl Friends {
         let t = keep_time(&orbits[fresh_i]);
 
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
         // 背景星：只有剛更新那顆星附近的會閃（見 `starfield`）
         let (fx, fy) = orbits[fresh_i].at(orbits[fresh_i].mean(t));
         let twinkle = starfield::scatter(&mut ctx, |x, y| (x - fx).hypot(y - fy) < 220.0);

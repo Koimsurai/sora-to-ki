@@ -34,8 +34,8 @@ use chrono::{Datelike, NaiveDate};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, Rgba, amber, ink, load_image, resize_image};
-use super::saturn::rng;
+use super::super::canvas::{Ctx, Gradient, Rgba, amber, ground, ink, load_image, resize_image};
+use super::body::rng;
 
 /// 一圈 12 秒、每格 100ms。火焰與脈動每一格都在變（一格約 4 KB），一圈越長檔案越大：
 /// 15 秒是 640 KB，12 秒收在 550 KB 左右
@@ -334,7 +334,7 @@ impl Log {
 
         // ── 天上的星（見檔頭）：照 saturn.rs 的種子與分布，右邊每四顆有一顆會閃 ──
         let mut sky = Ctx::new(W as u32, H as u32);
-        sky.clear(GROUND);
+        sky.clear(ground());
         let mut rand = rng(23);
         let mut twinkle = Vec::new();
         for i in 0..240 {
@@ -371,7 +371,7 @@ impl Log {
         };
         if earth.len() > 1 {
             let (first, last) = (earth[0], earth[earth.len() - 1]);
-            ctx.set_fill(Rgba(GROUND, 1.0));
+            ctx.set_fill(Rgba(ground(), 1.0));
             earth_path(&mut ctx);
             ctx.line_to(last.x as f32, hf * 4.0);
             ctx.line_to(first.x as f32, hf * 4.0);

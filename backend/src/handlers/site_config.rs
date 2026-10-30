@@ -7,7 +7,10 @@
 //! 讀的頻率很高（RSS、信件、分享圖每次都要站名），所以啟動時讀進記憶體，寫入時一起更新，
 //! [`current`] 不碰資料庫。
 
-use std::sync::LazyLock;
+use std::sync::{
+    LazyLock,
+    atomic::{AtomicUsize, Ordering},
+};
 
 use axum::{
     Json,
@@ -83,9 +86,19 @@ pub const SUPPORTED_LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
 /// 能選的天體（主題），順序就是頂欄天體選單的順序。前端在 src/lib/theme.ts
 pub const THEMES: [&str; 4] = ["saturn", "neptune", "blackhole", "betelgeuse"];
 
+/// 預設天體在 [`THEMES`] 裡的位置。分享圖每畫一個點都要問顏色，不能每次都複製整份設定，
+/// 所以另外存一份，跟 [`CURRENT`] 一起更新
+static THEME: AtomicUsize = AtomicUsize::new(0);
+
 /// 預設天體（分享圖用）
 pub fn theme() -> &'static str {
-    current().and_then(|s| theme_of(s.theme.as_deref())).unwrap_or(THEMES[0])
+    THEMES[THEME.load(Ordering::Relaxed)]
+}
+
+/// 只換分享圖讀的那份預設天體（測試與樣張用）
+#[cfg(test)]
+pub fn set_theme_for_test(theme: &str) {
+    THEME.store(THEMES.iter().position(|t| *t == theme).unwrap_or(0), Ordering::Relaxed);
 }
 
 /// 字串 → 能選的天體（大小寫不拘）
@@ -148,6 +161,8 @@ pub fn current() -> Option<SiteSettings> {
 }
 
 fn set_current(s: SiteSettings) {
+    let theme = theme_of(s.theme.as_deref()).and_then(|t| THEMES.iter().position(|x| *x == t)).unwrap_or(0);
+    THEME.store(theme, Ordering::Relaxed);
     *CURRENT.write() = Some(s);
 }
 

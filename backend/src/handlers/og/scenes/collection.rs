@@ -26,7 +26,7 @@ use std::f64::consts::{PI, TAU};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{AMBER, Ctx, GROUND, Gradient, INK, Rgba, amber, ink, load_image_sized};
+use super::super::canvas::{Ctx, Gradient, Rgba, amber, amber_rgb, ground, ink, ink_rgb, load_image_sized};
 
 /// 一整圈（畫圖用的 f32）
 const FULL: f32 = std::f32::consts::TAU;
@@ -358,7 +358,7 @@ impl Collection {
         let (ex, ey) = (EX as f32, EY as f32);
 
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
         ctx.set_line_width(1.0);
 
         // ── 背景：銀河的光霧、銀河、遠方的星 ──
@@ -432,7 +432,7 @@ impl Collection {
         let earth_l = (EARTH_L0 + EARTH_N * days) * DEG;
         let (sx, sy) = (-earth_l.cos(), -earth_l.sin());
         let ga = clamp01((f64::from(earth_r) - 2.5) / 12.0) as f32;
-        glow(&mut ctx, ex, ey, earth_r * 1.25, INK, 0.08 * ga);
+        glow(&mut ctx, ex, ey, earth_r * 1.25, ink_rgb(), 0.08 * ga);
         ctx.set_stroke(ink(0.3 * ga));
         ctx.begin_path();
         ctx.arc(ex, ey, earth_r, 0.0, FULL, false);
@@ -536,7 +536,7 @@ impl super::Scene for Collection {
 
         // 琥珀點：台灣
         let (dx, dy) = self.dot;
-        glow(&mut ctx, dx, dy, 16.0, AMBER, 0.5);
+        glow(&mut ctx, dx, dy, 16.0, amber_rgb(), 0.5);
         ctx.dot(dx, dy, 2.8, amber(1.0));
         ctx.pixmap
     }
