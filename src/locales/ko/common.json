@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "불러오는 중…",
+    "ownerFillHint": "나에게만 보여요 · 내용 채우기 →",
     "loadingData": "데이터 불러오는 중",
     "errorBackendApi": "백엔드 API에 연결할 수 없어요",
     "retry": "다시 시도",
@@ -78,7 +79,7 @@
     "signInWithGoogle": "Google로 로그인"
   },
   "hero": {
-    "description": "{{site}}, {{author}}의 개인 사이트. 노트, 혼잣말, 작품, 컬렉션."
+    "description": "{{author}}의 개인 사이트. 노트, 혼잣말, 작품, 컬렉션."
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",

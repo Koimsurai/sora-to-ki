@@ -668,7 +668,8 @@ const smooth = (a: number, b: number, x: number) => {
 
 export function createSpiral(bodies: Body[]) {
   const n = bodies.length;
-  const tLast = (n - 1) * STEP;
+  // 一件都沒有（新站）時航線長度是 0：只剩起點那顆琥珀點與往外的虛點
+  const tLast = Math.max(0, n - 1) * STEP;
   const flow = Array.from({ length: 320 }, () => ({
     th: Math.random() * (tLast + AHEAD),
     off: (Math.random() - 0.5) * 2,
@@ -692,9 +693,9 @@ export function createSpiral(bodies: Body[]) {
 
   /** 第 i 件的符號上，第一顆衛星現在在哪（沒有衛星就是星球中心）：最新那一件的琥珀點 */
   const moonOf = (i: number, w: number, h: number, t: number): [number, number] => {
-    const [x, y] = placer(w, h, t)(i * STEP);
-    const b = bodies[i];
-    if (!b.moons.length) return [x, y];
+    const [x, y] = placer(w, h, t)(Math.max(0, i) * STEP);
+    const b = bodies[i] as Body | undefined;
+    if (!b?.moons.length) return [x, y];
     const rc = glyphRadius(b, Math.min(w, h));
     const [px, py] = rotWith(b.tilt, b.roll)(...moonAt(b.moons[0], t, GLYPH_PACE), 0);
     return [x + px * rc, y - py * rc];

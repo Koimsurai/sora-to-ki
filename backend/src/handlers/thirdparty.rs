@@ -673,7 +673,12 @@ fn waka_auth(key: &str) -> String {
     format!("Basic {}", base64::engine::general_purpose::STANDARD.encode(key))
 }
 
-const WAKA_UNCONFIGURED: &str = "WakaTime API 未配置（請在 server/.env 設置 WAKATIME_API_KEY）";
+/// 整合沒設定（沒填金鑰）時的狀態碼：200，body 帶 `error` 說明。
+/// 自架的站多半不接這些整合，不是壞掉；回 500 會讓每個讀者的瀏覽器 console 都冒紅字、後端 log 一直警告。
+/// 前端看 `error` 欄位決定不顯示那一塊（data/logData.ts），跟 spotify 的 now-playing 同一個做法
+const UNCONFIGURED: StatusCode = StatusCode::OK;
+
+const WAKA_UNCONFIGURED: &str = "WakaTime 沒有設定（在 .env.backend 填 WAKATIME_API_KEY）";
 
 /// WakaTime 的 `grand_total`（前端只用 text，total_seconds 一起帶著方便日後算）。
 #[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
@@ -782,7 +787,7 @@ fn waka_err_parts(kind: &str, e: (StatusCode, Value)) -> (StatusCode, Option<Str
 pub async fn wakatime_today(State(state): State<AppState>) -> Response {
     let Some(key) = wakatime_key() else {
         return (
-            StatusCode::INTERNAL_SERVER_ERROR,
+            UNCONFIGURED,
             Json(WakatimeTodayResponse { error: Some(WAKA_UNCONFIGURED.to_string()), ..Default::default() }),
         )
             .into_response();
@@ -845,7 +850,7 @@ pub async fn wakatime_today(State(state): State<AppState>) -> Response {
 async fn wakatime_stats(state: &AppState, err_kind: &str) -> Response {
     let Some(key) = wakatime_key() else {
         return (
-            StatusCode::INTERNAL_SERVER_ERROR,
+            UNCONFIGURED,
             Json(WakatimeStatsResponse { error: Some(WAKA_UNCONFIGURED.to_string()), ..Default::default() }),
         )
             .into_response();
@@ -888,7 +893,7 @@ fn steam_env() -> Option<(String, String)> {
     Some((key, id))
 }
 
-const STEAM_UNCONFIGURED: &str = "Steam API 未配置（請在 server/.env 設置 STEAM_API_KEY 和 STEAM_ID）";
+const STEAM_UNCONFIGURED: &str = "Steam 沒有設定（在 .env.backend 填 STEAM_API_KEY 與 STEAM_ID）";
 const STEAM_PARSE_ERR: &str = "Failed to parse Steam API response";
 const STEAM_FETCH_ERR: &str = "Failed to fetch Steam data";
 
@@ -958,7 +963,7 @@ fn steam_games_from(v: &Value) -> Vec<SteamGame> {
 pub async fn steam_player(State(state): State<AppState>) -> Response {
     let unconf = || {
         (
-            StatusCode::INTERNAL_SERVER_ERROR,
+            UNCONFIGURED,
             Json(SteamPlayerResponse { error: Some(STEAM_UNCONFIGURED.to_string()), ..Default::default() }),
         )
             .into_response()
@@ -1012,7 +1017,7 @@ async fn steam_games(state: &AppState, url: &str, with_count: bool) -> Response 
 
 fn steam_games_unconfigured() -> Response {
     (
-        StatusCode::INTERNAL_SERVER_ERROR,
+        UNCONFIGURED,
         Json(SteamGamesResponse { error: Some(STEAM_UNCONFIGURED.to_string()), ..Default::default() }),
     )
         .into_response()
@@ -1041,6 +1046,7 @@ pub async fn steam_owned_games(State(state): State<AppState>) -> Response {
 }
 
 fn steam_unconfigured() -> Response {
+    // 前台沒在用（achievements、profile），留 500：200 的形狀是宣告好的型別，塞一個只有 error 的物件會對不上
     (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": STEAM_UNCONFIGURED }))).into_response()
 }
 
@@ -1564,8 +1570,7 @@ async fn refresh_steam_profile(state: &AppState, key: &str, id: &str) -> Result<
               (status = 503, description = "首抓失敗且無快取")))]
 pub async fn steam_profile(State(state): State<AppState>) -> Response {
     let Some((key, id)) = steam_env() else {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": STEAM_UNCONFIGURED })))
-            .into_response();
+        return steam_unconfigured();
     };
     let now = now_ms();
     let cached = state.steam.cache.lock().clone();
@@ -1698,7 +1703,7 @@ mod tests {
         }
     }
 
-    /// 沒設 key/id 時要在碰鎖之前就回 500——否則未配置的部署會把所有請求排到鎖上。
+    /// 沒設 key/id 時要在碰鎖之前就回——否則沒設定的部署會把所有請求排到鎖上。
     #[tokio::test]
     async fn steam_profile_without_env_fails_before_taking_the_lock() {
         let _env = STEAM_ENV_LOCK.lock().await;
@@ -2167,7 +2172,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn wakatime_沒設定_key_時三支都回_500_並說明原因() {
+    async fn wakatime_沒設定_key_時三支都回_200_並說明原因() {
         let _g = WAKA_ENV_LOCK.lock().await;
         // SAFETY: 靠 WAKA_ENV_LOCK 串行化。
         unsafe { std::env::remove_var("WAKATIME_API_KEY") };
@@ -2179,7 +2184,7 @@ mod tests {
             wakatime_week(axum::extract::State(st.clone())).await,
             wakatime_projects(axum::extract::State(st.clone())).await,
         ] {
-            assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(resp.status(), UNCONFIGURED);
             let v = body_of(resp).await;
             assert_eq!(v["error"], WAKA_UNCONFIGURED, "要說得出是「沒設定」而不是「壞了」");
         }
@@ -2760,7 +2765,7 @@ mod tests {
     // 這裡驗的是狀態碼與訊息。
 
     #[tokio::test]
-    async fn steam_沒設定金鑰時回_500_且陣列欄位仍然存在() {
+    async fn steam_沒設定金鑰時回_200_且陣列欄位仍然存在() {
         let _env = STEAM_ENV_LOCK.lock().await;
         // SAFETY: 靠 STEAM_ENV_LOCK 串行化。
         unsafe {
@@ -2774,14 +2779,14 @@ mod tests {
             steam_recent_games(axum::extract::State(st.clone())).await,
             steam_owned_games(axum::extract::State(st.clone())).await,
         ] {
-            assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(resp.status(), UNCONFIGURED);
             let v = body_of(resp).await;
             assert_eq!(v["error"], STEAM_UNCONFIGURED);
             assert!(v["games"].is_array(), "前端直接 .map，games 一定要是陣列不能是 undefined");
         }
 
         let resp = steam_player(axum::extract::State(st.clone())).await;
-        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(resp.status(), UNCONFIGURED);
         assert_eq!(body_of(resp).await["error"], STEAM_UNCONFIGURED);
 
         let resp = steam_achievements(axum::extract::State(st), axum::extract::Path("440".into())).await;

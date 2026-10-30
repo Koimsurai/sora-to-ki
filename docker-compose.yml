@@ -14,6 +14,7 @@ volumes:
   backend-db-data: # DB 檔（backend-rs 與 db-backup 共用）
   backend-uploads: # 後台上傳的圖片（Caddy 直接讀它出 /uploads/）
   backend-gallery: # 照片頁產生的縮圖與 manifest（Caddy 直接讀它出 /nas-images/）
+  revalidate-key: # 前後端共用的清快取密鑰（.env 沒填 REVALIDATE_SECRET 時，後端開機產生一把放這裡）
   caddy-data: # HTTPS 憑證，刪掉的話下次開機會重新申請
   caddy-config:
 
@@ -55,9 +56,12 @@ services:
       - TZ=${TZ:-UTC}
       - BACKEND_URL=http://backend-rs:3002
       - SITE_URL=${SITE_URL:-http://localhost}
-      # 發文/改文後 backend-rs 會打 /_revalidate 清 ISR 快取，不必等 TTL（文章頁 1h）。
-      # 沒設 = 端點回 404、功能不啟用。
+      # 發文/改文、改站台設定後 backend-rs 會打 /_revalidate 清 ISR 快取，不必等 TTL（文章頁 1h）。
+      # 密鑰沒填就用後端產生、放在 revalidate-key 裡的那把
       - REVALIDATE_SECRET=${REVALIDATE_SECRET:-}
+      - REVALIDATE_SECRET_FILE=/run/revalidate/secret
+    volumes:
+      - revalidate-key:/run/revalidate:ro
     restart: unless-stopped
     healthcheck:
       # slim image 沒有 curl/wget → 用 node 內建 fetch 打首頁
@@ -93,6 +97,7 @@ services:
       # 13579 = 前端容器內部 port（Dockerfile ENV PORT=13579）。兩邊密鑰必須相同。
       - FRONTEND_REVALIDATE_URL=http://frontend:13579/_revalidate
       - REVALIDATE_SECRET=${REVALIDATE_SECRET:-}
+      - REVALIDATE_SECRET_FILE=/run/revalidate/secret
       #
       # ⚠️ 金鑰類（GITHUB_TOKEN、SIMKL_CLIENT_ID…）放 .env.backend，**不要**在這裡寫
       # `- SIMKL_CLIENT_ID=${SIMKL_CLIENT_ID:-}`：`environment` 優先於 `env_file`，而 `${VAR:-}`
@@ -101,6 +106,7 @@ services:
       - backend-db-data:/usr/src/app/db
       - backend-uploads:/usr/src/app/storage/uploads
       - backend-gallery:/usr/src/app/storage/gallery
+      - revalidate-key:/run/revalidate
     env_file:
       - ./.env.backend
     restart: unless-stopped
