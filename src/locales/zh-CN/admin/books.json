@@ -1,0 +1,71 @@
+{
+  "meta": "{{count}} 本 · 在读 {{reading}}",
+  "add": "添加一本书",
+  "listLabel": "书单",
+  "tabAll": "全部",
+  "status": {
+    "to-read": "想读",
+    "reading": "在读",
+    "read": "读完"
+  },
+  "searchShelf": "搜索书架",
+  "searchPlaceholder": "书名、作者、ISBN",
+  "emptyShelf": "书架还是空的。",
+  "noMatch": "没有符合的书。",
+  "edit": "编辑",
+  "editAria": "编辑《{{title}}》",
+  "deleteAria": "删除《{{title}}》",
+  "pages": "{{count}} 页",
+  "finishedOn": "{{date}} 读完",
+  "startedOn": "{{date}} 开始",
+  "dialog": {
+    "editTitle": "编辑这本书",
+    "editDesc": "改完点“更新”。",
+    "addDesc": "先用 ISBN 或书名搜索外部书目导入，再补上自己的状态、评分与笔记；也可以全部手动填写。"
+  },
+  "external": {
+    "label": "搜索外部书目",
+    "placeholder": "ISBN 或书名（Google Books、OpenLibrary、台湾国图）",
+    "search": "搜索",
+    "searching": "搜索中",
+    "results": "搜索结果",
+    "ncl": "台湾国图（没有封面与简介）"
+  },
+  "field": {
+    "title": "书名",
+    "authors": "作者",
+    "publisher": "出版社",
+    "publishedDate": "出版日期",
+    "pageCount": "页数",
+    "language": "语言",
+    "categories": "分类",
+    "coverUrl": "封面网址",
+    "coverPreview": "封面预览",
+    "description": "简介",
+    "myReading": "我读这本",
+    "status": "状态",
+    "rating": "评分 · 0–5",
+    "started": "开始读",
+    "finished": "读完",
+    "notes": "笔记"
+  },
+  "cancel": "取消",
+  "update": "更新",
+  "putOnShelf": "放上书架",
+  "confirmTitle": "确定要把这本书移除吗？",
+  "confirmBody": "评分与笔记会一起删除，无法恢复。",
+  "toast": {
+    "needQuery": "请输入 ISBN 或书名",
+    "fallbackEmpty": "备用来源（OpenLibrary）也没有这本",
+    "notFound": "找不到这本书",
+    "searchFailed": "搜索失败",
+    "searchFailedRetry": "搜索失败，请稍后再试",
+    "picked": "已导入书目",
+    "updated": "已更新",
+    "added": "已放上书架",
+    "actionFailed": "操作失败",
+    "saveFailed": "保存失败",
+    "removed": "已从书架移除",
+    "deleteFailed": "删除失败"
+  }
+}

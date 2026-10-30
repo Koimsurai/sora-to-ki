@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { recentPostsFullQueryOptions } from '@/data/blogList';
+import { useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import './AdminPicker.css';
 
@@ -25,6 +26,7 @@ interface PostLinkModalProps {
  * 拉一份 published posts 清單，提供模糊搜尋，點擊後 onSelect(post) 回傳。
  */
 const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
+  const { t } = useAdminT();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -77,8 +79,8 @@ const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="搜尋文章標題或摘要"
-                aria-label="搜尋文章"
+                placeholder={t('editor.linkModal.searchPlaceholder')}
+                aria-label={t('editor.linkModal.searchLabel')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -87,14 +89,14 @@ const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
                 }}
               />
             </label>
-            <button type="button" onClick={onClose} className="adm-icon-btn" aria-label="關閉">
+            <button type="button" onClick={onClose} className="adm-icon-btn" aria-label={t('editor.linkModal.close')}>
               <X className="size-3.5" />
             </button>
           </div>
           <div className="adm-picker-body max-h-[60vh]">
-            {loading && <AdminLoading label="讀文章清單" />}
+            {loading && <AdminLoading label={t('editor.linkModal.loading')} />}
             {!loading && filtered.length === 0 && (
-              <p className="adm-picker-empty">{query ? '找不到符合的文章' : '沒有可用的文章'}</p>
+              <p className="adm-picker-empty">{query ? t('editor.linkModal.notFound') : t('editor.linkModal.none')}</p>
             )}
             {!loading && filtered.length > 0 && (
               <ul className="adm-picker-list">
@@ -113,10 +115,8 @@ const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
             )}
           </div>
           <div className="adm-picker-foot">
-            <span>Enter 選第一篇 · Esc 關閉</span>
-            <span>
-              {filtered.length} / {posts.length} 篇
-            </span>
+            <span>{t('editor.linkModal.foot')}</span>
+            <span>{t('editor.linkModal.count', { shown: filtered.length, total: posts.length })}</span>
           </div>
         </motion.div>
       </motion.div>

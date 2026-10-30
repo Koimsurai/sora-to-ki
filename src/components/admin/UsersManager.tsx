@@ -15,8 +15,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/auth';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import { jsonAuthHeaders } from '@/lib/authToken';
-import { lookupOr } from '../../lib/tableLookup';
+import { lookup, lookupOr } from '../../lib/tableLookup';
 import AdminLoading from './AdminLoading';
 import { AdminSelect } from './AdminFields';
 import { PageHead } from './AdminPage';
@@ -28,12 +29,17 @@ import { formatWhen } from './adminFormat';
 // 型別來源＝Rust struct（specta 生成）；原手寫 interface 已與 API 漂移（avatar vs avatar_url、id 型別）
 type AdminUser = AdminUserRow;
 
-const ROLE_LABEL: Record<string, string> = { OWNER: '站長', ADMIN: '管理員', USER: '讀者' };
+/** 後端的角色值 → users.role 底下的 key */
+const ROLE_KEY: Record<string, string> = { OWNER: 'owner', ADMIN: 'admin', USER: 'reader' };
 const PROVIDER_LABEL: Record<string, string> = { google: 'Google', github: 'GitHub' };
 
-const roleLabel = (role: string | null) => lookupOr(ROLE_LABEL, role ?? 'USER', role ?? '讀者');
+const roleLabel = (role: string | null) => {
+  const key = lookup(ROLE_KEY, role ?? 'USER');
+  return key ? at(`users.role.${key}`) : (role ?? at('users.role.reader'));
+};
 
 export default function UsersManager() {
+  const { t } = useAdminT();
   const { user: currentUser, isOwner } = useAuth();
   const queryClient = useQueryClient();
   const { data: users = [], isPending } = useQuery(adminUsersQueryOptions);
@@ -52,14 +58,14 @@ export default function UsersManager() {
         body: JSON.stringify({ role }),
       });
       if (res.ok) {
-        toast.success(`已把 ${target.display_name ?? ''} 改成${roleLabel(role)}`);
+        toast.success(t('users.roleChanged', { name: target.display_name ?? '', role: roleLabel(role) }));
         void invalidateUsers();
       } else {
         const data = (await res.json()) as { error?: string };
-        toast.error(data.error ?? '更改角色失敗');
+        toast.error(data.error ?? t('users.roleChangeFailed'));
       }
     } catch {
-      toast.error('更改角色失敗');
+      toast.error(t('users.roleChangeFailed'));
     } finally {
       setChange(null);
     }
@@ -74,29 +80,33 @@ export default function UsersManager() {
   return (
     <div className="adm-page adm-page-narrow">
       <PageHead
-        title="帳號"
+        title={t('nav.users')}
         latin="Accounts"
-        meta={isPending ? '載入中' : `站長 ${countOf('OWNER')} · 管理員 ${countOf('ADMIN')} · 讀者 ${countOf('USER')}`}
+        meta={
+          isPending
+            ? t('common.loading')
+            : t('users.meta', { owner: countOf('OWNER'), admin: countOf('ADMIN'), reader: countOf('USER') })
+        }
         actions={
           <button type="button" className="adm-btn" onClick={() => void invalidateUsers()} disabled={isPending}>
-            重新整理
+            {t('users.refresh')}
           </button>
         }
       />
 
-      <section className="adm-stack" aria-label="帳號清單">
+      <section className="adm-stack" aria-label={t('users.listLabel')}>
         <div className="adm-toolbar">
-          <span className="adm-meta">登入過的人都在這裡；管理員能進後台，但不能改別人的角色</span>
+          <span className="adm-meta">{t('users.hint')}</span>
           <label className="adm-prompt">
             <span className="adm-prompt-mark" aria-hidden="true">
               &gt;
             </span>
-            <span className="sr-only">搜尋帳號</span>
+            <span className="sr-only">{t('users.searchLabel')}</span>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="名字、Email、登入方式"
+              placeholder={t('users.searchPlaceholder')}
             />
           </label>
         </div>
@@ -104,20 +114,20 @@ export default function UsersManager() {
         {isPending ? (
           <AdminLoading />
         ) : shown.length === 0 ? (
-          <p className="adm-empty">{q ? '找不到符合的帳號。' : '還沒有人登入過。'}</p>
+          <p className="adm-empty">{q ? t('users.noMatch') : t('users.empty')}</p>
         ) : (
           <div className="adm-table-wrap">
             <table className="adm-table">
               <thead>
                 <tr>
-                  <th scope="col">名字</th>
-                  <th scope="col">Email</th>
-                  <th scope="col">登入方式</th>
-                  <th scope="col">角色</th>
-                  <th scope="col">加入</th>
+                  <th scope="col">{t('users.col.name')}</th>
+                  <th scope="col">{t('users.col.email')}</th>
+                  <th scope="col">{t('users.col.provider')}</th>
+                  <th scope="col">{t('users.col.role')}</th>
+                  <th scope="col">{t('users.col.joined')}</th>
                   {isOwner && (
                     <th scope="col">
-                      <span className="sr-only">改角色</span>
+                      <span className="sr-only">{t('users.col.changeRole')}</span>
                     </th>
                   )}
                 </tr>
@@ -138,7 +148,7 @@ export default function UsersManager() {
                           )}
                           <span className="adm-cell-name">
                             {u.display_name ?? '—'}
-                            {isSelf && <span className="adm-meta"> · 你</span>}
+                            {isSelf && <span className="adm-meta"> · {t('users.you')}</span>}
                           </span>
                         </span>
                       </td>
@@ -163,14 +173,14 @@ export default function UsersManager() {
                           {editable ? (
                             <div className="adm-prompt adm-prompt-compact">
                               <AdminSelect
-                                label={`${u.display_name ?? '這位'}的角色`}
+                                label={t('users.roleSelectLabel', { name: u.display_name ?? t('users.someone') })}
                                 value={u.role ?? 'USER'}
                                 onChange={(role) => {
                                   if (role !== u.role) setChange({ user: u, role });
                                 }}
                                 options={[
-                                  { value: 'USER', label: '讀者' },
-                                  { value: 'ADMIN', label: '管理員' },
+                                  { value: 'USER', label: t('users.role.reader') },
+                                  { value: 'ADMIN', label: t('users.role.admin') },
                                 ]}
                               />
                             </div>
@@ -196,15 +206,18 @@ export default function UsersManager() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>更改角色？</AlertDialogTitle>
+            <AlertDialogTitle>{t('users.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              把 {change?.user.display_name} 從{roleLabel(change?.user.role ?? null)}改成
-              {roleLabel(change?.role ?? null)}。{change?.role === 'ADMIN' ? '管理員進得了後台，能改文章與留言。' : ''}
+              {t(change?.role === 'ADMIN' ? 'users.confirmDescAdmin' : 'users.confirmDesc', {
+                name: change?.user.display_name ?? '',
+                from: roleLabel(change?.user.role ?? null),
+                to: roleLabel(change?.role ?? null),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void handleRoleChange()}>確認更改</AlertDialogAction>
+            <AlertDialogCancel>{t('users.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleRoleChange()}>{t('users.confirm')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

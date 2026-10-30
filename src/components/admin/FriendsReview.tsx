@@ -4,6 +4,7 @@ import type { AdminFriendRow } from '@koimsurai/api-types';
 import { toast } from 'sonner';
 
 import { adminFriendsQueryOptions } from '@/data/adminData';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -31,21 +32,20 @@ import './FriendsReview.css';
 
 type View = 'queue' | 'approved' | 'rejected';
 
-const TABS: { key: View; label: string }[] = [
-  { key: 'queue', label: '待看' },
-  { key: 'approved', label: '朋友' },
-  { key: 'rejected', label: '退回' },
-];
+const TABS: readonly View[] = ['queue', 'approved', 'rejected'];
 
 const hostOf = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
 /** 清單上的一行摘要：「4 / 5 · 還沒連回來」，沒檢查過就說沒檢查過 */
 function checkSummary(f: AdminFriendRow): { text: string; bad: boolean } {
-  if (f.checks.length === 0) return { text: '還沒檢查', bad: false };
+  if (f.checks.length === 0) return { text: at('friends.checkNone'), bad: false };
   const passed = f.checks.filter((c) => c.ok).length;
   const firstBad = f.checks.find((c) => !c.ok);
+  const total = f.checks.length;
   return {
-    text: `${passed} / ${f.checks.length}${firstBad ? ` · ${firstBad.label}沒過` : ''}`,
+    text: firstBad
+      ? at('friends.checkSumBad', { passed, total, label: firstBad.label })
+      : at('friends.checkSum', { passed, total }),
     bad: Boolean(firstBad),
   };
 }
@@ -60,6 +60,7 @@ interface FriendForm {
 const EMPTY_FORM: FriendForm = { name: '', url: '', description: '', feed_url: '' };
 
 export default function FriendsReview() {
+  const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(adminFriendsQueryOptions);
   const friends = data?.friends ?? [];
@@ -100,16 +101,13 @@ export default function FriendsReview() {
     setBusy('save');
     try {
       const out = await patch(f.id, { status, reply: reply.trim() || undefined });
-      const verb = { approved: '收下了', waiting: '先放著，等對方加回來', rejected: '退回了', pending: '放回待看' }[
-        status
-      ];
-      toast.success(`〈${f.name}〉${verb}`);
-      if (out.mail?.sent) toast.success('回信寄出了');
-      else if (out.mail) toast.error(`回信沒寄出：${out.mail.error ?? ''}`);
+      toast.success(t(`friends.decided.${status}`, { name: f.name }));
+      if (out.mail?.sent) toast.success(t('friends.mailSent'));
+      else if (out.mail) toast.error(t('friends.mailFailed', { error: out.mail.error ?? '' }));
       setReply('');
       refresh();
     } catch (e) {
-      toast.error(`沒有存到：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('friends.saveFailed', { error: e instanceof Error ? e.message : '' }));
     } finally {
       setBusy(null);
     }
@@ -126,10 +124,10 @@ export default function FriendsReview() {
       const row = (await res.json()) as AdminFriendRow;
       await queryClient.invalidateQueries({ queryKey: ['admin', 'friends'] });
       const sum = checkSummary(row);
-      if (sum.bad) toast.warning(`〈${f.name}〉檢查完了：${sum.text}`);
-      else toast.success(`〈${f.name}〉檢查完了：${sum.text}，全部通過`);
+      if (sum.bad) toast.warning(t('friends.checkedBad', { name: f.name, summary: sum.text }));
+      else toast.success(t('friends.checkedOk', { name: f.name, summary: sum.text }));
     } catch (e) {
-      toast.error(`檢查失敗：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('friends.checkFailed', { error: e instanceof Error ? e.message : '' }));
     } finally {
       setBusy(null);
       setCheckingId(null);
@@ -162,15 +160,15 @@ export default function FriendsReview() {
         });
         const out = (await res.json().catch(() => ({}))) as { error?: string };
         if (!res.ok) throw new Error(out.error ?? `${res.status}`);
-        toast.success(`〈${form.name}〉加進朋友了`);
+        toast.success(t('friends.added', { name: form.name }));
       } else {
         await patch(editing.id, { ...form });
-        toast.success('改好了');
+        toast.success(t('friends.updated'));
       }
       setEditing(null);
       refresh();
     } catch (err) {
-      toast.error(`沒有存到：${err instanceof Error ? err.message : ''}`);
+      toast.error(t('friends.saveFailed', { error: err instanceof Error ? err.message : '' }));
     }
   };
 
@@ -179,10 +177,10 @@ export default function FriendsReview() {
     try {
       const res = await fetch(`/api/admin/friends/${removeTarget.id}`, { method: 'DELETE', headers: authHeaders() });
       if (!res.ok) throw new Error(`${res.status}`);
-      toast.success('刪掉了');
+      toast.success(t('friends.deleted'));
       refresh();
     } catch (e) {
-      toast.error(`刪除失敗：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('friends.deleteFailed', { error: e instanceof Error ? e.message : '' }));
     } finally {
       setRemoveTarget(null);
     }
@@ -200,30 +198,34 @@ export default function FriendsReview() {
   return (
     <div className="adm-page">
       <PageHead
-        title="友鏈"
+        title={t('nav.friends')}
         latin="Friends"
-        meta={isPending ? '載入中' : `待看 ${countOf('queue') ?? 0} · 朋友 ${counts?.approved ?? 0}`}
+        meta={
+          isPending
+            ? t('common.loading')
+            : t('friends.meta', { queue: countOf('queue') ?? 0, approved: counts?.approved ?? 0 })
+        }
         actions={
           <button type="button" className="adm-btn adm-btn-primary" onClick={() => openEdit('new')}>
-            加一位朋友
+            {t('friends.addFriend')}
           </button>
         }
       />
 
-      <section className="adm-stack" aria-label="友鏈">
+      <section className="adm-stack" aria-label={t('nav.friends')}>
         <div className="adm-toolbar">
           <div className="adm-tabs">
-            {TABS.map((t) => (
+            {TABS.map((tab) => (
               <button
-                key={t.key}
+                key={tab}
                 type="button"
                 className="adm-tab"
-                aria-pressed={view === t.key}
-                onClick={() => setView(t.key)}
+                aria-pressed={view === tab}
+                onClick={() => setView(tab)}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                {t.label}
-                <span className="adm-meta">{isPending ? '' : countOf(t.key)}</span>
+                {t(`friends.tabs.${tab}`)}
+                <span className="adm-meta">{isPending ? '' : countOf(tab)}</span>
               </button>
             ))}
           </div>
@@ -234,10 +236,10 @@ export default function FriendsReview() {
             <AdminLoading />
           ) : view === 'queue' ? (
             queue.length === 0 || !selected ? (
-              <p className="adm-empty">沒有待看的申請。朋友頁的「成為下一顆」送來的會出現在這裡。</p>
+              <p className="adm-empty">{t('friends.queueEmpty')}</p>
             ) : (
               <div className="adm-review">
-                <ul className="adm-review-list" aria-label="申請">
+                <ul className="adm-review-list" aria-label={t('friends.listLabel')}>
                   {queue.map((f) => {
                     const sum = checkSummary(f);
                     return (
@@ -247,7 +249,7 @@ export default function FriendsReview() {
                           className="adm-review-item"
                           aria-pressed={selected.id === f.id}
                           // 鈕裡全是資料，沒有固定的字；報讀器念名字、網域與檢查結果
-                          aria-label={`${f.name}，${hostOf(f.url)}，${sum.text}`}
+                          aria-label={t('friends.itemLabel', { name: f.name, host: hostOf(f.url), summary: sum.text })}
                           onClick={() => {
                             setSelectedId(f.id);
                             setReply('');
@@ -261,7 +263,7 @@ export default function FriendsReview() {
                             </span>
                             <span className="adm-meta">{hostOf(f.url)}</span>
                             <span className="adm-meta adm-fr-sum" data-bad={sum.bad || undefined}>
-                              {f.status === 'waiting' ? '等對方加回來 · ' : ''}
+                              {f.status === 'waiting' ? `${t('friends.waitingTag')} · ` : ''}
                               {sum.text}
                             </span>
                           </span>
@@ -271,7 +273,7 @@ export default function FriendsReview() {
                   })}
                 </ul>
 
-                <section className="adm-review-detail" aria-label="這份申請">
+                <section className="adm-review-detail" aria-label={t('friends.detailLabel')}>
                   <div className="adm-review-head">
                     <div className="adm-head-text">
                       <span className="adm-review-name">{selected.name}</span>
@@ -280,14 +282,15 @@ export default function FriendsReview() {
                       </a>
                     </div>
                     <span className="adm-meta">
-                      {formatWhen(selected.created_at, 'MM.dd HH:mm')} 送出 · {selected.email ? '有留信箱' : '沒留信箱'}
+                      {t('friends.submittedAt', { when: formatWhen(selected.created_at, 'MM.dd HH:mm') })} ·{' '}
+                      {selected.email ? t('friends.hasEmail') : t('friends.noEmail')}
                     </span>
                   </div>
 
                   {selected.description && <p className="adm-review-body">{selected.description}</p>}
                   {selected.message && (
                     <blockquote className="adm-fr-message">
-                      <span className="adm-caps">想說的話</span>
+                      <span className="adm-caps">{t('friends.message')}</span>
                       {selected.message}
                     </blockquote>
                   )}
@@ -306,30 +309,27 @@ export default function FriendsReview() {
                           {checkingId === selected.id ? (
                             <>
                               <BusyDot />
-                              檢查中
+                              {t('friends.checking')}
                             </>
                           ) : selected.checks.length ? (
-                            '重新檢查'
+                            t('friends.recheck')
                           ) : (
-                            '檢查'
+                            t('friends.check')
                           )}
                         </button>
                       }
                     >
-                      自動檢查{selected.checked_at ? ` · ${formatWhen(selected.checked_at)}` : ''}
+                      {t('friends.checksHead')}
+                      {selected.checked_at ? ` · ${formatWhen(selected.checked_at)}` : ''}
                     </SectionHead>
                     {checkingId === selected.id && (
                       <p className="adm-meta adm-fr-checking" aria-live="polite">
                         <BusyDot />
-                        正在連到 {hostOf(selected.url)}——連不到的話會等到逾時，可能要十幾秒
+                        {t('friends.connecting', { host: hostOf(selected.url) })}
                       </p>
                     )}
                     {selected.checks.length === 0 ? (
-                      checkingId !== selected.id && (
-                        <p className="adm-meta">
-                          還沒檢查。按下去會連到對方的站，看連不連得到、有沒有 RSS、有沒有連回來。
-                        </p>
-                      )
+                      checkingId !== selected.id && <p className="adm-meta">{t('friends.checksNone')}</p>
                     ) : (
                       <ul className="adm-fr-check-list" data-stale={checkingId === selected.id || undefined}>
                         {selected.checks.map((c) => (
@@ -339,7 +339,7 @@ export default function FriendsReview() {
                             </span>
                             <span>
                               {c.label}
-                              <span className="sr-only">{c.ok ? '：通過' : '：沒過'}</span>
+                              <span className="sr-only">{c.ok ? t('friends.checkPass') : t('friends.checkFail')}</span>
                             </span>
                             <span className="adm-meta">{c.detail}</span>
                           </li>
@@ -349,7 +349,7 @@ export default function FriendsReview() {
                   </div>
 
                   <div className="adm-fr-preview">
-                    <span className="adm-caps">在朋友頁會是</span>
+                    <span className="adm-caps">{t('friends.preview')}</span>
                     <div className="adm-fr-card">
                       <span className="adm-fr-star" aria-hidden="true" />
                       <span className="adm-fr-card-text">
@@ -362,7 +362,7 @@ export default function FriendsReview() {
 
                   <div className="adm-review-reply">
                     <label className="adm-caps" htmlFor="fr-reply">
-                      回信 · 選填，寄到對方留的信箱
+                      {t('friends.replyLabel')}
                     </label>
                     <div className="adm-prompt adm-prompt-multi">
                       <span className="adm-prompt-mark" aria-hidden="true">
@@ -373,7 +373,7 @@ export default function FriendsReview() {
                         rows={2}
                         value={reply}
                         disabled={!selected.email}
-                        placeholder={selected.email ? '例如：已經收下，也請記得把這邊加回去' : '對方沒有留信箱'}
+                        placeholder={selected.email ? t('friends.replyPlaceholder') : t('friends.noEmailPlaceholder')}
                         onChange={(e) => setReply(e.target.value)}
                       />
                     </div>
@@ -386,7 +386,7 @@ export default function FriendsReview() {
                       disabled={busy !== null}
                       onClick={() => void decide(selected, 'approved')}
                     >
-                      收下
+                      {t('friends.accept')}
                     </button>
                     {selected.status === 'pending' && (
                       <button
@@ -395,7 +395,7 @@ export default function FriendsReview() {
                         disabled={busy !== null}
                         onClick={() => void decide(selected, 'waiting')}
                       >
-                        等對方加回來再說
+                        {t('friends.wait')}
                       </button>
                     )}
                     <span className="adm-review-gap" />
@@ -405,25 +405,25 @@ export default function FriendsReview() {
                       disabled={busy !== null}
                       onClick={() => void decide(selected, 'rejected')}
                     >
-                      退回
+                      {t('friends.reject')}
                     </button>
                   </div>
                 </section>
               </div>
             )
           ) : shown.length === 0 ? (
-            <p className="adm-empty">{view === 'approved' ? '還沒有朋友。' : '沒有退回的申請。'}</p>
+            <p className="adm-empty">{view === 'approved' ? t('friends.emptyApproved') : t('friends.emptyRejected')}</p>
           ) : (
             <div className="adm-table-wrap">
               <table className="adm-table">
                 <thead>
                   <tr>
-                    <th scope="col">站名</th>
-                    <th scope="col">網址</th>
-                    <th scope="col">檢查</th>
-                    <th scope="col">{view === 'approved' ? '收下' : '退回'}</th>
+                    <th scope="col">{t('friends.col.name')}</th>
+                    <th scope="col">{t('friends.col.url')}</th>
+                    <th scope="col">{t('friends.col.check')}</th>
+                    <th scope="col">{view === 'approved' ? t('friends.col.approved') : t('friends.col.rejected')}</th>
                     <th scope="col">
-                      <span className="sr-only">動作</span>
+                      <span className="sr-only">{t('friends.col.actions')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -445,7 +445,7 @@ export default function FriendsReview() {
                           {checkingId === f.id ? (
                             <span className="adm-meta adm-fr-checking">
                               <BusyDot />
-                              檢查中
+                              {t('friends.checking')}
                             </span>
                           ) : (
                             <span className="adm-meta adm-fr-sum" data-bad={sum.bad || undefined}>
@@ -463,7 +463,11 @@ export default function FriendsReview() {
                                 <button
                                   type="button"
                                   className="adm-icon-btn"
-                                  aria-label={checkingId === f.id ? `正在檢查 ${f.name}` : `檢查 ${f.name}`}
+                                  aria-label={
+                                    checkingId === f.id
+                                      ? t('friends.checkingName', { name: f.name })
+                                      : t('friends.checkName', { name: f.name })
+                                  }
                                   aria-busy={checkingId === f.id}
                                   disabled={busy !== null}
                                   onClick={() => void runCheck(f)}
@@ -471,38 +475,38 @@ export default function FriendsReview() {
                                   {checkingId === f.id ? (
                                     <>
                                       <BusyDot />
-                                      檢查中
+                                      {t('friends.checking')}
                                     </>
                                   ) : (
-                                    '檢查'
+                                    t('friends.check')
                                   )}
                                 </button>
                                 <button
                                   type="button"
                                   className="adm-icon-btn"
-                                  aria-label={`編輯 ${f.name}`}
+                                  aria-label={t('friends.editName', { name: f.name })}
                                   onClick={() => openEdit(f)}
                                 >
-                                  編輯
+                                  {t('friends.edit')}
                                 </button>
                               </>
                             ) : (
                               <button
                                 type="button"
                                 className="adm-icon-btn"
-                                aria-label={`把 ${f.name} 放回待看`}
+                                aria-label={t('friends.requeueName', { name: f.name })}
                                 onClick={() => void decide(f, 'pending')}
                               >
-                                放回待看
+                                {t('friends.requeue')}
                               </button>
                             )}
                             <button
                               type="button"
                               className="adm-icon-btn adm-icon-btn-flare"
-                              aria-label={`刪除 ${f.name}`}
+                              aria-label={t('friends.deleteName', { name: f.name })}
                               onClick={() => setRemoveTarget(f)}
                             >
-                              刪除
+                              {t('common.delete')}
                             </button>
                           </div>
                         </td>
@@ -519,18 +523,16 @@ export default function FriendsReview() {
       <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing === 'new' ? '加一位朋友' : '編輯朋友'}</DialogTitle>
-            <DialogDescription>
-              站名與介紹照對方站上寫的。直接加的朋友不經過申請，存了就出現在朋友頁。
-            </DialogDescription>
+            <DialogTitle>{editing === 'new' ? t('friends.addFriend') : t('friends.editTitle')}</DialogTitle>
+            <DialogDescription>{t('friends.editDesc')}</DialogDescription>
           </DialogHeader>
           <form className="adm-form" onSubmit={(e) => void saveEdit(e)}>
             <label className="adm-field">
-              <span className="adm-caps">站名</span>
+              <span className="adm-caps">{t('friends.field.name')}</span>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </label>
             <label className="adm-field">
-              <span className="adm-caps">網址</span>
+              <span className="adm-caps">{t('friends.field.url')}</span>
               <input
                 type="url"
                 value={form.url}
@@ -540,11 +542,11 @@ export default function FriendsReview() {
               />
             </label>
             <label className="adm-field">
-              <span className="adm-caps">一句介紹</span>
+              <span className="adm-caps">{t('friends.field.description')}</span>
               <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </label>
             <label className="adm-field">
-              <span className="adm-caps">RSS · 選填</span>
+              <span className="adm-caps">{t('friends.field.feed')}</span>
               <input
                 type="url"
                 value={form.feed_url}
@@ -554,10 +556,10 @@ export default function FriendsReview() {
             </label>
             <div className="adm-form-actions">
               <button type="button" className="adm-btn" onClick={() => setEditing(null)}>
-                取消
+                {t('friends.cancel')}
               </button>
               <button type="submit" className="adm-btn adm-btn-primary">
-                {editing === 'new' ? '加進朋友' : '更新'}
+                {editing === 'new' ? t('friends.submitNew') : t('friends.submitUpdate')}
               </button>
             </div>
           </form>
@@ -567,16 +569,15 @@ export default function FriendsReview() {
       <AlertDialog open={removeTarget !== null} onOpenChange={() => setRemoveTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>刪除〈{removeTarget?.name}〉？</AlertDialogTitle>
+            <AlertDialogTitle>{t('friends.removeTitle', { name: removeTarget?.name ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {removeTarget?.status === 'approved' ? '會從朋友頁上消失。' : '這份申請會整個刪掉。'}
-              想留著紀錄的話，改成退回就好。
+              {removeTarget?.status === 'approved' ? t('friends.removeApproved') : t('friends.removePending')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>留著</AlertDialogCancel>
+            <AlertDialogCancel>{t('friends.keep')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void remove()} variant="destructive">
-              刪除
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

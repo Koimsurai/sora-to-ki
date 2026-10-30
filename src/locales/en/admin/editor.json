@@ -1,0 +1,153 @@
+{
+  "loadingPost": "Opening this post",
+  "tagSearchPlaceholder": "Search tags...",
+  "tagNotFound": "No matching tags",
+  "fieldError": "{{field}}: {{message}}",
+  "invalidForm": "Some fields didn't pass validation",
+  "apiError": "API error ({{status}})",
+  "draftFound": "Found an unsaved draft from {{minutes}} min ago",
+  "restore": "Restore",
+  "busySaving": "Saving — please wait",
+  "busyProcessing": "Working on it — please wait",
+  "draftSaved": "Draft saved",
+  "saveFailed": "Couldn't save",
+  "schedulePast": "The scheduled time has already passed: pick a future time, or clear it to publish now",
+  "scheduledToast": "Scheduled: publishes {{when}}",
+  "publishedToast": "Post published",
+  "publishFailed": "Couldn't publish",
+  "newsletter": {
+    "confirmTitle": "Send to all subscribers now?",
+    "confirmBody": "Once it's sent, it can't be taken back.",
+    "confirmLabel": "Send",
+    "failed": "Couldn't send",
+    "sent": "Sent: {{sent}}, failed: {{failed}}",
+    "publishFailed": "Newsletter failed to send: {{error}}",
+    "publishSent": "Newsletter sent: {{sent}}, failed: {{failed}}",
+    "onPublish": "Send newsletter on publish",
+    "onPublishHint": "Sent when you press \"Publish\"; if scheduled, sent when the time comes",
+    "sendNow": "Send newsletter now"
+  },
+  "zhCn": {
+    "needId": "Save a draft first to get a post ID, then try again",
+    "needSource": "The original isn't Traditional Chinese: add and save a Traditional Chinese translation first, then generate Simplified from it",
+    "overwriteTitle": "Overwrite the current Simplified Chinese?",
+    "overwriteBody": "There's already Simplified Chinese content. Converting from Traditional again will replace it.",
+    "overwriteLabel": "Overwrite",
+    "done": "Simplified Chinese generated (OpenCC Traditional → Simplified)",
+    "failed": "Couldn't generate: {{message}}",
+    "button": "Generate Simplified from Traditional",
+    "buttonTitle": "OpenCC Traditional → Simplified: plain word conversion, no LLM"
+  },
+  "summary": {
+    "tooShort": "The post is too short to summarize",
+    "done": "Summary generated ({{locale}})",
+    "tagsSuggested": "Also suggested tags: {{n}}",
+    "badFormat": "The AI returned an unexpected format — try again",
+    "failed": "Couldn't generate summary: {{message}}",
+    "label": "Summary",
+    "generating": "Generating",
+    "generate": "AI generate",
+    "placeholder": "Post summary (use AI generate at the top right, or type it in)..."
+  },
+  "sourceBadge": "Original",
+  "editingHint": "Editing {{locale}} · all filled-in languages are saved / published together",
+  "titlePlaceholder": "Title of this post",
+  "titleLabel": "Title",
+  "view": {
+    "edit": "Edit",
+    "split": "Split",
+    "preview": "Preview",
+    "front": "Preview on site ↗",
+    "frontTitle": "Opens a tab that renders this draft with the reader-facing post page (unsaved changes included); edits here update it live"
+  },
+  "autosaved": "Backed up",
+  "restored": "Draft restored",
+  "zen": {
+    "enterTitle": "Zen mode (F11)",
+    "exitTitle": "Exit Zen (Esc)",
+    "enterLabel": "Focus mode",
+    "exitLabel": "Exit focus mode"
+  },
+  "side": {
+    "categoryTags": "Category & tags",
+    "category": "Category",
+    "categoryPlaceholder": "Choose a category",
+    "tags": "Tags",
+    "tagsAvailable": "({{n}} available)",
+    "tagsSelected": "Selected: {{n}}"
+  },
+  "series": {
+    "head": "Series (optional)",
+    "name": "Series name",
+    "namePlaceholder": "e.g. Learning Rust",
+    "order": "Order (smaller comes first)",
+    "orderPlaceholder": "e.g. 1"
+  },
+  "publishing": {
+    "head": "Publishing",
+    "now": "Now",
+    "schedule": "Schedule",
+    "scheduleDate": "Scheduled date",
+    "scheduleTime": "Scheduled time",
+    "clear": "Clear",
+    "hintScheduled": "After you press \"Schedule\", it appears on the site at this time (up to a minute late).",
+    "hintEmpty": "Leave empty = \"Publish\" publishes right away.",
+    "sourceLanguage": "Original language",
+    "slug": "URL slug",
+    "slugHint": "The post URL is /blog/<slug>. Leave empty to generate it from the English title; changing it won't break links — the old URL redirects (301) to the new one.",
+    "layout": "Layout",
+    "layoutRecord": "📅 Record (time-bound)",
+    "layoutColumn": "💎 Column (timeless)",
+    "allowComments": "Allow comments"
+  },
+  "cover": {
+    "head": "Cover image",
+    "url": "Image URL",
+    "alt": "Cover preview"
+  },
+  "links": {
+    "blockedNoExcerpt": "Write a summary first, then you can link its text to sections.",
+    "blockedNoChapters": "The post has no ## sections yet, so there's nothing to link the summary to.",
+    "bar": "Summary links · linked: {{n}}",
+    "edit": "Edit links",
+    "hint": "On the post page, clicking a linked passage in the summary jumps to the section it links to.",
+    "title": "Summary links",
+    "description": "Select some text in the summary on the left, then click a section on the right to link it. Click a linked passage to move it to another section or unlink it.",
+    "statusLinked": "\"{{text}}\" links to {{to}}. Click another section on the right to move it, or unlink it.",
+    "statusPick": "Which section should \"{{text}}\" link to? Click one on the right.",
+    "statusCount": "Linked: {{n}} (up to {{max}} per language).",
+    "missingChapter": "(no such section in the post)",
+    "unlink": "Unlink this passage",
+    "orphans": "The summary changed, so these passages can't be found anymore (the backend ignores them on save):",
+    "remove": "Remove",
+    "problem": {
+      "empty": "Select some text in the excerpt first",
+      "tooLong": "A passage can be at most {{max}} characters (this one has {{n}})",
+      "outside": "You can only select text inside the excerpt",
+      "full": "Up to {{max}} passages per language",
+      "overlap": "Overlaps the already linked \"{{text}}\""
+    }
+  },
+  "preview": {
+    "mdxFailed": "⚠ MDX failed to compile (fix it before publishing, or it falls back to plain Markdown)",
+    "mdFailed": "⚠ Markdown failed to compile",
+    "preparing": "Preparing preview…",
+    "empty": "Nothing here yet"
+  },
+  "draft": {
+    "noSnapshot": "Open this page from the post editor in the admin with \"Preview on site\"",
+    "mdxFailed": "MDX failed to compile (if published, the site falls back to plain Markdown): {{error}}",
+    "badge": "Draft preview · updates live with the editor · readers can't see this page",
+    "pageTitle": "Draft preview · {{site}}"
+  },
+  "linkModal": {
+    "searchPlaceholder": "Search post titles or summaries",
+    "searchLabel": "Search posts",
+    "close": "Close",
+    "loading": "Loading posts",
+    "notFound": "No matching posts",
+    "none": "No posts available",
+    "foot": "Enter picks the first · Esc closes",
+    "count": "{{shown}} / {{total}}"
+  }
+}

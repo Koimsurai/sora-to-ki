@@ -21,6 +21,6 @@
   "localesNone": "Languages: none yet",
   "listSep": ", ",
   "openCalendar": "{{label}}: open calendar",
-  "saveFailed": "Couldn’t save ({{status}})",
-  "offline": "Can’t reach the server — not saved yet"
+  "saveFailed": "Couldn't save ({{status}})",
+  "offline": "Can't reach the server — not saved yet"
 }

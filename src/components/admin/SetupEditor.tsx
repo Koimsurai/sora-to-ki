@@ -4,6 +4,7 @@ import type { SetupBay, SetupContent, SetupPart } from '@koimsurai/api-types';
 
 import { setupContentQueryOptions } from '@/data/pageContent';
 import { authHeaders } from '@/lib/authToken';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import { SHEETS, sheetById } from '@/components/about/setupSheetRegistry';
 import { AdminSelect } from './AdminFields';
 import AdminLoading from './AdminLoading';
@@ -54,12 +55,13 @@ async function upload(file: File): Promise<{ url: string; ratio: number }> {
   const form = new FormData();
   form.append('file', file, file.name);
   const res = await fetch('/api/admin/upload', { method: 'POST', headers: authHeaders(), body: form });
-  if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? '上傳失敗');
+  if (!res.ok)
+    throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? at('pageSetup.uploadFailed'));
   const { url } = (await res.json()) as { url: string };
   const ratio = await new Promise<number>((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img.naturalHeight / img.naturalWidth);
-    img.onerror = () => reject(new Error('讀不到上傳的圖'));
+    img.onerror = () => reject(new Error(at('pageSetup.imageUnreadable')));
     img.src = url;
   });
   return { url, ratio };
@@ -67,6 +69,7 @@ async function upload(file: File): Promise<{ url: string; ratio: number }> {
 
 /** 上傳的圖上放部件：點圖新增一個部件（落點），或替選中的那個部件放落點／編號圈 */
 function Placer({ bay, onChange }: { bay: SetupBay; onChange: (parts: SetupPart[]) => void }) {
+  const { t } = useAdminT();
   const [arm, setArm] = useState<{ k: number; what: 'at' | 'b' } | null>(null);
   const parts = bay.parts ?? [];
   const image = bay.image;
@@ -97,8 +100,8 @@ function Placer({ bay, onChange }: { bay: SetupBay; onChange: (parts: SetupPart[
         onClick={onClick}
         aria-label={
           arm
-            ? `點圖上的位置，放第 ${arm.k + 1} 個部件的${arm.what === 'at' ? '落點' : '編號圈'}`
-            : '點圖上的位置新增一個部件'
+            ? t(arm.what === 'at' ? 'pageSetup.placeArmAt' : 'pageSetup.placeArmB', { n: arm.k + 1 })
+            : t('pageSetup.placeNew')
         }
       >
         <img src={image.url} alt="" draggable={false} />
@@ -124,8 +127,8 @@ function Placer({ bay, onChange }: { bay: SetupBay; onChange: (parts: SetupPart[
       </button>
       <p className="adm-meta">
         {arm
-          ? `在圖上點一下，放第 ${arm.k + 1} 個部件的${arm.what === 'at' ? '落點' : '編號圈'}。`
-          : '在圖上點一下就新增一個部件（落點在你點的地方，編號圈在左上，可以再挪）。'}
+          ? t(arm.what === 'at' ? 'pageSetup.hintArmAt' : 'pageSetup.hintArmB', { n: arm.k + 1 })
+          : t('pageSetup.hintNew')}
       </p>
       <div className="pg-placer-arm">
         {parts.map((_, k) => (
@@ -133,10 +136,10 @@ function Placer({ bay, onChange }: { bay: SetupBay; onChange: (parts: SetupPart[
           <span key={k} className="adm-meta">
             {k + 1}
             <button type="button" className="adm-icon-btn" onClick={() => setArm({ k, what: 'at' })}>
-              挪落點
+              {t('pageSetup.moveAt')}
             </button>
             <button type="button" className="adm-icon-btn" onClick={() => setArm({ k, what: 'b' })}>
-              挪編號
+              {t('pageSetup.moveB')}
             </button>
           </span>
         ))}
@@ -146,6 +149,7 @@ function Placer({ bay, onChange }: { bay: SetupBay; onChange: (parts: SetupPart[
 }
 
 function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onChange: (bay: SetupBay) => void }) {
+  const { t } = useAdminT();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const set = (patch: Partial<SetupBay>) => onChange({ ...bay, ...patch });
@@ -169,22 +173,25 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
       <div className="pg-row">
         <label className="adm-field pg-check">
           <input type="checkbox" checked={bay.on ?? false} onChange={(e) => set({ on: e.target.checked })} />
-          <span>開著（關掉的那一格照樣畫在貨艙裡，只是點不開）</span>
+          <span>{t('pageSetup.bayOn')}</span>
         </label>
         <div className="adm-field">
-          <span className="adm-caps">圖紙</span>
+          <span className="adm-caps">{t('pageSetup.sheet')}</span>
           <AdminSelect
-            label="圖紙"
+            label={t('pageSetup.sheet')}
             value={choice}
             options={[
-              ...SHEETS.map((s) => ({ value: s.id, label: s.builtin ? `${s.name}（內建）` : s.name })),
-              { value: UPLOAD, label: '上傳自己的圖' },
+              ...SHEETS.map((s) => ({
+                value: s.id,
+                label: s.builtin ? t('pageSetup.builtin', { name: s.name }) : s.name,
+              })),
+              { value: UPLOAD, label: t('pageSetup.uploadOwn') },
             ]}
             onChange={(v) => set(v === UPLOAD ? { sheet: '' } : { sheet: v })}
           />
         </div>
         <label className="adm-field">
-          <span className="adm-caps">英文小字 · 標題欄的 PAYLOAD 後面</span>
+          <span className="adm-caps">{t('pageSetup.eyebrow')}</span>
           <input
             value={bay.eyebrow ?? ''}
             onChange={(e) => set({ eyebrow: e.target.value })}
@@ -192,30 +199,30 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
           />
         </label>
         <div className="adm-field">
-          <span className="adm-caps">分類名</span>
-          <I18nInput lang={lang} label="分類名" value={bay.label} onChange={(label) => set({ label })} />
+          <span className="adm-caps">{t('pageSetup.label')}</span>
+          <I18nInput lang={lang} label={t('pageSetup.label')} value={bay.label} onChange={(label) => set({ label })} />
         </div>
         <div className="adm-field pg-wide">
-          <span className="adm-caps">一句話說明</span>
-          <I18nInput lang={lang} label="一句話說明" value={bay.lede} onChange={(lede) => set({ lede })} />
+          <span className="adm-caps">{t('pageSetup.lede')}</span>
+          <I18nInput lang={lang} label={t('pageSetup.lede')} value={bay.lede} onChange={(lede) => set({ lede })} />
         </div>
       </div>
 
-      <SectionHead id="pg-setup-parts">圖上的部件</SectionHead>
+      <SectionHead id="pg-setup-parts">{t('pageSetup.partsHead')}</SectionHead>
       {sheet ? (
         <>
-          <p className="adm-meta">部件的位置與編號是圖紙畫好的；換成你的名稱與規格，用不到的勾「隱藏」。</p>
+          <p className="adm-meta">{t('pageSetup.partsHint')}</p>
           {sheet.parts.map((sp, k) => {
             const p = filled(sp.key);
             return (
               <div key={sp.key} className="pg-row pg-row-part">
                 <span className="pg-part-no">{String(k + 1).padStart(2, '0')}</span>
                 <label className="adm-field">
-                  <span className="adm-caps">名稱 · {sp.key}</span>
+                  <span className="adm-caps">{t('pageSetup.nameKey', { key: sp.key })}</span>
                   <input value={p?.name ?? ''} onChange={(e) => setFilled(sp.key, { name: e.target.value })} />
                 </label>
                 <label className="adm-field">
-                  <span className="adm-caps">規格</span>
+                  <span className="adm-caps">{t('pageSetup.spec')}</span>
                   <input value={p?.spec ?? ''} onChange={(e) => setFilled(sp.key, { spec: e.target.value })} />
                 </label>
                 <label className="adm-field pg-check">
@@ -224,7 +231,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
                     checked={p?.hidden ?? false}
                     onChange={(e) => setFilled(sp.key, { hidden: e.target.checked })}
                   />
-                  <span>隱藏</span>
+                  <span>{t('pageSetup.hidden')}</span>
                 </label>
               </div>
             );
@@ -234,7 +241,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
         <>
           <div className="pg-row">
             <label className="adm-field pg-wide">
-              <span className="adm-caps">上傳圖 · 白色線稿、透明底最好（畫在深色的貨艙上）</span>
+              <span className="adm-caps">{t('pageSetup.uploadField')}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -246,7 +253,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
                   setError('');
                   upload(file)
                     .then((image) => set({ sheet: '', image }))
-                    .catch((err: unknown) => setError(err instanceof Error ? err.message : '上傳失敗'))
+                    .catch((err: unknown) => setError(err instanceof Error ? err.message : t('pageSetup.uploadFailed')))
                     .finally(() => setUploading(false));
                 }}
               />
@@ -259,14 +266,14 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
             <div key={k} className="pg-row pg-row-part">
               <span className="pg-part-no">{String(k + 1).padStart(2, '0')}</span>
               <label className="adm-field">
-                <span className="adm-caps">名稱</span>
+                <span className="adm-caps">{t('pageSetup.name')}</span>
                 <input
                   value={p.name ?? ''}
                   onChange={(e) => set({ parts: replaceAt(parts, k, { name: e.target.value }) })}
                 />
               </label>
               <label className="adm-field">
-                <span className="adm-caps">規格</span>
+                <span className="adm-caps">{t('pageSetup.spec')}</span>
                 <input
                   value={p.spec ?? ''}
                   onChange={(e) => set({ parts: replaceAt(parts, k, { spec: e.target.value }) })}
@@ -275,7 +282,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
               <RowActions
                 index={k}
                 length={parts.length}
-                name={`第 ${k + 1} 個部件`}
+                name={t('pageSetup.partN', { n: k + 1 })}
                 onMove={(by) => set({ parts: move(parts, k, by) })}
                 onRemove={() => set({ parts: parts.filter((_, i) => i !== k) })}
               />
@@ -284,20 +291,20 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
         </>
       )}
 
-      <SectionHead id="pg-setup-extra">零件表裡沒有編號的</SectionHead>
+      <SectionHead id="pg-setup-extra">{t('pageSetup.extraHead')}</SectionHead>
       {(bay.extra ?? []).map((x, k) => (
         // eslint-disable-next-line @eslint-react/no-array-index-key
         <div key={k} className="pg-row pg-row-part">
           <span className="pg-part-no">·</span>
           <label className="adm-field">
-            <span className="adm-caps">名稱</span>
+            <span className="adm-caps">{t('pageSetup.name')}</span>
             <input
               value={x.name}
               onChange={(e) => set({ extra: replaceAt(bay.extra ?? [], k, { name: e.target.value }) })}
             />
           </label>
           <label className="adm-field">
-            <span className="adm-caps">規格</span>
+            <span className="adm-caps">{t('pageSetup.spec')}</span>
             <input
               value={x.spec ?? ''}
               onChange={(e) => set({ extra: replaceAt(bay.extra ?? [], k, { spec: e.target.value }) })}
@@ -309,12 +316,12 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
               checked={x.not_drawn ?? false}
               onChange={(e) => set({ extra: replaceAt(bay.extra ?? [], k, { not_drawn: e.target.checked }) })}
             />
-            <span>標「圖上未繪出」</span>
+            <span>{t('pageSetup.notDrawn')}</span>
           </label>
           <RowActions
             index={k}
             length={(bay.extra ?? []).length}
-            name={`第 ${k + 1} 筆`}
+            name={t('pageSetup.extraN', { n: k + 1 })}
             onMove={(by) => set({ extra: move(bay.extra ?? [], k, by) })}
             onRemove={() => set({ extra: (bay.extra ?? []).filter((_, i) => i !== k) })}
           />
@@ -325,10 +332,10 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
         className="adm-btn pg-add"
         onClick={() => set({ extra: [...(bay.extra ?? []), { name: '', spec: '', not_drawn: false }] })}
       >
-        ＋ 加一筆
+        {t('pageSetup.addExtra')}
       </button>
 
-      <SectionHead id="pg-setup-more">接在這一艙的東西</SectionHead>
+      <SectionHead id="pg-setup-more">{t('pageSetup.moreHead')}</SectionHead>
       <div className="pg-row">
         <label className="adm-field pg-check pg-wide">
           <input
@@ -336,13 +343,13 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
             checked={bay.telemetry ?? false}
             onChange={(e) => set({ telemetry: e.target.checked })}
           />
-          <span>接上這台伺服器的即時遙測（溫度、負載、記憶體）</span>
+          <span>{t('pageSetup.telemetry')}</span>
         </label>
         <div className="adm-field pg-wide">
-          <span className="adm-caps">裝置那一段的標題</span>
+          <span className="adm-caps">{t('pageSetup.devicesTitle')}</span>
           <I18nInput
             lang={lang}
-            label="裝置的標題"
+            label={t('pageSetup.devicesTitleLabel')}
             value={bay.devices_title}
             onChange={(devices_title) => set({ devices_title })}
           />
@@ -352,23 +359,23 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
         // eslint-disable-next-line @eslint-react/no-array-index-key
         <div key={k} className="pg-row">
           <label className="adm-field">
-            <span className="adm-caps">裝置</span>
+            <span className="adm-caps">{t('pageSetup.device')}</span>
             <input
               value={d.name}
               onChange={(e) => set({ devices: replaceAt(bay.devices ?? [], k, { name: e.target.value }) })}
             />
           </label>
           <div className="adm-field">
-            <span className="adm-caps">用途</span>
+            <span className="adm-caps">{t('pageSetup.role')}</span>
             <I18nInput
               lang={lang}
-              label="用途"
+              label={t('pageSetup.role')}
               value={d.role}
               onChange={(role) => set({ devices: replaceAt(bay.devices ?? [], k, { role }) })}
             />
           </div>
           <label className="adm-field pg-wide">
-            <span className="adm-caps">寫到它的文章 · 文章 id，逗號隔開</span>
+            <span className="adm-caps">{t('pageSetup.devicePosts')}</span>
             <input
               defaultValue={(d.posts ?? []).join(', ')}
               onBlur={(e) => set({ devices: replaceAt(bay.devices ?? [], k, { posts: idsOf(e.target.value) }) })}
@@ -377,7 +384,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
           <RowActions
             index={k}
             length={(bay.devices ?? []).length}
-            name={`第 ${k + 1} 個裝置`}
+            name={t('pageSetup.deviceN', { n: k + 1 })}
             onMove={(by) => set({ devices: move(bay.devices ?? [], k, by) })}
             onRemove={() => set({ devices: (bay.devices ?? []).filter((_, i) => i !== k) })}
           />
@@ -388,23 +395,23 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
         className="adm-btn pg-add"
         onClick={() => set({ devices: [...(bay.devices ?? []), { name: '', role: {}, posts: [] }] })}
       >
-        ＋ 加一個裝置
+        {t('pageSetup.addDevice')}
       </button>
       {(bay.appliances ?? []).map((a, k) => (
         // eslint-disable-next-line @eslint-react/no-array-index-key
         <div key={k} className="pg-row">
           <label className="adm-field">
-            <span className="adm-caps">連網家電 · 牌子</span>
+            <span className="adm-caps">{t('pageSetup.applianceBrand')}</span>
             <input
               value={a.name}
               onChange={(e) => set({ appliances: replaceAt(bay.appliances ?? [], k, { name: e.target.value }) })}
             />
           </label>
           <div className="adm-field">
-            <span className="adm-caps">種類</span>
+            <span className="adm-caps">{t('pageSetup.kind')}</span>
             <I18nInput
               lang={lang}
-              label="種類"
+              label={t('pageSetup.kind')}
               value={a.kind}
               onChange={(kind) => set({ appliances: replaceAt(bay.appliances ?? [], k, { kind }) })}
             />
@@ -412,7 +419,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
           <RowActions
             index={k}
             length={(bay.appliances ?? []).length}
-            name={`第 ${k + 1} 個家電`}
+            name={t('pageSetup.applianceN', { n: k + 1 })}
             onMove={(by) => set({ appliances: move(bay.appliances ?? [], k, by) })}
             onRemove={() => set({ appliances: (bay.appliances ?? []).filter((_, i) => i !== k) })}
           />
@@ -423,11 +430,11 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
         className="adm-btn pg-add"
         onClick={() => set({ appliances: [...(bay.appliances ?? []), { name: '', kind: {} }] })}
       >
-        ＋ 加一個連網家電
+        {t('pageSetup.addAppliance')}
       </button>
       <div className="pg-row">
         <label className="adm-field pg-wide">
-          <span className="adm-caps">跟這一艙有關的文章 · 文章 id，逗號隔開</span>
+          <span className="adm-caps">{t('pageSetup.records')}</span>
           <input
             defaultValue={(bay.records ?? []).join(', ')}
             onBlur={(e) => set({ records: idsOf(e.target.value) })}
@@ -439,13 +446,14 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
 }
 
 export default function SetupEditor() {
+  const { t } = useAdminT();
   const [lang, setLang] = useState<string>(defaultLocale);
   const [tab, setTab] = useState(0);
   const page = usePageDraft(
     setupContentQueryOptions,
     '/api/admin/pages/setup',
     (raw) => normalizeSetup(raw as SetupContent),
-    '設備頁已更新',
+    t('pageSetup.saved'),
   );
   // 四格與第五站補齊（舊資料或還沒填過）
   const draft = page.draft ? normalizeSetup(page.draft) : undefined;
@@ -457,22 +465,19 @@ export default function SetupEditor() {
   return (
     <div className="adm-form pg-editor">
       <LangBar lang={lang} onChange={setLang} />
-      <p className="adm-meta">
-        想讓滑過部件時整個部件亮起來，或自己畫網路線、訊號圈：做一個圖紙包放進 custom/setup/（見那裡的 README），
-        重新建置後就會出現在「圖紙」的選單裡。
-      </p>
+      <p className="adm-meta">{t('pageSetup.customHint')}</p>
       <div className="adm-tabs">
         {[0, 1, 2, 3].map((i) => (
           <button key={i} type="button" className="adm-tab" aria-pressed={tab === i} onClick={() => setTab(i)}>
             <span className="adm-tab-dot" aria-hidden="true" />
-            貨艙 {String(i + 1).padStart(2, '0')}
-            <span className="adm-meta">{bays[i]?.on ? '' : '關'}</span>
+            {t('pageSetup.bayTab', { n: String(i + 1).padStart(2, '0') })}
+            <span className="adm-meta">{bays[i]?.on ? '' : t('pageSetup.off')}</span>
           </button>
         ))}
         <button type="button" className="adm-tab" aria-pressed={tab === 4} onClick={() => setTab(4)}>
           <span className="adm-tab-dot" aria-hidden="true" />
-          第五站
-          <span className="adm-meta">{base.on ? '' : '關'}</span>
+          {t('pageSetup.base')}
+          <span className="adm-meta">{base.on ? '' : t('pageSetup.off')}</span>
         </button>
       </div>
 
@@ -492,34 +497,34 @@ export default function SetupEditor() {
                 checked={base.on ?? false}
                 onChange={(e) => page.set({ base: { ...base, on: e.target.checked } })}
               />
-              <span>開著（遠處軌道上的那顆衛星；關掉照樣畫，只是點不開）</span>
+              <span>{t('pageSetup.baseOn')}</span>
             </label>
             <div className="adm-field">
-              <span className="adm-caps">名字</span>
+              <span className="adm-caps">{t('pageSetup.baseName')}</span>
               <I18nInput
                 lang={lang}
-                label="第五站的名字"
+                label={t('pageSetup.baseNameLabel')}
                 value={base.label}
                 onChange={(label) => page.set({ base: { ...base, label } })}
               />
             </div>
             <div className="adm-field">
-              <span className="adm-caps">一句話說明</span>
+              <span className="adm-caps">{t('pageSetup.lede')}</span>
               <I18nInput
                 lang={lang}
-                label="第五站的說明"
+                label={t('pageSetup.baseLedeLabel')}
                 value={base.lede}
                 onChange={(lede) => page.set({ base: { ...base, lede } })}
               />
             </div>
           </div>
-          <SectionHead id="pg-setup-specs">規格 · 照順序對到衛星上的編號，最多 7 條</SectionHead>
+          <SectionHead id="pg-setup-specs">{t('pageSetup.specsHead')}</SectionHead>
           {specs.map((sp, k) => (
             // eslint-disable-next-line @eslint-react/no-array-index-key
             <div key={k} className="pg-row pg-row-part">
               <span className="pg-part-no">{String(k + 1).padStart(2, '0')}</span>
               <label className="adm-field">
-                <span className="adm-caps">項目</span>
+                <span className="adm-caps">{t('pageSetup.specItem')}</span>
                 <input
                   value={sp.label}
                   onChange={(e) =>
@@ -528,7 +533,7 @@ export default function SetupEditor() {
                 />
               </label>
               <label className="adm-field">
-                <span className="adm-caps">規格</span>
+                <span className="adm-caps">{t('pageSetup.spec')}</span>
                 <input
                   value={sp.value ?? ''}
                   onChange={(e) =>
@@ -539,7 +544,7 @@ export default function SetupEditor() {
               <RowActions
                 index={k}
                 length={specs.length}
-                name={`第 ${k + 1} 條`}
+                name={t('pageSetup.specN', { n: k + 1 })}
                 onMove={(by) => page.set({ base: { ...base, specs: move(specs, k, by) } })}
                 onRemove={() => page.set({ base: { ...base, specs: specs.filter((_, i) => i !== k) } })}
               />
@@ -551,7 +556,7 @@ export default function SetupEditor() {
               className="adm-btn pg-add"
               onClick={() => page.set({ base: { ...base, specs: [...specs, { label: '', value: '' }] } })}
             >
-              ＋ 加一條
+              {t('pageSetup.addSpec')}
             </button>
           )}
         </>

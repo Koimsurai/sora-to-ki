@@ -1,0 +1,153 @@
+{
+  "loadingPost": "打開這篇",
+  "tagSearchPlaceholder": "搜尋標籤...",
+  "tagNotFound": "沒有找到相關標籤",
+  "fieldError": "{{field}}：{{message}}",
+  "invalidForm": "表單有欄位沒通過驗證",
+  "apiError": "API 錯誤 ({{status}})",
+  "draftFound": "偵測到 {{minutes}} 分鐘前的未儲存草稿",
+  "restore": "還原",
+  "busySaving": "正在儲存中，請稍候",
+  "busyProcessing": "正在處理中，請稍候",
+  "draftSaved": "草稿已儲存",
+  "saveFailed": "儲存失敗",
+  "schedulePast": "排程時間已經過了：改一個未來的時間，或清空它直接發佈",
+  "scheduledToast": "已排程：{{when}} 發佈",
+  "publishedToast": "文章已發佈",
+  "publishFailed": "發佈失敗",
+  "newsletter": {
+    "confirmTitle": "現在推送給所有訂閱者？",
+    "confirmBody": "寄出去就收不回來了。",
+    "confirmLabel": "推送",
+    "failed": "推送失敗",
+    "sent": "已寄出 {{sent}} 封，失敗 {{failed}}",
+    "publishFailed": "電子報寄送失敗：{{error}}",
+    "publishSent": "電子報已寄出 {{sent}} 封，失敗 {{failed}}",
+    "onPublish": "發佈時推送 Newsletter",
+    "onPublishHint": "按「發佈文章」時寄；排程的話等時間到了才寄",
+    "sendNow": "立即推送 Newsletter"
+  },
+  "zhCn": {
+    "needId": "請先儲存草稿，取得文章 ID 後再執行",
+    "needSource": "原稿不是繁中：先補好繁中譯文並儲存，再從它產生简中",
+    "overwriteTitle": "覆蓋現在的簡中？",
+    "overwriteBody": "已經有简体中文的內容了，重新從繁中轉一次會把它蓋掉。",
+    "overwriteLabel": "覆蓋",
+    "done": "简体中文已生成（OpenCC 繁轉簡）",
+    "failed": "生成失敗：{{message}}",
+    "button": "從繁中產生简中",
+    "buttonTitle": "OpenCC 繁→簡，純字詞轉換不丟 LLM"
+  },
+  "summary": {
+    "tooShort": "文章內容太短，無法生成摘要",
+    "done": "摘要已生成（{{locale}}）",
+    "tagsSuggested": "同時生成了 {{n}} 個標籤建議",
+    "badFormat": "AI 回傳格式異常，請重試",
+    "failed": "摘要生成失敗：{{message}}",
+    "label": "摘要",
+    "generating": "生成中",
+    "generate": "AI 生成",
+    "placeholder": "文章摘要（點擊右上角 AI 生成或手動輸入）..."
+  },
+  "sourceBadge": "原稿",
+  "editingHint": "正在編 {{locale}} · 所有已填語系會一起儲存／發佈",
+  "titlePlaceholder": "這篇的標題",
+  "titleLabel": "標題",
+  "view": {
+    "edit": "編輯",
+    "split": "分割",
+    "preview": "預覽",
+    "front": "在前台預覽 ↗",
+    "frontTitle": "開一個分頁，用讀者看到的文章頁畫這份草稿（還沒存的也算）；這裡改了那邊跟著更新"
+  },
+  "autosaved": "已自動備份",
+  "restored": "已還原草稿",
+  "zen": {
+    "enterTitle": "Zen 模式（F11）",
+    "exitTitle": "退出 Zen（Esc）",
+    "enterLabel": "專注模式",
+    "exitLabel": "退出專注模式"
+  },
+  "side": {
+    "categoryTags": "分類與標籤",
+    "category": "分類",
+    "categoryPlaceholder": "選擇分類",
+    "tags": "標籤",
+    "tagsAvailable": "({{n}} 個可用)",
+    "tagsSelected": "已選擇 {{n}} 項"
+  },
+  "series": {
+    "head": "系列文（選填）",
+    "name": "系列名稱",
+    "namePlaceholder": "如：Rust 學習筆記",
+    "order": "順序（數字越小越前面）",
+    "orderPlaceholder": "例：1"
+  },
+  "publishing": {
+    "head": "發佈設定",
+    "now": "現在",
+    "schedule": "排程發佈",
+    "scheduleDate": "排程發佈日期",
+    "scheduleTime": "排程發佈時間",
+    "clear": "清空",
+    "hintScheduled": "按「排程發佈」之後，到這個時間才會出現在前台（最多晚一分鐘）。",
+    "hintEmpty": "留空＝按「發佈文章」立刻發佈。",
+    "sourceLanguage": "原文語言",
+    "slug": "網址 slug",
+    "slugHint": "文章網址是 /blog/<slug>。留空會自動從英文標題產生；改了也不會斷——舊網址會自動 301 到新的。",
+    "layout": "樣板類型",
+    "layoutRecord": "📅 紀錄（時效性）",
+    "layoutColumn": "💎 專欄（無時間性）",
+    "allowComments": "允許留言"
+  },
+  "cover": {
+    "head": "封面圖片",
+    "url": "圖片網址",
+    "alt": "封面預覽"
+  },
+  "links": {
+    "blockedNoExcerpt": "先寫摘要，才能把摘要裡的字連到章節。",
+    "blockedNoChapters": "內文還沒有 ## 章節，摘要沒有地方可以連。",
+    "bar": "摘要對應 · 已連 {{n}} 段",
+    "edit": "編輯對應",
+    "hint": "讀者在文章頁點摘要裡連過的那段，會跳到它連的那一章。",
+    "title": "摘要對應",
+    "description": "在左邊的摘要裡反白一段字，再點右邊的一章就連好；點已經連的那段，可以點別章換過去或取消。",
+    "statusLinked": "「{{text}}」連到 {{to}}。點右邊別章換過去，或取消連結。",
+    "statusPick": "「{{text}}」要連到哪一章？點右邊的一章。",
+    "statusCount": "已連 {{n}} 段（一個語系最多 {{max}} 段）。",
+    "missingChapter": "（內文裡沒有這一章）",
+    "unlink": "取消這段的連結",
+    "orphans": "摘要改過，這幾段已經找不到（存檔時後端也會忽略它們）：",
+    "remove": "移除",
+    "problem": {
+      "empty": "先在摘要裡反白一段字",
+      "tooLong": "一段最多 {{max}} 字，這段有 {{n}} 字",
+      "outside": "只能選摘要裡的字",
+      "full": "一個語系最多連 {{max}} 段",
+      "overlap": "跟已經連的「{{text}}」重疊了"
+    }
+  },
+  "preview": {
+    "mdxFailed": "⚠ MDX 編譯失敗（發布前要修好，否則會退回純 Markdown）",
+    "mdFailed": "⚠ Markdown 編譯失敗",
+    "preparing": "準備預覽…",
+    "empty": "尚無內容"
+  },
+  "draft": {
+    "noSnapshot": "從後台的文章編輯器按「在前台預覽」打開這一頁",
+    "mdxFailed": "MDX 編譯失敗（發布的話前台會退回純 Markdown）：{{error}}",
+    "badge": "草稿預覽 · 跟著編輯器即時更新 · 讀者看不到這一頁",
+    "pageTitle": "草稿預覽 · {{site}}"
+  },
+  "linkModal": {
+    "searchPlaceholder": "搜尋文章標題或摘要",
+    "searchLabel": "搜尋文章",
+    "close": "關閉",
+    "loading": "讀文章清單",
+    "notFound": "找不到符合的文章",
+    "none": "沒有可用的文章",
+    "foot": "Enter 選第一篇 · Esc 關閉",
+    "count": "{{shown}} / {{total}} 篇"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "title": "Now",
+  "writeThought": "Write a thought",
+  "writePost": "New post",
+  "go": {
+    "review": "Review →",
+    "look": "View →",
+    "continue": "Keep writing →",
+    "list": "View list →"
+  },
+  "todo": {
+    "heading": "Needs you",
+    "headingCount": "Needs you · {{count}}",
+    "loading": "Checking what needs doing",
+    "empty": "Nothing to do.",
+    "comments": "Comments awaiting review: {{count}}",
+    "newestCommentOnPost": "Latest from {{author}}, on \"{{title}}\"",
+    "newestCommentElsewhere": "Latest from {{author}}, on a thought or the guestbook",
+    "friends": "Unread friend link requests: {{count}}",
+    "newestFriend": "Latest: \"{{name}}\", sent {{date}}",
+    "drafts": "Drafts: {{count}}",
+    "stalestDraft": "Oldest untouched: \"{{title}}\", last edited {{date}}",
+    "gaps": "Published posts missing translations: {{count}}",
+    "gapsDetail": "Missing EN {{en}} · JA {{ja}} · KO {{ko}} (Simplified Chinese is converted from Traditional and not counted)",
+    "bahamutExpiring": "Days until the Bahamut login expires: {{days}}",
+    "bahamutExpired": "The Bahamut cookie has expired",
+    "bahamutExpiringDetail": "Once it expires, \"Watching\" on the collection page stops updating",
+    "bahamutExpiredDetail": "\"Watching\" on the collection page is stuck at the last sync. Log in again."
+  },
+  "tiles": {
+    "label": "Site numbers",
+    "posts": "Posts",
+    "postsSub": "Published · Drafts {{drafts}}",
+    "postsSubScheduled": "Published · Drafts {{drafts}} · Next scheduled {{when}}",
+    "recent": "Last 30 days",
+    "recentSub": "new posts",
+    "comments": "Comments",
+    "commentsSub": "Last 7 days · Pending {{pending}}",
+    "views": "Views",
+    "viewsSub": "Across all posts"
+  },
+  "recent": {
+    "heading": "Recently edited",
+    "all": "All →",
+    "allLabel": "All posts",
+    "empty": "No posts yet.",
+    "meta": "Post · {{category}} · {{when}}",
+    "uncategorized": "Uncategorized"
+  },
+  "vitals": {
+    "heading": "Signals · last {{days}} days",
+    "footnote": "p75 · excludes /admin · source web_vitals",
+    "rating": {
+      "good": "Good",
+      "needsWork": "Needs work",
+      "poor": "Poor"
+    },
+    "ratingCount": "{{rating}} · n = {{count}}",
+    "noSamples": "No samples"
+  }
+}

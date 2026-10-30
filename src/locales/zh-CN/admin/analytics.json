@@ -1,0 +1,182 @@
+{
+  "periods": {
+    "today": "今天",
+    "3d": "3 天",
+    "7d": "7 天",
+    "30d": "30 天",
+    "6mo": "半年"
+  },
+  "periodWord": {
+    "today": "今天到现在",
+    "3d": "这 3 天",
+    "7d": "这 7 天",
+    "30d": "这 30 天",
+    "6mo": "这半年"
+  },
+  "prev": {
+    "today": "昨天同时段",
+    "other": "上一段"
+  },
+  "unit": {
+    "sec": "秒",
+    "min": "分"
+  },
+  "duration": {
+    "sec": "{{s}} 秒",
+    "minSec": "{{m}} 分 {{s}} 秒"
+  },
+  "unknownCountry": "未知",
+  "direct": "直接访问",
+  "device": {
+    "Desktop": "台式机",
+    "Laptop": "笔记本",
+    "Mobile": "手机",
+    "Tablet": "平板"
+  },
+  "live": "此刻 {{count}} 人在站上",
+  "source": "来源 Plausible",
+  "openPlausible": "在 Plausible 打开 ↗",
+  "loadFailed": "读不到 Plausible：{{message}}",
+  "noData": "还没有数据。",
+  "compare": {
+    "noPrev": "{{than}}还没有人来",
+    "times": "是{{than}}的 {{n}} 倍",
+    "more": "比{{than}}多 {{pct}}%",
+    "less": "比{{than}}少 {{pct}}%",
+    "same": "跟{{than}}差不多"
+  },
+  "summary": {
+    "plain": "{{period}}有 <b>{{count}}</b> 人来。",
+    "compared": "{{period}}有 <b>{{count}}</b> 人来，{{cmp}}。"
+  },
+  "from": {
+    "allDirect": "几乎都是直接访问（{{count}} 人）。",
+    "allSource": "几乎都是从 {{source}} 来的（{{count}} 人）。",
+    "partDirect": "{{tenths}} 成是直接访问（{{count}} 人）。",
+    "partSource": "{{tenths}} 成是从 {{source}} 来的（{{count}} 人）。"
+  },
+  "delta": {
+    "noData": "{{than}}没有数据",
+    "plain": "{{arrow}} {{than}} {{prev}}",
+    "better": "{{arrow}} {{than}} {{prev}}，变好",
+    "worse": "{{arrow}} {{than}} {{prev}}，变差"
+  },
+  "tiles": {
+    "label": "总数",
+    "visitors": "来的人",
+    "visitorsSub": "不重复的人数。同一个人同一天来好几次只算一次。",
+    "pages": "每人看几页",
+    "pagesSub": "每次进站平均看了几页。越高代表越多人会继续逛。",
+    "bounce": "只看一页就走",
+    "bounceSub": "也就是「跳出率」：看完第一页就离开的人占多少。越低越好。",
+    "duration": "每次待多久",
+    "durationSub": "从进站到离开大概多久（一次访问的平均）。"
+  },
+  "series": {
+    "heading": {
+      "hour": "每小时来的人",
+      "day": "每天来的人",
+      "week": "每周来的人"
+    },
+    "caption": {
+      "hour": "每小时访客与浏览",
+      "day": "每天访客与浏览",
+      "week": "每周访客与浏览"
+    },
+    "tip": "{{date}} · 访客 {{visitors}} · 浏览 {{pageviews}}",
+    "tipWeek": "{{date}} 那周 · 访客 {{visitors}} · 浏览 {{pageviews}}",
+    "date": "日期",
+    "visitors": "访客",
+    "pageviews": "浏览",
+    "empty": "这段期间没有数据。"
+  },
+  "more": {
+    "summary": "热门页面、国家与设备",
+    "pages": "热门页面",
+    "countries": "国家",
+    "devices": "设备",
+    "note": "国家是按连接位置判断的，读者用 VPN 或代理时会算成那一端的国家，只能作参考。"
+  },
+  "langName": {
+    "zh-TW": "繁中",
+    "zh-CN": "简中",
+    "en": "英文",
+    "ja": "日文",
+    "ko": "韩文"
+  },
+  "pageName": {
+    "suffix": "（{{lang}}）",
+    "home": "首页{{suffix}}",
+    "blog": "手记{{suffix}}",
+    "post": "《{{title}}》{{suffix}}"
+  },
+  "posts": {
+    "heading": "每篇文章",
+    "note": "「平均停留」是每次打开这篇到离开的平均（标签页在后台的时间不算），「读完要」是按字数估算的阅读时间，两者差很多代表多数人只看了开头。「滚到」是画面最远到过全文的几成，跳到底部、从目录跳到后面也算到过，所以会比实际读到的多。各语言的同一篇合在一起算；爱心与留言是全部的，不限这段期间。",
+    "empty": "这段期间还没有人看文章。",
+    "col": {
+      "post": "文章",
+      "visitors": "看的人",
+      "scroll": "滚到",
+      "time": "平均停留",
+      "read": "读完要",
+      "hearts": "爱心",
+      "comments": "留言"
+    },
+    "readMinutes": "{{n}} 分"
+  },
+  "sources": {
+    "heading": "从哪里来，先看了什么",
+    "note": "「直接访问」是没有带来源的：书签、自己输入网址，或某些聊天软件打开的链接（LINE、Discord 有时不带来源）。",
+    "people": "{{count}} 人"
+  },
+  "search": {
+    "heading": "在 Google 搜了什么",
+    "setup": "还没接上 Search Console：在 <code>docker-compose.yml</code> 把服务账号密钥挂进后端，并设置 <code>GSC_SERVICE_ACCOUNT_FILE</code>（见 <code>backend/src/handlers/search_console.rs</code>）。",
+    "error": "读不到 Search Console：{{error}}",
+    "note": "「展示」是本站在搜索结果里被看到几次，「点击」是有几次点进来。Google 的数据大约晚两三天，最近几天会比较少。",
+    "empty": "这段期间没有搜索数据。",
+    "col": {
+      "query": "搜索词",
+      "clicks": "点击",
+      "impressions": "展示",
+      "ctr": "点击率",
+      "position": "平均排名"
+    }
+  },
+  "reactions": {
+    "heading": "收到的爱心与反应",
+    "note": "每一次点爱心、表情、给留言点赞、给碎念点喜欢都记一笔，收回也记。不记身份与 IP：国家是 Cloudflare 判断的，来源是读者从哪个网站链接进来的。",
+    "loadFailed": "读不到记录：{{message}}",
+    "deleted": "（已删除）",
+    "post": "在《{{title}}》点了 {{value}}",
+    "postUndo": "收回了 {{value}}，在《{{title}}》",
+    "site": "在首页留下印记",
+    "commentThought": "给碎念「{{title}}」底下的一条留言点赞",
+    "commentMessages": "给留言页的一条留言点赞",
+    "commentDeleted": "给一条已删除的留言点赞",
+    "commentPost": "给《{{title}}》的一条留言点赞",
+    "commentOther": "给 /{{on}} 的一条留言点赞",
+    "thoughtLike": "喜欢碎念「{{title}}」",
+    "thoughtDislike": "不喜欢碎念「{{title}}」",
+    "thoughtUnlike": "收回了对碎念「{{title}}」的喜欢",
+    "thoughtUndislike": "收回了对碎念「{{title}}」的不喜欢",
+    "unknownCountry": "国家未知",
+    "from": "从 {{referrer}}",
+    "direct": "直接访问",
+    "device": {
+      "mobile": "手机",
+      "desktop": "电脑"
+    },
+    "beforeLog": "开始记录之前",
+    "current": "目前",
+    "totals": "文章收到 {{hearts}} 颗爱心、首页留下 {{marks}} 个印记（只有总数，没有细节）"
+  },
+  "setup": {
+    "intro": "还没接上 Plausible。后端需要一把 Stats API 的 key：",
+    "step1": "打开 Plausible，右上角头像 → <b>Account Settings</b> → <b>API Keys</b> → <b>New API Key</b>，类型选 <b>Stats API</b>。",
+    "step2": "把 key 加进服务器的 <code>.env.backend</code>：<code>PLAUSIBLE_API_KEY=…</code>（Plausible 里的站点名称不是 <code>koimsurai.com</code> 的话，再加一行 <code>PLAUSIBLE_SITE_ID=…</code>）",
+    "step3": "重启后端：<code>docker compose up -d backend-rs</code>",
+    "keyNote": "key 只在后端，不会进入前端代码。"
+  }
+}

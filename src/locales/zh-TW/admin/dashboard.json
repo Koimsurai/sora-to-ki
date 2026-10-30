@@ -1,0 +1,61 @@
+{
+  "title": "此刻",
+  "writeThought": "寫一則碎念",
+  "writePost": "新寫一篇手記",
+  "go": {
+    "review": "去審 →",
+    "look": "去看 →",
+    "continue": "繼續寫 →",
+    "list": "看清單 →"
+  },
+  "todo": {
+    "heading": "等你處理",
+    "headingCount": "等你處理 · {{count}} 件",
+    "loading": "看看有什麼事",
+    "empty": "沒有要處理的事。",
+    "comments": "{{count}} 則留言等你審",
+    "newestCommentOnPost": "最新一則是 {{author}}，留在〈{{title}}〉",
+    "newestCommentElsewhere": "最新一則是 {{author}}，留在碎念或留言板",
+    "friends": "{{count}} 份友鏈申請還沒看",
+    "newestFriend": "最新一份是〈{{name}}〉，{{date}} 送來的",
+    "drafts": "{{count}} 篇草稿",
+    "stalestDraft": "最久沒動的是〈{{title}}〉，停在 {{date}}",
+    "gaps": "{{count}} 篇已發佈的手記少了譯文",
+    "gapsDetail": "缺 EN {{en}} · 日 {{ja}} · 韓 {{ko}}（简中由繁中轉換，不算在內）",
+    "bahamutExpiring": "巴哈姆特的登入再 {{days}} 天就過期",
+    "bahamutExpired": "巴哈姆特的 cookie 失效了",
+    "bahamutExpiringDetail": "過期之後收藏頁的「在看」就不會再更新",
+    "bahamutExpiredDetail": "收藏頁的「在看」停在上一次同步，要重新登入一次"
+  },
+  "tiles": {
+    "label": "站上的數字",
+    "posts": "手記",
+    "postsSub": "已發佈 · 草稿 {{drafts}}",
+    "postsSubScheduled": "已發佈 · 草稿 {{drafts}} · 下一篇排程 {{when}}",
+    "recent": "近 30 天",
+    "recentSub": "篇新寫的",
+    "comments": "留言",
+    "commentsSub": "近 7 天 · 待審 {{pending}}",
+    "views": "瀏覽",
+    "viewsSub": "所有手記加起來"
+  },
+  "recent": {
+    "heading": "最近動過",
+    "all": "全部 →",
+    "allLabel": "全部手記",
+    "empty": "還沒有手記。",
+    "meta": "手記 · {{category}} · {{when}}",
+    "uncategorized": "未分類"
+  },
+  "vitals": {
+    "heading": "訊號 · 近 {{days}} 天",
+    "footnote": "p75 · 不含 /admin · 來源 web_vitals",
+    "rating": {
+      "good": "好",
+      "needsWork": "待改善",
+      "poor": "差"
+    },
+    "ratingCount": "{{rating}} · {{count}} 筆",
+    "noSamples": "沒有樣本"
+  }
+}

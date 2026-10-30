@@ -1,0 +1,29 @@
+{
+  "tabs": {
+    "active": "購読中",
+    "unsubscribed": "解除済み"
+  },
+  "unsubscribeFailed": "購読解除に失敗しました",
+  "unsubscribed": "{{email}} を購読解除にしました",
+  "meta": "購読中 {{active}} · 解除済み {{unsubscribed}}",
+  "refresh": "再読み込み",
+  "exportCsv": "CSV をエクスポート",
+  "listLabel": "購読者リスト",
+  "searchLabel": "購読者を検索",
+  "searchPlaceholder": "メールまたは名前",
+  "noMatch": "一致する購読者はいません。",
+  "emptyActive": "まだ購読者はいません。",
+  "emptyUnsubscribed": "購読解除の記録はありません。",
+  "col": {
+    "email": "メール",
+    "name": "名前",
+    "subscribed": "購読日",
+    "unsubscribed": "解除日",
+    "actions": "操作"
+  },
+  "markLabel": "{{email}} を購読解除にする",
+  "mark": "購読解除にする",
+  "confirmTitle": "購読解除にしますか？",
+  "confirmDesc": "{{email}} を購読解除にします。以後このアドレスにはメールを送りません。",
+  "cancel": "キャンセル"
+}

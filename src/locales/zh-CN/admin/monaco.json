@@ -1,0 +1,42 @@
+{
+  "toolbar": {
+    "undo": "撤销 (Ctrl+Z)",
+    "redo": "重做 (Ctrl+Y)",
+    "bold": "切换粗体 (Ctrl+B)",
+    "italic": "切换斜体 (Ctrl+I)",
+    "link": "切换链接 (Ctrl+K)",
+    "linkPost": "插入旧文章链接 (Cmd/Ctrl+Shift+K)",
+    "image": "插入图片 (Ctrl+Shift+G)",
+    "nas": "从 NAS 插入图片",
+    "upload": "上传图片文件",
+    "vimOn": "Vim 模式：开（点击关闭）",
+    "vimOff": "Vim 模式：关（点击开启）"
+  },
+  "placeholder": {
+    "bold": "粗体文字",
+    "italic": "斜体文字",
+    "link": "链接文字",
+    "image": "图片描述"
+  },
+  "snippet": {
+    "code": "代码块",
+    "mermaid": "Mermaid 图表",
+    "table": "表格",
+    "tableHeader": "标题",
+    "details": "可折叠区块",
+    "detailsSummary": "点我展开",
+    "img": "图片",
+    "footnote": "脚注",
+    "footnoteText": "正文",
+    "userDefined": "用户自定义"
+  },
+  "insertPostLink": "插入旧文章链接",
+  "loadingEditor": "打开编辑器",
+  "canvasFailed": "无法取得 OffscreenCanvas 2d context",
+  "uploadFailed": "图片上传失败：{{message}}",
+  "status": {
+    "total": "{{words}} 字 · {{chars}} 字符 · {{lines}} 行",
+    "reading": " · 约 {{minutes}} 分钟读完",
+    "selection": "选中: {{words}} 字 · {{chars}} 字符 · {{lines}} 行"
+  }
+}

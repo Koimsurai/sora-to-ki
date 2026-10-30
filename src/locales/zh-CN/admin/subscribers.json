@@ -1,0 +1,29 @@
+{
+  "tabs": {
+    "active": "订阅中",
+    "unsubscribed": "已退订"
+  },
+  "unsubscribeFailed": "退订失败",
+  "unsubscribed": "已将 {{email}} 标记为退订",
+  "meta": "订阅中 {{active}} · 已退订 {{unsubscribed}}",
+  "refresh": "刷新",
+  "exportCsv": "导出 CSV",
+  "listLabel": "订阅名单",
+  "searchLabel": "搜索订阅者",
+  "searchPlaceholder": "邮箱或名字",
+  "noMatch": "没有找到匹配的订阅者。",
+  "emptyActive": "还没有人订阅。",
+  "emptyUnsubscribed": "没有退订记录。",
+  "col": {
+    "email": "邮箱",
+    "name": "名字",
+    "subscribed": "订阅",
+    "unsubscribed": "退订",
+    "actions": "操作"
+  },
+  "markLabel": "把 {{email}} 标记为退订",
+  "mark": "标记退订",
+  "confirmTitle": "标记为退订？",
+  "confirmDesc": "{{email}} 会被标记为已退订，之后不会再给这个地址发邮件。",
+  "cancel": "取消"
+}

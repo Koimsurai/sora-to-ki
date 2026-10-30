@@ -1,0 +1,63 @@
+{
+  "count": "{{count}}장",
+  "lastSync": "마지막 동기화 {{date}}",
+  "filter": {
+    "all": "전체",
+    "featured": "추천",
+    "untitled": "제목 없음",
+    "hidden": "숨김"
+  },
+  "syncDone": "동기화했습니다: 추가 {{processed}}, 건너뜀 {{skipped}}",
+  "syncFailed": "동기화에 실패했습니다: {{error}}",
+  "syncing": "동기화 중",
+  "syncFromNas": "NAS에서 동기화",
+  "loadingPhotos": "사진 불러오는 중",
+  "emptyAll": "아직 사진이 없습니다. \"NAS에서 동기화\"를 눌러 가져오세요.",
+  "emptyFilter": "여기에는 사진이 없습니다.",
+  "wall": "사진 목록",
+  "featuredMark": " (추천)",
+  "hiddenMark": " (숨김)",
+  "untitledTag": "제목 없음",
+  "thisPhoto": "이 사진",
+  "saveFailed": "저장하지 못했습니다: {{error}}",
+  "saved": "저장했습니다",
+  "field": {
+    "title": "제목",
+    "originalName": "원래 파일명은 {{name}}입니다. 비우면 이 이름으로 돌아갑니다.",
+    "description": "소개 · 선택",
+    "tags": "태그 · 쉼표로 구분",
+    "tagsEn": "영어 태그"
+  },
+  "savingFile": "저장 중",
+  "exif": {
+    "lens": "렌즈",
+    "exposure": "노출",
+    "taken": "촬영",
+    "size": "크기",
+    "location": "위치",
+    "hasGps": "GPS 있음",
+    "noGps": "없음"
+  },
+  "featuredOn": "추천으로 지정했습니다",
+  "featuredOff": "추천을 해제했습니다",
+  "featured": "추천",
+  "featuredNote": "사이트 맨 위에 표시",
+  "shownOn": "사이트에 표시됩니다",
+  "hiddenOn": "숨겼습니다",
+  "showOnSite": "사이트에 표시",
+  "showNote": "끄면 여기서만 보입니다",
+  "picker": {
+    "loginFirst": "동기화하려면 먼저 관리자 화면에 로그인하세요",
+    "syncFailed": "동기화 실패",
+    "syncComplete": "동기화 완료: 추가 {{processed}}, 건너뜀 {{skipped}}",
+    "unknownError": "알 수 없는 오류",
+    "title": "NAS에서 사진 선택",
+    "syncNas": "NAS 동기화",
+    "close": "닫기",
+    "searchPlaceholder": "제목, 설명, 태그 검색",
+    "searchLabel": "사진 검색",
+    "loading": "NAS에서 사진 불러오는 중",
+    "empty": "일치하는 사진이 없습니다",
+    "clickToInsert": "사진을 클릭하면 글에 삽입됩니다"
+  }
+}

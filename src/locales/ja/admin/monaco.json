@@ -1,0 +1,42 @@
+{
+  "toolbar": {
+    "undo": "元に戻す (Ctrl+Z)",
+    "redo": "やり直す (Ctrl+Y)",
+    "bold": "太字の切り替え (Ctrl+B)",
+    "italic": "斜体の切り替え (Ctrl+I)",
+    "link": "リンクの切り替え (Ctrl+K)",
+    "linkPost": "過去の記事へのリンクを挿入 (Cmd/Ctrl+Shift+K)",
+    "image": "画像を挿入 (Ctrl+Shift+G)",
+    "nas": "NAS から画像を挿入",
+    "upload": "画像ファイルをアップロード",
+    "vimOn": "Vim モード：オン（クリックでオフ）",
+    "vimOff": "Vim モード：オフ（クリックでオン）"
+  },
+  "placeholder": {
+    "bold": "太字のテキスト",
+    "italic": "斜体のテキスト",
+    "link": "リンクのテキスト",
+    "image": "画像の説明"
+  },
+  "snippet": {
+    "code": "コードブロック",
+    "mermaid": "Mermaid 図",
+    "table": "表",
+    "tableHeader": "見出し",
+    "details": "折りたたみブロック",
+    "detailsSummary": "クリックで展開",
+    "img": "画像",
+    "footnote": "脚注",
+    "footnoteText": "本文",
+    "userDefined": "ユーザー定義"
+  },
+  "insertPostLink": "過去の記事へのリンクを挿入",
+  "loadingEditor": "エディタを開いています",
+  "canvasFailed": "OffscreenCanvas の 2d コンテキストを取得できませんでした",
+  "uploadFailed": "画像のアップロードに失敗しました：{{message}}",
+  "status": {
+    "total": "{{words}} 語 · {{chars}} 文字 · {{lines}} 行",
+    "reading": " · 約 {{minutes}} 分で読めます",
+    "selection": "選択: {{words}} 語 · {{chars}} 文字 · {{lines}} 行"
+  }
+}

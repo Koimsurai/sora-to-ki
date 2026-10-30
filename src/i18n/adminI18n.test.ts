@@ -36,41 +36,9 @@ describe('後台語系檔', () => {
   });
 });
 
-// 還沒搬到語系檔的檔案。搬完一個就從這裡拿掉（搬完卻沒拿掉，下面那條測試也會叫）。
-// 整份清空之後這個清單就可以刪了。
-const NOT_YET = new Set([
-  'src/components/admin/AboutEditor.tsx',
-  'src/components/admin/AdminAnalytics.tsx',
-  'src/components/admin/AdminDashboard.tsx',
-  'src/components/admin/BooksManager.tsx',
-  'src/components/admin/CategoriesManager.tsx',
-  'src/components/admin/CollectionManager.tsx',
-  'src/components/admin/CommentsManager.tsx',
-  'src/components/admin/DraftPreview.tsx',
-  'src/components/admin/ExcerptLinksEditor.tsx',
-  'src/components/admin/FriendsReview.tsx',
-  'src/components/admin/LogEditor.tsx',
-  'src/components/admin/PhotoSelectorModal.tsx',
-  'src/components/admin/PhotosManager.tsx',
-  'src/components/admin/PostEditor.tsx',
-  'src/components/admin/PostLinkModal.tsx',
-  'src/components/admin/PostPreview.tsx',
-  'src/components/admin/PostsList.tsx',
-  'src/components/admin/QaEditor.tsx',
-  'src/components/admin/SetupEditor.tsx',
-  'src/components/admin/SubscribersManager.tsx',
-  'src/components/admin/TagsManager.tsx',
-  'src/components/admin/ThoughtsManager.tsx',
-  'src/components/admin/UsersManager.tsx',
-  'src/components/admin/WorksEditor.tsx',
-  'src/components/admin/thoughtCandidates.ts',
-  'src/components/monaco-editor/monaco-editor.tsx',
-  'src/components/monaco-editor/monaco-snippets.ts',
-  'src/components/monaco-editor/monaco-toolbar.tsx',
-  'src/components/monaco-editor/types.ts',
-]);
-
 const ADMIN_DIRS = ['src/components/admin', 'src/routes/admin', 'src/components/monaco-editor'];
+/** 不在上面那幾個資料夾、但畫面只有站長看得到的 */
+const ADMIN_FILES = ['src/lib/excerptLinks.ts', 'src/routes/preview/post.tsx'];
 const CJK = /[぀-ヿ㐀-鿿가-힯]/;
 
 function sourceFiles(dir: string): string[] {
@@ -81,25 +49,75 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+/**
+ * 註解換成空白、換行留著（行號才對得回原文）。逐字走一遍而不是用 regex：字串裡的 `/*`
+ * （`accept="image/*"`）會被 regex 當成區塊註解的開頭，把後面幾行整段吃掉，漏檢。
+ * 樣板字串的 `${…}` 裡又是程式碼，用一個堆疊記著現在在第幾層。
+ */
+function stripComments(src: string): string {
+  let out = '';
+  const stack: string[] = []; // '`' = 在樣板字串裡；'{' = 在 ${…} 的程式碼裡
+  let quote = ''; // 在 ' 或 " 字串裡
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    const top = stack.at(-1);
+    if (quote) {
+      out += c;
+      if (c === '\\') out += src[++i] ?? '';
+      else if (c === quote) quote = '';
+      continue;
+    }
+    if (top === '`') {
+      out += c;
+      if (c === '\\') out += src[++i] ?? '';
+      else if (c === '`') stack.pop();
+      else if (c === '$' && src[i + 1] === '{') {
+        out += src[++i];
+        stack.push('{');
+      }
+      continue;
+    }
+    if (c === '/' && src[i + 1] === '/') {
+      while (i < src.length && src[i] !== '\n') i++;
+      out += '\n';
+      continue;
+    }
+    if (c === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2);
+      const stop = end === -1 ? src.length : end + 2;
+      out += src.slice(i, stop).replace(/[^\n]/g, ' ');
+      i = stop - 1;
+      continue;
+    }
+    if (c === "'" || c === '"') quote = c;
+    else if (c === '`') stack.push('`');
+    else if (c === '{' && top === '{') stack.push('{');
+    else if (c === '}' && top === '{') stack.pop();
+    out += c;
+  }
+  return out;
+}
+
 /** 去掉註解後還帶著中日韓文字的那幾行。真的不該翻的（例如語言的原生名稱）在那一行寫 `i18n-ignore` */
 function hardcodedLines(file: string): string[] {
   const raw = readFileSync(join(ROOT, file), 'utf8');
-  // 區塊註解換成同樣多的換行，行號才對得回原文（i18n-ignore 寫在註解裡，要看原文那一行）
-  const code = raw
-    .replace(/\/\*[\s\S]*?\*\//g, (c) => '\n'.repeat(c.split('\n').length - 1))
-    .replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
   const original = raw.split('\n');
-  return code.split('\n').filter((l, i) => CJK.test(l) && !original[i]?.includes('i18n-ignore'));
+  return stripComments(raw)
+    .split('\n')
+    .filter((l, i) => CJK.test(l) && !original[i]?.includes('i18n-ignore'));
 }
 
 describe('後台的程式碼不寫死介面文字', () => {
-  const files = ADMIN_DIRS.flatMap(sourceFiles);
-
-  it.each(files.filter((f) => !NOT_YET.has(f)))('%s', (file) => {
+  it.each([...ADMIN_DIRS.flatMap(sourceFiles), ...ADMIN_FILES])('%s', (file) => {
     expect(hardcodedLines(file)).toEqual([]);
   });
 
-  it('清單上的檔案還真的沒搬完（搬完了就從 NOT_YET 拿掉）', () => {
-    expect([...NOT_YET].filter((f) => hardcodedLines(f).length === 0)).toEqual([]);
+  it('去註解不會被字串裡的 /* 騙到', () => {
+    const src = ['const a = "image/*";', "const b = '繁中';", '/* 註解 */ const c = `x ${"中"}`;'].join('\n');
+    expect(stripComments(src).split('\n')).toEqual([
+      'const a = "image/*";',
+      "const b = '繁中';",
+      ' '.repeat(9) + 'const c = `x ${"中"}`;',
+    ]);
   });
 });

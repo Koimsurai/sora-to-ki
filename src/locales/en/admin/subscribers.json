@@ -1,0 +1,29 @@
+{
+  "tabs": {
+    "active": "Subscribed",
+    "unsubscribed": "Unsubscribed"
+  },
+  "unsubscribeFailed": "Couldn't unsubscribe",
+  "unsubscribed": "Marked {{email}} as unsubscribed",
+  "meta": "{{active}} subscribed · {{unsubscribed}} unsubscribed",
+  "refresh": "Refresh",
+  "exportCsv": "Export CSV",
+  "listLabel": "Subscriber list",
+  "searchLabel": "Search subscribers",
+  "searchPlaceholder": "Email or name",
+  "noMatch": "No matching subscribers.",
+  "emptyActive": "No subscribers yet.",
+  "emptyUnsubscribed": "No unsubscribes.",
+  "col": {
+    "email": "Email",
+    "name": "Name",
+    "subscribed": "Subscribed",
+    "unsubscribed": "Unsubscribed",
+    "actions": "Actions"
+  },
+  "markLabel": "Mark {{email}} as unsubscribed",
+  "mark": "Mark unsubscribed",
+  "confirmTitle": "Mark as unsubscribed?",
+  "confirmDesc": "{{email}} will be marked as unsubscribed and won't receive any more emails.",
+  "cancel": "Cancel"
+}

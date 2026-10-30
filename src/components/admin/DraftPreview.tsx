@@ -9,8 +9,10 @@ import { useEffect, useMemo, useState } from 'react';
 import BlogPost from '@/components/blog/BlogPost';
 import NotFound from '@/components/layout/NotFound';
 import { useAuth } from '@/contexts/auth';
+import { adminReady, loadAdminI18n, useAdminT } from '@/i18n/admin-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import type { Locale } from '@/lib/locales';
+import { siteName } from '@/lib/siteIdentity';
 import { compileMarkdown, compileMdx } from '@/lib/mdx/mdx-compile';
 import { renderMermaidSvgs } from '@/lib/mdx/mermaidRender';
 import { buildPreviewDetail } from '@/lib/postPreviewDetail';
@@ -32,6 +34,16 @@ interface Rendered {
 export default function DraftPreview() {
   const { user, isLoggedIn, loading } = useAuth();
   const allowed = isLoggedIn && (user?.role === 'ADMIN' || user?.role === 'OWNER');
+  // 這一頁不在 /admin 底下，後台的字串檔沒有跟著路由先載好：自己載，載好之前徽章先不寫字
+  const { t } = useAdminT();
+  const [i18nReady, setI18nReady] = useState(adminReady);
+  useEffect(() => {
+    if (!i18nReady) void loadAdminI18n().then(() => setI18nReady(true));
+  }, [i18nReady]);
+  // 分頁標題：路由的 head() 在伺服器上寫的是繁中（那時還不知道站長用哪個語言），字串到了再換
+  useEffect(() => {
+    if (i18nReady) document.title = t('editor.draft.pageTitle', { site: siteName() });
+  }, [i18nReady, t]);
   const [snap, setSnap] = useState<PostPreviewSnapshot | null>(() => readPostPreview());
   useEffect(() => subscribePostPreview(setSnap), []);
   const [picked, setPicked] = useState<string | null>(null);
@@ -80,11 +92,13 @@ export default function DraftPreview() {
       ) : null}
       <output className="dp-badge">
         <span className="dp-dot" aria-hidden="true" />
-        {!snap
-          ? '從後台的文章編輯器按「在前台預覽」打開這一頁'
-          : rendered?.error
-            ? `MDX 編譯失敗（發布的話前台會退回純 Markdown）：${rendered.error}`
-            : '草稿預覽 · 跟著編輯器即時更新 · 讀者看不到這一頁'}
+        {!i18nReady
+          ? null
+          : !snap
+            ? t('editor.draft.noSnapshot')
+            : rendered?.error
+              ? t('editor.draft.mdxFailed', { error: rendered.error })
+              : t('editor.draft.badge')}
       </output>
     </>
   );

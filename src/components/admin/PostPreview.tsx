@@ -10,6 +10,7 @@ import { LinkHoverPreview } from '@/components/common/LinkHoverPreview';
 import { compileMarkdown, compileMdx } from '@/lib/mdx/mdx-compile';
 import { renderMermaidSvgs } from '@/lib/mdx/mermaidRender';
 import { MermaidSvgContext } from '@/contexts/mermaidSvgs';
+import { useAdminT } from '@/i18n/admin-i18n';
 
 // 行內連結 → hover 預覽卡（跟前台一致）；錨點（#foo）不預覽。
 const Anchor = ({
@@ -49,6 +50,7 @@ interface Compiled {
 }
 
 export function PostPreview({ content, format }: { content: string; format?: string }) {
+  const { t } = useAdminT();
   const isMdx = format === 'mdx';
   const [compiled, setCompiled] = useState<Compiled | null>(null);
 
@@ -94,14 +96,18 @@ export function PostPreview({ content, format }: { content: string; format?: str
     if (compiled?.error) {
       return (
         <div className="mdx-error">
-          <strong>{isMdx ? '⚠ MDX 編譯失敗（發布前要修好，否則會退回純 Markdown）' : '⚠ Markdown 編譯失敗'}</strong>
+          <strong>{isMdx ? t('editor.preview.mdxFailed') : t('editor.preview.mdFailed')}</strong>
           <pre>{compiled.error}</pre>
         </div>
       );
     }
     if (compiled?.code) return <MdxContent compiled={compiled.code} baseComponents={MDX_BASE} />;
-    return <p className="text-muted-foreground text-sm">{content ? '準備預覽…' : '尚無內容'}</p>;
-  }, [isMdx, content, compiled]);
+    return (
+      <p className="text-muted-foreground text-sm">
+        {content ? t('editor.preview.preparing') : t('editor.preview.empty')}
+      </p>
+    );
+  }, [isMdx, content, compiled, t]);
 
   return (
     <MermaidSvgContext value={mermaidSvgs}>

@@ -1,0 +1,71 @@
+{
+  "meta": "{{count}} 本 · 在讀 {{reading}}",
+  "add": "加一本書",
+  "listLabel": "書單",
+  "tabAll": "全部",
+  "status": {
+    "to-read": "想讀",
+    "reading": "在讀",
+    "read": "讀完"
+  },
+  "searchShelf": "搜尋書架",
+  "searchPlaceholder": "書名、作者、ISBN",
+  "emptyShelf": "書架還是空的。",
+  "noMatch": "沒有符合的書。",
+  "edit": "編輯",
+  "editAria": "編輯《{{title}}》",
+  "deleteAria": "刪除《{{title}}》",
+  "pages": "{{count}} 頁",
+  "finishedOn": "{{date}} 讀完",
+  "startedOn": "{{date}} 開始",
+  "dialog": {
+    "editTitle": "編輯這本書",
+    "editDesc": "改完按「更新」。",
+    "addDesc": "先用 ISBN 或書名搜外部書目帶入，再補自己的狀態、評分與筆記；也可以全部手打。"
+  },
+  "external": {
+    "label": "搜尋外部書目",
+    "placeholder": "ISBN 或書名（Google Books、OpenLibrary、國圖）",
+    "search": "搜尋",
+    "searching": "搜尋中",
+    "results": "搜尋結果",
+    "ncl": "國圖（沒有封面與簡介）"
+  },
+  "field": {
+    "title": "書名",
+    "authors": "作者",
+    "publisher": "出版社",
+    "publishedDate": "出版日期",
+    "pageCount": "頁數",
+    "language": "語言",
+    "categories": "分類",
+    "coverUrl": "封面網址",
+    "coverPreview": "封面預覽",
+    "description": "簡介",
+    "myReading": "我讀這本",
+    "status": "狀態",
+    "rating": "評分 · 0–5",
+    "started": "開始讀",
+    "finished": "讀完",
+    "notes": "筆記"
+  },
+  "cancel": "取消",
+  "update": "更新",
+  "putOnShelf": "放上書架",
+  "confirmTitle": "確定要把這本書拿掉嗎？",
+  "confirmBody": "連同評分與筆記一起刪掉，拿不回來。",
+  "toast": {
+    "needQuery": "請輸入 ISBN 或書名",
+    "fallbackEmpty": "備用來源（OpenLibrary）也沒有這本",
+    "notFound": "找不到這本書",
+    "searchFailed": "搜尋失敗",
+    "searchFailedRetry": "搜尋失敗，請稍後再試",
+    "picked": "已帶入書目",
+    "updated": "已更新",
+    "added": "已放上書架",
+    "actionFailed": "操作失敗",
+    "saveFailed": "保存失敗",
+    "removed": "已從書架拿掉",
+    "deleteFailed": "刪除失敗"
+  }
+}

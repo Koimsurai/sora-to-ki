@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useAdminT } from '@/i18n/admin-i18n';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { lookupOr } from '../../lib/tableLookup';
 import AdminLoading from './AdminLoading';
@@ -27,12 +28,10 @@ import { formatWhen } from './adminFormat';
 type Subscriber = SubscriberRow;
 type Status = 'active' | 'unsubscribed';
 
-const TABS: { key: Status; label: string }[] = [
-  { key: 'active', label: '訂閱中' },
-  { key: 'unsubscribed', label: '已退訂' },
-];
+const TABS: readonly Status[] = ['active', 'unsubscribed'];
 
 export default function SubscribersManager() {
+  const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { data: active = [], isPending: la } = useQuery(adminSubscribersByStatusQueryOptions('active'));
   const { data: unsubscribed = [], isPending: lu } = useQuery(adminSubscribersByStatusQueryOptions('unsubscribed'));
@@ -59,12 +58,12 @@ export default function SubscribersManager() {
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? '退訂失敗');
+        throw new Error(data.error ?? t('subscribers.unsubscribeFailed'));
       }
-      toast.success(`已將 ${sub.email} 標記為退訂`);
+      toast.success(t('subscribers.unsubscribed', { email: sub.email }));
       void invalidateSubs();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '退訂失敗');
+      toast.error(e instanceof Error ? e.message : t('subscribers.unsubscribeFailed'));
     }
   };
 
@@ -85,35 +84,39 @@ export default function SubscribersManager() {
   return (
     <div className="adm-page adm-page-narrow">
       <PageHead
-        title="電子報"
+        title={t('nav.subscribers')}
         latin="Newsletter"
-        meta={isPending ? '載入中' : `訂閱中 ${active.length} · 已退訂 ${unsubscribed.length}`}
+        meta={
+          isPending
+            ? t('common.loading')
+            : t('subscribers.meta', { active: active.length, unsubscribed: unsubscribed.length })
+        }
         actions={
           <>
             <button type="button" className="adm-btn" onClick={() => void invalidateSubs()} disabled={isPending}>
-              重新整理
+              {t('subscribers.refresh')}
             </button>
             <button type="button" className="adm-btn" onClick={exportCSV} disabled={visible.length === 0}>
-              匯出 CSV
+              {t('subscribers.exportCsv')}
             </button>
           </>
         }
       />
 
-      <section className="adm-stack" aria-label="訂閱名單">
+      <section className="adm-stack" aria-label={t('subscribers.listLabel')}>
         <div className="adm-toolbar">
           <div className="adm-tabs">
-            {TABS.map((t) => (
+            {TABS.map((key) => (
               <button
-                key={t.key}
+                key={key}
                 type="button"
                 className="adm-tab"
-                aria-pressed={tab === t.key}
-                onClick={() => setTab(t.key)}
+                aria-pressed={tab === key}
+                onClick={() => setTab(key)}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                {t.label}
-                <span className="adm-meta">{isPending ? '' : lists[t.key].length}</span>
+                {t(`subscribers.tabs.${key}`)}
+                <span className="adm-meta">{isPending ? '' : lists[key].length}</span>
               </button>
             ))}
           </div>
@@ -121,8 +124,13 @@ export default function SubscribersManager() {
             <span className="adm-prompt-mark" aria-hidden="true">
               &gt;
             </span>
-            <span className="sr-only">搜尋訂閱者</span>
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Email 或名字" />
+            <span className="sr-only">{t('subscribers.searchLabel')}</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('subscribers.searchPlaceholder')}
+            />
           </label>
         </div>
 
@@ -131,19 +139,23 @@ export default function SubscribersManager() {
             <AdminLoading />
           ) : visible.length === 0 ? (
             <p className="adm-empty">
-              {q ? '找不到符合的訂閱者。' : tab === 'active' ? '還沒有人訂閱。' : '沒有退訂紀錄。'}
+              {q
+                ? t('subscribers.noMatch')
+                : tab === 'active'
+                  ? t('subscribers.emptyActive')
+                  : t('subscribers.emptyUnsubscribed')}
             </p>
           ) : (
             <div className="adm-table-wrap">
               <table className="adm-table">
                 <thead>
                   <tr>
-                    <th scope="col">Email</th>
-                    <th scope="col">名字</th>
-                    <th scope="col">訂閱</th>
-                    <th scope="col">退訂</th>
+                    <th scope="col">{t('subscribers.col.email')}</th>
+                    <th scope="col">{t('subscribers.col.name')}</th>
+                    <th scope="col">{t('subscribers.col.subscribed')}</th>
+                    <th scope="col">{t('subscribers.col.unsubscribed')}</th>
                     <th scope="col">
-                      <span className="sr-only">動作</span>
+                      <span className="sr-only">{t('subscribers.col.actions')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -168,10 +180,10 @@ export default function SubscribersManager() {
                             <button
                               type="button"
                               className="adm-icon-btn adm-icon-btn-flare"
-                              aria-label={`把 ${s.email} 標記為退訂`}
+                              aria-label={t('subscribers.markLabel', { email: s.email })}
                               onClick={() => setToUnsubscribe(s)}
                             >
-                              標記退訂
+                              {t('subscribers.mark')}
                             </button>
                           </div>
                         )}
@@ -193,13 +205,13 @@ export default function SubscribersManager() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>標記為退訂？</AlertDialogTitle>
+            <AlertDialogTitle>{t('subscribers.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {toUnsubscribe?.email} 會被標記為已退訂，之後不會再寄信到這個地址。
+              {t('subscribers.confirmDesc', { email: toUnsubscribe?.email ?? '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('subscribers.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
@@ -207,7 +219,7 @@ export default function SubscribersManager() {
                 setToUnsubscribe(null);
               }}
             >
-              標記退訂
+              {t('subscribers.mark')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

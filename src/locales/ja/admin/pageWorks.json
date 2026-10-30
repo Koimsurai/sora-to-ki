@@ -1,0 +1,18 @@
+{
+  "saved": "作品ページを更新しました",
+  "noNumbers": "まだ数値がありません",
+  "noLanguages": "言語データなし",
+  "pick": "自分の GitHub から選ぶ",
+  "pickAs": "自分の GitHub から選ぶ（{{account}}）",
+  "noAccount": "サイト設定に GitHub アカウントが未入力のため、下の URL 貼り付けでのみ追加できます。",
+  "added": "追加済み",
+  "addArrow": "追加 →",
+  "paste": "他の人や組織の repo · URL か owner/name を貼り付け",
+  "add": "追加",
+  "listHead": "作品 · 並び順がそのまま螺旋の順番、最初の1件が起点",
+  "empty": "作品はまだありません。上から1件選ぶと、作品ページに最初の惑星が生まれます。",
+  "origin": "螺旋の起点",
+  "name": "表示名 · 空欄なら repo 名を使用",
+  "what": "ひとこと紹介",
+  "setOrigin": "起点にする"
+}

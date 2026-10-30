@@ -1,0 +1,63 @@
+{
+  "count": "{{count}} 枚",
+  "lastSync": "前回の同期 {{date}}",
+  "filter": {
+    "all": "すべて",
+    "featured": "おすすめ",
+    "untitled": "タイトルなし",
+    "hidden": "非表示"
+  },
+  "syncDone": "同期しました：追加 {{processed}}、スキップ {{skipped}}",
+  "syncFailed": "同期に失敗しました：{{error}}",
+  "syncing": "同期中",
+  "syncFromNas": "NAS から同期",
+  "loadingPhotos": "写真を読み込み中",
+  "emptyAll": "写真はまだありません。「NAS から同期」を押して取り込んでください。",
+  "emptyFilter": "ここには写真がありません。",
+  "wall": "写真の一覧",
+  "featuredMark": "（おすすめ）",
+  "hiddenMark": "（非表示）",
+  "untitledTag": "無題",
+  "thisPhoto": "この写真",
+  "saveFailed": "保存できませんでした：{{error}}",
+  "saved": "保存しました",
+  "field": {
+    "title": "タイトル",
+    "originalName": "元のファイル名は {{name}} です。空にするとこの名前に戻ります。",
+    "description": "説明 · 任意",
+    "tags": "タグ · 読点かカンマで区切る",
+    "tagsEn": "英語のタグ"
+  },
+  "savingFile": "保存中",
+  "exif": {
+    "lens": "レンズ",
+    "exposure": "露出",
+    "taken": "撮影日",
+    "size": "サイズ",
+    "location": "位置",
+    "hasGps": "GPS あり",
+    "noGps": "なし"
+  },
+  "featuredOn": "おすすめにしました",
+  "featuredOff": "おすすめを外しました",
+  "featured": "おすすめ",
+  "featuredNote": "サイトで最初に表示",
+  "shownOn": "サイトに表示しました",
+  "hiddenOn": "非表示にしました",
+  "showOnSite": "サイトに表示",
+  "showNote": "オフにすると、ここでしか見えません",
+  "picker": {
+    "loginFirst": "同期する前に管理画面にログインしてください",
+    "syncFailed": "同期に失敗しました",
+    "syncComplete": "同期完了：追加 {{processed}}、スキップ {{skipped}}",
+    "unknownError": "不明なエラー",
+    "title": "NAS から写真を選ぶ",
+    "syncNas": "NAS を同期",
+    "close": "閉じる",
+    "searchPlaceholder": "タイトル・説明・タグで検索",
+    "searchLabel": "写真を検索",
+    "loading": "NAS から写真を読み込み中",
+    "empty": "該当する写真はありません",
+    "clickToInsert": "クリックで記事に挿入"
+  }
+}

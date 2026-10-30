@@ -1,0 +1,42 @@
+{
+  "toolbar": {
+    "undo": "실행 취소 (Ctrl+Z)",
+    "redo": "다시 실행 (Ctrl+Y)",
+    "bold": "굵게 전환 (Ctrl+B)",
+    "italic": "기울임 전환 (Ctrl+I)",
+    "link": "링크 전환 (Ctrl+K)",
+    "linkPost": "예전 글 링크 넣기 (Cmd/Ctrl+Shift+K)",
+    "image": "이미지 넣기 (Ctrl+Shift+G)",
+    "nas": "NAS에서 이미지 넣기",
+    "upload": "이미지 파일 업로드",
+    "vimOn": "Vim 모드: 켜짐 (클릭하면 끔)",
+    "vimOff": "Vim 모드: 꺼짐 (클릭하면 켬)"
+  },
+  "placeholder": {
+    "bold": "굵은 텍스트",
+    "italic": "기울임 텍스트",
+    "link": "링크 텍스트",
+    "image": "이미지 설명"
+  },
+  "snippet": {
+    "code": "코드 블록",
+    "mermaid": "Mermaid 다이어그램",
+    "table": "표",
+    "tableHeader": "제목",
+    "details": "접을 수 있는 블록",
+    "detailsSummary": "눌러서 펼치기",
+    "img": "이미지",
+    "footnote": "각주",
+    "footnoteText": "본문",
+    "userDefined": "사용자 정의"
+  },
+  "insertPostLink": "예전 글 링크 넣기",
+  "loadingEditor": "편집기를 여는 중",
+  "canvasFailed": "OffscreenCanvas 2d 컨텍스트를 가져오지 못했습니다",
+  "uploadFailed": "이미지를 업로드하지 못했습니다: {{message}}",
+  "status": {
+    "total": "단어 {{words}} · 글자 {{chars}} · 줄 {{lines}}",
+    "reading": " · 약 {{minutes}}분 분량",
+    "selection": "선택: 단어 {{words}} · 글자 {{chars}} · 줄 {{lines}}"
+  }
+}

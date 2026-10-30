@@ -7,6 +7,7 @@ import { exifYmd } from '../../lib/exifDate';
 import type { PhotoManifest } from '../../types/photo';
 import { toast } from 'sonner';
 import { authHeaders, readToken } from '@/lib/authToken';
+import { useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import './AdminPicker.css';
 
@@ -17,6 +18,7 @@ interface PhotoSelectorModalProps {
 }
 
 const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalProps) => {
+  const { t } = useAdminT();
   const [syncing, setSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -36,7 +38,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
     if (syncing) return;
 
     if (!readToken()) {
-      toast.error('請先登入後台再同步');
+      toast.error(t('photos.picker.loginFirst'));
       return;
     }
 
@@ -53,14 +55,16 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
         skipped?: number;
       };
       if (!response.ok) {
-        throw new Error(data.error ?? '同步失敗');
+        throw new Error(data.error ?? t('photos.picker.syncFailed'));
       }
 
-      toast.success(`同步完成：新增 ${data.processed ?? 0}，略過 ${data.skipped ?? 0}`);
+      toast.success(t('photos.picker.syncComplete', { processed: data.processed ?? 0, skipped: data.skipped ?? 0 }));
       await refetch();
     } catch (err) {
       console.error('NAS sync failed:', err);
-      toast.error(`同步失敗：${err instanceof Error ? err.message : '未知錯誤'}`);
+      toast.error(
+        t('photos.syncFailed', { error: err instanceof Error ? err.message : t('photos.picker.unknownError') }),
+      );
     } finally {
       setSyncing(false);
     }
@@ -104,8 +108,8 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
         >
           <div className="adm-picker-head">
             <h3 className="adm-picker-title">
-              從 NAS 選照片
-              <span className="adm-picker-count">{photos.length} 張</span>
+              {t('photos.picker.title')}
+              <span className="adm-picker-count">{t('photos.count', { count: photos.length })}</span>
             </h3>
             <button
               type="button"
@@ -115,9 +119,9 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
               disabled={syncing || loading}
               className="adm-btn adm-btn-small"
             >
-              {syncing ? '同步中' : '同步 NAS'}
+              {syncing ? t('photos.syncing') : t('photos.picker.syncNas')}
             </button>
-            <button type="button" onClick={onClose} className="adm-icon-btn" aria-label="關閉">
+            <button type="button" onClick={onClose} className="adm-icon-btn" aria-label={t('photos.picker.close')}>
               <X className="size-3.5" />
             </button>
           </div>
@@ -127,10 +131,10 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
               <Search className="size-3.5 text-muted-foreground" aria-hidden="true" />
               <input
                 type="text"
-                placeholder="搜尋標題、描述或標籤"
+                placeholder={t('photos.picker.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="搜尋照片"
+                aria-label={t('photos.picker.searchLabel')}
                 // modal 打開就是為了搜尋照片，焦點直接進搜尋框
                 // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
@@ -140,9 +144,9 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
 
           <div className="adm-picker-body">
             {loading ? (
-              <AdminLoading label="從 NAS 讀照片" />
+              <AdminLoading label={t('photos.picker.loading')} />
             ) : filteredPhotos.length === 0 ? (
-              <p className="adm-picker-empty">沒有符合的照片</p>
+              <p className="adm-picker-empty">{t('photos.picker.empty')}</p>
             ) : (
               <div className="adm-picker-grid">
                 {filteredPhotos.map((photo) => {
@@ -163,8 +167,8 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
           </div>
 
           <div className="adm-picker-foot">
-            <span>{filteredPhotos.length} 張</span>
-            <span>點一張插入文章</span>
+            <span>{t('photos.count', { count: filteredPhotos.length })}</span>
+            <span>{t('photos.picker.clickToInsert')}</span>
           </div>
         </motion.div>
       </motion.div>

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { adminBahamutStatusQueryOptions, adminCollectionQueryOptions } from '@/data/adminData';
 import { watchFavoritesQueryOptions } from '@/data/watchData';
 import { jsonAuthHeaders } from '@/lib/authToken';
+import { useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
@@ -18,14 +19,11 @@ import './CollectionManager.css';
 
 type Tab = 'watch' | 'listen' | 'fav';
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'watch', label: '在看' },
-  { key: 'listen', label: '在聽' },
-  { key: 'fav', label: '最愛' },
-];
+const TABS: Tab[] = ['watch', 'listen', 'fav'];
 
-const KIND_LABEL: Record<string, string> = { anime: '動畫', film: '電影', tv: '影集', track: '歌' };
-const SOURCE_LABEL: Record<string, string> = { bahamut: '巴哈', simkl: 'Simkl', trakt: 'Trakt' };
+const KINDS = new Set(['anime', 'film', 'tv', 'track']);
+/** 巴哈要翻（是簡稱），其他是服務名 */
+const SOURCE_NAME: Record<string, string> = { simkl: 'Simkl', trakt: 'Trakt' };
 
 /** 最愛只收得了 TMDb 上查得到的（電影、影集；動畫有對上 TMDb 的也算影集） */
 const favoriteKind = (w: AdminWatchItem) => (w.kind === 'film' ? 'film' : 'tv');
@@ -43,6 +41,7 @@ async function send(method: string, path: string, body?: unknown) {
 }
 
 export default function CollectionManager() {
+  const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(adminCollectionQueryOptions);
   const favorites = useQuery(watchFavoritesQueryOptions('zh-TW'));
@@ -52,7 +51,7 @@ export default function CollectionManager() {
 
   const watch = data?.watch ?? [];
   const tracks = data?.tracks ?? [];
-  const hiddenTracks = (data?.hidden ?? []).filter((h) => h.kind === 'track' && !tracks.some((t) => t.id === h.key));
+  const hiddenTracks = (data?.hidden ?? []).filter((h) => h.kind === 'track' && !tracks.some((tr) => tr.id === h.key));
   const favs = favorites.data ?? [];
 
   const refresh = () => {
@@ -68,7 +67,7 @@ export default function CollectionManager() {
       toast.success(done);
       refresh();
     } catch (e) {
-      toast.error(`沒有存到：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('collection.saveFailed', { error: e instanceof Error ? e.message : '' }));
     } finally {
       setBusyKey(null);
     }
@@ -78,7 +77,7 @@ export default function CollectionManager() {
     run(
       `${kind}:${key}`,
       () => send('PUT', '/api/admin/collection/hidden', { kind, key, title, hidden }),
-      hidden ? `〈${title}〉不出現在前台了` : `〈${title}〉回到前台了`,
+      hidden ? t('collection.hiddenNow', { title }) : t('collection.shownNow', { title }),
     );
 
   const toggleFavorite = (w: AdminWatchItem) =>
@@ -88,49 +87,58 @@ export default function CollectionManager() {
         w.favorite_id != null
           ? send('DELETE', `/api/watch/favorites/${w.favorite_id}`)
           : send('POST', '/api/watch/favorites', { tmdbId: w.tmdb_id, kind: favoriteKind(w), rating: 5, quote: '' }),
-      w.favorite_id != null ? `〈${w.title}〉拿出最愛了` : `〈${w.title}〉放進最愛了`,
+      w.favorite_id != null
+        ? t('collection.favRemoved', { title: w.title })
+        : t('collection.favAdded', { title: w.title }),
     );
 
-  const countOf = (t: Tab) => (t === 'watch' ? watch.length : t === 'listen' ? tracks.length : favs.length);
+  const countOf = (k: Tab) => (k === 'watch' ? watch.length : k === 'listen' ? tracks.length : favs.length);
   const b = bahamut.data;
 
   return (
     <div className="adm-page adm-page-narrow">
       <PageHead
-        title="收藏"
+        title={t('nav.collection')}
         latin="Collection"
-        meta={isPending ? '載入中' : `在看 ${watch.length} 部 · 最愛 ${favs.length} 部`}
+        meta={isPending ? t('common.loading') : t('collection.meta', { watch: watch.length, fav: favs.length })}
       />
 
-      <p className="adm-coll-sources" aria-label="資料來源">
+      <p className="adm-coll-sources" aria-label={t('collection.sources')}>
         {b && (
           <span data-bad={!b.ok || undefined}>
-            {b.ok ? '●' : '×'} 巴哈
-            {b.ok ? (b.daysLeft !== null ? ` · 登入還有 ${b.daysLeft} 天` : '') : ' · cookie 失效'}
+            {b.ok ? '●' : '×'} {t('collection.bahamut')}
+            {b.ok
+              ? b.daysLeft !== null
+                ? ` · ${t('collection.loginDaysLeft', { days: b.daysLeft })}`
+                : ''
+              : ` · ${t('collection.cookieExpired')}`}
           </span>
         )}
         <span data-bad={data?.tracks_error ? true : undefined}>
-          {data?.tracks_error ? '×' : '●'} Spotify{data?.tracks_error ? ' · 抓不到' : ` · 最近 ${tracks.length} 首`}
+          {data?.tracks_error ? '×' : '●'} Spotify
+          {data?.tracks_error
+            ? ` · ${t('collection.spotifyFailed')}`
+            : ` · ${t('collection.spotifyRecent', { count: tracks.length })}`}
         </span>
         <Link to="/admin/books" className="adm-coll-link">
-          書在書架 →
+          {t('collection.booksLink')}
         </Link>
       </p>
 
-      <section className="adm-stack" aria-label="收藏">
+      <section className="adm-stack" aria-label={t('nav.collection')}>
         <div className="adm-toolbar">
           <div className="adm-tabs">
-            {TABS.map((t) => (
+            {TABS.map((key) => (
               <button
-                key={t.key}
+                key={key}
                 type="button"
                 className="adm-tab"
-                aria-pressed={tab === t.key}
-                onClick={() => setTab(t.key)}
+                aria-pressed={tab === key}
+                onClick={() => setTab(key)}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                {t.label}
-                <span className="adm-meta">{isPending ? '' : countOf(t.key)}</span>
+                {t(`collection.tab.${key}`)}
+                <span className="adm-meta">{isPending ? '' : countOf(key)}</span>
               </button>
             ))}
           </div>
@@ -138,7 +146,7 @@ export default function CollectionManager() {
 
         <TabPanel tab={tab}>
           {isPending ? (
-            <AdminLoading label="讀收藏" />
+            <AdminLoading label={t('collection.loadingCollection')} />
           ) : tab === 'watch' ? (
             <WatchList items={watch} busyKey={busyKey} onHide={setHidden} onFavorite={toggleFavorite} />
           ) : tab === 'listen' ? (
@@ -169,12 +177,11 @@ function WatchList({
   onHide: (kind: string, key: string, title: string, hidden: boolean) => Promise<void>;
   onFavorite: (w: AdminWatchItem) => Promise<void>;
 }) {
-  if (items.length === 0) return <p className="adm-empty">還沒有觀看紀錄。巴哈、Simkl 同步之後會出現在這裡。</p>;
+  const { t } = useAdminT();
+  if (items.length === 0) return <p className="adm-empty">{t('collection.watchEmpty')}</p>;
   return (
     <>
-      <p className="adm-form-note">
-        同步進來的紀錄改不了，只能決定要不要出現在前台；電影與影集可以放進收藏頁最上面那一排。
-      </p>
+      <p className="adm-form-note">{t('collection.watchNote')}</p>
       <ul className="adm-coll-list">
         {items.map((w) => (
           <li key={`${w.kind}:${w.key}`} className="adm-coll-row" data-hidden={w.hidden || undefined}>
@@ -184,14 +191,18 @@ function WatchList({
               <span className="adm-cover adm-cover-empty" aria-hidden="true" />
             )}
             <span className="adm-coll-main">
-              <span className="adm-coll-title">{w.title || '（沒有名字）'}</span>
+              <span className="adm-coll-title">{w.title || t('collection.untitled')}</span>
               <span className="adm-meta">
                 {[
-                  KIND_LABEL[w.kind],
+                  KINDS.has(w.kind) ? t(`collection.kind.${w.kind}`) : null,
                   // 巴哈的集數是原樣的字（「[03]」「特別篇」），不再包一層「第…集」
-                  w.kind === 'anime' && w.detail ? `看到 ${w.detail}` : w.detail,
+                  w.kind === 'anime' && w.detail ? t('collection.watchedUpTo', { detail: w.detail }) : w.detail,
                   formatWhen(w.watched_at, 'yyyy.MM.dd'),
-                  w.source ? (SOURCE_LABEL[w.source] ?? w.source) : null,
+                  w.source
+                    ? w.source === 'bahamut'
+                      ? t('collection.bahamut')
+                      : (SOURCE_NAME[w.source] ?? w.source)
+                    : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
@@ -203,20 +214,20 @@ function WatchList({
                 className="adm-btn adm-btn-small"
                 aria-pressed={w.favorite_id != null}
                 disabled={w.tmdb_id == null || busyKey !== null}
-                title={w.tmdb_id == null ? '沒有對上 TMDb，放不進最愛' : undefined}
+                title={w.tmdb_id == null ? t('collection.noTmdb') : undefined}
                 onClick={() => void onFavorite(w)}
               >
-                {w.favorite_id != null ? '★ 最愛' : '☆ 最愛'}
+                {w.favorite_id != null ? t('collection.favOn') : t('collection.favOff')}
               </button>
               <button
                 type="button"
                 className="adm-btn adm-btn-small"
                 aria-pressed={!w.hidden}
-                aria-label={`${w.title} 在前台顯示`}
+                aria-label={t('collection.showAria', { title: w.title })}
                 disabled={busyKey !== null}
                 onClick={() => void onHide(w.kind, w.key, w.title, !w.hidden)}
               >
-                {w.hidden ? '不公開' : '前台顯示'}
+                {w.hidden ? t('collection.hidden') : t('collection.shown')}
               </button>
             </span>
           </li>
@@ -239,35 +250,36 @@ function ListenList({
   busyKey: string | null;
   onHide: (kind: string, key: string, title: string, hidden: boolean) => Promise<void>;
 }) {
+  const { t } = useAdminT();
   return (
     <>
-      <p className="adm-form-note">直接從 Spotify 來（最近播放的 50 首），這裡只能決定哪幾首不要出現在前台。</p>
-      {error && <p className="adm-empty">Spotify 現在抓不到：{error}</p>}
-      {!error && tracks.length === 0 && <p className="adm-empty">沒有最近播放。Spotify 沒接上的話這裡會是空的。</p>}
+      <p className="adm-form-note">{t('collection.listenNote')}</p>
+      {error && <p className="adm-empty">{t('collection.spotifyError', { error })}</p>}
+      {!error && tracks.length === 0 && <p className="adm-empty">{t('collection.listenEmpty')}</p>}
       <ul className="adm-coll-list">
-        {tracks.map((t) => (
-          <li key={`${t.id}:${t.played_at}`} className="adm-coll-row" data-hidden={t.hidden || undefined}>
-            {t.cover ? (
-              <img className="adm-coll-square" src={t.cover} alt="" loading="lazy" />
+        {tracks.map((tr) => (
+          <li key={`${tr.id}:${tr.played_at}`} className="adm-coll-row" data-hidden={tr.hidden || undefined}>
+            {tr.cover ? (
+              <img className="adm-coll-square" src={tr.cover} alt="" loading="lazy" />
             ) : (
               <span className="adm-coll-square adm-cover-empty" aria-hidden="true" />
             )}
             <span className="adm-coll-main">
-              <span className="adm-coll-title">{t.name}</span>
+              <span className="adm-coll-title">{tr.name}</span>
               <span className="adm-meta">
-                {t.artists} · {formatWhen(t.played_at)}
+                {tr.artists} · {formatWhen(tr.played_at)}
               </span>
             </span>
             <span className="adm-coll-actions">
               <button
                 type="button"
                 className="adm-btn adm-btn-small"
-                aria-pressed={!t.hidden}
-                aria-label={`${t.name} 在前台顯示`}
+                aria-pressed={!tr.hidden}
+                aria-label={t('collection.showAria', { title: tr.name })}
                 disabled={busyKey !== null}
-                onClick={() => void onHide('track', t.id, t.name, !t.hidden)}
+                onClick={() => void onHide('track', tr.id, tr.name, !tr.hidden)}
               >
-                {t.hidden ? '不公開' : '前台顯示'}
+                {tr.hidden ? t('collection.hidden') : t('collection.shown')}
               </button>
             </span>
           </li>
@@ -275,13 +287,15 @@ function ListenList({
       </ul>
       {hiddenTracks.length > 0 && (
         <div className="adm-coll-hidden">
-          <span className="adm-caps">其他不公開的歌</span>
+          <span className="adm-caps">{t('collection.otherHidden')}</span>
           <ul className="adm-coll-list">
             {hiddenTracks.map((h) => (
               <li key={h.key} className="adm-coll-row" data-hidden>
                 <span className="adm-coll-main">
                   <span className="adm-coll-title">{h.title || h.key}</span>
-                  <span className="adm-meta">{formatWhen(h.hidden_at, 'yyyy.MM.dd')} 藏起來的</span>
+                  <span className="adm-meta">
+                    {t('collection.hiddenOn', { date: formatWhen(h.hidden_at, 'yyyy.MM.dd') })}
+                  </span>
                 </span>
                 <span className="adm-coll-actions">
                   <button
@@ -290,7 +304,7 @@ function ListenList({
                     disabled={busyKey !== null}
                     onClick={() => void onHide('track', h.key, h.title, false)}
                   >
-                    改回公開
+                    {t('collection.unhide')}
                   </button>
                 </span>
               </li>
@@ -313,9 +327,10 @@ function FavoriteList({
   busyKey: string | null;
   run: (key: string, work: () => Promise<void>, done: string) => Promise<void>;
 }) {
-  if (loading) return <AdminLoading label="讀最愛" />;
+  const { t } = useAdminT();
+  if (loading) return <AdminLoading label={t('collection.loadingFavs')} />;
   if (favorites.length === 0) {
-    return <p className="adm-empty">還沒有最愛。在「在看」裡按「☆ 最愛」放進來。</p>;
+    return <p className="adm-empty">{t('collection.favEmpty')}</p>;
   }
 
   /** 換位置：整排重新編號（sort_order 從 0 起），只送有變的 */
@@ -330,13 +345,13 @@ function FavoriteList({
           if (favorites[i]?.id !== f.id) await send('PUT', `/api/watch/favorites/${f.id}`, { sort_order: i });
         }
       },
-      '換好位置了',
+      t('collection.moved'),
     );
   };
 
   return (
     <>
-      <p className="adm-form-note">收藏頁最上面那一排，照這裡的順序；每一部可以留一句話。</p>
+      <p className="adm-form-note">{t('collection.favNote')}</p>
       <ol className="adm-coll-favs">
         {favorites.map((f, i) => (
           <li key={f.id} className="adm-coll-fav">
@@ -354,7 +369,7 @@ function FavoriteList({
               <button
                 type="button"
                 className="adm-icon-btn"
-                aria-label={`把 ${f.title} 往前移`}
+                aria-label={t('collection.moveUp', { title: f.title })}
                 disabled={i === 0 || busyKey !== null}
                 onClick={() => move(i, i - 1)}
               >
@@ -363,7 +378,7 @@ function FavoriteList({
               <button
                 type="button"
                 className="adm-icon-btn"
-                aria-label={`把 ${f.title} 往後移`}
+                aria-label={t('collection.moveDown', { title: f.title })}
                 disabled={i === favorites.length - 1 || busyKey !== null}
                 onClick={() => move(i, i + 1)}
               >
@@ -372,17 +387,17 @@ function FavoriteList({
               <button
                 type="button"
                 className="adm-icon-btn adm-icon-btn-flare"
-                aria-label={`把 ${f.title} 拿出最愛`}
+                aria-label={t('collection.removeFavAria', { title: f.title })}
                 disabled={busyKey !== null}
                 onClick={() =>
                   void run(
                     `fav:${f.id}`,
                     () => send('DELETE', `/api/watch/favorites/${f.id}`),
-                    `〈${f.title}〉拿出最愛了`,
+                    t('collection.favRemoved', { title: f.title }),
                   )
                 }
               >
-                拿掉
+                {t('collection.remove')}
               </button>
             </span>
           </li>
@@ -402,18 +417,23 @@ function QuoteField({
   disabled: boolean;
   run: (key: string, work: () => Promise<void>, done: string) => Promise<void>;
 }) {
+  const { t } = useAdminT();
   const [quote, setQuote] = useState(favorite.quote ?? '');
   const save = () => {
     if (quote === (favorite.quote ?? '')) return;
-    void run(`quote:${favorite.id}`, () => send('PUT', `/api/watch/favorites/${favorite.id}`, { quote }), '存好了');
+    void run(
+      `quote:${favorite.id}`,
+      () => send('PUT', `/api/watch/favorites/${favorite.id}`, { quote }),
+      t('collection.saved'),
+    );
   };
   return (
     <label className="adm-prompt adm-prompt-compact adm-coll-quote">
-      <span className="sr-only">{favorite.title} 的一句話</span>
+      <span className="sr-only">{t('collection.quoteLabel', { title: favorite.title })}</span>
       <input
         value={quote}
         disabled={disabled}
-        placeholder="留一句話"
+        placeholder={t('collection.quotePlaceholder')}
         maxLength={120}
         onChange={(e) => setQuote(e.target.value)}
         onBlur={save}
