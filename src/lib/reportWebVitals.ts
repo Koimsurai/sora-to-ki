@@ -55,6 +55,65 @@ function trackShiftPath() {
   }
 }
 
+/* ── 換頁時最長那一幀被誰吃掉 ──
+ *
+ * TX 只說得出「卡了幾毫秒、卡在收／飛／長哪一段」，說不出是誰。Long Animation Frames（LoAF，
+ * Chromium 123 起）會列出那一幀裡跑了哪些腳本、渲染花了多久。這裡留著最近的幾個，TX 上報時
+ * 拿轉場那段時間裡最長的一個做摘要。不支援的瀏覽器就沒有這一段 */
+interface LoafScript {
+  duration: number;
+  invoker?: string;
+  invokerType?: string;
+  sourceURL?: string;
+  sourceFunctionName?: string;
+}
+interface Loaf {
+  startTime: number;
+  duration: number;
+  /** 這一幀開始畫（樣式、排版、繪製）的時間；0 是沒畫 */
+  renderStart: number;
+  scripts: LoafScript[];
+}
+const loafs: Loaf[] = [];
+/** 留幾個就好：一趟轉場兩秒多，長幀不會超過這個數 */
+const LOAF_KEEP = 30;
+
+function trackLoaf() {
+  try {
+    new PerformanceObserver((list) => {
+      loafs.push(...(list.getEntries() as unknown as Loaf[]));
+      if (loafs.length > LOAF_KEEP) loafs.splice(0, loafs.length - LOAF_KEEP);
+    }).observe({ type: 'long-animation-frame', buffered: false });
+  } catch {
+    /* 不支援 LoAF 就少一段歸因 */
+  }
+}
+
+/** 腳本的名字：檔名去掉 hash 與副檔名（`Collection-B3x9Qa_1.js` → `Collection`），後端只收英數與 `._-` */
+function scriptName(s: LoafScript): string {
+  const file = (s.sourceURL ?? '').split(/[?#]/)[0].split('/').pop() ?? '';
+  const base = file.replace(/\.[a-z]+$/i, '').replace(/-[\w-]{6,}$/, '');
+  // 空字串也算沒有：setTimeout 的回呼常常沒有 sourceURL，這時 invoker（TimerHandler:setTimeout）最有用
+  const name = [base, s.sourceFunctionName, s.invoker, s.invokerType].find((v) => v) ?? '-';
+  return name.replace(/[^\w.-]+/g, '.').slice(0, 24) || '-';
+}
+
+/**
+ * [from, to] 之間最長的那一幀 → `整幀/腳本合計/渲染/最久的那段腳本`（毫秒整數）。
+ * 渲染是從開始畫到這一幀結束；腳本只算 LoAF 列出來的（超過 5ms 的那些）。沒有就是空字串
+ */
+export function loafSummary(entries: readonly Loaf[], from: number, to: number): string {
+  let worst: Loaf | null = null;
+  for (const e of entries)
+    if (e.startTime >= from && e.startTime <= to && (!worst || e.duration > worst.duration)) worst = e;
+  if (!worst) return '';
+  const ms = (v: number) => Math.max(0, Math.round(v));
+  const scripts = worst.scripts.reduce((s, x) => s + x.duration, 0);
+  const render = worst.renderStart > 0 ? worst.startTime + worst.duration - worst.renderStart : 0;
+  const top = worst.scripts.reduce<LoafScript | null>((a, x) => (!a || x.duration > a.duration ? x : a), null);
+  return `${ms(worst.duration)}/${ms(scripts)}/${ms(render)}/${top ? scriptName(top) : '-'}`;
+}
+
 /** LCP 的四段時間 → `ttfb/載入延遲/下載/繪製延遲`（毫秒整數，後端 migration 0027 的 lcp_phases） */
 export function lcpPhases(a: {
   timeToFirstByte: number;
@@ -149,6 +208,7 @@ export function initWebVitals() {
   if (isBotUserAgent(navigator.userAgent)) return;
   initialized = true;
   trackShiftPath();
+  trackLoaf();
   onCLS((m: CLSMetricWithAttribution) => {
     const a = m.attribution;
     send(m, {
@@ -172,11 +232,19 @@ export function initWebVitals() {
   });
   onFCP(send);
   onTTFB(send);
-  // 站內換頁：值是最長那一幀，細節是 幀數/長幀數/總時長；target 記從哪頁到哪頁
+  // 站內換頁：值是最長那一幀；target 記從哪頁到哪頁。細節是
+  //   幀數/長幀數/總時長/收、飛、長各自最長的一幀/LoAF 的摘要（loafSummary，不支援就沒有這四欄）
+  // 前三欄的位置不變（migration 0028 寫的格式），舊的資料照樣讀得懂
   subscribeTransitions((r) => {
+    const now = performance.now();
+    const loaf = loafSummary(loafs, now - r.ms, now);
+    const phases = [r.phases.leave, r.phases.fly, r.phases.grow].map((v) => Math.round(v)).join('/');
     send(
       { name: 'TX', value: Math.round(r.maxFrame), rating: rate(r.maxFrame, TX_GOOD, TX_POOR), navigationType: 'spa' },
-      { target: `${r.from} → ${r.to}`, detail: `${r.frames}/${r.long}/${Math.round(r.ms)}` },
+      {
+        target: `${r.from} → ${r.to}`,
+        detail: [r.frames, r.long, Math.round(r.ms), phases, loaf].filter((v) => v !== '').join('/'),
+      },
     );
   });
   // 開場退場：從這次載入開始過了多久；首頁有沒有等到 3D 土星交棒
