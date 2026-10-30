@@ -1,3 +1,4 @@
+import { SYNC_KEY } from './i18nSync';
 import { defaultLocale } from './locales';
 
 /**
@@ -6,6 +7,8 @@ import { defaultLocale } from './locales';
  */
 export function pickText(text: Partial<Record<string, string>> | undefined, lang: string): string {
   if (!text) return '';
-  const candidates = [text[lang], text[defaultLocale()], ...Object.values(text)];
+  // `_src` 是後台記譯文對著哪一版原文翻的（lib/i18nSync），不是給人看的字
+  const others = Object.entries(text).flatMap(([k, v]) => (k === SYNC_KEY ? [] : [v]));
+  const candidates = [text[lang], text[defaultLocale()], ...others];
   return candidates.find((v): v is string => typeof v === 'string' && v !== '') ?? '';
 }

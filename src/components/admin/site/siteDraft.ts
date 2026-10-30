@@ -15,7 +15,26 @@ export interface Draft {
   disabled_pages: string[];
   /** 預設天體（lib/theme 的 THEMES）：只有站台設定頁改，初次設定的精靈不問 */
   theme: string;
+  /** 介紹文字：哪一頁 → 語系 → 字（站台設定頁的「介紹文字」那段） */
+  page_descriptions: Record<string, Record<string, string>>;
 }
+
+/** 介紹文字的格子，照前台的位置排：首頁、「關於」選單開頭那一句、各頁 */
+export const DESCRIBABLE = [
+  'home',
+  'aboutLead',
+  'notes',
+  'moments',
+  'works',
+  'collection',
+  'about',
+  'setup',
+  'log',
+  'messages',
+  'photos',
+  'friends',
+  'colophon',
+] as const;
 
 /** 頁面開關分三組，照它們在前台出現的位置：首頁的軌道、「關於」選單、「更多」選單 */
 export const TOGGLE_GROUPS = [
@@ -36,6 +55,7 @@ export function draftOf(config: SiteConfig, defaultLocale = config.default_local
     github: config.github,
     disabled_pages: config.disabled_pages,
     theme: config.theme,
+    page_descriptions: config.page_descriptions,
   };
 }
 

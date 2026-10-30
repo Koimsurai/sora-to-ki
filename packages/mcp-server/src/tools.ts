@@ -782,6 +782,17 @@ export function makeTools(api: ApiClient): Tool[] {
             description:
               '預設天體（土星、海王星、黑洞、參宿四）：讀者沒在頂欄選過時看到的那顆，分享圖也畫這顆。讀者自己選過的不受影響',
           },
+          page_descriptions: {
+            type: 'object',
+            description:
+              '站長自己寫的介紹文字（整份換掉）：{ 地方: { 語系: 字 } }。地方是 home、notes、moments、works、collection、' +
+              'about、setup、log、messages、photos、friends、colophon（各頁在搜尋結果裡的描述）與 aboutLead（「關於」選單開頭那一句）。' +
+              '沒寫的用內建的通用句子；要改一頁，先 koimsurai_get_site_config 拿現在的整份再改。每段最多 300 字',
+            additionalProperties: {
+              type: 'object',
+              additionalProperties: { type: 'string' },
+            },
+          },
         },
         additionalProperties: false,
       },
@@ -792,6 +803,7 @@ export function makeTools(api: ApiClient): Tool[] {
             'author',
             'description',
             'disabled_pages',
+            'page_descriptions',
             'email',
             'github',
             'default_locale',

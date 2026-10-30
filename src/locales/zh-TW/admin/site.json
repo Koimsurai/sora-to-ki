@@ -10,10 +10,27 @@
     "pagesNote": "關掉的頁面連同首頁上它的軌道一起拿掉，讀者看不到入口。內容會留著，開回來就在。",
     "saved": "站台設定存好了",
     "invalid": "有欄位要先改好",
+    "descriptionsHead": "介紹文字",
+    "descriptionsNote": "各頁在搜尋結果與分享卡片上的那段描述，和「關於」選單開頭那一句。空著就用框裡淡淡的那句通用的；一次寫一個語系，沒寫的語系也是用通用的。",
     "confirmTitle": "換掉預設語系？",
     "confirmDesc": "預設語系會從{{from}}換成{{to}}。不帶前綴的網址（例如 {{host}}/blog）會改顯示{{to}}，已經分享出去的{{from}}連結打開也會變成{{to}}；{{from}}改到 /{{fromPrefix}}/ 底下。原本 /{{toPrefix}}/ 開頭的網址會自動轉到不帶前綴的那一條。搜尋引擎要一陣子才會重新收錄。",
     "confirmOk": "換掉並儲存",
     "cancel": "先不要"
+  },
+  "descriptions": {
+    "home": "首頁",
+    "aboutLead": "「關於」選單開頭那一句",
+    "notes": "手記",
+    "moments": "碎念",
+    "works": "作品",
+    "collection": "收藏",
+    "about": "關於",
+    "setup": "設備",
+    "log": "航行日誌",
+    "messages": "留言",
+    "photos": "照片",
+    "friends": "朋友",
+    "colophon": "此站點"
   },
   "lang": {
     "defaultLabel": "預設語系",

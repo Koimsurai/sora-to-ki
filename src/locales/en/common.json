@@ -68,7 +68,7 @@
     "listening": "Listening",
     "recently": "Lately",
     "episode": "Ep. {{ep}}",
-    "aboutLead": "Koimsurai, someone who writes code and occasionally builds things.",
+    "aboutLead": "{{author}}'s personal site.",
     "aboutAll": "About me"
   },
   "user": {
@@ -78,7 +78,7 @@
     "signInWithGoogle": "Sign in with Google"
   },
   "hero": {
-    "description": "Sora to Ki (宙と木), Koimsurai's personal space. Someone who writes code and occasionally builds things."
+    "description": "{{site}}, {{author}}'s personal site: notes, murmurs, work and collection."
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -163,7 +163,7 @@
   },
   "activity": {
     "title": "Activity dashboard",
-    "description": "Koimsurai's live activity dashboard.",
+    "description": "{{author}}'s live activity dashboard.",
     "loading": "Loading activity",
     "labels": {
       "gameCollection": "Games owned",
@@ -209,7 +209,7 @@
     "more": "{{count}} more",
     "minutes": "{{count}} min",
     "metaTitle": "Notes",
-    "description": "Koimsurai's technical notes, learning logs, and life sketches. Frontend architecture, Rust, system design, and more.",
+    "description": "{{author}}'s notes: technical writing, learning logs and everyday essays.",
     "heroTitle": "Notes",
     "loading": "Loading posts",
     "search": "Search posts...",
@@ -301,7 +301,7 @@
   },
   "setup": {
     "title": "My Setup",
-    "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
+    "description": "{{author}}'s gear.",
     "heroTitle": "Setup",
     "subtitle": "Taking precision apart, giving obsession a place to rest.",
     "appliances": {
@@ -365,7 +365,7 @@
     "missingToken": "Link is missing a token. Use the unsubscribe link at the bottom of an email.",
     "invalidLink": "Link is invalid or expired.",
     "unsubscribeFailed": "Unsubscribe failed",
-    "bodyConfirm": "You're about to unsubscribe <em>{{email}}</em> from the Koimsurai newsletter.<br />Once unsubscribed, future posts won't reach your inbox.",
+    "bodyConfirm": "You're about to unsubscribe <em>{{email}}</em> from the {{author}} newsletter.<br />Once unsubscribed, future posts won't reach your inbox.",
     "btnConfirm": "Confirm unsubscribe",
     "btnKeep": "Never mind, keep me",
     "bodyDoneEmail": "<em>{{email}}</em> has been removed from the list.",
@@ -380,7 +380,7 @@
   },
   "about": {
     "title": "About",
-    "description": "Koimsurai — full-stack engineer. Skills, experience, communities and journey."
+    "description": "{{author}}: experience, skills and the road so far."
   },
   "portfolio": {
     "title": "Projects",
@@ -388,7 +388,7 @@
   },
   "photos": {
     "title": "Photography",
-    "description": "Koimsurai's photography — light and shadow from the road.",
+    "description": "Photography by {{author}}.",
     "heading": "Photos",
     "subtitle": "Faint signals that crossed the void, developed here line by line.",
     "station": "DSN · GROUND STATION",
@@ -399,7 +399,7 @@
       "share": "Share this photo",
       "shareShort": "Share",
       "shareTitle": "Photo",
-      "shareText": "A photo by Koimsurai",
+      "shareText": "A photo by {{author}}",
       "close": "Close viewer",
       "closeHint": "Close (Esc)",
       "prev": "Previous photo",

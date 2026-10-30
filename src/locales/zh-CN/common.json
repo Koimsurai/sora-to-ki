@@ -68,7 +68,7 @@
     "listening": "在听",
     "recently": "最近",
     "episode": "第 {{ep}} 集",
-    "aboutLead": "Koimsurai，一个写代码的人，偶尔造点东西。",
+    "aboutLead": "{{author}} 的个人网站。",
     "aboutAll": "关于我"
   },
   "user": {
@@ -78,7 +78,7 @@
     "signInWithGoogle": "Google 登录"
   },
   "hero": {
-    "description": "宙与木，Koimsurai 的个人空间。一个写代码的人，偶尔造点东西。"
+    "description": "{{site}}，{{author}} 的个人网站：手记、碎念、作品与收藏。"
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -163,7 +163,7 @@
   },
   "activity": {
     "title": "动态仪表板",
-    "description": "Koimsurai 的即时活动仪表板。",
+    "description": "{{author}} 的即时活动仪表板。",
     "loading": "加载活动数据",
     "labels": {
       "gameCollection": "游戏收藏",
@@ -209,7 +209,7 @@
     "more": "还有 {{count}} 篇",
     "minutes": "约 {{count}} 分",
     "metaTitle": "手记 · Notes",
-    "description": "Koimsurai 的技术手记、学习笔记与生活随笔。涵盖前端架构、Rust、系统设计等主题。",
+    "description": "{{author}} 的手记：技术笔记、学习记录与生活随笔。",
     "heroTitle": "手记",
     "loading": "正在加载文章",
     "search": "搜索文章...",
@@ -301,7 +301,7 @@
   },
   "setup": {
     "title": "我的装备 · My Setup",
-    "description": "Koimsurai 的设备清单：主力机、跑着这个网站的家用服务器、网络与智能家居，还有一张家里怎么连起来的拓扑图。",
+    "description": "{{author}} 的设备清单。",
     "heroTitle": "设备",
     "subtitle": "解构精密，安放偏执。",
     "appliances": {
@@ -365,7 +365,7 @@
     "missingToken": "链接缺少 token，请点电子报底部的退订链接。",
     "invalidLink": "链接无效或已过期。",
     "unsubscribeFailed": "退订失败",
-    "bodyConfirm": "你正在用 <em>{{email}}</em> 退订 Koimsurai 电子报。<br />退订后，未来新文章不会再寄到你的信箱。",
+    "bodyConfirm": "你正在用 <em>{{email}}</em> 退订 {{author}} 电子报。<br />退订后，未来新文章不会再寄到你的信箱。",
     "btnConfirm": "确认退订",
     "btnKeep": "算了，留下来",
     "bodyDoneEmail": "<em>{{email}}</em> 已从订阅列表中移除。",
@@ -380,7 +380,7 @@
   },
   "about": {
     "title": "关于我",
-    "description": "Koimsurai — 全栈工程师。技能、经历、社团与成长轨迹。"
+    "description": "{{author}} 的经历、技能与一路走来的轨迹。"
   },
   "portfolio": {
     "title": "作品",
@@ -388,7 +388,7 @@
   },
   "photos": {
     "title": "摄影作品集",
-    "description": "Koimsurai 的摄影作品集，记录旅途中的光影故事。",
+    "description": "{{author}} 的摄影作品。",
     "heading": "照片",
     "subtitle": "跨越虚空的微弱信号，在此逐行显影。",
     "station": "DSN · 地面站",

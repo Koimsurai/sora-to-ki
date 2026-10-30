@@ -4,6 +4,7 @@ import { useRouterState } from '@tanstack/react-router';
 import { LocaleLink } from '@/i18n/locale-link';
 import { useTranslation, Trans } from 'react-i18next';
 import { subscriberByTokenQueryOptions } from '@/data/newsletterData';
+import { useSiteConfig } from '@/data/siteConfig';
 import './Unsubscribe.css';
 
 const PHASE = {
@@ -16,6 +17,7 @@ const PHASE = {
 
 function Unsubscribe() {
   const { t } = useTranslation();
+  const { author } = useSiteConfig();
   const search = useRouterState({ select: (s) => s.location.search }) as { token?: string };
   const token = search.token;
   // token 驗證讀取改由 TanStack Query（consume 生成 SubscriberByToken）；
@@ -89,7 +91,7 @@ function Unsubscribe() {
             <p className="unsubscribe-body">
               <Trans
                 i18nKey="unsubscribe.bodyConfirm"
-                values={{ email: subscriber.email }}
+                values={{ email: subscriber.email, author }}
                 components={{ em: <span className="unsubscribe-email" /> }}
               />
             </p>
@@ -120,7 +122,7 @@ function Unsubscribe() {
                 <>
                   <Trans
                     i18nKey="unsubscribe.bodyDoneEmail"
-                    values={{ email: subscriber.email }}
+                    values={{ email: subscriber.email, author }}
                     components={{ em: <span className="unsubscribe-email" /> }}
                   />
                   <br />

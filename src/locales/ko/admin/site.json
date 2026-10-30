@@ -10,10 +10,27 @@
     "pagesNote": "끈 페이지는 홈의 궤도와 함께 사라지고, 독자는 들어갈 길을 잃습니다. 내용은 남아 있어서 다시 켜면 그대로입니다.",
     "saved": "사이트 설정을 저장했습니다",
     "invalid": "먼저 고쳐야 할 항목이 있습니다",
+    "descriptionsHead": "소개 문구",
+    "descriptionsNote": "각 페이지가 검색 결과와 공유 카드에 보여 주는 설명, 그리고 \"소개\" 메뉴의 첫 문장. 비워 두면 칸 안에 흐리게 보이는 일반 문구를 씁니다. 한 번에 한 언어씩 쓰고, 쓰지 않은 언어도 일반 문구를 씁니다.",
     "confirmTitle": "기본 언어를 바꿀까요?",
     "confirmDesc": "기본 언어가 {{from}}에서 {{to}}(으)로 바뀝니다. 접두사 없는 주소(예: {{host}}/blog)는 {{to}}(으)로 보이고, 이미 공유한 {{from}} 링크도 열면 {{to}}(으)로 나옵니다. {{from}}은(는) /{{fromPrefix}}/ 아래로 옮겨집니다. /{{toPrefix}}/로 시작하던 주소는 접두사 없는 같은 페이지로 자동으로 넘어갑니다. 검색 엔진에 반영되기까지 시간이 걸립니다.",
     "confirmOk": "바꾸고 저장",
     "cancel": "그만두기"
+  },
+  "descriptions": {
+    "home": "홈",
+    "aboutLead": "\"소개\" 메뉴의 첫 문장",
+    "notes": "노트",
+    "moments": "혼잣말",
+    "works": "작품",
+    "collection": "컬렉션",
+    "about": "소개",
+    "setup": "장비",
+    "log": "항해 일지",
+    "messages": "메시지",
+    "photos": "사진",
+    "friends": "친구들",
+    "colophon": "이 사이트"
   },
   "lang": {
     "defaultLabel": "기본 언어",

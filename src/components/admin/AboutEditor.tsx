@@ -34,7 +34,7 @@ export default function AboutEditor() {
 
   return (
     <div className="adm-form pg-editor">
-      <LangBar lang={lang} onChange={setLang} />
+      <LangBar lang={lang} onChange={setLang} content={page.draft} />
 
       <SectionHead id="pg-about-chapters">{t('pageAbout.chaptersHead')}</SectionHead>
       <p className="adm-meta">{t('pageAbout.chaptersHint')}</p>

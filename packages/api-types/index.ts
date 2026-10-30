@@ -1294,6 +1294,8 @@ export type SiteConfig = {
 	locales: string[],
 	/**  預設天體（saturn、neptune、blackhole、betelgeuse）：讀者沒選過時看到的那顆 */
 	theme: string,
+	/**  站長自己寫的介紹文字：哪一頁 → 語系 → 字。沒有的就用通用句子 */
+	page_descriptions: { [key in string]: { [key in string]: string } },
 };
 
 /**  一個來源與從它進站時先看的那幾頁 */

@@ -15,6 +15,7 @@ const config = (over: Partial<Parameters<typeof setSiteIdentity>[0]> = {}) => ({
   default_locale: 'zh-TW',
   locales: ['zh-TW'],
   theme: 'saturn',
+  page_descriptions: {},
   ...over,
 });
 

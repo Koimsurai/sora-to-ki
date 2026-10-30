@@ -11,6 +11,7 @@ const base: Draft = {
   github: '',
   disabled_pages: [],
   theme: 'saturn',
+  page_descriptions: {},
 };
 
 describe('siteProblems', () => {

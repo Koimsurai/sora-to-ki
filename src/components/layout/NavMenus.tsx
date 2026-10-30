@@ -18,6 +18,7 @@ import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { latestAnimeQueryOptions, liveNowQueryOptions } from '@/data/watchData';
 import { statsOf, useWorkEntries, useWorkStats } from '@/data/works';
 import { pickText } from '@/lib/i18nText';
+import { descriptionIn } from '@/lib/siteIdentity';
 import { useLocale } from '@/hooks/useLocale';
 import { LocaleLink } from '@/i18n/locale-link';
 import { splitTitle } from '@/lib/blogReading';
@@ -209,12 +210,16 @@ function CollectionPage({ armed }: { armed: boolean }) {
 function AboutPage({ label }: { label: (it: SiteSection) => string }) {
   const { t } = useTranslation();
   const pages = useEnabledSections(ABOUT_SECTIONS);
-  const { github, email } = useSiteConfig();
+  const config = useSiteConfig();
+  const { github, email, author } = config;
+  const locale = useLocale();
+  // 開頭那一句：站長在站台設定寫過就用那句，沒寫就是字串檔的通用句子
+  const lead = descriptionIn(config, 'aboutLead', locale) ?? t('siteNav.aboutLead', { author });
   return (
     <Page
       lead={
         <>
-          <p>{t('siteNav.aboutLead')}</p>
+          <p>{lead}</p>
           {(github || email) && (
             <p className="snav-page-contact">
               {github && (

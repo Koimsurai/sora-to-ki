@@ -15,6 +15,7 @@ const config = (disabled: string[]) => ({
   default_locale: 'zh-TW',
   locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
   theme: 'saturn',
+  page_descriptions: {},
 });
 
 describe('siteConfig', () => {
