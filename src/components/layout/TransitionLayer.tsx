@@ -274,6 +274,10 @@ interface Run {
   frames: number;
   maxFrame: number;
   longFrames: number;
+  /** 收、飛、長各自最長的一幀：卡在哪一段，修的地方不一樣（飛的途中卡，多半是新的一頁正在掛上去） */
+  phaseMax: Record<Run['phase'], number>;
+  /** 上一次在效能時間軸上標記的是哪一段（performance.mark，錄 trace 時看得到三段的起點） */
+  marked: Run['phase'] | null;
   /** 這一頁其實沒換（換主題之後接回來，store/pageTransition 的 arriveFrom）：不走頁面那段路、不重演它的進場 */
   quiet: boolean;
   /** quiet 那一趟走了幾成（0 到 1）：沒有 flight，黑洞照它決定什麼時候收起來 */
@@ -941,13 +945,19 @@ export default function TransitionLayer() {
       if (!r) return;
       raf = requestAnimationFrame(frame);
       // 幀與幀之間隔多久：主執行緒卡住（新的一頁掛上去）的那一下會在這裡變成一個長幀
+      // 這一幀的間隔記在間隔當中的那一段（這一幀還沒改 phase）
       if (r.prevFrame) {
         const d = now - r.prevFrame;
         r.frames++;
         r.maxFrame = Math.max(r.maxFrame, d);
+        r.phaseMax[r.phase] = Math.max(r.phaseMax[r.phase], d);
         if (d > 50) r.longFrames++;
       }
       r.prevFrame = now;
+      if (r.marked !== r.phase) {
+        performance.mark(`transition:${r.phase}`);
+        r.marked = r.phase;
+      }
       try {
         if (now - r.t0 > RUN_LIMIT_MS) throw new Error('換頁轉場跑太久');
         step(r, now);
@@ -1237,6 +1247,7 @@ export default function TransitionLayer() {
             frames: r.frames,
             maxFrame: r.maxFrame,
             long: r.longFrames,
+            phases: { ...r.phaseMax },
           });
         }
         finish(r);
@@ -1345,6 +1356,8 @@ export default function TransitionLayer() {
       frames: 0,
       maxFrame: 0,
       longFrames: 0,
+      phaseMax: { leave: 0, fly: 0, grow: 0 },
+      marked: null,
       quiet: false,
     });
 
@@ -1540,6 +1553,8 @@ export default function TransitionLayer() {
           frames: 0,
           maxFrame: 0,
           longFrames: 0,
+          phaseMax: { leave: 0, fly: 0, grow: 0 },
+          marked: null,
           quiet: false,
         };
         run = r;

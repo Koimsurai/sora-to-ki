@@ -154,6 +154,8 @@ export interface TransitionReport {
   maxFrame: number;
   /** 超過 50ms 的幀數 */
   long: number;
+  /** 收、飛、長各自最長的一幀（毫秒） */
+  phases: { leave: number; fly: number; grow: number };
 }
 const transitionListeners = new Set<(r: TransitionReport) => void>();
 export function reportTransition(r: TransitionReport) {

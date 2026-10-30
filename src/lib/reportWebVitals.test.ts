@@ -50,6 +50,8 @@ let beaconOk = true;
 let fetchCalls: { url: string; init: RequestInit }[] = [];
 /** trackShiftPath 註冊的 layout-shift observer 回呼 */
 let shiftObserver: ((list: { getEntries: () => unknown[] }) => void) | null = null;
+/** trackLoaf 註冊的 long-animation-frame observer 回呼 */
+let loafObserver: ((list: { getEntries: () => unknown[] }) => void) | null = null;
 
 async function load() {
   vi.resetModules();
@@ -57,15 +59,19 @@ async function load() {
   beacons = [];
   fetchCalls = [];
   shiftObserver = null;
+  loafObserver = null;
 
   vi.stubGlobal(
     'PerformanceObserver',
     class {
+      f: (list: { getEntries: () => unknown[] }) => void;
       constructor(f: (list: { getEntries: () => unknown[] }) => void) {
-        shiftObserver = f;
+        this.f = f;
       }
-      observe() {
-        /* 測試自己叫 shiftObserver */
+      observe({ type }: { type: string }) {
+        // 測試自己叫 shiftObserver、loafObserver
+        if (type === 'layout-shift') shiftObserver = this.f;
+        if (type === 'long-animation-frame') loafObserver = this.f;
       }
     },
   );
@@ -128,6 +134,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('誰不該被上報', () => {
@@ -371,23 +378,69 @@ describe('INP 的診斷欄位', () => {
 });
 
 describe('自己量的 TX（換頁順暢度）與 BOOT（開場）', () => {
-  it('換頁跑完送 TX：值是最長那一幀，細節是 幀數/長幀數/總時長，target 是從哪頁到哪頁', async () => {
+  const phases = { leave: 16.7, fly: 33.4, grow: 17.2 };
+
+  it('換頁跑完送 TX：值是最長那一幀，細節是 幀數/長幀數/總時長/收、飛、長各自最長的一幀，target 是從哪頁到哪頁', async () => {
     const init = await load();
     const { reportTransition } = await import('@/store/pageTransition');
     init();
-    reportTransition({ from: '/', to: '/blog', ms: 2149.6, frames: 142, maxFrame: 33.4, long: 0 });
+    reportTransition({ from: '/', to: '/blog', ms: 2149.6, frames: 142, maxFrame: 33.4, long: 0, phases });
     expect(lastBody()).toMatchObject({
       metric: 'TX',
       value: 33,
       rating: 'good',
       target: '/ → /blog',
-      detail: '142/0/2150',
+      detail: '142/0/2150/17/33/17',
       navType: 'spa',
     });
-    reportTransition({ from: '/blog', to: '/about', ms: 2000, frames: 100, maxFrame: 80, long: 2 });
+    reportTransition({ from: '/blog', to: '/about', ms: 2000, frames: 100, maxFrame: 80, long: 2, phases });
     expect(lastBody()).toMatchObject({ rating: 'needs-improvement' });
-    reportTransition({ from: '/about', to: '/', ms: 2000, frames: 100, maxFrame: 101, long: 3 });
+    reportTransition({ from: '/about', to: '/', ms: 2000, frames: 100, maxFrame: 101, long: 3, phases });
     expect(lastBody()).toMatchObject({ rating: 'poor' });
+  });
+
+  it('轉場期間有長動畫幀（LoAF）：細節後面接最長那一幀的 整幀/腳本/渲染/最久的腳本', async () => {
+    const init = await load();
+    const { reportTransition } = await import('@/store/pageTransition');
+    init();
+    // jsdom 剛起來時的 performance.now() 很小，往前推會變負的：固定在十秒
+    const now = 10_000;
+    vi.spyOn(performance, 'now').mockReturnValue(now);
+    loafObserver?.({
+      getEntries: () => [
+        // 轉場開始之前的：不算
+        { startTime: now - 5000, duration: 400, renderStart: 0, scripts: [] },
+        {
+          startTime: now - 900,
+          duration: 180.4,
+          renderStart: now - 900 + 150,
+          scripts: [
+            { duration: 30, invokerType: 'user-callback', sourceURL: 'https://koimsurai.com/assets/main-Dq1x9Za.js' },
+            {
+              duration: 112.6,
+              invokerType: 'resolve-promise',
+              sourceURL: 'https://koimsurai.com/assets/Collection-B3x9Qa_1.js?v=2',
+            },
+          ],
+        },
+        { startTime: now - 400, duration: 60, renderStart: 0, scripts: [] },
+      ],
+    });
+    reportTransition({ from: '/', to: '/watch', ms: 2000, frames: 100, maxFrame: 180, long: 2, phases });
+    expect(lastBody()).toMatchObject({ detail: '100/2/2000/17/33/17/180/143/30/Collection' });
+  });
+
+  it('LoAF 的腳本名稱：沒有檔名時用 invoker，只留後端收的字元；沒有腳本的長幀寫 -', async () => {
+    const { loafSummary } = await import('./reportWebVitals');
+    const base = { startTime: 10, duration: 90, renderStart: 0 };
+    const one = (s: Record<string, unknown>) => loafSummary([{ ...base, scripts: [{ duration: 50, ...s }] }], 0, 100);
+    expect(loafSummary([{ ...base, scripts: [] }], 0, 100)).toBe('90/0/0/-');
+    // 實測：換頁時最長的那段常是沒有 sourceURL 的 setTimeout 回呼
+    expect(one({ sourceURL: '', invoker: 'TimerHandler:setTimeout', invokerType: 'user-callback' })).toBe(
+      '90/50/0/TimerHandler.setTimeout',
+    );
+    expect(one({ sourceURL: '', sourceFunctionName: 'on click' })).toBe('90/50/0/on.click');
+    expect(loafSummary([{ ...base, scripts: [] }], 20, 100)).toBe('');
   });
 
   it('開場比上報早結束也照送：BOOT 是退場的時間，細節是 ring／collapse 與等待的分段', async () => {
