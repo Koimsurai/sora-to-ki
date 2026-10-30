@@ -165,6 +165,7 @@
 
 /* 設備：勾選框、部件列（編號＋名稱＋規格＋動作）、上傳的圖上放部件 */
 .pg-check {
+  display: flex;
   flex-direction: row;
   gap: var(--space-2);
   align-items: center;
@@ -262,6 +263,11 @@
   .pg-row-part {
     grid-template-columns: 2rem minmax(0, 1fr);
   }
+
+  /* 編號留在左邊那一欄，其餘（名稱、規格、勾選、動作）一個一行疊在右邊 */
+  .pg-row-part > :not(.pg-part-no) {
+    grid-column: 2;
+  }
 }
 
 /* 譯文可能過期：原文改過、這個語系還是對著舊的寫的（lib/i18nSync）。不用琥珀（那是「現在」），用警示色的字 */
@@ -279,4 +285,171 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   color: var(--danger);
+}
+
+/* ── 設備 ── */
+
+/* 選哪一艙：跟前台太空梭上的標籤一樣（編號＋大標）。上面的頁面分頁是圓點、語系是格子，這排是底線 */
+.pg-bays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-6);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.pg-bay {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2-5) var(--space-0-5) 0;
+  background: transparent;
+  border: 0;
+  box-shadow: inset 0 -1px 0 transparent;
+  color: var(--ink-muted);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  cursor: pointer;
+  transition:
+    color var(--dur-150) ease,
+    box-shadow var(--dur-150) ease;
+}
+
+.pg-bay:hover {
+  color: var(--ink);
+}
+
+.pg-bay[aria-pressed="true"] {
+  box-shadow: inset 0 -1px 0 var(--ink);
+  color: var(--ink);
+}
+
+.pg-bay:focus-visible {
+  outline: 1px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.pg-bay-no,
+.pg-bay-off {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--ink-subtle);
+}
+
+.pg-bay[aria-pressed="true"] .pg-bay-no {
+  color: var(--signal);
+}
+
+/* 部件：左邊是圖紙（捲動時黏著），右邊是清單；滑到哪一列圖上就亮哪一個 */
+.pg-split {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.pg-split-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.pg-sheet {
+  position: sticky;
+  top: calc(var(--adm-sticky-top) + var(--space-16));
+  margin: 0;
+}
+
+.pg-sheet .pg-placer-art {
+  width: 100%;
+  border-style: solid;
+  cursor: default;
+}
+
+.pg-sheet svg line {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.pg-sheet .pg-placer-at {
+  background: var(--ink-subtle);
+}
+
+.pg-sheet .pg-placer-b {
+  padding: 0;
+  border-color: var(--line-strong);
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.pg-sheet svg line[data-hot] {
+  stroke: var(--signal);
+}
+
+.pg-sheet .pg-placer-at[data-hot] {
+  background: var(--signal);
+}
+
+.pg-sheet .pg-placer-b[data-hot] {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+/* 有一個亮著的時候，其他的退後 */
+.pg-sheet[data-hot] svg line:not([data-hot]),
+.pg-sheet[data-hot] .pg-placer-b:not([data-hot]),
+.pg-sheet[data-hot] .pg-placer-at:not([data-hot]) {
+  opacity: 0.35;
+}
+
+/* 清單上的編號畫成跟圖上一樣的圈 */
+.pg-split .pg-part-no {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: var(--space-5);
+  height: var(--space-5);
+  margin-bottom: var(--space-2-5);
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-round);
+  font-size: var(--fs-11);
+}
+
+.pg-split .pg-row-part[data-hot] .pg-part-no {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+/* 隱藏的部件：不佔號、圈是虛線 */
+.pg-split .pg-row-part[data-hidden] .pg-part-no {
+  border-style: dashed;
+}
+
+.pg-split .pg-row-part[data-hidden] input:not([type="checkbox"]) {
+  color: var(--ink-subtle);
+}
+
+.pg-posts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+@media (max-width: 900px) {
+  .pg-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pg-sheet {
+    position: static;
+    max-width: 28rem;
+  }
 }
