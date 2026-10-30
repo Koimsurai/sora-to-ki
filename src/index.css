@@ -715,6 +715,14 @@ html.theme-switching * {
   transition-timing-function: var(--easing-standard);
 }
 
+/* 首頁以外第一次換主題：換色那一刻這一頁收在點裡，要一秒多才回來（layout/ThemeSwitchDot）。
+   頁面裡的東西淡了也看不到，卻要每一幀重算整頁的樣式（手記列表約 380 個元素，一幀 50ms，
+   主星出場時一直掉幀）。只有頁面裡的不淡，底色與導覽列照常 */
+html.theme-switching.theme-switching-offstage .main-content-container > main,
+html.theme-switching.theme-switching-offstage .main-content-container > main * {
+  transition-property: none;
+}
+
 /* 黑洞：紫，墨偏冷灰，夜色最深。真實的吸積盤是暖白偏橘，會跟土星、火星撞色，所以取光譜的另一端。
    55% 的字 5.2:1，訊號色 7.7:1，訊號色與墨 ΔE 27.9；跟海王星的藍 ΔE 24.5（四組裡最近的一對） */
 :root[data-theme="blackhole"] {
