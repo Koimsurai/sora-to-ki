@@ -34,6 +34,9 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 /** 第一則的高度：列表頁是彗核，單則頁是這一則（彗核在畫面外很上面） */
 const coreY = (L: ArcLayout) => L.posts[0]?.y ?? L.y0;
 
+/** 換主題之後接回來時點沿著彗尾飛多長一段（px） */
+const REJOIN_TAIL_PX = 360;
+
 /**
  * 鏡頭推近到 k（0 是原樣、1 是放大到底）：以 P（版面座標，當下在畫面的 Ps）為中心放大，同時把它帶到畫面上的 T。
  * 字與點那幾層（layers）直接套 transform，回傳畫布要用的 view
@@ -171,6 +174,22 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
       const approach: Pt[] = [];
       for (let d = best; d >= 0; d -= 6) approach.push(at(d));
       return approach.length > 1 ? { approach } : null;
+    },
+    // 換主題之後接回來：跟飛進來一樣，從彗尾切進來、沿著中線往上飛進第一則。
+    // 捲下去了（第一則在畫面上面）就停在畫面裡最上面那一段彗尾
+    rejoin: () => {
+      const L = layoutRef.current;
+      if (!L || handedOver || (optsRef.current.zoomFrom && !pullRef.current.done)) return null;
+      const o = origin();
+      const c = coreY(L);
+      const top = Math.max(0, 72 - o.y - c);
+      const bottom = Math.min(L.yEnd - c, window.innerHeight - 40 - o.y - c);
+      const run = Math.min(bottom - top, REJOIN_TAIL_PX);
+      if (run < 40) return null;
+      const line: Pt[] = [];
+      for (let d = top + run; d > top; d -= 6) line.push({ x: o.x + arcX(L, c + d), y: o.y + c + d });
+      line.push({ x: o.x + arcX(L, c + top), y: o.y + c + top });
+      return line;
     },
     leave: (ctx) => {
       const L = layoutRef.current;

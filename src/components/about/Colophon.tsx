@@ -122,6 +122,17 @@ export default function Colophon() {
       const f = frontOf(b.w, b.h, turnFor(targetRef.current, b.w, b.h));
       return { x: b.r.left + f.x, y: b.r.top + f.y };
     },
+    // 換主題之後接回來：星座早就收掉了，留下的是視線。點落到鏡筒前端，順著視線走到正在測的那顆星上
+    rejoin: () => {
+      const b = box();
+      if (!b) return null;
+      const f = frontOf(b.w, b.h, turnFor(targetRef.current, b.w, b.h));
+      const s = starAt(targetRef.current, b.w, b.h);
+      return [
+        { x: b.r.left + f.x, y: b.r.top + f.y },
+        { x: b.r.left + s.x, y: b.r.top + s.y },
+      ];
+    },
     leave: () => {
       const b = box();
       if (!b) return null;
