@@ -28,6 +28,8 @@ A one-person site: technical notes, short moments, photos and a reading list, wi
 
 ---
 
+> 🛰️ **You can run your own site with it, too.** This code is **sora-to-ki**: `docker compose up -d`, claim the site in the first-time setup wizard, pick your languages and name it, and you have a site just like koimsurai.com, filled with your own things. See [Run your own site](#️-run-your-own-site).
+
 Started in April 2025 and still evolving. The frontend is **React 19 + TanStack Start (SSR + ISR)**, the backend is **Rust (axum + sqlx + SQLite)**, and everything runs on a server at home, deployed with Docker Compose.
 
 > **Looking for the old site?** In October 2026 the whole site was rebuilt as the current 宙と木. The last version before that lives at the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final) (`git checkout v1-final`) and is still running, read-only, at <https://archive.koimsurai.com>.
@@ -208,7 +210,7 @@ docker compose logs backend-rs | grep setup   # the first-time setup link
   with that address is the owner
 - The admin is at `/admin` and only takes GitHub or Google sign-in (`ADMIN_USERNAME` / `ADMIN_PASSWORD` is a machine
   account for MCP, not for people). The site name, description and which pages are on can all be changed there (or over MCP) afterwards
-- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.1.0` in `.env`
+- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.2.0` in `.env`
 - The database is backed up to `./backups` every day
 
 - The about, works, log, colophon Q&A and setup pages are filled in from Admin → Pages (or over MCP). On a new site
