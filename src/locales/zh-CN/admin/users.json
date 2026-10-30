@@ -1,0 +1,33 @@
+{
+  "role": {
+    "owner": "站长",
+    "admin": "管理员",
+    "reader": "读者"
+  },
+  "roleChanged": "已把 {{name}} 改为{{role}}",
+  "roleChangeFailed": "更改角色失败",
+  "meta": "站长 {{owner}} · 管理员 {{admin}} · 读者 {{reader}}",
+  "refresh": "刷新",
+  "listLabel": "账号列表",
+  "hint": "登录过的用户都在这里；管理员能进入后台，但不能修改别人的角色",
+  "searchLabel": "搜索账号",
+  "searchPlaceholder": "名字、邮箱、登录方式",
+  "noMatch": "没有找到匹配的账号。",
+  "empty": "还没有人登录过。",
+  "col": {
+    "name": "名字",
+    "email": "邮箱",
+    "provider": "登录方式",
+    "role": "角色",
+    "joined": "加入",
+    "changeRole": "修改角色"
+  },
+  "you": "你",
+  "roleSelectLabel": "{{name}}的角色",
+  "someone": "这位",
+  "confirmTitle": "更改角色？",
+  "confirmDesc": "把 {{name}} 从{{from}}改为{{to}}。",
+  "confirmDescAdmin": "把 {{name}} 从{{from}}改为{{to}}。管理员可以进入后台，能修改文章和留言。",
+  "cancel": "取消",
+  "confirm": "确认更改"
+}

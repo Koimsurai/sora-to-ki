@@ -1,0 +1,11 @@
+{
+  "saved": "Q&A updated",
+  "introHead": "Intro · the line above the questions when the Q&A star is in view",
+  "intro": "Intro",
+  "itemsHead": "Q&A · the site's Q&A star",
+  "itemsHint": "Answer formatting: a blank line starts a new paragraph, `code`, [text](url) (starting with / links within the site); a URL on its own paragraph becomes a post card.",
+  "question": "Question",
+  "answer": "Answer",
+  "itemN": "question {{n}}",
+  "add": "＋ Add a question"
+}

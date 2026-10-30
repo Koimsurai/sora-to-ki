@@ -55,19 +55,28 @@ export function excerptPieces(excerpt: string, links: readonly ExcerptLink[]): E
  * 反白的那段能不能拿來連：可以的話回 null，不行的話回一句說明。
  * 已經連過的同一段可以（那是換章節），跟別段重疊的不行（文章頁只會畫先出現的那段，另一段會靜靜不見）
  */
-export function checkSelection(excerpt: string, links: readonly ExcerptLink[], text: string): string | null {
-  if (!text) return '先在摘要裡反白一段字';
-  if (text.length > MAX_LINK_CHARS) return `一段最多 ${MAX_LINK_CHARS} 字，這段有 ${text.length} 字`;
+export function checkSelection(excerpt: string, links: readonly ExcerptLink[], text: string): SelectionProblem | null {
+  if (!text) return { key: 'empty' };
+  if (text.length > MAX_LINK_CHARS) return { key: 'tooLong', params: { max: MAX_LINK_CHARS, n: text.length } };
   const at = excerpt.indexOf(text);
-  if (at < 0) return '只能選摘要裡的字';
+  if (at < 0) return { key: 'outside' };
   const existing = links.some((l) => l.text === text);
-  if (!existing && links.length >= MAX_LINKS_PER_LOCALE) return `一個語系最多連 ${MAX_LINKS_PER_LOCALE} 段`;
+  if (!existing && links.length >= MAX_LINKS_PER_LOCALE) return { key: 'full', params: { max: MAX_LINKS_PER_LOCALE } };
   const clash = links.find((l) => {
     if (l.text === text) return false;
     const from = excerpt.indexOf(l.text);
     return from >= 0 && from < at + text.length && at < from + l.text.length;
   });
-  return clash ? `跟已經連的「${clash.text}」重疊了` : null;
+  return clash ? { key: 'overlap', params: { text: clash.text } } : null;
+}
+
+/**
+ * 為什麼不能連。這支前台也會載（excerptPieces），所以不在這裡翻成句子：
+ * 後台拿 `editor.links.problem.<key>` 自己翻
+ */
+export interface SelectionProblem {
+  key: 'empty' | 'tooLong' | 'outside' | 'full' | 'overlap';
+  params?: Record<string, string | number>;
 }
 
 /** 連到的句子在摘要裡已經找不到（摘要改過）——後台列出來讓人刪 */

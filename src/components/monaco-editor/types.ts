@@ -1,4 +1,5 @@
 import type { editor } from 'monaco-editor';
+import { at } from '@/i18n/admin-i18n';
 
 export interface MonacoEditorProps {
   value: string;
@@ -45,25 +46,34 @@ export interface TextAction {
   placeholder?: string;
 }
 
+// placeholder 是 getter：插入的那一刻才照後台語言取字（模組載入時語系檔可能還沒好，之後也可能換語言）
 export const TEXT_ACTIONS: Record<string, TextAction> = {
   bold: {
     before: '**',
     after: '**',
-    placeholder: '粗體文字',
+    get placeholder() {
+      return at('monaco.placeholder.bold');
+    },
   },
   italic: {
     before: '*',
     after: '*',
-    placeholder: '斜體文字',
+    get placeholder() {
+      return at('monaco.placeholder.italic');
+    },
   },
   link: {
     before: '[',
     after: '](url)',
-    placeholder: '連結文字',
+    get placeholder() {
+      return at('monaco.placeholder.link');
+    },
   },
   image: {
     before: '![',
     after: '](image-url)',
-    placeholder: '圖片描述',
+    get placeholder() {
+      return at('monaco.placeholder.image');
+    },
   },
 };

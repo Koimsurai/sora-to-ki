@@ -1,0 +1,61 @@
+{
+  "title": "지금",
+  "writeThought": "단상 쓰기",
+  "writePost": "새 글 쓰기",
+  "go": {
+    "review": "검토하기 →",
+    "look": "보기 →",
+    "continue": "이어 쓰기 →",
+    "list": "목록 보기 →"
+  },
+  "todo": {
+    "heading": "처리할 일",
+    "headingCount": "처리할 일 · {{count}}건",
+    "loading": "처리할 일을 확인하는 중",
+    "empty": "처리할 일이 없습니다.",
+    "comments": "검토 대기 댓글 {{count}}건",
+    "newestCommentOnPost": "최신 댓글: {{author}}, 〈{{title}}〉",
+    "newestCommentElsewhere": "최신 댓글: {{author}}, 단상 또는 방명록",
+    "friends": "확인하지 않은 링크 교환 신청 {{count}}건",
+    "newestFriend": "최신 신청: 〈{{name}}〉, {{date}} 접수",
+    "drafts": "임시 글 {{count}}개",
+    "stalestDraft": "가장 오래 손대지 않은 글: 〈{{title}}〉, {{date}} 이후 그대로",
+    "gaps": "번역이 빠진 발행 글 {{count}}개",
+    "gapsDetail": "누락: EN {{en}} · JA {{ja}} · KO {{ko}} (간체 중국어는 번체에서 변환하므로 제외)",
+    "bahamutExpiring": "바하무트 로그인이 {{days}}일 후 만료됩니다",
+    "bahamutExpired": "바하무트 쿠키가 만료되었습니다",
+    "bahamutExpiringDetail": "만료되면 컬렉션 페이지의 '보는 중'이 더 이상 업데이트되지 않습니다",
+    "bahamutExpiredDetail": "컬렉션 페이지의 '보는 중'이 마지막 동기화에서 멈췄습니다. 다시 로그인하세요"
+  },
+  "tiles": {
+    "label": "사이트 숫자",
+    "posts": "글",
+    "postsSub": "발행됨 · 임시 글 {{drafts}}",
+    "postsSubScheduled": "발행됨 · 임시 글 {{drafts}} · 다음 예약 {{when}}",
+    "recent": "최근 30일",
+    "recentSub": "새로 쓴 글",
+    "comments": "댓글",
+    "commentsSub": "최근 7일 · 검토 대기 {{pending}}",
+    "views": "조회수",
+    "viewsSub": "전체 글 합계"
+  },
+  "recent": {
+    "heading": "최근 수정",
+    "all": "전체 →",
+    "allLabel": "전체 글",
+    "empty": "아직 글이 없습니다.",
+    "meta": "글 · {{category}} · {{when}}",
+    "uncategorized": "미분류"
+  },
+  "vitals": {
+    "heading": "신호 · 최근 {{days}}일",
+    "footnote": "p75 · /admin 제외 · 출처 web_vitals",
+    "rating": {
+      "good": "좋음",
+      "needsWork": "개선 필요",
+      "poor": "나쁨"
+    },
+    "ratingCount": "{{rating}} · {{count}}건",
+    "noSamples": "샘플 없음"
+  }
+}

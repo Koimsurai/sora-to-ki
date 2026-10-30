@@ -1,0 +1,63 @@
+{
+  "count": "Photos: {{count}}",
+  "lastSync": "last synced {{date}}",
+  "filter": {
+    "all": "All",
+    "featured": "Featured",
+    "untitled": "Untitled",
+    "hidden": "Hidden"
+  },
+  "syncDone": "Synced: {{processed}} added, {{skipped}} skipped",
+  "syncFailed": "Sync failed: {{error}}",
+  "syncing": "Syncing",
+  "syncFromNas": "Sync from NAS",
+  "loadingPhotos": "Loading photos",
+  "emptyAll": "No photos yet. Press \"Sync from NAS\" to pull them in.",
+  "emptyFilter": "No photos here.",
+  "wall": "Photo wall",
+  "featuredMark": " (featured)",
+  "hiddenMark": " (hidden)",
+  "untitledTag": "Untitled",
+  "thisPhoto": "This photo",
+  "saveFailed": "Not saved: {{error}}",
+  "saved": "Saved",
+  "field": {
+    "title": "Title",
+    "originalName": "The original file name is {{name}}. Clear the title to go back to it.",
+    "description": "Description · optional",
+    "tags": "Tags · separated by commas",
+    "tagsEn": "English tags"
+  },
+  "savingFile": "Saving",
+  "exif": {
+    "lens": "Lens",
+    "exposure": "Exposure",
+    "taken": "Taken",
+    "size": "Size",
+    "location": "Location",
+    "hasGps": "GPS",
+    "noGps": "None"
+  },
+  "featuredOn": "Marked as featured",
+  "featuredOff": "No longer featured",
+  "featured": "Featured",
+  "featuredNote": "Shown first on the site",
+  "shownOn": "Now visible on the site",
+  "hiddenOn": "Hidden",
+  "showOnSite": "Show on site",
+  "showNote": "Turn off to keep it visible only here",
+  "picker": {
+    "loginFirst": "Sign in to the admin before syncing",
+    "syncFailed": "Sync failed",
+    "syncComplete": "Sync complete: {{processed}} added, {{skipped}} skipped",
+    "unknownError": "unknown error",
+    "title": "Pick a photo from the NAS",
+    "syncNas": "Sync NAS",
+    "close": "Close",
+    "searchPlaceholder": "Search titles, descriptions or tags",
+    "searchLabel": "Search photos",
+    "loading": "Loading photos from the NAS",
+    "empty": "No matching photos",
+    "clickToInsert": "Click a photo to insert it into the post"
+  }
+}

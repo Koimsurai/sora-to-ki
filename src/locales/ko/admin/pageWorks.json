@@ -1,0 +1,18 @@
+{
+  "saved": "작업 페이지를 업데이트했습니다",
+  "noNumbers": "아직 수치가 없습니다",
+  "noLanguages": "언어 데이터 없음",
+  "pick": "내 GitHub에서 고르기",
+  "pickAs": "내 GitHub에서 고르기({{account}})",
+  "noAccount": "사이트 설정에 GitHub 계정이 아직 없어서, 아래에 URL을 붙여 넣는 방식으로만 추가할 수 있습니다.",
+  "added": "추가됨",
+  "addArrow": "추가 →",
+  "paste": "다른 사람이나 조직의 repo · URL 또는 owner/name 붙여 넣기",
+  "add": "추가",
+  "listHead": "작업 · 순서가 곧 나선의 순서, 첫 번째가 기점",
+  "empty": "아직 작업이 없습니다. 위에서 하나를 고르면 작업 페이지에 첫 행성이 생깁니다.",
+  "origin": "나선의 기점",
+  "name": "표시 이름 · 비워 두면 repo 이름 사용",
+  "what": "한 줄 소개",
+  "setOrigin": "기점으로 설정"
+}

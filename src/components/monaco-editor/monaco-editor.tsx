@@ -13,6 +13,7 @@ import { getActiveSnippets } from './monaco-snippets';
 import { SORA_NIGHT, defineSoraNight } from './monaco-theme';
 import './monaco-editor.css';
 import AdminLoading from '@/components/admin/AdminLoading';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import { authHeaders } from '@/lib/authToken';
 import { toast } from 'sonner';
 import { readMinutes } from '@/lib/readTime';
@@ -56,6 +57,7 @@ export default function MonacoEditor({
   showToolbar = true,
   path,
 }: MonacoEditorProps) {
+  const { t } = useAdminT();
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const textHelperRef = useRef<MonacoTextHelper | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
@@ -166,7 +168,7 @@ export default function MonacoEditor({
         // getContext 可能回 null（同時開太多 context 時瀏覽器會拒絕），
         // 斷言掉只是把錯誤延到執行期。取不到就跳過縮圖、沿用原圖。
         const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('OffscreenCanvas 2d context 取得失敗');
+        if (!ctx) throw new Error(at('monaco.canvasFailed'));
         ctx.drawImage(bitmap, 0, 0, w, h);
         blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
         bitmap.close();
@@ -206,7 +208,7 @@ export default function MonacoEditor({
       }
     } catch (err) {
       console.error('Upload image error:', err);
-      toast.error(`圖片上傳失敗：${err instanceof Error ? err.message : String(err)}`);
+      toast.error(at('monaco.uploadFailed', { message: err instanceof Error ? err.message : String(err) }));
     } finally {
       setUploading(false);
     }
@@ -368,7 +370,7 @@ export default function MonacoEditor({
         // getContext 可能回 null（同時開太多 context 時瀏覽器會拒絕），
         // 斷言掉只是把錯誤延到執行期。取不到就跳過縮圖、沿用原圖。
         const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('OffscreenCanvas 2d context 取得失敗');
+        if (!ctx) throw new Error(at('monaco.canvasFailed'));
         ctx.drawImage(bitmap, 0, 0, w, h);
         const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.8 });
         bitmap.close();
@@ -406,7 +408,7 @@ export default function MonacoEditor({
         }
       } catch (err) {
         console.error('Paste/Upload image error:', err);
-        toast.error(`圖片上傳失敗：${err instanceof Error ? err.message : String(err)}`);
+        toast.error(at('monaco.uploadFailed', { message: err instanceof Error ? err.message : String(err) }));
       }
     };
 
@@ -443,7 +445,7 @@ export default function MonacoEditor({
           // getContext 可能回 null（同時開太多 context 時瀏覽器會拒絕），
           // 斷言掉只是把錯誤延到執行期。取不到就跳過縮圖、沿用原圖。
           const ctx = canvas.getContext('2d');
-          if (!ctx) throw new Error('OffscreenCanvas 2d context 取得失敗');
+          if (!ctx) throw new Error(at('monaco.canvasFailed'));
           ctx.drawImage(bitmap, 0, 0, w, h);
           blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
           bitmap.close();
@@ -473,7 +475,7 @@ export default function MonacoEditor({
         }
       } catch (err) {
         console.error('Drop/Upload image error:', err);
-        toast.error(`圖片上傳失敗：${err instanceof Error ? err.message : String(err)}`);
+        toast.error(at('monaco.uploadFailed', { message: err instanceof Error ? err.message : String(err) }));
       }
     };
 
@@ -672,7 +674,7 @@ export default function MonacoEditor({
         vimAdapterRef.current = initVimMode(editorRef.current, vimStatusRef.current);
       })
       .catch((err) => {
-        console.error('monaco-vim 載入失敗:', err);
+        console.error('monaco-vim 載入失敗:', err); // i18n-ignore：開發者看的 console，不是介面
       });
     return () => {
       cancelled = true;
@@ -706,12 +708,12 @@ export default function MonacoEditor({
     if (!monacoNs) return;
     const action = editor.addAction({
       id: 'koimsurai.insert-post-link',
-      label: '插入舊文章連結',
+      label: t('monaco.insertPostLink'),
       keybindings: [monacoNs.KeyMod.CtrlCmd | monacoNs.KeyMod.Shift | monacoNs.KeyCode.KeyK],
       run: () => handleOpenPostLink(),
     });
     return () => action.dispose();
-  }, [isEditorReady, handleOpenPostLink]);
+  }, [isEditorReady, handleOpenPostLink, t]);
 
   const defaultOptions: editor.IStandaloneEditorConstructionOptions = {
     fontSize: 14,
@@ -804,7 +806,7 @@ export default function MonacoEditor({
         options={defaultOptions}
         beforeMount={defineSoraNight}
         onMount={handleEditorDidMount}
-        loading={<AdminLoading label="打開編輯器" />}
+        loading={<AdminLoading label={t('monaco.loadingEditor')} />}
       />
 
       {/* Vim 模式狀態列：monaco-vim 會把 :command / 模式提示寫到這個 div */}
@@ -813,11 +815,10 @@ export default function MonacoEditor({
       {/* 狀態欄（C-4：加上閱讀時間） */}
       <div className="monaco-statusbar">
         <div>
-          {totalWords} 字 · {totalChars} 字元 · {totalLines} 行{totalChars > 0 && <> · 約 {readingMinutes} 分鐘閱讀</>}
+          {t('monaco.status.total', { words: totalWords, chars: totalChars, lines: totalLines })}
+          {totalChars > 0 && t('monaco.status.reading', { minutes: readingMinutes })}
         </div>
-        <div>
-          選取: {selWords} 字 · {selChars} 字元 · {selLines} 行
-        </div>
+        <div>{t('monaco.status.selection', { words: selWords, chars: selChars, lines: selLines })}</div>
       </div>
     </div>
   );

@@ -1,0 +1,71 @@
+{
+  "meta": "{{count}} books · {{reading}} reading",
+  "add": "Add a book",
+  "listLabel": "Book list",
+  "tabAll": "All",
+  "status": {
+    "to-read": "To read",
+    "reading": "Reading",
+    "read": "Read"
+  },
+  "searchShelf": "Search the bookshelf",
+  "searchPlaceholder": "Title, author, ISBN",
+  "emptyShelf": "The bookshelf is empty.",
+  "noMatch": "No matching books.",
+  "edit": "Edit",
+  "editAria": "Edit \"{{title}}\"",
+  "deleteAria": "Delete \"{{title}}\"",
+  "pages": "Pages: {{count}}",
+  "finishedOn": "Finished {{date}}",
+  "startedOn": "Started {{date}}",
+  "dialog": {
+    "editTitle": "Edit this book",
+    "editDesc": "Press \"Update\" when you're done.",
+    "addDesc": "Search external catalogs by ISBN or title to fill in the details, then add your own status, rating and notes. You can also type everything in by hand."
+  },
+  "external": {
+    "label": "Search external catalogs",
+    "placeholder": "ISBN or title (Google Books, OpenLibrary, NCL Taiwan)",
+    "search": "Search",
+    "searching": "Searching",
+    "results": "Search results",
+    "ncl": "NCL Taiwan (no cover or summary)"
+  },
+  "field": {
+    "title": "Title",
+    "authors": "Author",
+    "publisher": "Publisher",
+    "publishedDate": "Published",
+    "pageCount": "Pages",
+    "language": "Language",
+    "categories": "Categories",
+    "coverUrl": "Cover URL",
+    "coverPreview": "Cover preview",
+    "description": "Summary",
+    "myReading": "My reading",
+    "status": "Status",
+    "rating": "Rating · 0–5",
+    "started": "Started",
+    "finished": "Finished",
+    "notes": "Notes"
+  },
+  "cancel": "Cancel",
+  "update": "Update",
+  "putOnShelf": "Add to shelf",
+  "confirmTitle": "Remove this book?",
+  "confirmBody": "Its rating and notes will be deleted too. This can't be undone.",
+  "toast": {
+    "needQuery": "Enter an ISBN or a title",
+    "fallbackEmpty": "The fallback source (OpenLibrary) doesn't have it either",
+    "notFound": "Book not found",
+    "searchFailed": "Search failed",
+    "searchFailedRetry": "Search failed. Please try again later",
+    "picked": "Details filled in",
+    "updated": "Updated",
+    "added": "Added to the shelf",
+    "actionFailed": "Something went wrong",
+    "saveFailed": "Couldn't save",
+    "removed": "Removed from the shelf",
+    "deleteFailed": "Couldn't delete"
+  }
+}

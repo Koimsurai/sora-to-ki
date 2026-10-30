@@ -16,6 +16,7 @@ import {
 import { adminBooksQueryOptions, adminCollectionQueryOptions, adminStatsQueryOptions } from '@/data/adminData';
 import { useSiteConfig } from '@/data/siteConfig';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
+import { useAdminT } from '@/i18n/admin-i18n';
 import { apiUrl } from '@/lib/api';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import {
@@ -40,21 +41,12 @@ import './ThoughtsManager.css';
 // 那些紀錄不會自己發，按「寫」才帶進左邊；附了作品的話字可以空著，只發「看了」也行。
 // 前台的樣子在 blog/MomentPost，卡片怎麼畫兩邊共用 lib/thoughtRef。
 
-const VERB_LABEL: Record<ThoughtVerb, string> = {
-  watched: '看了',
-  read: '讀了',
-  listened: '聽了',
-  played: '玩了',
-  shared: '分享',
-};
-const KIND_LABEL: Record<MediaKind, string> = { film: '電影', tv: '影集', anime: '動畫', book: '書', track: '歌' };
-
 /** 右邊清單的篩選：附上那一排的「看了／讀了／聽了」 */
 type Shelf = 'watch' | 'book' | 'track';
-const SHELVES: { key: Shelf; label: string }[] = [
-  { key: 'watch', label: '看了' },
-  { key: 'book', label: '讀了' },
-  { key: 'track', label: '聽了' },
+const SHELVES: { key: Shelf; verb: ThoughtVerb }[] = [
+  { key: 'watch', verb: 'watched' },
+  { key: 'book', verb: 'read' },
+  { key: 'track', verb: 'listened' },
 ];
 const shelfOf = (kind: MediaKind): Shelf => (kind === 'book' ? 'book' : kind === 'track' ? 'track' : 'watch');
 
@@ -105,6 +97,8 @@ async function send(method: string, path: string, body?: unknown) {
 }
 
 export default function ThoughtsManager() {
+  const { t } = useAdminT();
+  const verbLabel = (v: ThoughtVerb) => t(`thoughts.verb.${v}`);
   const queryClient = useQueryClient();
   const { author } = useSiteConfig();
   const list = useQuery(thoughtsListQueryOptions);
@@ -124,10 +118,8 @@ export default function ThoughtsManager() {
   const [today] = useState(() => new Date());
 
   const thoughts = useMemo(() => list.data ?? [], [list.data]);
-  const records = useMemo(
-    () => candidates(collection.data?.watch ?? [], collection.data?.tracks ?? [], books.data ?? []),
-    [collection.data, books.data],
-  );
+  // 候選的小字（種類、來源）是當下語言的字，所以每次 render 重算（不 memo），換語言才跟得上
+  const records = candidates(collection.data?.watch ?? [], collection.data?.tracks ?? [], books.data ?? []);
   const written = useMemo(() => new Set(thoughts.map((th) => th.ref?.key).filter(Boolean)), [thoughts]);
   const shown = shelf ? records.filter((c) => shelfOf(c.kind) === shelf) : records;
 
@@ -159,7 +151,7 @@ export default function ThoughtsManager() {
               title: attach.url.trim().replace(/^https?:\/\//, ''),
               href: undefined,
               poster: undefined,
-              facts: ['發送時抓預覽'],
+              facts: [t('thoughts.fetchOnSend')],
             }
           : null;
 
@@ -189,18 +181,18 @@ export default function ThoughtsManager() {
         if (attach.type === 'record') body.ref = attach.c.ref;
         if (attach.type === 'link' && attach.url.trim() !== editing.ref_url) body.refUrl = attach.url.trim();
         await send('PUT', `/api/admin/thoughts/${editing.id}`, body);
-        toast.success('改好了');
+        toast.success(t('thoughts.toast.updated'));
       } else {
         if (verb) body.verb = verb;
         if (attach.type === 'record') body.ref = attach.c.ref;
         if (attach.type === 'link') body.refUrl = attach.url.trim();
         await send('POST', '/api/admin/thoughts', body);
-        toast.success('發出去了');
+        toast.success(t('thoughts.toast.sent'));
       }
       reset();
       refresh();
     } catch (e) {
-      toast.error(`沒有送出：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('thoughts.toast.sendFailed', { error: e instanceof Error ? e.message : '' }));
     } finally {
       setBusy(false);
     }
@@ -232,27 +224,28 @@ export default function ThoughtsManager() {
     if (!th) return;
     try {
       await send('DELETE', `/api/admin/thoughts/${th.id}`);
-      toast.success('刪掉了');
+      toast.success(t('thoughts.toast.deleted'));
       if (editing?.id === th.id) reset();
       refresh();
     } catch (e) {
-      toast.error(`沒有刪掉：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('thoughts.toast.deleteFailed', { error: e instanceof Error ? e.message : '' }));
     }
   };
 
   const s = stats.data;
-  const meta = s?.thoughts !== undefined ? `${s.thoughts} 則 · 本月 ${s.thoughtsThisMonth ?? 0}` : undefined;
+  const meta =
+    s?.thoughts !== undefined ? t('thoughts.meta', { count: s.thoughts, month: s.thoughtsThisMonth ?? 0 }) : undefined;
   const linkOn = attach.type === 'link';
 
   return (
     <div className="adm-page">
-      <PageHead title="碎念" latin="Moments" meta={meta} />
+      <PageHead title={t('nav.thoughts')} latin="Moments" meta={meta} />
 
       <div className="adm-split">
         <div className="adm-split-main adm-th-main">
           <form
             className="adm-th-compose"
-            aria-label={editing ? '改這則碎念' : '寫一則碎念'}
+            aria-label={editing ? t('thoughts.composeEdit') : t('thoughts.composeNew')}
             onSubmit={(e) => {
               e.preventDefault();
               void submit();
@@ -262,12 +255,12 @@ export default function ThoughtsManager() {
               <span className="adm-prompt-mark" aria-hidden="true">
                 &gt;
               </span>
-              <span className="sr-only">內容</span>
+              <span className="sr-only">{t('thoughts.content')}</span>
               <textarea
                 ref={textRef}
                 rows={3}
                 value={content}
-                placeholder="想到什麼寫一句。附了作品的話可以空著，只發「看了」也行。"
+                placeholder={t('thoughts.placeholder')}
                 onChange={(e) => setContent(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -283,7 +276,7 @@ export default function ThoughtsManager() {
                 <span className="adm-prompt-mark" aria-hidden="true">
                   ↗
                 </span>
-                <span className="sr-only">連結</span>
+                <span className="sr-only">{t('thoughts.link')}</span>
                 <input
                   type="url"
                   value={attach.url}
@@ -299,7 +292,7 @@ export default function ThoughtsManager() {
                 <button
                   type="button"
                   className="adm-icon-btn"
-                  aria-label="拿掉附上的東西"
+                  aria-label={t('thoughts.removeAttach')}
                   onClick={() => setAttach({ type: 'none' })}
                 >
                   ×
@@ -308,7 +301,7 @@ export default function ThoughtsManager() {
             )}
 
             <div className="adm-th-bar">
-              <span className="adm-caps">附上</span>
+              <span className="adm-caps">{t('thoughts.attach')}</span>
               <button
                 type="button"
                 className="adm-th-chip"
@@ -316,7 +309,7 @@ export default function ThoughtsManager() {
                 onClick={() => setAttach(linkOn ? { type: 'none' } : { type: 'link', url: '' })}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                連結
+                {t('thoughts.link')}
               </button>
               {SHELVES.map((sh) => (
                 <button
@@ -328,35 +321,38 @@ export default function ThoughtsManager() {
                   onClick={() => setShelf(shelf === sh.key ? null : sh.key)}
                 >
                   <span className="adm-tab-dot" aria-hidden="true" />
-                  {sh.label}
+                  {verbLabel(sh.verb)}
                 </button>
               ))}
               <span className="adm-grow" />
               <div className="adm-prompt adm-prompt-compact adm-th-verb">
                 <span className="adm-meta" aria-hidden="true">
-                  動詞
+                  {t('thoughts.verbLabel')}
                 </span>
                 <AdminSelect
-                  label="動詞"
+                  label={t('thoughts.verbLabel')}
                   value={verbChoice}
                   onChange={(v) => setVerbChoice(v as VerbChoice)}
                   options={[
                     {
                       value: 'auto',
-                      label: verb && verbChoice === 'auto' ? `${VERB_LABEL[verb]}（依類型）` : '依類型',
+                      label:
+                        verb && verbChoice === 'auto'
+                          ? t('thoughts.verbAutoWith', { verb: verbLabel(verb) })
+                          : t('thoughts.verbAuto'),
                     },
-                    ...THOUGHT_VERBS.map((v) => ({ value: v, label: VERB_LABEL[v] })),
-                    { value: 'none', label: '不用動詞' },
+                    ...THOUGHT_VERBS.map((v) => ({ value: v, label: verbLabel(v) })),
+                    { value: 'none', label: t('thoughts.verbNone') },
                   ]}
                 />
               </div>
               {editing && (
                 <button type="button" className="adm-btn" onClick={reset}>
-                  取消
+                  {t('thoughts.cancel')}
                 </button>
               )}
               <button type="submit" className="adm-btn adm-btn-primary" disabled={!canSend}>
-                {busy ? '送出中' : editing ? '更新' : '發送'}
+                {busy ? t('thoughts.sending') : editing ? t('thoughts.update') : t('thoughts.send')}
                 <kbd className="adm-meta" aria-hidden="true">
                   ⌘↵
                 </kbd>
@@ -365,31 +361,31 @@ export default function ThoughtsManager() {
           </form>
 
           <section aria-labelledby="th-preview-h">
-            <SectionHead id="th-preview-h">前台會長這樣</SectionHead>
+            <SectionHead id="th-preview-h">{t('thoughts.previewHead')}</SectionHead>
             <div className="adm-th-preview">
               <span className="adm-th-preview-head">
                 <span>{author}</span>
-                {verb && <span className="adm-th-verb-text">{VERB_LABEL[verb]}</span>}
+                {verb && <span className="adm-th-verb-text">{verbLabel(verb)}</span>}
                 <span className="adm-meta">{formatWhen(editing?.created_at ?? today, 'MM.dd')}</span>
               </span>
               {content.trim() ? (
                 <p className="adm-th-preview-text">{content.trim()}</p>
               ) : !card ? (
-                <p className="adm-th-preview-text adm-th-placeholder">還沒有字，也還沒附東西。</p>
+                <p className="adm-th-preview-text adm-th-placeholder">{t('thoughts.previewEmpty')}</p>
               ) : null}
               {card && <AttachedCard card={card} compact />}
               <span className="adm-meta">
-                ♡ {editing?.likes ?? 0} · 留言 {editing?.comment_count ?? 0}
+                {t('thoughts.previewStats', { likes: editing?.likes ?? 0, comments: editing?.comment_count ?? 0 })}
               </span>
             </div>
           </section>
 
           <section aria-labelledby="th-list-h">
-            <SectionHead id="th-list-h">發過的</SectionHead>
+            <SectionHead id="th-list-h">{t('thoughts.listHead')}</SectionHead>
             {list.isPending ? (
-              <AdminLoading label="讀碎念" />
+              <AdminLoading label={t('thoughts.loadingThoughts')} />
             ) : thoughts.length === 0 ? (
-              <p className="adm-empty">還沒有碎念。</p>
+              <p className="adm-empty">{t('thoughts.empty')}</p>
             ) : (
               <ul className="adm-th-list">
                 {thoughts.map((th) => {
@@ -398,15 +394,17 @@ export default function ThoughtsManager() {
                   const line = [c?.title, text].filter(Boolean).join(' · ') || thoughtLine(th);
                   return (
                     <li key={th.id} className="adm-row" data-editing={editing?.id === th.id || undefined}>
-                      <span className="adm-th-row-verb">{isThoughtVerb(th.verb) ? VERB_LABEL[th.verb] : '說'}</span>
+                      <span className="adm-th-row-verb">
+                        {isThoughtVerb(th.verb) ? verbLabel(th.verb) : t('thoughts.said')}
+                      </span>
                       <span className="adm-row-main">
                         <span className="adm-row-title">{line}</span>
                         <span className="adm-meta">
                           {[
                             formatWhen(th.created_at, 'MM.dd'),
                             `♡ ${th.likes}`,
-                            th.comment_count ? `留言 ${th.comment_count}` : null,
-                            th.edited ? '改過' : null,
+                            th.comment_count ? t('thoughts.rowComments', { count: th.comment_count }) : null,
+                            th.edited ? t('thoughts.edited') : null,
                           ]
                             .filter(Boolean)
                             .join(' · ')}
@@ -418,25 +416,25 @@ export default function ThoughtsManager() {
                           href={`/thinking/${th.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          aria-label={`在前台看〈${line}〉`}
+                          aria-label={t('thoughts.viewOnSite', { title: line })}
                         >
                           ↗
                         </a>
                         <button
                           type="button"
                           className="adm-icon-btn"
-                          aria-label={`改〈${line}〉`}
+                          aria-label={t('thoughts.editRow', { title: line })}
                           onClick={() => startEdit(th)}
                         >
-                          改
+                          {t('thoughts.editShort')}
                         </button>
                         <button
                           type="button"
                           className="adm-icon-btn adm-icon-btn-flare"
-                          aria-label={`刪掉〈${line}〉`}
+                          aria-label={t('thoughts.deleteRow', { title: line })}
                           onClick={() => setDeleteTarget(th)}
                         >
-                          刪
+                          {t('thoughts.deleteShort')}
                         </button>
                       </span>
                     </li>
@@ -448,12 +446,12 @@ export default function ThoughtsManager() {
         </div>
 
         <aside className="adm-split-side" aria-labelledby="th-records-h">
-          <SectionHead id="th-records-h">最近的紀錄</SectionHead>
-          <p className="adm-form-note">同步進來的看、讀、聽。不會自己發，按「寫」才帶進左邊。</p>
+          <SectionHead id="th-records-h">{t('thoughts.recordsHead')}</SectionHead>
+          <p className="adm-form-note">{t('thoughts.recordsNote')}</p>
           {collection.isPending || books.isPending ? (
-            <AdminLoading label="讀紀錄" />
+            <AdminLoading label={t('thoughts.loadingRecords')} />
           ) : shown.length === 0 ? (
-            <p className="adm-empty">{shelf ? '這一類最近沒有紀錄。' : '還沒有同步進來的紀錄。'}</p>
+            <p className="adm-empty">{shelf ? t('thoughts.shelfEmpty') : t('thoughts.recordsEmpty')}</p>
           ) : (
             <ul id="adm-th-records" className="adm-th-records">
               {shown.map((c) => {
@@ -486,10 +484,10 @@ export default function ThoughtsManager() {
                       type="button"
                       className="adm-btn adm-btn-small"
                       aria-pressed={picked}
-                      aria-label={`寫〈${c.title}〉`}
+                      aria-label={t('thoughts.writeRow', { title: c.title })}
                       onClick={() => pick(c)}
                     >
-                      {picked ? '已帶入' : done ? '已寫' : '寫'}
+                      {picked ? t('thoughts.picked') : done ? t('thoughts.done') : t('thoughts.write')}
                     </button>
                   </li>
                 );
@@ -502,20 +500,20 @@ export default function ThoughtsManager() {
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>刪掉這則碎念？</AlertDialogTitle>
+            <AlertDialogTitle>{t('thoughts.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              〈{deleteTarget ? thoughtLine(deleteTarget) : ''}〉連同底下的留言一起刪，找不回來。
+              {t('thoughts.confirmBody', { title: deleteTarget ? thoughtLine(deleteTarget) : '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>留著</AlertDialogCancel>
+            <AlertDialogCancel>{t('thoughts.keep')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
                 void remove();
               }}
             >
-              刪掉
+              {t('thoughts.confirmDelete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -526,7 +524,11 @@ export default function ThoughtsManager() {
 
 /** 附上的東西：海報、種類與小字、名字。compact 是預覽裡那張（小一號） */
 function AttachedCard({ card, compact = false }: { card: ThoughtCard; compact?: boolean }) {
-  const meta = [card.kind ? KIND_LABEL[card.kind] : card.type === 'link' ? '連結' : null, ...card.facts]
+  const { t } = useAdminT();
+  const meta = [
+    card.kind ? t(`thoughts.kind.${card.kind}`) : card.type === 'link' ? t('thoughts.link') : null,
+    ...card.facts,
+  ]
     .filter(Boolean)
     .join(' · ');
   return (
@@ -549,7 +551,7 @@ function AttachedCard({ card, compact = false }: { card: ThoughtCard; compact?: 
         ))}
       <span className="adm-th-card-text">
         {meta && <span className="adm-caps">{meta}</span>}
-        <span className="adm-th-card-title">{card.title || '（沒有名字）'}</span>
+        <span className="adm-th-card-title">{card.title || t('thoughts.untitled')}</span>
       </span>
     </div>
   );

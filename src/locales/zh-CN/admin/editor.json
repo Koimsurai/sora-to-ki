@@ -1,0 +1,153 @@
+{
+  "loadingPost": "打开这篇",
+  "tagSearchPlaceholder": "搜索标签...",
+  "tagNotFound": "没有找到相关标签",
+  "fieldError": "{{field}}：{{message}}",
+  "invalidForm": "表单有字段没通过验证",
+  "apiError": "API 错误 ({{status}})",
+  "draftFound": "检测到 {{minutes}} 分钟前未保存的草稿",
+  "restore": "还原",
+  "busySaving": "正在保存，请稍候",
+  "busyProcessing": "正在处理，请稍候",
+  "draftSaved": "草稿已保存",
+  "saveFailed": "保存失败",
+  "schedulePast": "定时时间已经过了：改一个未来的时间，或清空它直接发布",
+  "scheduledToast": "已定时：{{when}} 发布",
+  "publishedToast": "文章已发布",
+  "publishFailed": "发布失败",
+  "newsletter": {
+    "confirmTitle": "现在推送给所有订阅者？",
+    "confirmBody": "发出去就收不回来了。",
+    "confirmLabel": "推送",
+    "failed": "推送失败",
+    "sent": "已发送 {{sent}} 封，失败 {{failed}}",
+    "publishFailed": "电子报发送失败：{{error}}",
+    "publishSent": "电子报已发送 {{sent}} 封，失败 {{failed}}",
+    "onPublish": "发布时推送 Newsletter",
+    "onPublishHint": "按「发布文章」时发送；定时的话等时间到了才发送",
+    "sendNow": "立即推送 Newsletter"
+  },
+  "zhCn": {
+    "needId": "请先保存草稿，取得文章 ID 后再执行",
+    "needSource": "原稿不是繁体中文：先补好繁体译文并保存，再从它生成简体",
+    "overwriteTitle": "覆盖现有的简体中文？",
+    "overwriteBody": "已经有简体中文的内容了，重新从繁体转换一次会把它覆盖掉。",
+    "overwriteLabel": "覆盖",
+    "done": "简体中文已生成（OpenCC 繁转简）",
+    "failed": "生成失败：{{message}}",
+    "button": "从繁体生成简体",
+    "buttonTitle": "OpenCC 繁→简，纯字词转换，不经过 LLM"
+  },
+  "summary": {
+    "tooShort": "文章内容太短，无法生成摘要",
+    "done": "摘要已生成（{{locale}}）",
+    "tagsSuggested": "同时生成了 {{n}} 个标签建议",
+    "badFormat": "AI 返回的格式异常，请重试",
+    "failed": "摘要生成失败：{{message}}",
+    "label": "摘要",
+    "generating": "生成中",
+    "generate": "AI 生成",
+    "placeholder": "文章摘要（点击右上角 AI 生成或手动输入）..."
+  },
+  "sourceBadge": "原稿",
+  "editingHint": "正在编辑 {{locale}} · 所有已填写的语言会一起保存／发布",
+  "titlePlaceholder": "这篇的标题",
+  "titleLabel": "标题",
+  "view": {
+    "edit": "编辑",
+    "split": "分屏",
+    "preview": "预览",
+    "front": "在前台预览 ↗",
+    "frontTitle": "打开一个标签页，用读者看到的文章页渲染这份草稿（未保存的也算）；这里改了那边跟着更新"
+  },
+  "autosaved": "已自动备份",
+  "restored": "已还原草稿",
+  "zen": {
+    "enterTitle": "Zen 模式（F11）",
+    "exitTitle": "退出 Zen（Esc）",
+    "enterLabel": "专注模式",
+    "exitLabel": "退出专注模式"
+  },
+  "side": {
+    "categoryTags": "分类与标签",
+    "category": "分类",
+    "categoryPlaceholder": "选择分类",
+    "tags": "标签",
+    "tagsAvailable": "({{n}} 个可用)",
+    "tagsSelected": "已选择 {{n}} 项"
+  },
+  "series": {
+    "head": "系列文章（选填）",
+    "name": "系列名称",
+    "namePlaceholder": "如：Rust 学习笔记",
+    "order": "顺序（数字越小越靠前）",
+    "orderPlaceholder": "例：1"
+  },
+  "publishing": {
+    "head": "发布设置",
+    "now": "当前",
+    "schedule": "定时发布",
+    "scheduleDate": "定时发布日期",
+    "scheduleTime": "定时发布时间",
+    "clear": "清空",
+    "hintScheduled": "按「定时发布」之后，到这个时间才会出现在前台（最多晚一分钟）。",
+    "hintEmpty": "留空＝按「发布文章」立即发布。",
+    "sourceLanguage": "原文语言",
+    "slug": "网址 slug",
+    "slugHint": "文章网址是 /blog/<slug>。留空会自动从英文标题生成；改了也不会失效——旧网址会自动 301 到新的。",
+    "layout": "模板类型",
+    "layoutRecord": "📅 记录（有时效性）",
+    "layoutColumn": "💎 专栏（无时效性）",
+    "allowComments": "允许评论"
+  },
+  "cover": {
+    "head": "封面图片",
+    "url": "图片网址",
+    "alt": "封面预览"
+  },
+  "links": {
+    "blockedNoExcerpt": "先写摘要，才能把摘要里的文字链接到章节。",
+    "blockedNoChapters": "正文还没有 ## 章节，摘要没有地方可以链接。",
+    "bar": "摘要对应 · 已链接 {{n}} 段",
+    "edit": "编辑对应",
+    "hint": "读者在文章页点击摘要里链接过的那段，会跳到它链接的那一章。",
+    "title": "摘要对应",
+    "description": "在左边的摘要里选中一段文字，再点右边的一章就链接好了；点已经链接的那段，可以点别的章节换过去或取消。",
+    "statusLinked": "「{{text}}」链接到 {{to}}。点右边别的章节换过去，或取消链接。",
+    "statusPick": "「{{text}}」要链接到哪一章？点右边的一章。",
+    "statusCount": "已链接 {{n}} 段（每种语言最多 {{max}} 段）。",
+    "missingChapter": "（正文里没有这一章）",
+    "unlink": "取消这段的链接",
+    "orphans": "摘要改过，这几段已经找不到了（保存时后端也会忽略它们）：",
+    "remove": "移除",
+    "problem": {
+      "empty": "先在摘要里选中一段文字",
+      "tooLong": "一段最多 {{max}} 字，这段有 {{n}} 字",
+      "outside": "只能选择摘要里的文字",
+      "full": "一种语言最多关联 {{max}} 段",
+      "overlap": "与已关联的“{{text}}”重叠了"
+    }
+  },
+  "preview": {
+    "mdxFailed": "⚠ MDX 编译失败（发布前要修好，否则会退回纯 Markdown）",
+    "mdFailed": "⚠ Markdown 编译失败",
+    "preparing": "准备预览…",
+    "empty": "暂无内容"
+  },
+  "draft": {
+    "noSnapshot": "从后台的文章编辑器按「在前台预览」打开这一页",
+    "mdxFailed": "MDX 编译失败（发布的话前台会退回纯 Markdown）：{{error}}",
+    "badge": "草稿预览 · 随编辑器实时更新 · 读者看不到这一页",
+    "pageTitle": "草稿预览 · {{site}}"
+  },
+  "linkModal": {
+    "searchPlaceholder": "搜索文章标题或摘要",
+    "searchLabel": "搜索文章",
+    "close": "关闭",
+    "loading": "读取文章列表",
+    "notFound": "找不到符合的文章",
+    "none": "没有可用的文章",
+    "foot": "Enter 选第一篇 · Esc 关闭",
+    "count": "{{shown}} / {{total}} 篇"
+  }
+}

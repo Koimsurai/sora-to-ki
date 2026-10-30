@@ -6,6 +6,7 @@ import type { GithubReposResponse, WorkItem, WorkRepo, WorksContent, WorksRespon
 import { worksContentQueryOptions } from '@/data/pageContent';
 import { useSiteConfig } from '@/data/siteConfig';
 import { authHeaders } from '@/lib/authToken';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { SectionHead } from './AdminPage';
 import { move, replaceAt, usePageDraft } from './pageDraft';
@@ -42,15 +43,16 @@ const snapshotOf = (r: WorkRepo): WorkItem['snapshot'] => ({
 
 /** 「TypeScript 58% · ★ 12 · 2.1k commits」 */
 function summary(s: WorkItem['snapshot'] | WorkRepo | null | undefined): string {
-  if (!s) return '還沒有數字';
+  if (!s) return at('pageWorks.noNumbers');
   const total = (s.languages ?? []).reduce((n, l) => n + l.bytes, 0);
   const top = s.languages?.[0];
-  const lang = top && total ? `${top.name} ${Math.round((top.bytes / total) * 100)}%` : '沒有語言資料';
+  const lang = top && total ? `${top.name} ${Math.round((top.bytes / total) * 100)}%` : at('pageWorks.noLanguages');
   const commits = (s.commits ?? 0) >= 1000 ? `${((s.commits ?? 0) / 1000).toFixed(1)}k` : String(s.commits ?? 0);
   return `${lang} · ★ ${s.stars ?? 0} · ${commits} commits`;
 }
 
 export default function WorksEditor() {
+  const { t } = useAdminT();
   const [lang, setLang] = useState<string>(defaultLocale);
   const [paste, setPaste] = useState('');
   const { github } = useSiteConfig();
@@ -58,7 +60,7 @@ export default function WorksEditor() {
     worksContentQueryOptions,
     '/api/admin/pages/works',
     (raw) => (raw as WorksContent).items ?? [],
-    '作品頁已更新',
+    t('pageWorks.saved'),
     // 存之前把每一件最後量到的數字更新一次；抓不到的那幾件保留原本的
     async (items) => {
       const live = await preview(items.map((w) => w.repo));
@@ -98,9 +100,11 @@ export default function WorksEditor() {
     <div className="adm-form pg-editor">
       <LangBar lang={lang} onChange={setLang} />
 
-      <SectionHead id="pg-works-pick">從你的 GitHub 挑{github ? `（${github}）` : ''}</SectionHead>
+      <SectionHead id="pg-works-pick">
+        {github ? t('pageWorks.pickAs', { account: github }) : t('pageWorks.pick')}
+      </SectionHead>
       {github === '' ? (
-        <p className="adm-meta">站台設定還沒填 GitHub 帳號，只能用下面貼網址的方式加。</p>
+        <p className="adm-meta">{t('pageWorks.noAccount')}</p>
       ) : (
         <ul className="pg-pick">
           {(mine ?? []).map((r) => {
@@ -113,7 +117,7 @@ export default function WorksEditor() {
                   {r.language ?? '—'} · ★ {r.stargazers_count}
                 </span>
                 <button type="button" className="adm-icon-btn" disabled={added} onClick={() => add(repo)}>
-                  {added ? '已加入' : '加入 →'}
+                  {added ? t('pageWorks.added') : t('pageWorks.addArrow')}
                 </button>
               </li>
             );
@@ -122,7 +126,7 @@ export default function WorksEditor() {
       )}
       <div className="pg-paste">
         <label className="adm-field">
-          <span className="adm-caps">別人或組織的 repo · 貼網址或 owner/name</span>
+          <span className="adm-caps">{t('pageWorks.paste')}</span>
           <input value={paste} onChange={(e) => setPaste(e.target.value)} placeholder="github.com/Limatura/tessera" />
         </label>
         <button
@@ -134,12 +138,12 @@ export default function WorksEditor() {
             setPaste('');
           }}
         >
-          加入
+          {t('pageWorks.add')}
         </button>
       </div>
 
-      <SectionHead id="pg-works-list">作品 · 順序就是螺旋的順序，第一件是起點</SectionHead>
-      {items.length === 0 && <p className="adm-meta">還沒有作品；從上面挑一件，作品頁就會長出第一顆星球。</p>}
+      <SectionHead id="pg-works-list">{t('pageWorks.listHead')}</SectionHead>
+      {items.length === 0 && <p className="adm-meta">{t('pageWorks.empty')}</p>}
       {items.map((w, i) => {
         const r = live.find((x) => x.repo.toLowerCase() === w.repo.toLowerCase());
         return (
@@ -147,7 +151,7 @@ export default function WorksEditor() {
             <div className="pg-work-head pg-wide">
               <span className="pg-work-repo">
                 {i === 0 && (
-                  <span className="pg-origin" title="螺旋的起點">
+                  <span className="pg-origin" title={t('pageWorks.origin')}>
                     ●
                   </span>
                 )}
@@ -156,7 +160,7 @@ export default function WorksEditor() {
               <span className="adm-meta">{summary(r ?? w.snapshot)}</span>
             </div>
             <label className="adm-field">
-              <span className="adm-caps">顯示的名字 · 空著就用 repo 名</span>
+              <span className="adm-caps">{t('pageWorks.name')}</span>
               <input
                 value={w.name}
                 placeholder={w.repo.split('/')[1]}
@@ -164,10 +168,10 @@ export default function WorksEditor() {
               />
             </label>
             <div className="adm-field">
-              <span className="adm-caps">一句話介紹</span>
+              <span className="adm-caps">{t('pageWorks.what')}</span>
               <I18nInput
                 lang={lang}
-                label="一句話介紹"
+                label={t('pageWorks.what')}
                 value={w.what}
                 onChange={(what) => page.set(replaceAt(items, i, { what }))}
               />
@@ -179,7 +183,7 @@ export default function WorksEditor() {
                   className="adm-icon-btn"
                   onClick={() => page.set([w, ...items.filter((_, k) => k !== i)])}
                 >
-                  設為起點
+                  {t('pageWorks.setOrigin')}
                 </button>
               )}
               <RowActions

@@ -65,19 +65,22 @@ describe('checkSelection：反白的那段能不能連', () => {
   });
 
   it('跟已經連的重疊不行，說得出跟哪一段', () => {
-    expect(checkSelection(ex, links, '先比較')).toMatch('比較了三台機器');
+    expect(checkSelection(ex, links, '先比較')).toEqual({ key: 'overlap', params: { text: '比較了三台機器' } });
   });
 
   it('空的、太長的、摘要裡沒有的都說得出原因', () => {
-    expect(checkSelection(ex, links, '')).toMatch('反白');
-    expect(checkSelection('字'.repeat(200), [], '字'.repeat(121))).toMatch('121');
-    expect(checkSelection(ex, links, '別篇的字')).toMatch('摘要裡');
+    expect(checkSelection(ex, links, '')?.key).toBe('empty');
+    expect(checkSelection('字'.repeat(200), [], '字'.repeat(121))).toEqual({
+      key: 'tooLong',
+      params: { max: 120, n: 121 },
+    });
+    expect(checkSelection(ex, links, '別篇的字')?.key).toBe('outside');
   });
 
   it('連滿 24 段之後不能再加新的，但還能換章節', () => {
     const many = Array.from({ length: 24 }, (_, i) => ({ text: `第${i}段`, to: '01' }));
     const text = many.map((l) => l.text).join('') + '新的一段';
-    expect(checkSelection(text, many, '新的一段')).toMatch('24');
+    expect(checkSelection(text, many, '新的一段')).toEqual({ key: 'full', params: { max: 24 } });
     expect(checkSelection(text, many, '第3段')).toBeNull();
   });
 });

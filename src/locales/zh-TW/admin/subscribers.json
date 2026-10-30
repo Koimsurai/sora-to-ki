@@ -1,0 +1,29 @@
+{
+  "tabs": {
+    "active": "訂閱中",
+    "unsubscribed": "已退訂"
+  },
+  "unsubscribeFailed": "退訂失敗",
+  "unsubscribed": "已將 {{email}} 標記為退訂",
+  "meta": "訂閱中 {{active}} · 已退訂 {{unsubscribed}}",
+  "refresh": "重新整理",
+  "exportCsv": "匯出 CSV",
+  "listLabel": "訂閱名單",
+  "searchLabel": "搜尋訂閱者",
+  "searchPlaceholder": "Email 或名字",
+  "noMatch": "找不到符合的訂閱者。",
+  "emptyActive": "還沒有人訂閱。",
+  "emptyUnsubscribed": "沒有退訂紀錄。",
+  "col": {
+    "email": "Email",
+    "name": "名字",
+    "subscribed": "訂閱",
+    "unsubscribed": "退訂",
+    "actions": "動作"
+  },
+  "markLabel": "把 {{email}} 標記為退訂",
+  "mark": "標記退訂",
+  "confirmTitle": "標記為退訂？",
+  "confirmDesc": "{{email}} 會被標記為已退訂，之後不會再寄信到這個地址。",
+  "cancel": "取消"
+}

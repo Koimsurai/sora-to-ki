@@ -1,0 +1,20 @@
+{
+  "saved": "Logbook updated",
+  "level": {
+    "0": "Small dot · visible on hover",
+    "1": "Medium dot · a bigger turn",
+    "2": "Large dot · labeled on the trail"
+  },
+  "startHead": "Start · the day the site was born",
+  "startHint": "The trail is drawn from this day, and the mission elapsed time in the top right counts from its midnight. Clear it to use the day of the first post.",
+  "date": "Date",
+  "startDate": "Start date",
+  "milestonesHead": "Milestones · points on the trail",
+  "milestoneDate": "Date of milestone {{n}}",
+  "what": "Text",
+  "milestone": "Milestone",
+  "size": "Size",
+  "milestoneSize": "Size of milestone {{n}}",
+  "milestoneN": "milestone {{n}}",
+  "add": "＋ Add a milestone"
+}

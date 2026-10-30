@@ -1,0 +1,33 @@
+{
+  "role": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "reader": "Reader"
+  },
+  "roleChanged": "Changed {{name}} to {{role}}",
+  "roleChangeFailed": "Couldn't change role",
+  "meta": "Owner {{owner}} · Admin {{admin}} · Reader {{reader}}",
+  "refresh": "Refresh",
+  "listLabel": "Account list",
+  "hint": "Everyone who has signed in is listed here. Admins can use the dashboard but can't change other people's roles",
+  "searchLabel": "Search accounts",
+  "searchPlaceholder": "Name, email, sign-in method",
+  "noMatch": "No matching accounts.",
+  "empty": "No one has signed in yet.",
+  "col": {
+    "name": "Name",
+    "email": "Email",
+    "provider": "Sign-in method",
+    "role": "Role",
+    "joined": "Joined",
+    "changeRole": "Change role"
+  },
+  "you": "You",
+  "roleSelectLabel": "Role for {{name}}",
+  "someone": "this person",
+  "confirmTitle": "Change role?",
+  "confirmDesc": "Change {{name}} from {{from}} to {{to}}.",
+  "confirmDescAdmin": "Change {{name}} from {{from}} to {{to}}. Admins can use the dashboard and edit posts and comments.",
+  "cancel": "Cancel",
+  "confirm": "Change role"
+}

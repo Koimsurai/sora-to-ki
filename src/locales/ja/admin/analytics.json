@@ -1,0 +1,182 @@
+{
+  "periods": {
+    "today": "今日",
+    "3d": "3 日",
+    "7d": "7 日",
+    "30d": "30 日",
+    "6mo": "半年"
+  },
+  "periodWord": {
+    "today": "今日のここまで",
+    "3d": "この 3 日間",
+    "7d": "この 7 日間",
+    "30d": "この 30 日間",
+    "6mo": "この半年"
+  },
+  "prev": {
+    "today": "昨日の同じ時間帯",
+    "other": "前の期間"
+  },
+  "unit": {
+    "sec": "秒",
+    "min": "分"
+  },
+  "duration": {
+    "sec": "{{s}} 秒",
+    "minSec": "{{m}} 分 {{s}} 秒"
+  },
+  "unknownCountry": "不明",
+  "direct": "直接アクセス",
+  "device": {
+    "Desktop": "デスクトップ",
+    "Laptop": "ノート PC",
+    "Mobile": "スマートフォン",
+    "Tablet": "タブレット"
+  },
+  "live": "いま {{count}} 人がサイトにいます",
+  "source": "ソース Plausible",
+  "openPlausible": "Plausible で開く ↗",
+  "loadFailed": "Plausible を読み込めません：{{message}}",
+  "noData": "まだデータがありません。",
+  "compare": {
+    "noPrev": "{{than}}は訪問者ゼロ",
+    "times": "{{than}}の {{n}} 倍",
+    "more": "{{than}}より {{pct}}% 多い",
+    "less": "{{than}}より {{pct}}% 少ない",
+    "same": "{{than}}とほぼ同じ"
+  },
+  "summary": {
+    "plain": "{{period}}の訪問者は <b>{{count}}</b> 人。",
+    "compared": "{{period}}の訪問者は <b>{{count}}</b> 人で、{{cmp}}。"
+  },
+  "from": {
+    "allDirect": "ほぼすべてが直接アクセス（{{count}} 人）。",
+    "allSource": "ほぼすべてが {{source}} から（{{count}} 人）。",
+    "partDirect": "{{tenths}} 割が直接アクセス（{{count}} 人）。",
+    "partSource": "{{tenths}} 割が {{source}} から（{{count}} 人）。"
+  },
+  "delta": {
+    "noData": "{{than}}のデータなし",
+    "plain": "{{arrow}} {{than}} {{prev}}",
+    "better": "{{arrow}} {{than}} {{prev}}、改善",
+    "worse": "{{arrow}} {{than}} {{prev}}、悪化"
+  },
+  "tiles": {
+    "label": "合計",
+    "visitors": "訪問者",
+    "visitorsSub": "ユニークな人数。同じ人が同じ日に何度来ても 1 人と数えます。",
+    "pages": "1 人あたりの閲覧ページ数",
+    "pagesSub": "1 回の訪問で平均何ページ見たか。高いほど回遊する人が多いということです。",
+    "bounce": "1 ページだけで離脱",
+    "bounceSub": "いわゆる「直帰率」：最初のページだけ見て離れた人の割合。低いほど良好です。",
+    "duration": "1 回の滞在時間",
+    "durationSub": "訪問から離脱までのおおよその時間（1 回の訪問の平均）。"
+  },
+  "series": {
+    "heading": {
+      "hour": "1 時間ごとの訪問者",
+      "day": "1 日ごとの訪問者",
+      "week": "1 週間ごとの訪問者"
+    },
+    "caption": {
+      "hour": "1 時間ごとの訪問者と閲覧数",
+      "day": "1 日ごとの訪問者と閲覧数",
+      "week": "1 週間ごとの訪問者と閲覧数"
+    },
+    "tip": "{{date}} · 訪問者 {{visitors}} · 閲覧 {{pageviews}}",
+    "tipWeek": "{{date}} の週 · 訪問者 {{visitors}} · 閲覧 {{pageviews}}",
+    "date": "日付",
+    "visitors": "訪問者",
+    "pageviews": "閲覧",
+    "empty": "この期間のデータはありません。"
+  },
+  "more": {
+    "summary": "人気ページ・国・デバイス",
+    "pages": "人気ページ",
+    "countries": "国",
+    "devices": "デバイス",
+    "note": "国は接続元の位置から判定しています。VPN やプロキシを使う読者はその接続先の国として数えられるので、目安として見てください。"
+  },
+  "langName": {
+    "zh-TW": "繁体字",
+    "zh-CN": "簡体字",
+    "en": "英語",
+    "ja": "日本語",
+    "ko": "韓国語"
+  },
+  "pageName": {
+    "suffix": "（{{lang}}）",
+    "home": "トップページ{{suffix}}",
+    "blog": "記事{{suffix}}",
+    "post": "『{{title}}』{{suffix}}"
+  },
+  "posts": {
+    "heading": "記事ごと",
+    "note": "「平均滞在」は記事を開いてから離れるまでの平均（タブがバックグラウンドの時間は含みません）、「読了目安」は文字数から見積もった読む時間です。両者の差が大きければ、多くの人は冒頭しか読んでいません。「スクロール」は画面が本文のどこまで到達したかの割合で、末尾へのジャンプや目次からの移動も含むため、実際に読んだ量より多めに出ます。同じ記事の各言語版はまとめて数えます。いいねとコメントは全期間の数で、この期間に限りません。",
+    "empty": "この期間はまだ記事が読まれていません。",
+    "col": {
+      "post": "記事",
+      "visitors": "訪問者",
+      "scroll": "スクロール",
+      "time": "平均滞在",
+      "read": "読了目安",
+      "hearts": "いいね",
+      "comments": "コメント"
+    },
+    "readMinutes": "{{n}} 分"
+  },
+  "sources": {
+    "heading": "どこから来て、最初に何を見たか",
+    "note": "「直接アクセス」は参照元のない訪問です：ブックマーク、URL の直接入力、一部のメッセージアプリから開いたリンク（LINE や Discord は参照元を送らないことがあります）。",
+    "people": "{{count}} 人"
+  },
+  "search": {
+    "heading": "Google で何が検索されたか",
+    "setup": "Search Console が未接続です：<code>docker-compose.yml</code> でサービスアカウントの鍵をバックエンドにマウントし、<code>GSC_SERVICE_ACCOUNT_FILE</code> を設定してください（<code>backend/src/handlers/search_console.rs</code> を参照）。",
+    "error": "Search Console を読み込めません：{{error}}",
+    "note": "「表示回数」は検索結果にこのサイトが表示された回数、「クリック」は実際にクリックされた回数です。Google のデータは 2〜3 日遅れるため、直近の数日は少なめに出ます。",
+    "empty": "この期間の検索データはありません。",
+    "col": {
+      "query": "検索語句",
+      "clicks": "クリック",
+      "impressions": "表示回数",
+      "ctr": "クリック率",
+      "position": "平均掲載順位"
+    }
+  },
+  "reactions": {
+    "heading": "届いたいいねとリアクション",
+    "note": "いいね、絵文字リアクション、コメントへのいいね、つぶやきへの「好き」はすべて 1 件ずつ記録し、取り消しも記録します。個人や IP は記録しません：国は Cloudflare の判定、参照元は読者がどのサイトから来たかです。",
+    "loadFailed": "記録を読み込めません：{{message}}",
+    "deleted": "（削除済み）",
+    "post": "『{{title}}』に {{value}} を押しました",
+    "postUndo": "『{{title}}』の {{value}} を取り消しました",
+    "site": "トップページに足あとを残しました",
+    "commentThought": "つぶやき「{{title}}」のコメントにいいねしました",
+    "commentMessages": "メッセージページのコメントにいいねしました",
+    "commentDeleted": "削除済みのコメントにいいねしました",
+    "commentPost": "『{{title}}』のコメントにいいねしました",
+    "commentOther": "/{{on}} のコメントにいいねしました",
+    "thoughtLike": "つぶやき「{{title}}」を好きと言いました",
+    "thoughtDislike": "つぶやき「{{title}}」を好きじゃないと言いました",
+    "thoughtUnlike": "つぶやき「{{title}}」への「好き」を取り消しました",
+    "thoughtUndislike": "つぶやき「{{title}}」への「好きじゃない」を取り消しました",
+    "unknownCountry": "国不明",
+    "from": "{{referrer}} から",
+    "direct": "直接アクセス",
+    "device": {
+      "mobile": "スマートフォン",
+      "desktop": "PC"
+    },
+    "beforeLog": "記録開始より前",
+    "current": "現在",
+    "totals": "記事へのいいね {{hearts}} 件、トップページの足あと {{marks}} 件（合計のみ、詳細なし）"
+  },
+  "setup": {
+    "intro": "Plausible が未接続です。バックエンドに Stats API のキーが必要です：",
+    "step1": "Plausible を開き、右上のアバター → <b>Account Settings</b> → <b>API Keys</b> → <b>New API Key</b> で、種類に <b>Stats API</b> を選びます。",
+    "step2": "キーをサーバーの <code>.env.backend</code> に追加します：<code>PLAUSIBLE_API_KEY=…</code>（Plausible 上のサイト名が <code>koimsurai.com</code> でなければ、<code>PLAUSIBLE_SITE_ID=…</code> も追加）",
+    "step3": "バックエンドを再起動します：<code>docker compose up -d backend-rs</code>",
+    "keyNote": "キーはバックエンドだけにあり、フロントエンドのコードには入りません。"
+  }
+}

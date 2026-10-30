@@ -9,7 +9,8 @@ const DraftPreview = lazy(() => import('@/components/admin/DraftPreview'));
 
 export const Route = createFileRoute('/preview/post')({
   head: () => ({
-    meta: [{ title: `草稿預覽 · ${siteName()}` }, { name: 'robots', content: 'noindex, nofollow' }],
+    // 繁中只是伺服器那一輪的預設；DraftPreview 載好後台字串後換成站長的語言
+    meta: [{ title: `草稿預覽 · ${siteName()}` }, { name: 'robots', content: 'noindex, nofollow' }], // i18n-ignore
   }),
   component: () => (
     <ClientOnly fallback={null}>

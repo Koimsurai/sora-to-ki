@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ExcerptLink } from '@koimsurai/api-types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useAdminT } from '@/i18n/admin-i18n';
 import {
   MAX_LINKS_PER_LOCALE,
   chapterOptions,
@@ -31,23 +32,24 @@ export default function ExcerptLinksEditor({
   localeLabel?: string;
   onChange: (links: ExcerptLink[]) => void;
 }) {
+  const { t } = useAdminT();
   const [open, setOpen] = useState(false);
   const chapters = useMemo(() => chapterOptions(content), [content]);
   const titleOf = useMemo(() => new Map(chapters.map((c) => [c.num, c.text])), [chapters]);
   const found = links.filter((l) => excerpt.includes(l.text));
 
   const blocked = !excerpt.trim()
-    ? '先寫摘要，才能把摘要裡的字連到章節。'
+    ? t('editor.links.blockedNoExcerpt')
     : !chapters.length
-      ? '內文還沒有 ## 章節，摘要沒有地方可以連。'
+      ? t('editor.links.blockedNoChapters')
       : null;
 
   return (
     <div className="pe-links">
       <div className="pe-links-bar">
-        <span className="adm-meta">摘要對應 · 已連 {found.length} 段</span>
+        <span className="adm-meta">{t('editor.links.bar', { n: found.length })}</span>
         <button type="button" className="adm-btn adm-btn-small" disabled={!!blocked} onClick={() => setOpen(true)}>
-          編輯對應
+          {t('editor.links.edit')}
         </button>
       </div>
       {blocked ? (
@@ -62,17 +64,18 @@ export default function ExcerptLinksEditor({
           ))}
         </ul>
       ) : (
-        <p className="pe-side-hint">讀者在文章頁點摘要裡連過的那段，會跳到它連的那一章。</p>
+        <p className="pe-side-hint">{t('editor.links.hint')}</p>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         {/* shadcn 的 Dialog 預設最寬 512px，這裡要放兩欄 */}
         <DialogContent className="max-w-[min(960px,calc(100vw-2rem))]">
           <DialogHeader>
-            <DialogTitle>摘要對應{localeLabel ? ` · ${localeLabel}` : ''}</DialogTitle>
-            <DialogDescription>
-              在左邊的摘要裡反白一段字，再點右邊的一章就連好；點已經連的那段，可以點別章換過去或取消。
-            </DialogDescription>
+            <DialogTitle>
+              {t('editor.links.title')}
+              {localeLabel ? ` · ${localeLabel}` : ''}
+            </DialogTitle>
+            <DialogDescription>{t('editor.links.description')}</DialogDescription>
           </DialogHeader>
           <LinkBoard excerpt={excerpt} links={links} chapters={chapters} titleOf={titleOf} onChange={onChange} />
         </DialogContent>
@@ -95,6 +98,7 @@ function LinkBoard({
   titleOf: Map<string, string>;
   onChange: (links: ExcerptLink[]) => void;
 }) {
+  const { t } = useAdminT();
   const textRef = useRef<HTMLDivElement>(null);
   /** 正在處理的那段：剛反白的、或點了已經連的那段 */
   const [picked, setPicked] = useState<string | null>(null);
@@ -113,7 +117,7 @@ function LinkBoard({
       if (!sel || sel.isCollapsed || !box.contains(sel.anchorNode) || !box.contains(sel.focusNode)) return;
       const text = sel.toString().trim();
       const why = checkSelection(excerpt, links, text);
-      setProblem(why);
+      setProblem(why && t(`editor.links.problem.${why.key}`, why.params));
       setPicked(why ? null : text);
     };
     box.addEventListener('mouseup', take);
@@ -122,7 +126,7 @@ function LinkBoard({
       box.removeEventListener('mouseup', take);
       box.removeEventListener('keyup', take);
     };
-  }, [excerpt, links]);
+  }, [excerpt, links, t]);
 
   /** 點已經連的那段：選起來（可以換章或取消），再點一次放開 */
   const toggle = (text: string) => {
@@ -141,9 +145,9 @@ function LinkBoard({
     problem ??
     (picked
       ? pickedTo
-        ? `「${picked}」連到 ${pickedTo}。點右邊別章換過去，或取消連結。`
-        : `「${picked}」要連到哪一章？點右邊的一章。`
-      : `已連 ${links.length} 段（一個語系最多 ${MAX_LINKS_PER_LOCALE} 段）。`);
+        ? t('editor.links.statusLinked', { text: picked, to: pickedTo })
+        : t('editor.links.statusPick', { text: picked })
+      : t('editor.links.statusCount', { n: links.length, max: MAX_LINKS_PER_LOCALE }));
 
   return (
     <div className="pe-board">
@@ -159,7 +163,7 @@ function LinkBoard({
               className="pe-board-link"
               data-to={p.to}
               aria-pressed={picked === p.text}
-              title={`${p.to} ${titleOf.get(p.to) ?? '（內文裡沒有這一章）'}`}
+              title={`${p.to} ${titleOf.get(p.to) ?? t('editor.links.missingChapter')}`}
               onClick={() => toggle(p.text)}
               onKeyDown={(e) => {
                 if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -188,7 +192,7 @@ function LinkBoard({
               setPicked(null);
             }}
           >
-            取消這段的連結
+            {t('editor.links.unlink')}
           </button>
         )}
         <ol className="pe-board-chapters">
@@ -212,7 +216,7 @@ function LinkBoard({
         </ol>
         {orphans.length > 0 && (
           <div className="pe-links-orphans">
-            <p className="adm-meta">摘要改過，這幾段已經找不到（存檔時後端也會忽略它們）：</p>
+            <p className="adm-meta">{t('editor.links.orphans')}</p>
             <ul>
               {orphans.map((l) => (
                 <li key={l.text}>
@@ -224,7 +228,7 @@ function LinkBoard({
                     className="adm-btn adm-btn-small"
                     onClick={() => onChange(setLink(links, l.text, null))}
                   >
-                    移除
+                    {t('editor.links.remove')}
                   </button>
                 </li>
               ))}

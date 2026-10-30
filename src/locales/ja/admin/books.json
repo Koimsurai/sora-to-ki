@@ -1,0 +1,71 @@
+{
+  "meta": "{{count}} 冊 · 読書中 {{reading}}",
+  "add": "本を追加",
+  "listLabel": "本のリスト",
+  "tabAll": "すべて",
+  "status": {
+    "to-read": "読みたい",
+    "reading": "読書中",
+    "read": "読了"
+  },
+  "searchShelf": "本棚を検索",
+  "searchPlaceholder": "書名、著者、ISBN",
+  "emptyShelf": "本棚はまだ空です。",
+  "noMatch": "該当する本はありません。",
+  "edit": "編集",
+  "editAria": "『{{title}}』を編集",
+  "deleteAria": "『{{title}}』を削除",
+  "pages": "{{count}} ページ",
+  "finishedOn": "{{date}} 読了",
+  "startedOn": "{{date}} 開始",
+  "dialog": {
+    "editTitle": "この本を編集",
+    "editDesc": "編集が終わったら「更新」を押してください。",
+    "addDesc": "ISBN か書名で外部の書誌を検索して取り込み、読書状況・評価・メモを追加します。すべて手入力することもできます。"
+  },
+  "external": {
+    "label": "外部の書誌を検索",
+    "placeholder": "ISBN または書名（Google Books、OpenLibrary、台湾国家図書館）",
+    "search": "検索",
+    "searching": "検索中",
+    "results": "検索結果",
+    "ncl": "台湾国家図書館（表紙・紹介なし）"
+  },
+  "field": {
+    "title": "書名",
+    "authors": "著者",
+    "publisher": "出版社",
+    "publishedDate": "出版日",
+    "pageCount": "ページ数",
+    "language": "言語",
+    "categories": "カテゴリ",
+    "coverUrl": "表紙の URL",
+    "coverPreview": "表紙のプレビュー",
+    "description": "紹介",
+    "myReading": "自分の読書記録",
+    "status": "状況",
+    "rating": "評価 · 0–5",
+    "started": "読み始めた日",
+    "finished": "読了日",
+    "notes": "メモ"
+  },
+  "cancel": "キャンセル",
+  "update": "更新",
+  "putOnShelf": "本棚に追加",
+  "confirmTitle": "この本を削除しますか？",
+  "confirmBody": "評価とメモも一緒に削除され、元に戻せません。",
+  "toast": {
+    "needQuery": "ISBN または書名を入力してください",
+    "fallbackEmpty": "予備のソース（OpenLibrary）にも見つかりませんでした",
+    "notFound": "本が見つかりませんでした",
+    "searchFailed": "検索に失敗しました",
+    "searchFailedRetry": "検索に失敗しました。しばらくしてからお試しください",
+    "picked": "書誌を取り込みました",
+    "updated": "更新しました",
+    "added": "本棚に追加しました",
+    "actionFailed": "操作に失敗しました",
+    "saveFailed": "保存に失敗しました",
+    "removed": "本棚から削除しました",
+    "deleteFailed": "削除に失敗しました"
+  }
+}
