@@ -1,18 +1,20 @@
 <div align="center">
 
-<img src="public/favicon.svg" width="72" alt="宙と木 logo" />
+<img src="public/favicon.svg" width="72" alt="sora-to-ki logo" />
 
-# 宙と木 · Koimsurai
+# sora-to-ki
 
-**此處無他，唯有黑夜、白墨與微光。**
+**Nothing else here: only the night, white ink, and a faint light.**
 
-一個人的網站：寫技術手記、發碎念、放照片與書單，也把看的、聽的、寫的程式串在同一片天空裡。
+A one-person site: notes, moments, works, a collection and a voyage log, all strung together in one night sky.<br/>
+This is the source of [**宙と木 (koimsurai.com)**](https://koimsurai.com), and you can run it as your own site.
 
-**繁體中文** · [English](README.en.md)
+**English** · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md)
 
-[**koimsurai.com**](https://koimsurai.com) · [手記](https://koimsurai.com/blog) · [此站點](https://koimsurai.com/about-site) · [航行日誌](https://koimsurai.com/history) · [RSS](https://koimsurai.com/rss)
+[**See the demo**](https://koimsurai.com/en) · [**Run your own site**](#️-run-your-own-site) · [Colophon (the design write-up)](https://koimsurai.com/en/about-site) · [Releases](https://github.com/Koimsurai/sora-to-ki/releases)
 
 [![CI](https://img.shields.io/github/actions/workflow/status/Koimsurai/sora-to-ki/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/Koimsurai/sora-to-ki/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Koimsurai/sora-to-ki?logo=github)](https://github.com/Koimsurai/sora-to-ki/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 [![frontend cov](https://img.shields.io/codecov/c/github/Koimsurai/sora-to-ki/main?flag=frontend&label=frontend%20cov&logo=codecov&logoColor=white)](https://app.codecov.io/gh/Koimsurai/sora-to-ki?flags%5B0%5D=frontend)
 [![e2e cov](https://img.shields.io/codecov/c/github/Koimsurai/sora-to-ki/main?flag=e2e&label=e2e%20cov&logo=playwright&logoColor=white)](https://app.codecov.io/gh/Koimsurai/sora-to-ki?flags%5B0%5D=e2e)
@@ -24,218 +26,197 @@
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
 [![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
+[![Home: moons around Saturn](.github/screenshots/home.jpg)](https://koimsurai.com/en)
+
 </div>
 
----
+## 🛰️ Run your own site
 
-> 🛰️ **也可以拿去架你自己的站。** 這份程式碼叫 **sora-to-ki**：`docker compose up -d`，照初次設定精靈認領站長、選語系、填站名，就是一個跟 koimsurai.com 同款的站，內容換成你的。見[架自己的站](#️-架自己的站)。
-
-從 2025 年 4 月開始寫，一路改到現在。前端是 **React 19 + TanStack Start（SSR + ISR）**，後端是 **Rust（axum + sqlx + SQLite）**，全部跑在家裡的一台伺服器上，用 Docker Compose 部署。
-
-> **想看舊站？** 2026 年 10 月整站翻新成現在的「宙と木」。翻新前的最後一版留在 tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)（`git checkout v1-final`），也還跑在 <https://archive.koimsurai.com>（唯讀）。
-
-## 🌌 設計
-
-整個站只有一個概念：**每一頁都是同一片夜空裡的一種東西**，用首頁那顆點線土星的點和線變出來。完整的說明（還能一步一步看土星怎麼畫出來）在站上的 [此站點](https://koimsurai.com/about-site)。
-
-### 只有三樣材料
-
-| | | |
-|---|---|---|
-| ⬛ | **黑，是紙** | 整個站的底 |
-| ⬜ | **白，是墨** | 字、線、點 |
-| 🟧 | **琥珀，是訊號** | 只出現在一個點上：你在哪裡、正在發生的事。不拿來當大面積的強調色 |
-
-### 三種字
-
-- **思源宋體**：中文與所有混排的句子。按頁面實際用到的字裁切，一頁只下載幾十 KB
-- **Instrument Serif**：只給整段英文的大字，不加粗
-- **等寬字**：日期與數字
-
-讀文章時還能換成黑體、楷體或現代無襯線，四種都照語系由站上提供。
-
-### 三條規則
-
-1. **一個畫面只有一個訊號**：琥珀色一次只亮一處
-2. **只用點與線**：不塗色塊、不疊陰影、不用毛玻璃；直角、細線、點線分隔
-3. **由數據長出來**：作品頁的星球大小是程式碼量、地貌是主要語言、衛星是 GitHub 星星
-
-### 同一片天空
-
-| 頁面 | 是天空裡的 |
-|---|---|
-| 首頁 | 繞著土星的衛星（五顆衛星對應五個分區） |
-| 手記 | 一圈一圈的星軌，一篇文章就是一道 |
-| 碎念 | 劃過的彗星，最新那則是彗核 |
-| 作品 | 往外長的螺旋航線 |
-| 收藏 | 從地球發出的訊號：看完、讀完、聽完的那一刻發出，以光速飛到現在，距離就是離現在多久 |
-| 照片 | 從深空傳回來的照片，一行一行收下來 |
-| 設備 | 太空船的工程圖 |
-| 朋友 | 繞著同一個中心的星 |
-| 留言 | 收到的電波 |
-| 航行日誌 | 從地表升空 |
-| 關於 | 一次下墜 |
-
-## 📸 畫面
-
-| 首頁：繞著土星的衛星 | 手記：一圈一圈的星軌 |
-|:---:|:---:|
-| [![首頁](.github/screenshots/home.jpg)](https://koimsurai.com) | [![手記](.github/screenshots/notes.jpg)](https://koimsurai.com/blog) |
-| **文章** | **照片：從深空傳回來的照片** |
-| [![文章](.github/screenshots/post.jpg)](https://koimsurai.com/blog) | [![照片](.github/screenshots/photos.jpg)](https://koimsurai.com/photos) |
-| **作品：往外長的螺旋航線** | **收藏：從地球發出的訊號** |
-| [![作品](.github/screenshots/works.jpg)](https://koimsurai.com/portfolio) | [![收藏](.github/screenshots/collection.jpg)](https://koimsurai.com/watch) |
-| **朋友：繞著同一個中心的星** | **航行日誌：從地表升空** |
-| [![朋友](.github/screenshots/friends.jpg)](https://koimsurai.com/friends) | [![航行日誌](.github/screenshots/log.jpg)](https://koimsurai.com/history) |
-| **設備：太空船的工程圖** | **此站點** |
-| [![設備](.github/screenshots/setup.jpg)](https://koimsurai.com/setup) | [![此站點](.github/screenshots/colophon.jpg)](https://koimsurai.com/about-site) |
-
-### 後台
-
-| 此刻 | 手記 |
-|:---:|:---:|
-| ![後台：此刻](.github/screenshots/admin-dashboard.jpg) | ![後台：手記](.github/screenshots/admin-posts.jpg) |
-| **碎念**：右邊是同步進來的紀錄，按「寫」帶進左邊 | **留言**：左邊清單、右邊那一則，鍵盤 j／k／a／s／r |
-| ![後台：碎念](.github/screenshots/admin-thoughts.jpg) | ![後台：留言](.github/screenshots/admin-comments.jpg) |
-
-## 🚀 2026-10 的大遷移
-
-這次不是換皮，是把整個站照上面的三條規則重新做一遍。舊版的樣子在 [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)。
-
-**前台**
-
-- 配色從品牌紫、洋紅、Happy Hues 那套收回到三樣材料；連結滑過變綠發光那條拿掉
-- 每一頁各畫各的天空（`src/components/*/*Sky.ts`，2D canvas），共用首頁那顆土星的點與線；換頁時用轉場把兩片天空接起來
-- 拿掉游標尾巴、流星、UFO 與首訪的高速穿越開場：裝飾一多，「一個畫面只有一個訊號」就不成立
-- 字換成思源宋體並按頁裁字；每一頁有自己的動態分享圖
-
-**後台**
-
-- 換成跟前台同一套材料，側欄照前台的分區分成「此刻、寫、收、回、站」
-- 內容撐滿側欄右邊的寬度（清單類的頁面收成一欄置中）；換頁時舊畫面淡出、新的那頁淡入上浮，切分頁也一樣
-- 新功能：排程發佈、回收桶、碎念附作品、友鏈申請審核、照片與收藏的前台顯示設定（見下面「站台本身」）
-
-**更早的一次遷移**：2026-07 後端從 Express 整套搬到 Rust，120 多個端點逐一對拍、確認回應一模一樣才切換。過程記錄在 [`backend/STRANGLER.md`](backend/STRANGLER.md)。
-
-## ✨ 有什麼
-
-### 手記與碎念
-
-- **MDX 文章**：除了 GFM，另有二十多個自訂區塊（程式碼分頁、Diff、檔案樹、圖表、投票、手繪風草圖、日文振假名、劇透、站長註解…）
-- **五種語系**：繁中、簡中、English、日本語、한국어。簡中用 OpenCC 自動轉換，每篇文章可以各自翻譯
-- **程式碼高亮**：Shiki 走 JavaScript 正規式引擎（文章頁不用下載 wasm），只有 C 家族語言才載入 Oniguruma
-- **Mermaid 圖表**：可縮放、平移、全螢幕，跟著站點配色
-- **圖片不跳版**：上傳時算出 thumbhash 和原始尺寸，載入前先顯示模糊佔位圖
-- **留言、按讚、系列文、目錄、閱讀進度**，以及 RSS、電子報（Resend）
-- **碎念**：短篇動態，可以附上連結卡片，或從同步進來的紀錄帶入一部片、一本書、一首歌，前台寫成「看了／讀了／聽了」
-
-### 收藏與生活紀錄
-
-- **在看什麼**：動畫瘋觀看紀錄自動同步（[anigamer](https://github.com/Koimsurai/anigamer-rs)，自己寫的 SDK），電影與影集透過 Simkl 和 TMDb 同步
-- **音樂**：Spotify 正在播放、最近播放、最愛曲風
-- **書櫃**：ISBN 查詢走國家圖書館的資料
-- **照片**：EXIF 資訊、CLIP 自動標籤、可縮放的全螢幕檢視；標題、標籤、精選與隱藏在後台改，NAS 重新同步不會蓋掉
-- **動態**：WakaTime 寫程式時數、GitHub 活動、Steam 個人檔案與遊戲時數
-- **設備**：主機的零件與家裡的網路拓樸，畫成工程圖
-
-### 站台本身
-
-- **太空背景**：星空與首頁的土星由 three.js（WebGPU，不支援時退回 WebGL2）在 Web Worker 的 OffscreenCanvas 裡算；偵測到軟體渲染的裝置自動改成純 CSS
-- **自製後台**，照前台的分區：
-  - **此刻**：總覽列出等你處理的事、近 28 天的 Web Vitals
-  - **寫**：Monaco 編輯器（夜色主題、Vim 模式、斜線指令、拖放上傳）與即時預覽；**排程發佈**（到時間自動發，電子報也那時才寄）；刪掉的文章先進**回收桶**，30 天內可以還原；**碎念**的右邊列出巴哈、Simkl、Spotify、書架同步進來的紀錄，按「寫」帶進撰寫框
-  - **收**：觀看紀錄與聽的歌可以設成不公開、排收藏頁的最愛；書架；照片的標題、標籤、精選
-  - **回**：留言審核（鍵盤 j／k／a／s／r 操作）、**友鏈申請**（朋友頁的表單直接送進來，一鍵檢查對方的站連得到、有沒有回連、有沒有 RSS）、電子報訂閱者
-  - **站**：帳號與權限
-- **MCP server**：[`packages/mcp-server`](packages/mcp-server) 提供 27 個工具，讓 AI 助手透過後台 API 寫文章（含排程與回收桶）、發碎念、上傳圖片、管理分類
-- **其他**：GitHub／Google 登入、命令面板（`Ctrl+K`）、PWA 離線頁、每語系各自的 sitemap 與 hreflang、嚴格的 CSP、自架的錯誤追蹤（GlitchTip）與 Core Web Vitals 回報
-
-## 🏗️ 架構
-
-```mermaid
-flowchart LR
-  user([瀏覽器]) --> nginx[nginx<br/>TLS / gzip / 靜態圖]
-  nginx -->|頁面| fe[frontend<br/>TanStack Start · Nitro<br/>SSR + ISR]
-  nginx -->|/api| be[backend-rs<br/>axum · sqlx]
-  fe -->|SSR 取資料| be
-  be --> db[(SQLite)]
-  be -->|快取 + 失敗回舊資料| ext[第三方 API<br/>GitHub · Spotify · Steam<br/>WakaTime · TMDb · Simkl · 動畫瘋]
-  be -.文章更新後清 ISR 快取.-> fe
-  backup[db-backup<br/>每日備份 SQLite] --- db
-```
-
-- **型別只寫一次**：後端的 Rust struct 用 [specta](https://github.com/specta-rs/specta) 產生 TypeScript 型別（[`packages/api-types`](packages/api-types)），前端直接引用；CI 會檢查兩邊有沒有對上
-- **第三方 API 都經過後端**：金鑰不會進前端。回應會快取，上游出錯時改回舊資料，不會整區空白
-- **ISR**：頁面由 Nitro 快取，後端改到文章時主動通知前端清除快取
-- **設計 token 有檢查在擋**：間距、字級、行高、圓角、透明度…都必須用 `src/index.css` 裡的 token，`pnpm check:css-tokens` 會擋掉現編的值
-
-## 🛠️ 技術
-
-| | |
-|---|---|
-| **前端** | React 19 · TanStack Start / Router / Query · Vite+（vite、vitest、oxlint、oxfmt）· Tailwind CSS v4 · Framer Motion · three.js · MDX · @pierre/highlights · pele · rough.js · i18next · Radix UI / shadcn |
-| **後端** | Rust 2024 · axum · tokio · sqlx（SQLite）· JWT + bcrypt · image / resvg / thumbhash（圖片與分享圖）· ferrous-opencc · utoipa（OpenAPI，`/api/docs`）· Sentry SDK |
-| **字** | 思源宋體（按頁裁字）· Instrument Serif · 等寬字 |
-| **基礎設施** | Docker Compose · nginx · GitHub Actions · Codecov · 自架 GlitchTip |
-
-## 🧪 品質把關
-
-每個 PR 都要通過下面這些才能合併（完整清單在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）：
-
-- **型別與 lint**：`tsc`、oxlint（含型別感知規則與 `@shadcn/lint`）、Biome（CSS）、CSS token 檢查、knip（沒用到的檔案與 export）
-- **測試**：vitest 單元測試、Playwright e2e（21 支 spec，含無障礙檢查、後台的往返操作，以及公開頁 11 條 × 3 種寬度加上後台頁的計算後樣式比對）、後端 cargo-nextest 搭配覆蓋率門檻
-- **API**：用 OpenAPI 規格自動產生測試資料打後端（Schemathesis），並檢查回應符合宣告的 schema
-- **後端**：`cargo clippy`（pedantic）、`cargo audit`、`cargo shear`、`typos`
-- **效能**：Lighthouse CI 的效能預算
-- **另外**（不在 CI，手動跑）：變異測試（Stryker、cargo-mutants），找出「測試有跑到、但其實沒在檢查」的地方
-
-## 🛰️ 架自己的站
-
-只需要一台裝了 Docker 的機器，和一個指向它的網域。
+All you need is a machine with Docker and a domain pointing at it.
 
 ```bash
 git clone https://github.com/Koimsurai/sora-to-ki.git
 cd sora-to-ki
-cp .env.example .env                  # 網址、網域、站名、聯絡方式
-cp .env.backend.example .env.backend  # JWT_SECRET、GitHub 或 Google 登入
+cp .env.example .env                  # URL, domain
+cp .env.backend.example .env.backend  # JWT_SECRET, GitHub or Google sign-in
 docker compose up -d
-docker compose logs backend-rs | grep setup   # 初次設定的網址
+docker compose logs backend-rs | grep setup   # the first-time setup link
 ```
 
-- 映像是發版時建好的（[GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)），不必在自己機器上編譯；要從原始碼建就加 `--build`
-- 內建 Caddy：`.env` 的 `CADDY_ADDRESS` 填網域會自動申請 HTTPS；在本機試跑就填 `:80`，打開 <http://localhost>
-- 第一次開機會在 log 印一行 `setup: open …/admin/init?code=…`。打開它：用 GitHub 或 Google 登入認領站長，
-  再選語系、填站名、決定要開哪些頁面。登入的設定方式精靈裡一步一步寫著；`.env.backend` 填了 `OWNER_EMAIL` 的話不走精靈，
-  用那個信箱登入就是站長
-- 後台在 `/admin`，只能用 GitHub 或 Google 登入（`ADMIN_USERNAME`／`ADMIN_PASSWORD` 是給 MCP 用的機器帳號，不是給人登入的）。
-  站名、介紹、哪幾頁要開，之後都在後台（或 MCP）改
-- 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.2.0`
-- 資料庫每天自動備份到 `./backups`
+The link in the log opens the **first-time setup wizard**: sign in with GitHub or Google to claim the site, pick your
+languages, name it and choose which pages to show, while the orbit on the right grows with every answer. The wizard's
+first step walks you through creating the OAuth app it needs for sign-in.
 
-- 關於、作品、航行日誌、此站點的問答、設備的內容都在後台「頁面」填（MCP 也能改）。新站的設備與照片預設是關著的
-  （一個要先選圖紙、一個要先接相片來源），準備好再到站台設定打開
-- 設備頁想用自己的手繪圖紙、讓滑過的部件整個亮起來：做一個圖紙包放進 `custom/setup/`，
-  格式與交給 AI 的說法見 [`custom/setup/README.md`](custom/setup/README.md)
+![First-time setup wizard](.github/screenshots/init-wizard.jpg)
 
-### 交給 AI 架
+- The images are built at release time ([GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)), so nothing compiles on your machine; add `--build` to build from source instead
+- Caddy is built in: put your domain in `CADDY_ADDRESS` in `.env` and HTTPS is set up automatically. To try it locally, use `:80` and open <http://localhost>.
+  If the machine already runs nginx, switch to it with [`deploy/nginx/`](deploy/nginx/README.md) (an override and a server block are included);
+  for any other reverse proxy, write a `docker-compose.override.yml` as described at the top of `docker-compose.yml`
+- If `OWNER_EMAIL` is set in `.env.backend` there's no wizard: whoever signs in with that address is the owner
+- The admin is at `/admin` and only takes GitHub or Google sign-in (`ADMIN_USERNAME` / `ADMIN_PASSWORD` is a machine account for MCP, not for people)
+- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.2.0` in `.env`
+- The database is backed up to `./backups` every day
 
-用 Claude Code、Codex 這類能在主機上跑指令的 AI 也可以，把下面這段貼給它（`<…>` 換成你的）：
+### Let an AI set it up
+
+An AI that can run commands on the server (Claude Code, Codex…) can do this too. Paste it the following, with the `<…>` filled in:
 
 ```text
-在這台主機上架 https://github.com/Koimsurai/sora-to-ki ，照 README「架自己的站」做。
-網域是 <blog.example.com>，站名 <站名>，預設語系 <zh-TW>。
-- .env：SITE_URL、CADDY_ADDRESS 填網域；.env.backend 的 JWT_SECRET 用 `openssl rand -hex 32` 產生
-- 80／443 已經被別的服務用了的話，不要停掉它：照 docker-compose.yml 開頭的說明寫 docker-compose.override.yml
-- 起來之後把 `docker compose logs backend-rs | grep setup` 那行網址給我，登入與認領我自己來
-- .env、.env.backend 不要提交、不要貼到別的地方
+Set up https://github.com/Koimsurai/sora-to-ki on this server, following "Run your own site" in the README.
+The domain is <blog.example.com>, the site name is <name>, the default language is <en>.
+- .env: put the domain in SITE_URL and CADDY_ADDRESS; generate JWT_SECRET in .env.backend with `openssl rand -hex 32`
+- If ports 80/443 are already taken by something else, don't stop it: write a docker-compose.override.yml as described at the top of docker-compose.yml
+- When it's up, give me the URL from `docker compose logs backend-rs | grep setup`; I'll sign in and claim the site myself
+- Don't commit .env or .env.backend, and don't paste them anywhere
 ```
 
-登入一定要你本人來：GitHub／Google 的 OAuth App 是用你的帳號建的，精靈第一步會一步一步帶你做。
-AI 能做的是把機器準備好、把設定檔填對、在你建好 OAuth App 之後把兩串值填進 `.env.backend` 並重開後端。
+Signing in has to be you: the GitHub/Google OAuth app is created under your own account. What the AI can do is get the
+machine ready, fill in the config, and, once you've made the OAuth app, put the two values into `.env.backend` and restart the backend.
 
-## ⚙️ 本機開發
+## ✨ What you get
 
-需要 **Node.js ≥ 26**、**pnpm 12**、**Rust stable**（edition 2024），或者只要 Docker。
+### One sky
+
+Every page is one kind of thing in the same night sky. Turn off a page you don't want in the admin, and its orbit leaves the home page with it.
+
+| Page | is, in the sky | Filled from |
+|---|---|---|
+| Home | moons around Saturn, one moon per section | the latest of each page |
+| Notes | rings of star trails, one trail per article | articles written in the admin |
+| Moments | passing comets; the newest moment is the head | short posts from the admin |
+| Works | a spiral course outward; a planet's size is its code size, its moons are GitHub stars | GitHub repos picked in the admin |
+| Collection | signals sent from Earth at the moment something was finished, travelling at the speed of light | bookshelf, Simkl / TMDb, Spotify (all optional) |
+| Log | a launch from your launch pad; altitude is your cumulative GitHub contributions | a start date and milestones from the admin |
+| About | a free fall from one year down to now | chapters, skills and experience from the admin |
+| Photos | pictures downlinked from deep space, received line by line | a NAS or an uploaded folder |
+| Setup | engineering sheets in a space shuttle's cargo bay | built-in sheets, or your own uploaded image |
+| Friends | stars around one center | a form on the page, reviewed in the admin |
+| Messages | radio waves received | readers |
+| Colophon | a sextant and the stars it measured | a Q&A from the admin |
+
+### Writing
+
+- **MDX articles**: GFM plus twenty-odd custom blocks (code tabs, diffs, file trees, Mermaid charts, polls, hand-drawn sketches, Japanese furigana, spoilers, author's notes…),
+  all compiled and highlighted on the server, so readers never download a compiler
+- **Five languages**: Traditional Chinese, Simplified Chinese, English, Japanese and Korean, with the default chosen by you. Each article is translated on its own,
+  Simplified Chinese can be converted automatically, and the admin flags translations that fell behind the original
+- **Scheduled publishing** (the newsletter goes out then too), a **trash** with 30 days to restore, a newsletter (Resend), RSS
+- **No layout shift from images**: a thumbhash and the original dimensions are computed at upload, so a blurred placeholder shows before the image loads
+- **MCP server**: the 31 tools in [`packages/mcp-server`](packages/mcp-server) let an AI assistant write posts, post moments, upload images and edit pages and site settings through the admin API
+
+### The admin
+
+- **Now**: an overview of what needs attention and the last 28 days of Web Vitals
+- **Write**: Monaco editor (Vim mode, slash commands, drag-and-drop upload) with live preview; synced records sit next to the moments composer, one click pulls one in
+- **Keep**: the bookshelf, photo titles and featured picks, what the collection shows publicly
+- **Reply**: comment moderation (keyboard j / k / a / s / r), **link-exchange requests** (one-click checks that the site is reachable, links back and has an RSS feed), newsletter subscribers
+- **Station**: site settings (name, languages, celestial body, launch pad, each page's description), each page's content, accounts and roles
+- The admin itself speaks all five languages, following you rather than the site's default
+
+| Now | Notes |
+|:---:|:---:|
+| ![Admin: Now](.github/screenshots/admin-dashboard.jpg) | ![Admin: Notes](.github/screenshots/admin-posts.jpg) |
+
+### Also
+
+- GitHub / Google sign-in, a command palette (`Ctrl+K`), a PWA offline page, a sitemap and hreflang per language, a generated share image for every page, a strict CSP
+- Third-party integrations are all optional: leave a key empty and that section simply isn't there, with no errors
+- Error tracking (anything Sentry-compatible, such as GlitchTip) and Plausible analytics are optional too
+
+## 🎛️ Customizing
+
+You choose from a set of carefully made options rather than a wall of knobs: every site gets a little "this is mine", and the whole still holds together.
+
+- **Celestial body**: Saturn, Neptune, a black hole or Betelgeuse, as the one readers see first; readers can switch it from the top bar
+- **Launch pad**: where you are. The log's rocket lifts off there over that part of the coastline (with rivers and lakes if you're inland), and it's the amber dot on the Collection globe
+- **Pages**: moments, works, collection, setup, log, messages, photos, friends and the colophon can all be turned off
+- **Descriptions**: each page's description in search results, and the opening line of the About menu, written separately in each language
+- **Setup sheets**: to use your own hand-drawn sheets on the setup page (with whole parts lighting up on hover), drop a sheet pack into `custom/setup/`;
+  the format, and how to ask an AI to make one, are in [`custom/setup/README.md`](custom/setup/README.md)
+
+## 🌌 Design
+
+The whole site rests on one idea: **every page is one kind of thing in the same night sky**, all made from the dots and lines of the dotted Saturn on the home page. The full explanation, where you can also watch Saturn being drawn step by step, is the demo site's [Colophon](https://koimsurai.com/en/about-site).
+
+### Only three materials
+
+| | | |
+|---|---|---|
+| ⬛ | **Black is the paper** | the ground of every page |
+| ⬜ | **White is the ink** | text, lines and dots |
+| 🟧 | **Amber is the signal** | only ever on a single point: where you are, or what is happening. Never a fill colour |
+
+### Three typefaces
+
+- **Source Han Serif**: Chinese and every mixed sentence. Subset per page to the characters actually used, so a page downloads only a few dozen KB
+- **Instrument Serif**: only large all-English display text, never bold
+- **Monospace**: dates and numbers
+
+Articles can also be read in a sans, a handwritten-style or a modern sans face, each served per language by the site.
+
+### Three rules
+
+1. **One signal per screen**: amber lights up one place at a time
+2. **Only dots and lines**: no filled blocks, no drop shadows, no frosted glass; right angles, hairlines, dotted dividers
+3. **Grown from data**: on the Works page a planet's size is its code size, its surface is its main language, and its moons are GitHub stars
+
+## 📸 Screenshots
+
+| Notes: rings of star trails | Article |
+|:---:|:---:|
+| [![Notes](.github/screenshots/notes.jpg)](https://koimsurai.com/en/blog) | [![Article](.github/screenshots/post.jpg)](https://koimsurai.com/en/blog) |
+| **Works: a spiral course outward** | **Collection: signals sent from Earth** |
+| [![Works](.github/screenshots/works.jpg)](https://koimsurai.com/en/portfolio) | [![Collection](.github/screenshots/collection.jpg)](https://koimsurai.com/en/watch) |
+| **Log: a launch from the ground** | **Photos: pictures downlinked from deep space** |
+| [![Log](.github/screenshots/log.jpg)](https://koimsurai.com/en/history) | [![Photos](.github/screenshots/photos.jpg)](https://koimsurai.com/en/photos) |
+| **Friends: stars around one center** | **Setup: a space shuttle's blueprints** |
+| [![Friends](.github/screenshots/friends.jpg)](https://koimsurai.com/en/friends) | [![Setup](.github/screenshots/setup.jpg)](https://koimsurai.com/en/setup) |
+| **Colophon** | **Admin: comments** |
+| [![Colophon](.github/screenshots/colophon.jpg)](https://koimsurai.com/en/about-site) | ![Admin: comments](.github/screenshots/admin-comments.jpg) |
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+  user([Browser]) --> proxy[Caddy<br/>TLS / compression / uploaded images]
+  proxy -->|pages| fe[frontend<br/>TanStack Start · Nitro<br/>SSR + ISR]
+  proxy -->|/api| be[backend-rs<br/>axum · sqlx]
+  fe -->|SSR data| be
+  be --> db[(SQLite)]
+  be -->|cached, stale on error| ext[Third-party APIs (optional)<br/>GitHub · Spotify · Steam<br/>WakaTime · TMDb · Simkl]
+  be -.purges ISR cache when posts or settings change.-> fe
+  backup[db-backup<br/>daily SQLite backup] --- db
+```
+
+- **Types are written once**: the backend's Rust structs generate TypeScript types with [specta](https://github.com/specta-rs/specta) ([`packages/api-types`](packages/api-types)), which the frontend imports directly; CI checks that both sides match
+- **Third-party APIs go through the backend**: keys never reach the frontend. Responses are cached, and stale data is served when an upstream fails, so a section never goes blank
+- **ISR**: pages are cached by Nitro, and the backend tells the frontend to purge them when a post or the site settings change
+- **Design tokens are enforced**: spacing, font sizes, line heights, radii, opacity… must use the tokens in `src/index.css`; `pnpm check:css-tokens` rejects ad-hoc values
+
+## 🛠️ Stack
+
+| | |
+|---|---|
+| **Frontend** | React 19 · TanStack Start / Router / Query · Vite+ (vite, vitest, oxlint, oxfmt) · Tailwind CSS v4 · Framer Motion · three.js (WebGPU, falling back to WebGL2) · MDX · @pierre/highlights · pele · rough.js · i18next · Radix UI / shadcn |
+| **Backend** | Rust 2024 · axum · tokio · sqlx (SQLite) · JWT · image / resvg / thumbhash (images and share images) · ferrous-opencc · utoipa (OpenAPI at `/api/docs`) · Sentry SDK |
+| **Type** | Source Han Serif (subset per page) · Instrument Serif · monospace |
+| **Infra** | Docker Compose · Caddy · GitHub Actions · GHCR · Codecov |
+
+## 🧪 Quality gates
+
+Every PR has to pass these before it can merge (the full list is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
+
+- **Types and lint**: `tsc`, oxlint (with type-aware rules and `@shadcn/lint`), Biome (CSS), the CSS token check, knip (unused files and exports)
+- **Tests**: vitest unit tests; Playwright e2e (26 specs, including accessibility checks, admin round trips, and computed-style comparisons of 11 public routes × 3 widths plus the admin pages); backend cargo-nextest with a coverage threshold
+- **API**: Schemathesis generates requests from the OpenAPI spec and checks the responses against the declared schemas
+- **Backend**: `cargo clippy` (pedantic), `cargo audit`, `cargo shear`, `typos`
+- **Performance**: Lighthouse CI budgets
+- **Also** (manual, not in CI): mutation testing (Stryker, cargo-mutants) to find code that tests run through but don't actually check
+
+## ⚙️ Local development
+
+You need **Node.js ≥ 26**, **pnpm 12** and **Rust stable** (edition 2024), or just Docker.
 
 ```bash
 git clone https://github.com/Koimsurai/sora-to-ki.git
@@ -243,110 +224,103 @@ cd sora-to-ki
 pnpm install
 ```
 
-### 分開跑前後端
+### Run frontend and backend separately
 
 ```bash
-# 後端：讀 backend/.env
+# Backend: reads backend/.env
 cp backend/.env.example backend/.env
-#   把 DATABASE_URL 改成本機路徑，例如 sqlite://./dev.sqlite
-#   把 BIND_ADDR 改成 127.0.0.1:3009（前端 dev server 預設連這個埠）
+#   set DATABASE_URL to a local path, e.g. sqlite://./dev.sqlite
+#   set BIND_ADDR to 127.0.0.1:3009 (the frontend dev server's default)
 cd backend && cargo run
 
-# 前端：http://localhost:13998
+# Frontend: http://localhost:13998
 pnpm dev
 ```
 
-資料庫不存在時會自動建立，schema 由 [`backend/migrations/`](backend/migrations) 在啟動時套用。
+The database is created if it doesn't exist, and the schema in [`backend/migrations/`](backend/migrations) is applied on startup.
 
-### 環境變數
+### Environment variables
 
-必填的只有 `DATABASE_URL` 和 `JWT_SECRET`（範例檔裡都有）。其他的沒設時，對應的功能會自動關閉，或顯示空狀態。
+Only `DATABASE_URL` and `JWT_SECRET` are required (both are in the example file). Anything else that's unset turns the related feature off or shows an empty state.
 
-| 用途 | 變數 |
+| Purpose | Variables |
 |---|---|
-| 基本 | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
-| 登入（站長與讀者） | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
-| MCP 的機器帳號 | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
-| 動態頁 | `GITHUB_TOKEN` `WAKATIME_API_KEY` `STEAM_API_KEY` `STEAM_ID` |
+| Basics | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
+| Sign-in (owner and readers) | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
+| MCP machine account | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
+| Activity page | `GITHUB_TOKEN` `WAKATIME_API_KEY` `STEAM_API_KEY` `STEAM_ID` |
 | Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
-| 影劇 | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN` `BAHAMUT_UID` `BAHAMUT_PASSWORD` |
-| 書櫃 | `GOOGLE_BOOKS_API_KEY` `ENABLE_TW_ISBN_SYNC` |
-| 電子報 | `RESEND_API_KEY` |
-| 錯誤追蹤 | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
-| 後台流量（Plausible） | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
-| ISR 清快取 | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET` |
+| Film and TV | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN`; Taiwan's Bahamut Anime Crazy: `BAHAMUT_UID` `BAHAMUT_PASSWORD` |
+| Bookshelf | `GOOGLE_BOOKS_API_KEY`; Taiwan's National Central Library ISBN data: `ENABLE_TW_ISBN_SYNC` |
+| Newsletter | `RESEND_API_KEY` |
+| Error tracking | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
+| Admin traffic (Plausible) | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
+| ISR purge | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET` (generated automatically under compose if left empty) |
 
-## 📜 常用指令
+### Common commands
 
 ```bash
-pnpm dev              # 前端 dev server
-pnpm build            # 正式建置
-pnpm test             # 單元測試
-pnpm e2e              # Playwright e2e（跑的是上一次 build 的產物，改完 src/ 要先 build）
-pnpm lint:css         # CSS lint（Biome）
-pnpm check:css-tokens # CSS token 檢查
-pnpm export:types     # 從 Rust 重新產生 TS 型別
+pnpm dev              # frontend dev server
+pnpm build            # production build
+pnpm test             # unit tests
+pnpm e2e              # Playwright e2e (runs the last build; run pnpm build after changing src/)
+pnpm lint:css         # CSS lint (Biome)
+pnpm check:css-tokens # CSS token check
+pnpm export:types     # regenerate TS types from Rust
 
 cd backend
-cargo nextest run --no-fail-fast   # 後端測試（請用 nextest，不要用 cargo test）
+cargo nextest run --no-fail-fast   # backend tests (use nextest, not cargo test)
 cargo clippy --all-targets -- -D warnings
 ```
 
-## 📂 專案結構
+### Project layout
 
 ```
 .
 ├── backend/                 # Rust API
-│   ├── src/router.rs        # 路由表
-│   ├── src/handlers/        # 依領域拆分（posts、thoughts、watch、gallery、spotify…）
-│   ├── migrations/          # SQLite schema
-│   └── STRANGLER.md         # Express → Rust 遷移紀錄
+│   ├── src/router.rs        # route table
+│   ├── src/handlers/        # split by domain (posts, thoughts, watch, gallery, ground…)
+│   ├── data/geo/            # the log's coastlines (Natural Earth, public domain)
+│   └── migrations/          # SQLite schema
 ├── packages/
-│   ├── api-types/           # 由 Rust 產生的 TS 型別（不要手改）
-│   ├── mdx-core/            # 前後端共用的 MDX 編譯設定
-│   └── mcp-server/          # 後台 API 的 MCP server
+│   ├── api-types/           # TS types generated from Rust (don't edit by hand)
+│   ├── mdx-core/            # MDX compile settings shared by frontend and backend
+│   └── mcp-server/          # MCP server for the admin API
 ├── src/
-│   ├── routes/              # TanStack Router 的檔案路由（含 $locale/ 語系前綴）
-│   ├── components/          # 依功能領域分組；各頁的天空在同名的 *Sky.ts
-│   ├── data/ i18n/ seo/     # API 查詢、語系路由、meta 與 JSON-LD
+│   ├── routes/              # TanStack Router file routes (including the $locale/ prefix)
+│   ├── components/          # grouped by feature; each page's sky is in a matching *Sky.ts
+│   ├── data/ i18n/ seo/     # API queries, locale routing, meta and JSON-LD
 │   ├── hooks/ store/ lib/
-│   └── locales/             # 五種語系的翻譯
-├── server/routes/           # Nitro 路由：sitemap、robots、rss、llms.txt
+│   └── locales/             # translations for the five languages (the admin's are in locales/<lang>/admin/)
+├── custom/                  # yours to change: setup sheet packs
+├── server/routes/           # Nitro routes: sitemap, robots, rss, llms.txt
 ├── tests/e2e/               # Playwright
 ├── Dockerfile
 └── docker-compose.yml
 ```
 
-給 AI 助手（Claude Code 等）看的工作守則在 [`CLAUDE.md`](CLAUDE.md)，裡面也記錄了很多踩過的坑和設計理由。
+Working notes for AI assistants (Claude Code and the like) live in [`CLAUDE.md`](CLAUDE.md) (in Chinese); it also records a lot of past pitfalls and the reasons behind design decisions.
 
-## 🍴 想參考或拿去改
+## 📜 History
 
-歡迎參考任何寫法。只是想架一個站的話，照上面「架自己的站」就好，不需要 fork。幾件事先說：
+- **April 2025**: started, as a one-person site
+- **July 2026**: the backend moved from Express to Rust in one go; all 120+ endpoints were diffed against the old ones and the switch happened only once every response matched ([`backend/STRANGLER.md`](backend/STRANGLER.md), in Chinese)
+- **October 2026**: rebuilt as today's 宙と木 around "three materials, three rules". The last version before that is the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final), still running read-only at <https://archive.koimsurai.com>
+- **October 2026**: the hard-coded parts taken out, open-sourced as sora-to-ki that anyone can run ([v0.2.0](https://github.com/Koimsurai/sora-to-ki/releases))
 
-- 程式碼採 **AGPL-3.0**：如果你改過之後**架成網站對外提供**，也要以相同授權公開修改後的原始碼
-- 站上的**文章、照片、碎念、頭像與 logo 都不在授權範圍內**（見下方），fork 之後請換成你自己的
-- 不接受 PR
-- 想要翻新前的版本，從 tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final) 開始
-- 有問題或發現 bug 都歡迎開 [issue](https://github.com/Koimsurai/sora-to-ki/issues)
+## 📄 License and contributing
 
-## 📄 授權
+- **Code**: [GNU Affero General Public License v3.0](LICENSE). If you modify it and **run it as a public website**, you have to publish your modified source under the same licence
+- **Content**: the demo site's articles, photos, moments, book reviews, avatar and logo © Koimsurai, **all rights reserved**, not covered by the licence
+- If you just want to run a site, follow "Run your own site" above; no fork needed
+- Pull requests are not accepted; questions and bug reports are welcome as [issues](https://github.com/Koimsurai/sora-to-ki/issues)
 
-- **程式碼**：[GNU Affero General Public License v3.0](LICENSE)
-- **內容**：文章、照片、碎念、書評、頭像與 logo 等站點內容 © Koimsurai，**保留所有權利**，未經同意請勿轉載或重製
+## 🙏 Thanks
 
-## 🙏 致謝
-
-站上用到的開源專案很多，特別感謝
-[TanStack](https://tanstack.com/)、[axum](https://github.com/tokio-rs/axum)、[sqlx](https://github.com/launchbadge/sqlx)、
-[three.js](https://threejs.org/)、[MDX](https://mdxjs.com/)、[pele](https://pele.run/)、[rough.js](https://roughjs.com/)、
-[Excalifont](https://github.com/excalidraw/excalidraw)、[小賴字體](https://github.com/lxgw/kose-font)、[Radix UI](https://www.radix-ui.com/)、[shadcn/ui](https://ui.shadcn.com/)、
-[OpenCC](https://github.com/BYVoid/OpenCC)、[thumbhash](https://github.com/evanw/thumbhash)、
-[思源宋體](https://github.com/adobe-fonts/source-han-serif)、[Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif)，
-以及 [Vite+](https://viteplus.dev/) 與 oxc 的工具鏈。
-
-## 🌌 更多
-
-- 此站點（設計的完整說明）：<https://koimsurai.com/about-site>
-- 站點走過的路：<https://koimsurai.com/history>
-- 舊站（v1，唯讀）：<https://archive.koimsurai.com>
-- 交換友鏈（頁面上的表單直接申請）：<https://koimsurai.com/friends>
+It relies on a lot of open source, with special thanks to
+[TanStack](https://tanstack.com/), [axum](https://github.com/tokio-rs/axum), [sqlx](https://github.com/launchbadge/sqlx),
+[three.js](https://threejs.org/), [MDX](https://mdxjs.com/), [pele](https://pele.run/), [rough.js](https://roughjs.com/),
+[Excalifont](https://github.com/excalidraw/excalidraw), [Xiaolai](https://github.com/lxgw/kose-font), [Radix UI](https://www.radix-ui.com/), [shadcn/ui](https://ui.shadcn.com/),
+[OpenCC](https://github.com/BYVoid/OpenCC), [thumbhash](https://github.com/evanw/thumbhash), [Natural Earth](https://www.naturalearthdata.com/),
+[Source Han Serif](https://github.com/adobe-fonts/source-han-serif), [Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif),
+and the [Vite+](https://viteplus.dev/) and oxc toolchain.
