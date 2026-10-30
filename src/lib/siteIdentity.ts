@@ -18,6 +18,7 @@ let current: SiteConfig = {
   github: '',
   default_locale: 'zh-TW',
   locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+  page_descriptions: {},
 };
 
 /** root 的 beforeLoad 用：後端回來的設定。站名是空的（後端連不上時的退路）就不採用 */
@@ -52,6 +53,14 @@ export function isOwnUrl(href: string): boolean {
 }
 export const siteName = (): string => current.name;
 export const siteAuthor = (): string => current.author;
+/**
+ * 站長自己寫的介紹文字（站台設定的 page_descriptions）；沒寫就 undefined，呼叫端用字串檔的通用句子。
+ * 生成的型別把每一格都當成一定有，實際上沒寫的頁、沒寫的語系就是沒有
+ */
+export const descriptionIn = (config: SiteConfig, key: string, locale: string): string | undefined =>
+  (config.page_descriptions as Partial<Record<string, Partial<Record<string, string>>>>)[key]?.[locale];
+/** 同上，給不在 React 裡的（SEO） */
+export const pageDescription = (key: string, locale: string): string | undefined => descriptionIn(current, key, locale);
 /** 首頁的 <title> 與 og:site_name：作者名跟站名不同時是「站名 · 作者」 */
 export const siteTitle = (): string =>
   current.author && current.author !== current.name ? `${current.name} · ${current.author}` : current.name;

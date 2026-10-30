@@ -14,6 +14,7 @@ const config = (over: Partial<Parameters<typeof setSiteIdentity>[0]> = {}) => ({
   github: '',
   default_locale: 'zh-TW',
   locales: ['zh-TW'],
+  page_descriptions: {},
   ...over,
 });
 

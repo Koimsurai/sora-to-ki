@@ -30,6 +30,7 @@ describe('站台設定改成預設英文、只開英文與日文', () => {
       github: '',
       default_locale: 'en',
       locales: ['en', 'ja'],
+      page_descriptions: {},
     });
   };
 

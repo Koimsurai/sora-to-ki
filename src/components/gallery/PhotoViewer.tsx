@@ -11,6 +11,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Keyboard, Thumbs } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { exifYmd } from '@/lib/exifDate';
+import { siteAuthor } from '@/lib/siteIdentity';
 import { selectedPhotoAtom, viewerOpenAtom, closeViewerAtom, photosAtom, currentIndexAtom } from '@/store/photoStore';
 import type { PhotoManifest } from '@/types/photo';
 import ProgressiveImage from './ProgressiveImage';
@@ -140,7 +141,7 @@ const PhotoViewer: React.FC = () => {
                   nav
                     .share({
                       title: currentPhoto.title || t('photos.viewer.shareTitle'),
-                      text: t('photos.viewer.shareText'),
+                      text: t('photos.viewer.shareText', { author: siteAuthor() }),
                       url: window.location.href,
                     })
                     .catch(() => {

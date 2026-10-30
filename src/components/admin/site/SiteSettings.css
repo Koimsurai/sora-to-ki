@@ -22,6 +22,24 @@
   margin-top: var(--space-3);
 }
 
+/* ── 介紹文字：一格一行，兩欄排 ── */
+
+.sfs-desc {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+}
+
+.sfs .sfs-desc-row textarea {
+  min-height: 4.5em;
+}
+
+@media (max-width: 900px) {
+  .sfs-desc {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── 頁面：上面一條星圖，下面三組開關並排 ── */
 
 .sfs-sky {

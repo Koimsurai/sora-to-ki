@@ -9,10 +9,27 @@
     "pagesNote": "A page you turn off takes its orbit on the home page with it, and readers lose the way in. The content stays; turn it back on and it's there.",
     "saved": "Site settings saved",
     "invalid": "Fix the highlighted fields first",
+    "descriptionsHead": "Descriptions",
+    "descriptionsNote": "The description each page shows in search results and on share cards, plus the opening line of the \"About\" menu. Leave a box empty to use the generic line shown faintly inside it. One language at a time; languages you skip use the generic line too.",
     "confirmTitle": "Change the default language?",
     "confirmDesc": "The default language goes from {{from}} to {{to}}. Addresses without a prefix (like {{host}}/blog) will show {{to}}, so {{from}} links you've already shared will open in {{to}}; {{from}} moves under /{{fromPrefix}}/. Addresses starting with /{{toPrefix}}/ will redirect to the same page without the prefix. Search engines will take a while to catch up.",
     "confirmOk": "Change and save",
     "cancel": "Not now"
+  },
+  "descriptions": {
+    "home": "Home",
+    "aboutLead": "Opening line of the \"About\" menu",
+    "notes": "Notes",
+    "moments": "Murmurs",
+    "works": "Work",
+    "collection": "Collection",
+    "about": "About",
+    "setup": "Setup",
+    "log": "Log",
+    "messages": "Messages",
+    "photos": "Photos",
+    "friends": "Friends",
+    "colophon": "This site"
   },
   "lang": {
     "defaultLabel": "Default language",

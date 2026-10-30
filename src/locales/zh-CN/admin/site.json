@@ -9,10 +9,27 @@
     "pagesNote": "关掉的页面连同首页上它的轨道一起拿掉，读者看不到入口。内容会留着，开回来就在。",
     "saved": "站点设置保存好了",
     "invalid": "有字段要先改好",
+    "descriptionsHead": "介绍文字",
+    "descriptionsNote": "各页在搜索结果与分享卡片上的那段描述，和「关于」菜单开头那一句。空着就用框里淡淡的那句通用的；一次写一个语言，没写的语言也是用通用的。",
     "confirmTitle": "换掉默认语言？",
     "confirmDesc": "默认语言会从{{from}}换成{{to}}。不带前缀的网址（例如 {{host}}/blog）会改显示{{to}}，已经分享出去的{{from}}链接打开也会变成{{to}}；{{from}}改到 /{{fromPrefix}}/ 底下。原本 /{{toPrefix}}/ 开头的网址会自动转到不带前缀的那一条。搜索引擎要一阵子才会重新收录。",
     "confirmOk": "换掉并保存",
     "cancel": "先不要"
+  },
+  "descriptions": {
+    "home": "首页",
+    "aboutLead": "「关于」菜单开头那一句",
+    "notes": "手记",
+    "moments": "碎念",
+    "works": "作品",
+    "collection": "收藏",
+    "about": "关于",
+    "setup": "设备",
+    "log": "航行日志",
+    "messages": "留言",
+    "photos": "照片",
+    "friends": "朋友",
+    "colophon": "此站点"
   },
   "lang": {
     "defaultLabel": "默认语言",

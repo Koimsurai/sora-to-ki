@@ -1292,6 +1292,8 @@ export type SiteConfig = {
 	default_locale: string,
 	/**  有開的語系，照語系選單的順序；一定含預設語系 */
 	locales: string[],
+	/**  站長自己寫的介紹文字：哪一頁 → 語系 → 字。沒有的就用通用句子 */
+	page_descriptions: { [key in string]: { [key in string]: string } },
 };
 
 /**  一個來源與從它進站時先看的那幾頁 */

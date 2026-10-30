@@ -17,6 +17,7 @@ const FALLBACK: SiteConfig = {
   github: '',
   default_locale: 'zh-TW',
   locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+  page_descriptions: {},
 };
 
 export const siteConfigQueryOptions = queryOptions({

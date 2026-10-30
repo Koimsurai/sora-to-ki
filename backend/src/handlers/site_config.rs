@@ -7,6 +7,7 @@
 //! 讀的頻率很高（RSS、信件、分享圖每次都要站名），所以啟動時讀進記憶體，寫入時一起更新，
 //! [`current`] 不碰資料庫。
 
+use std::collections::BTreeMap;
 use std::sync::LazyLock;
 
 use axum::{
@@ -72,7 +73,28 @@ pub struct SiteSettings {
     /// 有開的語系（一定包含預設語系）。規則同 `email`，退路是 `SITE_LOCALES`（逗號分隔），再退回全部
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locales: Option<Vec<String>>,
+    /// 站長自己寫的介紹文字：哪一頁（[`DESCRIBABLE`]）→ 語系 → 字。
+    /// 沒寫的就用前端字串檔裡的通用句子（各頁在搜尋結果裡的描述、「關於」選單開頭那一句）
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub page_descriptions: BTreeMap<String, BTreeMap<String, String>>,
 }
+
+/// 可以自己寫介紹文字的地方：首頁與各頁（前端 data/siteSections 的 key），加上「關於」選單開頭那一句
+pub const DESCRIBABLE: [&str; 13] = [
+    "home",
+    "notes",
+    "moments",
+    "works",
+    "collection",
+    "about",
+    "setup",
+    "log",
+    "messages",
+    "photos",
+    "friends",
+    "colophon",
+    "aboutLead",
+];
 
 /// 站上支援的語系（介面有翻譯的那五個），順序就是語系選單的順序。前端在 src/lib/locales.ts
 pub const SUPPORTED_LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
@@ -182,6 +204,7 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         github: None,
         default_locale: None,
         locales: None,
+        page_descriptions: BTreeMap::new(),
     };
     // OR IGNORE：兩個程序同時開機的話，以先寫進去的那份為準
     sqlx::query("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)")
@@ -222,6 +245,8 @@ pub struct SiteConfig {
     pub default_locale: String,
     /// 有開的語系，照語系選單的順序；一定含預設語系
     pub locales: Vec<String>,
+    /// 站長自己寫的介紹文字：哪一頁 → 語系 → 字。沒有的就用通用句子
+    pub page_descriptions: BTreeMap<String, BTreeMap<String, String>>,
 }
 
 impl From<SiteSettings> for SiteConfig {
@@ -238,6 +263,7 @@ impl From<SiteSettings> for SiteConfig {
             github: or_env(s.github, "SITE_GITHUB"),
             default_locale,
             locales,
+            page_descriptions: s.page_descriptions,
         }
     }
 }
@@ -259,6 +285,8 @@ pub struct SiteConfigUpdate {
     pub default_locale: Option<String>,
     /// 有開的語系（整份換掉）；預設語系一定會在裡面
     pub locales: Option<Vec<String>>,
+    /// 介紹文字（整份換掉）：哪一頁（home、notes…、aboutLead）→ 語系 → 字；空字串＝用通用句子
+    pub page_descriptions: Option<BTreeMap<String, BTreeMap<String, String>>>,
 }
 
 /// 把 body 套到現有的設定上。錯誤訊息直接給後台與 MCP 顯示，所以寫成人看得懂的句子
@@ -335,6 +363,33 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
         }
         s.github = Some(github.to_string());
     }
+    if let Some(all) = body.page_descriptions {
+        let mut next = BTreeMap::new();
+        for (page, texts) in all {
+            if !DESCRIBABLE.contains(&page.as_str()) {
+                return Err(format!(
+                    "沒有「{page}」這個地方可以寫介紹，能寫的是：{}",
+                    DESCRIBABLE.join("、")
+                ));
+            }
+            let mut kept = BTreeMap::new();
+            for (locale, text) in texts {
+                let locale = supported(&locale).ok_or_else(|| bad_locale(&locale))?;
+                let text = text.trim();
+                if text.chars().count() > DESCRIPTION_MAX {
+                    return Err(format!("介紹最多 {DESCRIPTION_MAX} 個字"));
+                }
+                // 空的就是「用通用句子」：不存，讀的時候自然退回去
+                if !text.is_empty() {
+                    kept.insert(locale.to_string(), text.to_string());
+                }
+            }
+            if !kept.is_empty() {
+                next.insert(page, kept);
+            }
+        }
+        s.page_descriptions = next;
+    }
     Ok(s)
 }
 
@@ -396,7 +451,26 @@ mod tests {
             github: None,
             default_locale: None,
             locales: None,
+            page_descriptions: BTreeMap::new(),
         }
+    }
+
+    #[test]
+    fn 介紹文字只收認得的地方與語系_空的不存() {
+        let body = |page: &str, locale: &str, text: &str| SiteConfigUpdate {
+            page_descriptions: Some(BTreeMap::from([(
+                page.to_string(),
+                BTreeMap::from([(locale.to_string(), text.to_string())]),
+            )])),
+            ..Default::default()
+        };
+        let s = apply(base(), body("notes", "EN", "  Notes on Rust  ")).unwrap();
+        assert_eq!(s.page_descriptions["notes"]["en"], "Notes on Rust", "語系大小寫不拘、前後空白去掉");
+        let s = apply(s, body("notes", "en", "   ")).unwrap();
+        assert!(s.page_descriptions.is_empty(), "清空就是不存（退回通用句子）");
+        assert!(apply(base(), body("posts", "en", "x")).unwrap_err().contains("posts"));
+        assert!(apply(base(), body("home", "fr", "x")).is_err());
+        assert!(apply(base(), body("home", "en", &"字".repeat(DESCRIPTION_MAX + 1))).is_err());
     }
 
     #[test]

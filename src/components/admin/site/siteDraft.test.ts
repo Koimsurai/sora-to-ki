@@ -10,6 +10,7 @@ const base: Draft = {
   email: '',
   github: '',
   disabled_pages: [],
+  page_descriptions: {},
 };
 
 describe('siteProblems', () => {

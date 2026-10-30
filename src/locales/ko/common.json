@@ -62,7 +62,7 @@
     "listening": "듣는 중",
     "recently": "최근",
     "episode": "{{ep}}화",
-    "aboutLead": "Koimsurai, 코드를 쓰는 사람. 가끔 뭔가를 만든다.",
+    "aboutLead": "{{author}}의 개인 사이트.",
     "aboutAll": "소개"
   },
   "user": {
@@ -72,7 +72,7 @@
     "signInWithGoogle": "Google로 로그인"
   },
   "hero": {
-    "description": "Sora to Ki (宙と木), Koimsurai의 개인 공간. 코드를 쓰는 사람. 가끔 뭔가를 만든다."
+    "description": "{{site}}, {{author}}의 개인 사이트. 노트, 혼잣말, 작품, 컬렉션."
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -157,7 +157,7 @@
   },
   "activity": {
     "title": "활동 대시보드",
-    "description": "Koimsurai의 실시간 활동 대시보드.",
+    "description": "{{author}}의 실시간 활동 대시보드.",
     "loading": "활동 데이터 불러오는 중",
     "labels": {
       "gameCollection": "게임 컬렉션",
@@ -203,7 +203,7 @@
     "more": "{{count}}편 더",
     "minutes": "약 {{count}}분",
     "metaTitle": "노트",
-    "description": "Koimsurai의 기술 노트, 학습 기록, 생활 에세이. 프런트엔드 아키텍처, Rust, 시스템 설계 등.",
+    "description": "{{author}}의 노트. 기술 메모, 학습 기록, 생활 에세이.",
     "heroTitle": "노트",
     "loading": "글 불러오는 중",
     "search": "글 검색...",
@@ -295,7 +295,7 @@
   },
   "setup": {
     "title": "내 장비 · My Setup",
-    "description": "Koimsurai의 장비 목록: 메인 PC, 이 사이트를 돌리는 홈 서버, 네트워크와 스마트홈, 그리고 집 안 연결도.",
+    "description": "{{author}}의 장비 목록.",
     "heroTitle": "장비",
     "subtitle": "정밀함을 해체하고, 집착을 내려놓을 자리를 만든다.",
     "appliances": {
@@ -359,7 +359,7 @@
     "missingToken": "링크에 token이 없어요. 뉴스레터 하단의 구독 취소 링크를 이용해주세요.",
     "invalidLink": "링크가 유효하지 않거나 만료됐어요.",
     "unsubscribeFailed": "구독 취소 실패",
-    "bodyConfirm": "<em>{{email}}</em>로 Koimsurai 뉴스레터를 구독 취소하려고 합니다.<br />취소 후 새 글은 받지 못해요.",
+    "bodyConfirm": "<em>{{email}}</em>로 {{author}} 뉴스레터를 구독 취소하려고 합니다.<br />취소 후 새 글은 받지 못해요.",
     "btnConfirm": "구독 취소 확정",
     "btnKeep": "아니요, 계속 받을게요",
     "bodyDoneEmail": "<em>{{email}}</em>를 구독 목록에서 제거했어요.",
@@ -374,7 +374,7 @@
   },
   "about": {
     "title": "소개",
-    "description": "Koimsurai — 풀스택 엔지니어. 기술, 경력, 커뮤니티와 여정."
+    "description": "{{author}}의 경력, 기술, 지금까지의 여정."
   },
   "portfolio": {
     "title": "프로젝트",
@@ -382,7 +382,7 @@
   },
   "photos": {
     "title": "사진 작품집",
-    "description": "Koimsurai 의 사진 작품집. 여행길의 빛과 그림자 기록.",
+    "description": "{{author}}의 사진 작품집.",
     "heading": "사진",
     "subtitle": "허공을 건너온 희미한 신호가, 이곳에서 한 줄씩 현상된다.",
     "station": "DSN · 지상국",
@@ -393,7 +393,7 @@
       "share": "이 사진 공유",
       "shareShort": "공유",
       "shareTitle": "사진",
-      "shareText": "Koimsurai의 사진",
+      "shareText": "{{author}}의 사진",
       "close": "뷰어 닫기",
       "closeHint": "닫기 (Esc)",
       "prev": "이전 사진",

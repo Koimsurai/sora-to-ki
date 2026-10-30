@@ -776,6 +776,17 @@ export function makeTools(api: ApiClient): Tool[] {
             items: { type: 'string', enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'] },
             description: '有開的語系（整份換掉）；預設語系一定算在裡面。只開一個時語系選單不出現，沒開的語系網址是 404',
           },
+          page_descriptions: {
+            type: 'object',
+            description:
+              '站長自己寫的介紹文字（整份換掉）：{ 地方: { 語系: 字 } }。地方是 home、notes、moments、works、collection、' +
+              'about、setup、log、messages、photos、friends、colophon（各頁在搜尋結果裡的描述）與 aboutLead（「關於」選單開頭那一句）。' +
+              '沒寫的用內建的通用句子；要改一頁，先 koimsurai_get_site_config 拿現在的整份再改。每段最多 300 字',
+            additionalProperties: {
+              type: 'object',
+              additionalProperties: { type: 'string' },
+            },
+          },
         },
         additionalProperties: false,
       },
@@ -786,6 +797,7 @@ export function makeTools(api: ApiClient): Tool[] {
             'author',
             'description',
             'disabled_pages',
+            'page_descriptions',
             'email',
             'github',
             'default_locale',

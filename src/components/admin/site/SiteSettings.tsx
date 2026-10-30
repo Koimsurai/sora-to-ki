@@ -20,6 +20,7 @@ import { setLocaleConfig } from '@/lib/locales';
 import AdminLoading from '../AdminLoading';
 import { PageHead, SectionHead } from '../AdminPage';
 import { SaveBar } from '../pageEditorKit';
+import DescriptionFields from './DescriptionFields';
 import OrbitPreview from './OrbitPreview';
 import { IdentityFields, LocaleFields, PageToggles } from './SiteFields';
 import { draftOf, siteProblems, type Draft } from './siteDraft';
@@ -107,6 +108,17 @@ export default function SiteSettings() {
         <div className="sfs-pages">
           <PageToggles draft={draft} patch={patch} hot={hot} onHot={setHot} notes />
         </div>
+      </section>
+
+      <section className="adm-stack" aria-labelledby="sfs-descriptions">
+        <SectionHead id="sfs-descriptions">{t('site.settings.descriptionsHead')}</SectionHead>
+        <p className="adm-form-note">{t('site.settings.descriptionsNote')}</p>
+        <DescriptionFields
+          draft={draft}
+          patch={patch}
+          locales={[config.default_locale, ...config.locales.filter((l) => l !== config.default_locale)]}
+          disabled={draft.disabled_pages}
+        />
       </section>
 
       <SaveBar dirty={dirty} saving={saving} onReset={() => setEdited(null)} onSave={trySave} />
