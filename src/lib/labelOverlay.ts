@@ -96,7 +96,7 @@ export function createLabelOverlay(renderer: THREE.WebGPURenderer, dpr: number):
     const map = texture(new THREE.Texture(), uv());
     const opacity = uniform(0);
     const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthTest: false, depthWrite: false });
-    // 快照本身就是預乘過透明度的（再乘一次的話，小字的反鋸齒邊緣全變暗，實測整行暗三成）。
+    // 快照是沒有預乘的透明度：這裡乘上去，輸出預乘過的值（用已知顏色的半透明底驗過，見 over）。
     // 一般的「疊上去」：src + dst × (1 − srcα)
     mat.blending = THREE.CustomBlending;
     mat.blendSrc = THREE.OneFactor;
