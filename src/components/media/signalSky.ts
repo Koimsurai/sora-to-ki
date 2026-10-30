@@ -447,14 +447,20 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
   });
 
   // 插圖：第一次畫的時候才載（伺服器端也會建這個天空，那裡沒有 Image）
+  // 解得開才畫：下載到一半被切斷（部署時容器重啟）的圖已經從檔頭讀到寬高，狀態卻是 broken，
+  // complete 與 naturalWidth 都擋不住，drawImage 會每一幀丟 InvalidStateError
   let art: Record<ArtKey, HTMLImageElement> | null = null;
+  const artReady = new Set<ArtKey>();
   const loadArt = () => {
     if (art || typeof Image === 'undefined') return;
     const out = {} as Record<ArtKey, HTMLImageElement>;
     for (const key of Object.keys(ART) as ArtKey[]) {
       const img = new Image();
-      img.decoding = 'async';
       img.src = ART[key].src;
+      img.decode().then(
+        () => artReady.add(key),
+        () => undefined,
+      );
       out[key] = img;
     }
     art = out;
@@ -544,7 +550,7 @@ export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_
 
   const drawArt = (ctx: CanvasRenderingContext2D, key: ArtKey, x: number, y: number, a: number) => {
     const img = art?.[key];
-    if (!img?.complete || img.naturalWidth === 0) return false;
+    if (!img || !artReady.has(key)) return false;
     const w = ART[key].w;
     const h = (w * img.naturalHeight) / img.naturalWidth;
     ctx.globalAlpha = a;
