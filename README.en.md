@@ -195,18 +195,24 @@ All you need is a machine with Docker and a domain pointing at it.
 git clone https://github.com/Koimsurai/sora-to-ki.git
 cd sora-to-ki
 cp .env.example .env                  # URL, domain, site name, contact
-cp .env.backend.example .env.backend  # JWT_SECRET, the first admin's login
+cp .env.backend.example .env.backend  # JWT_SECRET, GitHub or Google sign-in
 docker compose up -d
+docker compose logs backend-rs | grep setup   # the first-time setup link
 ```
 
 - The images are built at release time ([GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)), so nothing compiles on your machine; add `--build` to build from source instead
 - Caddy is built in: put your domain in `CADDY_ADDRESS` in `.env` and HTTPS is set up automatically. To try it locally, use `:80` and open <http://localhost>
-- The admin is at `/admin`; sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env.backend`. The site name, description and which pages are on can all be changed there (or over MCP) afterwards
+- On first start the backend logs a line like `setup: open …/admin/init?code=…`. Open it to claim the site by signing in
+  with GitHub or Google, then pick the languages, name the site and choose which pages to show. The wizard walks you
+  through setting up sign-in step by step. If `OWNER_EMAIL` is set in `.env.backend` there's no wizard: whoever signs in
+  with that address is the owner
+- The admin is at `/admin` and only takes GitHub or Google sign-in (`ADMIN_USERNAME` / `ADMIN_PASSWORD` is a machine
+  account for MCP, not for people). The site name, description and which pages are on can all be changed there (or over MCP) afterwards
 - Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.1.0` in `.env`
 - The database is backed up to `./backups` every day
 
 - The about, works, log, colophon Q&A and setup pages are filled in from Admin → Pages (or over MCP). On a new site
-  works, log and setup start switched off; turn them on in the site settings once they have content
+  setup and photos start switched off (one needs sheets picked, the other a photo source); turn them on in the site settings when ready
 - To use your own hand-drawn sheets on the setup page (with whole parts lighting up on hover), drop a sheet pack into
   `custom/setup/`; the format, and how to ask an AI to make one, are in [`custom/setup/README.md`](custom/setup/README.md)
 
@@ -242,8 +248,8 @@ Only `DATABASE_URL` and `JWT_SECRET` are required (both are in the example file)
 | Purpose | Variables |
 |---|---|
 | Basics | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
-| Admin account | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
-| OAuth sign-in | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` |
+| Sign-in (owner and readers) | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
+| MCP machine account | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
 | Activity page | `GITHUB_TOKEN` `WAKATIME_API_KEY` `STEAM_API_KEY` `STEAM_ID` |
 | Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
 | Film and TV | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN` `BAHAMUT_UID` `BAHAMUT_PASSWORD` |
