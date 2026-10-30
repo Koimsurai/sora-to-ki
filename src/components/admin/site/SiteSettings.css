@@ -1,0 +1,141 @@
+/* 站台設定頁：欄位本身在 SiteFields.css（精靈共用），這裡只把輸入框換成後台的細框、排頁面那一段 */
+
+/* 後台的輸入框是細框（顏色由 AdminTheme 的 input 規則給），跟其他後台表單一樣 */
+.sfs .sf-input {
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  border-width: 1px;
+  border-style: solid;
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  line-height: var(--lh-150);
+}
+
+.sfs .sf-input-ro {
+  border-style: dotted;
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+}
+
+.sfs .sf-label {
+  margin-top: var(--space-3);
+}
+
+/* ── 頁面：上面一條星圖，下面三組開關並排 ── */
+
+.sfs-sky {
+  position: relative;
+  height: 340px;
+  border: 1px solid var(--line);
+}
+
+.sfs-sky .wz-sky {
+  position: absolute;
+  inset: 0;
+}
+
+/* 框比精靈的半邊小：標註的字放大一點，縮完還讀得到 */
+.sfs-sky .wz-caps {
+  font-size: var(--fs-14);
+}
+
+.sfs-sky .wz-name {
+  font-size: var(--fs-28);
+}
+
+.sfs-sky .wz-sky-cap {
+  top: var(--space-4);
+  left: var(--space-4);
+}
+
+.sfs-sky .wz-sky-menus {
+  top: var(--space-4);
+  right: var(--space-4);
+}
+
+.sfs-pages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.sfs .sf-group-h {
+  margin-top: 0;
+  font-size: var(--fs-11);
+  color: var(--ink-muted);
+}
+
+.sf-group-note {
+  min-height: 3.4em;
+  margin: var(--space-1) 0 var(--space-2);
+  font-size: var(--fs-12);
+  line-height: var(--lh-150);
+  color: var(--ink-subtle);
+}
+
+/* 每一列兩行：名字在上、說明在下，整列都點得到 */
+.sfs .sf-toggle {
+  grid-template-columns: 26px 1fr;
+  grid-template-areas:
+    "switch name"
+    ". desc";
+  row-gap: var(--space-0-5);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-1);
+  border-top: 1px dotted var(--line);
+}
+
+.sfs .sf-switch {
+  grid-area: switch;
+  align-self: center;
+}
+
+.sfs .sf-toggle-name {
+  grid-area: name;
+  font-size: var(--fs-16);
+}
+
+/* 窄畫面也留著說明（SiteFields.css 在窄畫面把它藏起來，那是給精靈一列一行用的） */
+.sfs .sf-toggle-desc {
+  display: block;
+  grid-area: desc;
+  white-space: normal;
+}
+
+/* AdminTheme 給 Radix 開關的規則（button[role="switch"] 加上裡面的 span）也會套到這裡的整列開關上：
+   整列變成一個細框、每個 span 被壓成 14px 的圓鈕。把它們還原成 SiteFields.css 的樣子 */
+.sfs .sf-toggle[role="switch"] {
+  border: 0;
+  border-top: 1px dotted var(--line);
+}
+
+.sfs .sf-toggle[role="switch"] > span {
+  width: auto;
+  height: auto;
+  margin-left: 0;
+  background: transparent;
+}
+
+.sfs .sf-toggle[role="switch"] > .sf-switch {
+  width: 22px;
+  height: 12px;
+}
+
+@media (max-width: 900px) {
+  .sfs-pages {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .sf-group-note {
+    min-height: 0;
+  }
+
+  .sfs-sky {
+    height: 240px;
+  }
+
+  .sfs-sky .wz-sky-menus {
+    display: none;
+  }
+}

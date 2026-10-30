@@ -1,10 +1,14 @@
 import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS } from '@/data/siteSections';
 import { useAdminT } from '@/i18n/admin-i18n';
-import type { Draft, Step } from './initSession';
+import type { Draft } from './siteDraft';
+import './OrbitPreview.css';
 
-// 精靈右邊的星圖：首頁軌道的示意圖，跟著填的內容長出來。不是真的首頁（那是整個視窗的 3D 背景，
-// 縮不進半邊），所以畫得到首頁畫不了的東西：關掉的軌道留一條虛線、滑過哪一列就點亮哪一條。
-// 真的首頁在「完成」那一步才出現（InitWizard 的 iframe）。
+/** 畫到哪個階段：精靈的每一步各長出一點，後台的站台設定頁固定用 pages（全部畫出來、關掉的留虛線） */
+export type PreviewStage = 'gate' | 'owner' | 'lang' | 'site' | 'pages' | 'done';
+
+// 首頁軌道的示意圖：初次設定精靈的右半邊（跟著填的內容長出來），站台設定頁的頁面開關旁邊。
+// 不是真的首頁（那是整個視窗的 3D 背景，縮不進半邊），所以畫得到首頁畫不了的東西：
+// 關掉的軌道留一條虛線、滑過哪一列就點亮哪一條。真的首頁在精靈的「完成」那一步才出現（iframe）。
 //
 // 規則照首頁：主要分區由內到外各一條軌道，關掉一個，外面的往內遞補（starfieldGpu 的 setSections）。
 // 軌道壓扁的比例跟首頁一樣（HomeOrbit 的 ORBIT_FLAT）。
@@ -39,15 +43,20 @@ const STARS = (() => {
 })();
 
 interface Props {
-  step: Step;
+  step: PreviewStage;
   draft: Draft;
   /** 滑過或聚焦的那一頁（頁面那一步） */
   hot: string | null;
   owner: { name: string; avatar?: string } | null;
   url: string;
+  /** 放在矮的框裡（站台設定頁）：裁掉上下的空白，軌道與標註才不會縮到看不清楚 */
+  compact?: boolean;
 }
 
-export default function OrbitPreview({ step, draft, hot, owner, url }: Props) {
+/** compact 時只畫這一段高度（軌道的上緣到站名底下） */
+const CROP = { y: 100, h: 440 };
+
+export default function OrbitPreview({ step, draft, hot, owner, url, compact = false }: Props) {
   const { t } = useAdminT();
   const lit = step !== 'gate';
   const all = step === 'done';
@@ -70,7 +79,11 @@ export default function OrbitPreview({ step, draft, hot, owner, url }: Props) {
           <circle key={s.id} cx={s.x} cy={s.y} r={s.r} className="wz-star" opacity={s.o} />
         ))}
       </svg>
-      <svg className="wz-sky-system" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+      <svg
+        className="wz-sky-system"
+        viewBox={compact ? `0 ${CROP.y} ${W} ${CROP.h}` : `0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid meet"
+      >
         {rings.map((r) => {
           if (r.slot === null) return null;
           const { rx, ry } = orbit(r.slot);
@@ -111,7 +124,7 @@ export default function OrbitPreview({ step, draft, hot, owner, url }: Props) {
               <ellipse cx={CX} cy={CY} rx={rx} ry={ry} />
               <circle cx={x} cy={y} r={2.4} />
               <text x={x + 9} y={y + 15} className="wz-caps">
-                {r.caps} · {t('init.sky.off')}
+                {r.caps} · {t('site.sky.off')}
               </text>
             </g>
           );
@@ -146,9 +159,9 @@ export default function OrbitPreview({ step, draft, hot, owner, url }: Props) {
       </svg>
 
       <p className="wz-sky-cap">
-        PREVIEW · <b>{step === 'gate' ? t('init.sky.standby') : t('init.sky.yourHome')}</b>
+        PREVIEW · <b>{step === 'gate' ? t('site.sky.standby') : t('site.sky.yourHome')}</b>
       </p>
-      {step === 'gate' && <p className="wz-sky-note">{t('init.sky.note')}</p>}
+      {step === 'gate' && <p className="wz-sky-note">{t('site.sky.note')}</p>}
       {step === 'lang' && (
         <p className="wz-sky-urls">
           {[draft.default_locale, ...draft.locales.filter((l) => l !== draft.default_locale)].map((l, i) => (
@@ -160,7 +173,7 @@ export default function OrbitPreview({ step, draft, hot, owner, url }: Props) {
       )}
       {step === 'site' && (
         <div className="wz-sky-card">
-          <p className="wz-sky-card-k">{t('init.site.shareCard')}</p>
+          <p className="wz-sky-card-k">{t('site.identity.shareCard')}</p>
           <p className="wz-sky-card-u">{host}</p>
           <p className="wz-sky-card-t">{draft.name.trim() || '—'}</p>
           {draft.description.trim() && <p className="wz-sky-card-d">{draft.description.trim()}</p>}
@@ -169,8 +182,8 @@ export default function OrbitPreview({ step, draft, hot, owner, url }: Props) {
       {(step === 'pages' || step === 'done') && (
         <div className="wz-sky-menus">
           {[
-            { label: t('init.sky.menuAbout'), items: ABOUT_SECTIONS },
-            { label: t('init.sky.menuMore'), items: MORE_SECTIONS },
+            { label: t('site.sky.menuAbout'), items: ABOUT_SECTIONS },
+            { label: t('site.sky.menuMore'), items: MORE_SECTIONS },
           ].map((m) => (
             <div key={m.label}>
               <p className="wz-sky-menu-h">{m.label} ▾</p>
@@ -182,7 +195,7 @@ export default function OrbitPreview({ step, draft, hot, owner, url }: Props) {
                     className={`wz-sky-menu-i${off.has(s.key) ? ' is-off' : ''}${hot === s.key ? ' is-hot' : ''}`}
                   >
                     <i />
-                    {t(`init.pages.name.${s.key}`)}
+                    {t(`site.pages.name.${s.key}`)}
                   </p>
                 ))}
             </div>

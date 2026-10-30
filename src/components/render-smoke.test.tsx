@@ -28,7 +28,7 @@ import { renderWithProviders } from '@/test-utils/renderWithProviders';
  */
 const PROPS: Record<string, Record<string, unknown>> = {
   'blog/OrbitToc.tsx': { postId: 1, headings: [], contentRef: { current: null } },
-  'admin/init/OrbitPreview.tsx': {
+  'admin/site/OrbitPreview.tsx': {
     step: 'pages',
     draft: {
       default_locale: 'zh-TW',

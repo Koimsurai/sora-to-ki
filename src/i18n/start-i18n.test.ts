@@ -6,6 +6,7 @@ import {
   LOCALE_LABELS,
   buildAlternateLinks,
   createI18n,
+  defaultPrefixTarget,
   isLocaleLoaded,
   loadLocale,
   localeFromPathname,
@@ -64,6 +65,20 @@ describe('localeFromPathname / stripLocalePrefix', () => {
     expect(stripLocalePrefix('/blog/39')).toBe('blog/39');
     expect(stripLocalePrefix('/en')).toBe('');
     expect(stripLocalePrefix('/')).toBe('');
+  });
+});
+
+describe('defaultPrefixTarget', () => {
+  it('帶著預設語系自己的前綴 → 去掉前綴的那一條', () => {
+    expect(defaultPrefixTarget('/zh-tw/blog/39')).toBe('/blog/39');
+    expect(defaultPrefixTarget('/ZH-TW')).toBe('/');
+    expect(defaultPrefixTarget('/zh-tw/')).toBe('/');
+  });
+  it('其他網址不動（包括別的語系前綴、剛好也是 zh 開頭的路徑）', () => {
+    expect(defaultPrefixTarget('/en/blog/39')).toBeNull();
+    expect(defaultPrefixTarget('/blog/zh-tw')).toBeNull();
+    expect(defaultPrefixTarget('/zh-cn/about')).toBeNull();
+    expect(defaultPrefixTarget('/')).toBeNull();
   });
 });
 

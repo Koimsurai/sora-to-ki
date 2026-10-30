@@ -1,0 +1,82 @@
+{
+  "settings": {
+    "title": "사이트 설정",
+    "latin": "Site",
+    "meta": "사이트 이름, 언어, 보여 줄 페이지",
+    "identityHead": "기본 정보",
+    "localesHead": "언어",
+    "pagesHead": "페이지",
+    "pagesNote": "끈 페이지는 홈의 궤도와 함께 사라지고, 독자는 들어갈 길을 잃습니다. 내용은 남아 있어서 다시 켜면 그대로입니다.",
+    "saved": "사이트 설정을 저장했습니다",
+    "invalid": "먼저 고쳐야 할 항목이 있습니다",
+    "confirmTitle": "기본 언어를 바꿀까요?",
+    "confirmDesc": "기본 언어가 {{from}}에서 {{to}}(으)로 바뀝니다. 접두사 없는 주소(예: {{host}}/blog)는 {{to}}(으)로 보이고, 이미 공유한 {{from}} 링크도 열면 {{to}}(으)로 나옵니다. {{from}}은(는) /{{fromPrefix}}/ 아래로 옮겨집니다. /{{toPrefix}}/로 시작하던 주소는 접두사 없는 같은 페이지로 자동으로 넘어갑니다. 검색 엔진에 반영되기까지 시간이 걸립니다.",
+    "confirmOk": "바꾸고 저장",
+    "cancel": "그만두기"
+  },
+  "lang": {
+    "defaultLabel": "기본 언어",
+    "othersLabel": "함께 제공할 언어",
+    "warn": "공개 후에 기본 언어를 바꾸면 사이트의 모든 주소가 한꺼번에 바뀌고, 이미 공유한 접두사 없는 링크는 새 기본 언어로 열리게 됩니다.",
+    "single": "언어를 하나만 켜면 사이트에 언어 메뉴가 나오지 않습니다."
+  },
+  "identity": {
+    "name": "사이트 이름",
+    "author": "작성자",
+    "authorHint": "비워 두면 사이트 이름과 같음",
+    "url": "주소",
+    "description": "한 줄 소개",
+    "email": "공개 이메일",
+    "github": "GitHub 사용자 이름",
+    "optional": "선택",
+    "shareCard": "공유하면 이렇게 보입니다",
+    "errors": {
+      "nameRequired": "사이트 이름은 비워 둘 수 없습니다",
+      "nameTooLong": "사이트 이름은 최대 {{max}}자입니다",
+      "authorTooLong": "작성자 이름은 최대 {{max}}자입니다",
+      "descriptionTooLong": "소개는 최대 {{max}}자입니다",
+      "email": "이메일 형식이 올바르지 않습니다",
+      "github": "GitHub 사용자 이름은 영문, 숫자, 하이픈만 쓸 수 있고 최대 39자입니다"
+    }
+  },
+  "pages": {
+    "groupOrbit": "홈의 궤도",
+    "groupAbout": "\"소개\" 메뉴",
+    "groupMore": "\"더 보기\" 메뉴",
+    "alwaysOn": "노트와 소개는 항상 있습니다.",
+    "groupOrbitNote": "끈 항목은 홈의 궤도와 상단 메뉴에서 사라집니다. 노트와 소개는 항상 있습니다.",
+    "groupAboutNote": "상단 메뉴 \"소개\" 아래의 페이지.",
+    "groupMoreNote": "상단 메뉴 \"더 보기\" 아래의 페이지.",
+    "name": {
+      "moments": "혼잣말",
+      "works": "작품",
+      "collection": "컬렉션",
+      "setup": "장비",
+      "log": "항해 일지",
+      "messages": "메시지",
+      "photos": "사진",
+      "friends": "친구들",
+      "colophon": "이 사이트"
+    },
+    "desc": {
+      "moments": "한 줄씩 짧은 메모",
+      "works": "만든 것들, 하나씩 연표로",
+      "collection": "보는 것, 읽는 것, 듣는 것",
+      "setup": "손으로 그린 도면, 또는 기본 제공 도면",
+      "log": "어느 해부터 지금까지의 이정표",
+      "messages": "방명록",
+      "photos": "NAS나 업로드한 폴더가 필요",
+      "friends": "다른 사람의 사이트와 신청 양식",
+      "colophon": "이 사이트를 만든 방법과 Q&A"
+    }
+  },
+  "sky": {
+    "preview": "미리보기",
+    "standby": "점화 대기",
+    "yourHome": "당신의 홈",
+    "note": "한 단계씩 나아갈 때마다 여기에 조금씩 생겨납니다. 운영자, 언어, 이름, 궤도. 마지막에 보이는 모습이 독자가 홈을 열었을 때의 모습입니다.",
+    "menuAbout": "소개",
+    "menuMore": "더 보기",
+    "off": "끔"
+  }
+}

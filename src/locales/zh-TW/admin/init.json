@@ -75,64 +75,17 @@
   "lang": {
     "title": "語言",
     "latin": "Languages",
-    "lede": "讀者打開網址看到的是預設語系；其他語系各有自己的網址前綴。",
-    "defaultLabel": "預設語系",
-    "othersLabel": "也開放這些語系",
-    "warn": "開站之後再換預設語系，全站的網址會整批改掉，已經分享出去的連結都要跳轉一次。最好現在就決定。",
-    "single": "只開一個語系的話，前台不會出現語言選單。"
+    "lede": "讀者打開網址看到的是預設語系；其他語系各有自己的網址前綴。"
   },
   "site": {
     "title": "站台",
     "latin": "Identity",
-    "lede": "會出現在首頁、RSS 和分享出去的卡片上，之後在後台都能改。",
-    "name": "站名",
-    "author": "作者",
-    "authorHint": "空著就跟站名一樣",
-    "url": "網址",
-    "description": "一句話介紹",
-    "email": "公開信箱",
-    "github": "GitHub 帳號名",
-    "optional": "選填",
-    "shareCard": "分享出去長這樣",
-    "errors": {
-      "nameRequired": "站名不能是空的",
-      "nameTooLong": "站名最多 {{max}} 個字",
-      "authorTooLong": "作者名最多 {{max}} 個字",
-      "descriptionTooLong": "介紹最多 {{max}} 個字",
-      "email": "信箱的格式不對",
-      "github": "GitHub 帳號名只能有英數字與連字號，最多 39 個字"
-    }
+    "lede": "會出現在首頁、RSS 和分享出去的卡片上，之後在後台都能改。"
   },
   "pages": {
     "title": "頁面",
     "latin": "Pages",
-    "lede": "星圖就是你的首頁。關掉的頁面連同它的軌道一起拿掉，之後在後台隨時能開回來。",
-    "groupOrbit": "首頁的軌道",
-    "groupAbout": "「關於」選單",
-    "groupMore": "「更多」選單",
-    "alwaysOn": "手記與關於一直都在。",
-    "name": {
-      "moments": "碎念",
-      "works": "作品",
-      "collection": "收藏",
-      "setup": "設備",
-      "log": "航行日誌",
-      "messages": "留言",
-      "photos": "照片",
-      "friends": "朋友",
-      "colophon": "此站點"
-    },
-    "desc": {
-      "moments": "短短的一句話",
-      "works": "做過的東西，一件一條時間線",
-      "collection": "在看、在讀、在聽",
-      "setup": "手繪圖紙，或用內建的幾張",
-      "log": "從某一年到現在的里程碑",
-      "messages": "留言板",
-      "photos": "要接 NAS 或上傳資料夾",
-      "friends": "別人的站與申請表單",
-      "colophon": "這個站怎麼做的、問答"
-    }
+    "lede": "星圖就是你的首頁。關掉的頁面連同它的軌道一起拿掉，之後在後台隨時能開回來。"
   },
   "done": {
     "kicker": "完成",
@@ -156,14 +109,5 @@
     "latin": "Already set up",
     "lede": "已經有站長了，初次設定不會再打開。站長請從前台用 GitHub 或 Google 登入後台。",
     "home": "回首頁"
-  },
-  "sky": {
-    "preview": "預覽",
-    "standby": "等待點火",
-    "yourHome": "你的首頁",
-    "note": "每走一步，這裡就長出一點：站長、語系、站名、軌道。最後看到的就是讀者打開首頁的樣子。",
-    "menuAbout": "關於",
-    "menuMore": "更多",
-    "off": "關"
   }
 }

@@ -1,19 +1,20 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { InitStatus, SiteConfig } from '@koimsurai/api-types';
+import type { InitStatus } from '@koimsurai/api-types';
 
 import { useAuth, type User } from '@/contexts/auth';
 import { siteConfigQueryOptions } from '@/data/siteConfig';
-import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS } from '@/data/siteSections';
 import { adminLang, useAdminT } from '@/i18n/admin-i18n';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { SUPPORTED_LOCALES } from '@/lib/locales';
 import AdminLangSwitch from '../AdminLangSwitch';
 import AdminLoading from '../AdminLoading';
+import OrbitPreview from '../site/OrbitPreview';
+import { IdentityFields, LocaleFields, PageToggles, SiteField } from '../site/SiteFields';
+import { TOGGLE_GROUPS, draftOf, siteProblems, type Draft } from '../site/siteDraft';
 import OAuthGuide from './OAuthGuide';
-import OrbitPreview from './OrbitPreview';
-import { STEPS, clearSession, readSession, siteProblems, writeSession, type Draft, type Step } from './initSession';
+import { STEPS, clearSession, readSession, writeSession, type Step } from './initSession';
 import './InitWizard.css';
 
 // 初次設定（/admin/init）：還沒有站長的全新站台，從這裡認領站長、選語系、填站名、決定要開哪些頁面。
@@ -22,35 +23,14 @@ import './InitWizard.css';
 //
 // 設定碼印在後端的 log（handlers/init.rs），證明你是架站的人。認領要先用 GitHub／Google 登入，
 // 所以「站長」排在最前面：認領之後就是站長了，後面三步直接用一般的站台設定 API 存
-// （跟之後後台的站台設定頁同一支），精靈本身不需要另一套寫入的路。
+// （跟後台的站台設定頁同一支），精靈本身不需要另一套寫入的路。欄位也跟站台設定頁共用（site/SiteFields）。
 // 左邊是表單，右邊是首頁軌道的示意圖（OrbitPreview），完成那一步換成真的首頁。
 
 type Phase = 'loading' | 'open' | 'closed';
 
-const TOGGLE_GROUPS = [
-  { key: 'groupOrbit', items: MAIN_SECTIONS },
-  { key: 'groupAbout', items: ABOUT_SECTIONS },
-  { key: 'groupMore', items: MORE_SECTIONS },
-] as const;
-
 const isAdminRole = (u: User | null) => u?.role === 'OWNER' || u?.role === 'ADMIN';
 const ownerOf = (u: User | null) =>
   u ? { name: u.displayName ?? u.display_name ?? u.name ?? u.login ?? '', avatar: u.avatar ?? u.avatar_url } : null;
-
-/** 草稿的起點：現在的站台設定；預設語系先猜站長自己用的語言 */
-function draftFrom(config: SiteConfig): Draft {
-  const lang = adminLang();
-  return {
-    default_locale: lang,
-    locales: Array.from(new Set([lang, ...config.locales])),
-    name: config.name,
-    author: config.author === config.name ? '' : config.author,
-    description: config.description,
-    email: config.email,
-    github: config.github,
-    disabled_pages: config.disabled_pages,
-  };
-}
 
 /** 一開始停在哪一步：還沒有站長就從設定碼或認領開始；已經認領了，接著上次走到的地方 */
 function startStep(needed: boolean, user: User | null): Step | null {
@@ -73,37 +53,6 @@ function PageHead({ kicker, title, latin, lede }: { kicker?: string; title: stri
   );
 }
 
-function Field({
-  label,
-  hint,
-  error,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  // 錯誤放在 label 外面：放裡面的話，欄位的名字（讀屏念的那個）會跟著錯誤訊息一起變
-  return (
-    <div className="wz-field">
-      {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- 欄位就包在 label 裡 */}
-      <label>
-        <span className="wz-label">
-          {label}
-          {hint && <em> · {hint}</em>}
-        </span>
-        {children}
-      </label>
-      {error && (
-        <span className="wz-error" role="alert">
-          {error}
-        </span>
-      )}
-    </div>
-  );
-}
-
 export default function InitWizard() {
   const { t } = useAdminT();
   const search: { code?: unknown } = useSearch({ strict: false });
@@ -114,7 +63,8 @@ export default function InitWizard() {
   const [step, setStep] = useState<Step>('gate');
   // 改過才有自己的一份；沒改過就是從現在的站台設定算出來的起點
   const [edited, setEdited] = useState<Draft | null>(() => readSession().draft ?? null);
-  const draft = edited ?? (config ? draftFrom(config) : null);
+  // 預設語系先猜站長自己用的語言
+  const draft = edited ?? (config ? draftOf(config, adminLang()) : null);
   const [code, setCode] = useState(() => (typeof search.code === 'string' ? search.code : (readSession().code ?? '')));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -235,12 +185,6 @@ export default function InitWizard() {
     }
   };
 
-  const problems = siteProblems(draft);
-  const problem = (field: string) => {
-    const p = touched ? problems.find((x) => x.field === field) : undefined;
-    return p ? t(`init.site.errors.${p.key}`, { max: 'max' in p ? p.max : undefined }) : undefined;
-  };
-
   const providers = (['github', 'google'] as const).map((p) => ({
     key: p,
     label: p === 'github' ? 'GitHub' : 'Google',
@@ -273,7 +217,7 @@ export default function InitWizard() {
         </pre>
         <p className="wz-label">{t('init.gate.logLooksLike')}</p>
         <pre className="wz-cmd wz-cmd-soft">setup: open {url}/admin/init?code=XXXX-XXXX to claim this site</pre>
-        <Field label={t('init.gate.codeLabel')} error={error}>
+        <SiteField label={t('init.gate.codeLabel')} error={error}>
           <input
             className="wz-input wz-code"
             value={code}
@@ -283,7 +227,7 @@ export default function InitWizard() {
             onChange={(e) => setCode(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && code.trim() && void checkCode()}
           />
-        </Field>
+        </SiteField>
         <p className="wz-hint">{t('init.gate.envHint')}</p>
       </>
     );
@@ -360,47 +304,10 @@ export default function InitWizard() {
       </>
     );
   } else if (step === 'lang') {
-    const others = SUPPORTED_LOCALES.filter((l) => l !== draft.default_locale);
     body = (
       <>
         <PageHead title={t('init.lang.title')} latin={t('init.lang.latin')} lede={t('init.lang.lede')} />
-        <p className="wz-label">{t('init.lang.defaultLabel')}</p>
-        <fieldset className="wz-radios" aria-label={t('init.lang.defaultLabel')}>
-          {SUPPORTED_LOCALES.map((l) => (
-            <label key={l} lang={l}>
-              <input
-                type="radio"
-                name="wz-default-locale"
-                checked={draft.default_locale === l}
-                onChange={() => patch({ default_locale: l, locales: Array.from(new Set([l, ...draft.locales])) })}
-              />
-              {t(`layout.languageName.${l}`)}
-            </label>
-          ))}
-        </fieldset>
-        <p className="wz-label">{t('init.lang.othersLabel')}</p>
-        <div className="wz-checks">
-          {others.map((l) => (
-            <label key={l} className="wz-check" lang={l}>
-              <input
-                type="checkbox"
-                checked={draft.locales.includes(l)}
-                onChange={(e) =>
-                  patch({
-                    locales: e.target.checked ? [...draft.locales, l] : draft.locales.filter((x) => x !== l),
-                  })
-                }
-              />
-              {t(`layout.languageName.${l}`)}
-              <code>/{l.toLowerCase()}/</code>
-            </label>
-          ))}
-        </div>
-        <p className="wz-warn">
-          <b aria-hidden="true">!</b>
-          <span>{t('init.lang.warn')}</span>
-        </p>
-        <p className="wz-hint">{t('init.lang.single')}</p>
+        <LocaleFields draft={draft} patch={patch} />
       </>
     );
     foot = (
@@ -415,38 +322,7 @@ export default function InitWizard() {
     body = (
       <>
         <PageHead title={t('init.site.title')} latin={t('init.site.latin')} lede={t('init.site.lede')} />
-        <Field label={t('init.site.name')} error={problem('name')}>
-          <input className="wz-input" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />
-        </Field>
-        <div className="wz-row2">
-          <Field label={t('init.site.author')} hint={t('init.site.authorHint')} error={problem('author')}>
-            <input className="wz-input" value={draft.author} onChange={(e) => patch({ author: e.target.value })} />
-          </Field>
-          <Field label={t('init.site.url')} hint="SITE_URL">
-            <input className="wz-input wz-input-ro" value={url} readOnly />
-          </Field>
-        </div>
-        <Field label={t('init.site.description')} error={problem('description')}>
-          <input
-            className="wz-input"
-            value={draft.description}
-            onChange={(e) => patch({ description: e.target.value })}
-          />
-        </Field>
-        <div className="wz-row2">
-          <Field label={t('init.site.email')} hint={t('init.site.optional')} error={problem('email')}>
-            <input
-              className="wz-input"
-              type="email"
-              value={draft.email}
-              placeholder="hello@example.com"
-              onChange={(e) => patch({ email: e.target.value })}
-            />
-          </Field>
-          <Field label={t('init.site.github')} hint={t('init.site.optional')} error={problem('github')}>
-            <input className="wz-input" value={draft.github} onChange={(e) => patch({ github: e.target.value })} />
-          </Field>
-        </div>
+        <IdentityFields draft={draft} patch={patch} url={url} touched={touched} />
       </>
     );
     foot = (
@@ -459,7 +335,7 @@ export default function InitWizard() {
           className="wz-btn wz-btn-go"
           onClick={() => {
             setTouched(true);
-            if (problems.length === 0) go('pages');
+            if (siteProblems(draft).length === 0) go('pages');
           }}
         >
           {t('init.next')}
@@ -467,41 +343,10 @@ export default function InitWizard() {
       </>
     );
   } else if (step === 'pages') {
-    const off = new Set(draft.disabled_pages);
     body = (
       <>
         <PageHead title={t('init.pages.title')} latin={t('init.pages.latin')} lede={t('init.pages.lede')} />
-        {TOGGLE_GROUPS.map((g) => (
-          <div key={g.key} className="wz-group" onMouseLeave={() => setHot(null)}>
-            <p className="wz-group-h">{t(`init.pages.${g.key}`)}</p>
-            {g.items
-              .filter((s) => s.toggleable)
-              .map((s) => (
-                <button
-                  key={s.key}
-                  type="button"
-                  role="switch"
-                  aria-checked={!off.has(s.key)}
-                  className={`wz-toggle${hot === s.key ? ' is-hot' : ''}`}
-                  onMouseEnter={() => setHot(s.key)}
-                  onFocus={() => setHot(s.key)}
-                  onBlur={() => setHot(null)}
-                  onClick={() =>
-                    patch({
-                      disabled_pages: off.has(s.key)
-                        ? draft.disabled_pages.filter((k) => k !== s.key)
-                        : [...draft.disabled_pages, s.key],
-                    })
-                  }
-                >
-                  <span className="wz-switch" aria-hidden="true" />
-                  <span className="wz-toggle-name">{t(`init.pages.name.${s.key}`)}</span>
-                  <span className="wz-toggle-desc">{t(`init.pages.desc.${s.key}`)}</span>
-                </button>
-              ))}
-            {g.key === 'groupOrbit' && <p className="wz-hint">{t('init.pages.alwaysOn')}</p>}
-          </div>
-        ))}
+        <PageToggles draft={draft} patch={patch} hot={hot} onHot={setHot} />
         {error && <p className="wz-error">{error}</p>}
       </>
     );
@@ -518,8 +363,8 @@ export default function InitWizard() {
   } else {
     // 不用 Intl.ListFormat：語言名各用自己的文字寫，混在一起時它會插進「和」「and」，讀起來很怪
     const list = { format: (xs: string[]) => xs.join(t('init.done.listSep')) };
-    const offNames = draft.disabled_pages.map((k) => t(`init.pages.name.${k}`));
-    const total = TOGGLE_GROUPS.flatMap((g) => g.items.filter((s) => s.toggleable)).length;
+    const offNames = draft.disabled_pages.map((k) => t(`site.pages.name.${k}`));
+    const total = TOGGLE_GROUPS.flatMap((g) => g.items).length;
     const enabled = SUPPORTED_LOCALES.filter((l) => l === draft.default_locale || draft.locales.includes(l));
     const leave = (to: string) => {
       clearSession();

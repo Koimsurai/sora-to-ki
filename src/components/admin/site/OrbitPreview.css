@@ -1,0 +1,266 @@
+/* 首頁軌道的示意圖（OrbitPreview）：初次設定的右半邊、站台設定頁的頁面開關旁邊。
+   容器自己決定大小，這裡只管裡面的東西。 */
+
+.wz-sky {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.wz-sky-stars,
+.wz-sky-system {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.wz-star {
+  fill: var(--ink);
+}
+
+.wz-ring ellipse {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-opacity: 0.55;
+}
+
+.wz-ring.is-dark ellipse {
+  stroke: var(--line);
+  stroke-dasharray: 1 4;
+  stroke-opacity: 1;
+}
+
+.wz-ring.is-all ellipse {
+  stroke-opacity: 0.85;
+}
+
+.wz-ring.is-hot ellipse {
+  stroke: var(--signal);
+  stroke-opacity: 1;
+}
+
+.wz-sat {
+  fill: var(--ink);
+}
+
+.wz-ring.is-hot .wz-sat {
+  fill: var(--signal);
+  filter: drop-shadow(0 0 5px var(--signal));
+}
+
+.wz-caps {
+  fill: var(--ink-muted);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+}
+
+.wz-ring.is-hot .wz-caps {
+  fill: var(--signal);
+}
+
+.wz-dim.wz-caps {
+  fill: var(--ink-subtle);
+}
+
+.wz-ghost ellipse {
+  fill: none;
+  stroke: var(--line);
+  stroke-dasharray: 2 6;
+}
+
+.wz-ghost circle {
+  fill: var(--ground);
+  stroke: var(--ink-subtle);
+}
+
+.wz-ghost .wz-caps {
+  fill: var(--ink-subtle);
+}
+
+.wz-ghost.is-hot ellipse,
+.wz-ghost.is-hot circle {
+  stroke: var(--signal);
+}
+
+.wz-planet ellipse,
+.wz-planet path {
+  fill: none;
+  stroke: var(--ink-muted);
+}
+
+.wz-planet circle {
+  fill: var(--ground);
+  stroke: var(--ink);
+}
+
+.wz-planet.is-dark ellipse,
+.wz-planet.is-dark path,
+.wz-planet.is-dark circle {
+  stroke: var(--line);
+}
+
+.wz-planet.is-all circle {
+  filter: drop-shadow(0 0 14px var(--wash-strong));
+}
+
+.wz-name {
+  fill: var(--ink);
+  font-family: var(--serif);
+  font-size: var(--fs-24);
+  letter-spacing: var(--ls-12);
+}
+
+.wz-owner {
+  fill: var(--ink-subtle);
+}
+
+.wz-sky-cap {
+  position: absolute;
+  top: var(--space-9);
+  left: var(--space-10);
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--ink-subtle);
+}
+
+.wz-sky-cap b {
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.wz-sky-note {
+  position: absolute;
+  bottom: var(--space-8);
+  left: var(--space-10);
+  max-width: 26em;
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--ink-subtle);
+}
+
+.wz-sky-urls {
+  position: absolute;
+  right: var(--space-10);
+  bottom: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  line-height: var(--lh-185);
+  color: var(--ink-subtle);
+}
+
+.wz-sky-urls .is-default {
+  color: var(--ink-body);
+}
+
+.wz-sky-urls .is-default::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: var(--space-2);
+  vertical-align: middle;
+  background: var(--signal);
+  border-radius: var(--r-round);
+  box-shadow: 0 0 6px var(--signal);
+}
+
+.wz-sky-card {
+  position: absolute;
+  right: var(--space-10);
+  bottom: var(--space-8);
+  width: min(330px, 70%);
+  padding: var(--space-4) var(--space-4-5);
+  background: var(--corner-frame), var(--veil-2);
+}
+
+.wz-sky-card p {
+  margin: 0;
+}
+
+.wz-sky-card .wz-sky-card-k {
+  margin-bottom: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--ink-subtle);
+}
+
+.wz-sky-card-u {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--ink-subtle);
+}
+
+.wz-sky-card-t {
+  color: var(--ink);
+  font-size: var(--fs-16);
+}
+
+.wz-sky-card-d {
+  font-size: var(--fs-13);
+  color: var(--ink-muted);
+}
+
+.wz-sky-menus {
+  position: absolute;
+  top: var(--space-8);
+  right: var(--space-10);
+  display: flex;
+  gap: var(--space-8);
+  font-size: var(--fs-13);
+}
+
+.wz-sky-menus > div {
+  min-width: 7em;
+}
+
+.wz-sky-menus p {
+  margin: 0;
+}
+
+.wz-sky-menus .wz-sky-menu-h {
+  margin-bottom: var(--space-1);
+  padding-bottom: var(--space-1-5);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--ink-subtle);
+}
+
+.wz-sky-menu-i {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  line-height: var(--lh-185);
+  color: var(--ink-body);
+}
+
+.wz-sky-menu-i i {
+  width: 4px;
+  height: 4px;
+  background: var(--ink-muted);
+  border-radius: var(--r-round);
+}
+
+.wz-sky-menu-i.is-off {
+  color: var(--ink-subtle);
+  text-decoration: line-through;
+}
+
+.wz-sky-menu-i.is-off i {
+  background: transparent;
+  border: 1px solid var(--ink-subtle);
+}
+
+.wz-sky-menu-i.is-hot {
+  color: var(--signal);
+}

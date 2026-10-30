@@ -1,0 +1,269 @@
+/* 站台設定的三組欄位（SiteFields）：初次設定的精靈與後台的站台設定頁共用。
+   輸入框預設是一條底線（精靈的樣子），站台設定頁在 SiteSettings.css 換成後台的細框。 */
+
+.sf-label {
+  display: block;
+  margin: var(--space-4) 0 var(--space-1-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--ink-subtle);
+}
+
+.sf-label em {
+  font-style: normal;
+}
+
+.sf-field {
+  display: block;
+}
+
+.sf-input {
+  width: 100%;
+  padding: var(--space-1-5) 0 var(--space-2);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0;
+  outline: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-16);
+}
+
+.sf-input:focus {
+  border-bottom-color: var(--signal);
+}
+
+.sf-input::placeholder {
+  color: var(--ink-subtle);
+}
+
+.sf-input-ro {
+  border-bottom-style: dotted;
+  border-bottom-color: var(--line);
+  color: var(--ink-subtle);
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+}
+
+.sf-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5-5);
+}
+
+.sf-hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-12);
+  color: var(--ink-subtle);
+}
+
+.sf-error {
+  display: block;
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-12);
+  color: var(--danger);
+}
+
+/* 語言 */
+.sf-radios {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+}
+
+/* 圓點藏起來（還在，鍵盤與讀屏照常），整格就是選項 */
+.sf-radios label {
+  position: relative;
+  flex: 1;
+  padding: var(--space-2-5) var(--space-1);
+  border-right: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: var(--fs-13);
+  text-align: center;
+  cursor: pointer;
+}
+
+.sf-radios label:last-child {
+  border-right: 0;
+}
+
+.sf-radios input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sf-radios label:has(input:checked) {
+  background: var(--wash);
+  box-shadow: inset 0 -1px 0 var(--signal);
+  color: var(--ink);
+}
+
+.sf-radios label:has(input:focus-visible) {
+  outline: 1px solid var(--signal);
+  outline-offset: -2px;
+}
+
+.sf-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1-5) var(--space-5-5);
+}
+
+.sf-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  padding: var(--space-1) 0;
+  color: var(--ink-body);
+  cursor: pointer;
+}
+
+.sf-check input {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.sf-check input:checked {
+  padding: var(--space-0-5);
+  background: var(--ink) content-box;
+}
+
+.sf-check input:focus-visible {
+  outline: 1px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.sf-check code {
+  margin-left: auto;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--ink-subtle);
+}
+
+.sf-warn {
+  display: flex;
+  gap: var(--space-2-5);
+  margin: var(--space-5) 0 0;
+  font-size: var(--fs-13);
+}
+
+.sf-warn b {
+  font-family: var(--mono-font);
+  font-weight: 400;
+  color: var(--signal);
+}
+
+/* 頁面 */
+.sf-group-h {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  margin: var(--space-3-5) 0 var(--space-0-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--ink-subtle);
+}
+
+.sf-group-h::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dotted var(--line);
+}
+
+.sf-toggle {
+  display: grid;
+  grid-template-columns: 26px auto 1fr;
+  align-items: baseline;
+  gap: var(--space-2-5);
+  width: 100%;
+  padding: var(--space-1-5) var(--space-2) var(--space-1-5) 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sf-toggle.is-hot {
+  background: linear-gradient(90deg, var(--signal-wash), transparent 80%);
+}
+
+.sf-toggle:focus-visible {
+  outline: none;
+}
+
+.sf-switch {
+  position: relative;
+  top: 1px;
+  width: 22px;
+  height: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-full);
+}
+
+.sf-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  background: var(--ink-subtle);
+  border-radius: var(--r-round);
+  transition: left var(--dur-150) var(--easing-standard);
+}
+
+.sf-toggle[aria-checked="true"] .sf-switch {
+  border-color: var(--ink-muted);
+}
+
+.sf-toggle[aria-checked="true"] .sf-switch::after {
+  left: 12px;
+  background: var(--ink);
+}
+
+.sf-toggle.is-hot[aria-checked="true"] .sf-switch::after {
+  background: var(--signal);
+}
+
+.sf-toggle-name {
+  color: var(--ink);
+  font-size: var(--fs-14);
+}
+
+.sf-toggle[aria-checked="false"] .sf-toggle-name {
+  color: var(--ink-subtle);
+}
+
+.sf-toggle-desc {
+  overflow: hidden;
+  font-size: var(--fs-12);
+  color: var(--ink-subtle);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 760px) {
+  .sf-row2,
+  .sf-checks {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .sf-toggle-desc {
+    display: none;
+  }
+}
