@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LinkCard } from '@/components/common/LinkCard';
 import { usePageTransition } from '@/hooks/usePageTransition';
+import { useSignalName } from '@/hooks/useTheme';
 import { LocaleLink } from '@/i18n/locale-link';
 import { onPalette, palette } from '@/lib/palette';
 import { lookupOr } from '@/lib/tableLookup';
@@ -65,6 +66,7 @@ const stripNumber = (q: string) => q.replace(/^(\d+\.\s*|Q:\s*)/, '');
 
 export default function Colophon() {
   const { t, i18n } = useTranslation();
+  const signal = useSignalName();
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const qa = lookupOr(COLOPHON_QA, lang, COLOPHON_QA['zh-TW']);
   /** 問答目前看的是第幾題 */
@@ -339,7 +341,7 @@ export default function Colophon() {
         </li>
         <li>
           <i className="is-amber" />
-          {t('colophon.swatchAmber')}
+          {t('colophon.swatchSignal', signal)}
         </li>
       </ul>
     ),
@@ -451,7 +453,7 @@ export default function Colophon() {
         >
           <span className="cl-k">{t(`colophon.star.${target}`)}</span>
           <h2 id="cl-eyepiece-title">{target === 'qa' ? qa.qaHeading : t(`colophon.title_${target}`)}</h2>
-          <p>{target === 'qa' ? qa.intro : t(`colophon.text_${target}`)}</p>
+          <p>{target === 'qa' ? qa.intro : t(`colophon.text_${target}`, signal)}</p>
           <div className="cl-content">{panel[target]}</div>
         </section>
       </div>

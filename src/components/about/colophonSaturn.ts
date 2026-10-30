@@ -35,7 +35,6 @@ onPalette((p) => Object.assign(COLORS, p));
 const INK = channels(COLORS.paper);
 const GROUND = channels(COLORS.ground);
 const INK_RGB = COLORS.paper;
-const AMBER = COLORS.amber;
 
 /** 拆開的步驟（0 起算）：球與光、刷痕、雲帶、環、衛星、星軌 */
 export const SATURN_STEPS = ['light', 'strokes', 'bands', 'rings', 'satellites', 'trails'] as const;
@@ -239,13 +238,13 @@ export function drawOrbits(ctx: CanvasRenderingContext2D, cx: number, cy: number
     const s = satelliteAt(i, cx, cy, R, t);
     if (i === on) {
       const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 12);
-      glow.addColorStop(0, `rgba(${AMBER}, 0.55)`);
-      glow.addColorStop(1, `rgba(${AMBER}, 0)`);
+      glow.addColorStop(0, `rgba(${COLORS.amber}, 0.55)`);
+      glow.addColorStop(1, `rgba(${COLORS.amber}, 0)`);
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(s.x, s.y, 12, 0, TAU);
       ctx.fill();
-      ctx.fillStyle = `rgb(${AMBER})`;
+      ctx.fillStyle = `rgb(${COLORS.amber})`;
     } else ctx.fillStyle = `rgba(${INK_RGB}, 0.8)`;
     ctx.beginPath();
     ctx.arc(s.x, s.y, i === on ? 3 : 2.2, 0, TAU);

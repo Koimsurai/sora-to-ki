@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { useTranslation } from 'react-i18next';
 import { currentTheme, onTheme, type Theme } from '@/lib/theme';
 
 const subscribe = (notify: () => void) => onTheme(notify);
@@ -8,4 +9,14 @@ const serverTheme = (): Theme => 'saturn';
 /** 現在的主題（lib/theme），頁面開著時換了就跟著換 */
 export function useTheme(): Theme {
   return useSyncExternalStore(subscribe, currentTheme, serverTheme);
+}
+
+/**
+ * 現在這個主題的訊號色叫什麼（siteNav.skySignal）：文案裡寫到訊號色的地方用它，換主題時字跟著顏色換。
+ * signalLower 給英文句中用（「The amber line」），其他語系跟 signal 一樣
+ */
+export function useSignalName() {
+  const { t } = useTranslation();
+  const signal = t(`siteNav.skySignal.${useTheme()}`);
+  return { signal, signalLower: signal.toLowerCase() };
 }

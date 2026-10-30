@@ -37,6 +37,7 @@
   "siteNav": {
     "sky": "Sky",
     "skyNames": {"saturn": "Saturn", "neptune": "Neptune", "blackhole": "Black hole", "betelgeuse": "Betelgeuse"},
+    "skySignal": {"saturn": "Amber", "neptune": "Ice blue", "blackhole": "Lilac", "betelgeuse": "Red ochre"},
     "skyNotes": {"saturn": "Ringed in ice, bound to give it back.", "neptune": "Known before it was seen.", "blackhole": "Light turns back; time stands still.", "betelgeuse": "Breath by breath, becoming stardust."},
     "skyStories": {"saturn": "It wears a ring of ice, and is slowly losing it.\nEnceladus breathes a mist of ice from its south pole, laying down a new ring; the old ice falls back into Saturn, grain by grain.\nThe ring you see is fading and being born at the same time.", "neptune": "It was found on paper first.\nIn 1846, someone worked out from the wandering path of Uranus that another world was hiding in the dark. The telescope followed the math, and there it was, as if it had been waiting a long time.\nIn 1989, Voyager 2 turned on its gravity and never looked back. That bent course, and four arcs of ring that never close, are what it leaves for those who travel far.", "blackhole": "This is the forbidden zone of the universe.\nLight turns back here. Time stops here.\nEverything falls in, and nothing finds its way home.\nNot one law we have written survives here.", "betelgeuse": "The shoulder of Orion takes one breath every four hundred days.\nWith each breath it casts itself into space; the dimming of 2019 was its own dust, veiling its own light.\nIt is still here, breathing slowly. But one day it will burn out and outshine every night."},
     "signIn": "Sign in",
@@ -742,7 +743,7 @@
       "qa": "Q&A"
     },
     "title_material": "Only three things",
-    "text_material": "Amber only ever appears on a single point: where you are, or what is happening. It is never a fill color.",
+    "text_material": "{{signal}} only ever appears on a single point: where you are, or what is happening. It is never a fill color.",
     "title_type": "Three typefaces",
     "text_type": "One for Chinese and every mixed sentence, one for large all-English display text, one for dates and numbers.",
     "title_sky": "One sky",
@@ -757,7 +758,7 @@
     "text_license": "Code is open source under AGPL-3.0; posts, photos and other content are all rights reserved.",
     "swatchGround": "Black is the paper",
     "swatchPaper": "White is the ink",
-    "swatchAmber": "Amber is the signal",
+    "swatchSignal": "{{signal}} is the signal",
     "fontSerif": "Source Han Serif: Chinese and every mixed sentence",
     "fontLatin": "Instrument Serif: only large all-English text, never bold",
     "fontMono": "Monospace: dates and numbers",
@@ -810,7 +811,7 @@
         },
         "satellites": {
           "t": "Only one lights up",
-          "d": "Five orbits outside, one satellite each, matching the five sections on the home page. Amber goes to only one at a time: try tapping another."
+          "d": "Five orbits outside, one satellite each, matching the five sections on the home page. {{signal}} goes to only one at a time: try tapping another."
         },
         "trails": {
           "t": "Long exposure",
@@ -828,7 +829,7 @@
         },
         "gray": {
           "t": "Row by row, in grayscale",
-          "d": "The ground station decodes one row at a time. Brightness arrives first, so the photo surfaces from top to bottom. The amber line is the row being received."
+          "d": "The ground station decodes one row at a time. Brightness arrives first, so the photo surfaces from top to bottom. The {{signalLower}} line is the row being received."
         },
         "color": {
           "t": "One sweep of color",

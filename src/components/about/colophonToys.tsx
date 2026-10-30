@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { RX_PHASES } from '@/components/gallery/downlink';
 import { WORKS, worksQueryOptions } from '@/data/works';
+import { useSignalName } from '@/hooks/useTheme';
 import { loadPhotosManifest } from '@/lib/manifestLoader';
 import { onPalette, palette } from '@/lib/palette';
 import { createTrails, drawOrbits, renderSaturn, satelliteAt, SATURN_STEPS } from './colophonSaturn';
@@ -70,6 +71,7 @@ function Steps({
   onStep: (i: number) => void;
 }) {
   const { t } = useTranslation();
+  const signal = useSignalName();
   const key = keys[step];
   return (
     <div className="cl-steps">
@@ -86,7 +88,7 @@ function Steps({
       </fieldset>
       <div className="cl-step" key={key} aria-live="polite">
         <b>{t(`${ns}.${key}.t`)}</b>
-        <p>{t(`${ns}.${key}.d`)}</p>
+        <p>{t(`${ns}.${key}.d`, signal)}</p>
       </div>
     </div>
   );
