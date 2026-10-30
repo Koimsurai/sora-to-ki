@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vite-plus/test';
+import { beforeAll, describe, expect, it } from 'vite-plus/test';
 import { createSignalSky, visibleArcs, type SkyFrame } from './signalSky';
+
+// jsdom 的 <img> 沒有 decode()。給一個永遠不會完成的：插圖一直不算解好、前景不畫插圖，
+// 兩次 draw 的呼叫才比得了（立刻完成的話插圖會在兩次之間變成可畫）
+beforeAll(() => {
+  HTMLImageElement.prototype.decode = () => new Promise<void>(() => undefined);
+});
 
 const TAU = Math.PI * 2;
 const span = (arcs: [number, number][]) => arcs.reduce((s, [a, b]) => s + (b - a), 0);
