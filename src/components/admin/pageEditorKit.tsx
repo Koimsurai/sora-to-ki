@@ -1,17 +1,38 @@
 import type { I18n } from './pageDraft';
 import { defaultLocale } from '@/lib/locales';
 import { at } from '@/i18n/admin-i18n';
+import { isStale, markSynced, staleCounts } from '@/lib/i18nSync';
 import { editLocales, localeLabel } from './pageLabels';
 
 // 後台「頁面」各分頁共用的畫面零件：語系切換、多語輸入框、列尾的上移下移刪除、儲存列（邏輯在 pageDraft.ts）。
 // 每一頁的編輯器只管自己的欄位長什麼樣子。
 
-/** 編輯哪個語系：會翻譯的欄位跟著它切換 */
-export function LangBar({ lang, onChange }: { lang: string; onChange: (lang: string) => void }) {
+/**
+ * 編輯哪個語系：會翻譯的欄位跟著它切換。
+ * 給了 `content`（整份頁面內容）就在每個語系旁邊標出有幾句可能過期（原文改過、譯文還沒跟上，lib/i18nSync）
+ */
+export function LangBar({
+  lang,
+  onChange,
+  content,
+}: {
+  lang: string;
+  onChange: (lang: string) => void;
+  content?: unknown;
+}) {
+  const locales = editLocales();
+  const stale =
+    content === undefined
+      ? {}
+      : staleCounts(
+          content,
+          locales.map((l) => l.key),
+          defaultLocale(),
+        );
   return (
     <fieldset className="adm-tabs pg-langs">
       <legend className="sr-only">{at('pages.whichLocale')}</legend>
-      {editLocales().map((l) => (
+      {locales.map((l) => (
         <button
           key={l.key}
           type="button"
@@ -21,6 +42,9 @@ export function LangBar({ lang, onChange }: { lang: string; onChange: (lang: str
         >
           <span className="adm-tab-dot" aria-hidden="true" />
           {l.label}
+          {(stale[l.key] ?? 0) > 0 && (
+            <span className="pg-stale-count">{at('pages.staleCount', { count: stale[l.key] })}</span>
+          )}
         </button>
       ))}
       <span className="adm-meta">
@@ -46,13 +70,28 @@ export function I18nInput({
   lang: string;
   multiline?: boolean;
 }) {
+  const base = defaultLocale();
   const props = {
     'aria-label': `${label}（${lang}）`,
     value: value?.[lang] ?? '',
-    placeholder: lang === defaultLocale() ? label : (value?.[defaultLocale()] ?? ''),
-    onChange: (e: { target: { value: string } }) => onChange({ ...value, [lang]: e.target.value }),
+    placeholder: lang === base ? label : (value?.[base] ?? ''),
+    // 寫譯文的同時記下「對著哪一版原文寫的」；改原文不動它，別的語系自然就對不上了
+    onChange: (e: { target: { value: string } }) =>
+      onChange(markSynced({ ...value, [lang]: e.target.value }, lang, base)),
   };
-  return multiline ? <textarea rows={2} {...props} /> : <input {...props} />;
+  const field = multiline ? <textarea rows={2} {...props} /> : <input {...props} />;
+  if (!isStale(value, lang, base)) return field;
+  return (
+    <>
+      {field}
+      <span className="pg-stale">
+        {at('pages.stale', { lang: localeLabel(base) })}
+        <button type="button" className="adm-icon-btn" onClick={() => onChange(markSynced({ ...value }, lang, base))}>
+          {at('pages.markSynced')}
+        </button>
+      </span>
+    </>
+  );
 }
 
 /** 列尾：上移、下移、刪除 */

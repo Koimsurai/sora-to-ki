@@ -98,7 +98,7 @@ export default function WorksEditor() {
 
   return (
     <div className="adm-form pg-editor">
-      <LangBar lang={lang} onChange={setLang} />
+      <LangBar lang={lang} onChange={setLang} content={page.draft} />
 
       <SectionHead id="pg-works-pick">
         {github ? t('pageWorks.pickAs', { account: github }) : t('pageWorks.pick')}

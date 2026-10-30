@@ -37,7 +37,7 @@ export default function LogEditor() {
 
   return (
     <div className="adm-form pg-editor">
-      <LangBar lang={lang} onChange={setLang} />
+      <LangBar lang={lang} onChange={setLang} content={page.draft} />
 
       <SectionHead id="pg-log-start">{t('pageLog.startHead')}</SectionHead>
       <p className="adm-meta">{t('pageLog.startHint')}</p>
