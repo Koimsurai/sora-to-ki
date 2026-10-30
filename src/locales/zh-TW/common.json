@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "載入中…",
+    "ownerFillHint": "只有你看得到 · 去填內容 →",
     "loadingData": "正在載入資料",
     "errorBackendApi": "無法連接到後端 API",
     "retry": "重試",
@@ -78,7 +79,7 @@
     "signInWithGoogle": "Google 登入"
   },
   "hero": {
-    "description": "{{site}}，{{author}} 的個人網站：手記、碎念、作品與收藏。"
+    "description": "{{author}} 的個人網站：手記、碎念、作品與收藏。"
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",

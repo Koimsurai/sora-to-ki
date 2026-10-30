@@ -6,7 +6,7 @@ use std::{env, str::FromStr, sync::Arc, time::Duration};
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use koimsurai_web_backend::{handlers, router, state};
+use koimsurai_web_backend::{handlers, revalidate, router, state};
 use state::AppState;
 
 // jemalloc（tikv fork）：長跑 server 的 RSS/碎片化優於 glibc malloc
@@ -138,6 +138,7 @@ async fn run() -> anyhow::Result<()> {
     }
 
     // 還沒有站長：把認領用的設定碼印在 log（後台的 /admin/init 精靈要它）
+    revalidate::ensure_secret_file();
     handlers::init::announce(&pool).await.map_err(|e| anyhow::anyhow!("初次設定的設定碼：{e:?}"))?;
 
     let http = reqwest::Client::builder().timeout(Duration::from_secs(30)).build()?;

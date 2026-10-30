@@ -1243,6 +1243,7 @@ export default function PostEditor() {
                               <SelectItem value="zh-CN">{tr('layout.languageName.zh-CN')}</SelectItem>
                               <SelectItem value="en">{tr('layout.languageName.en')}</SelectItem>
                               <SelectItem value="ja">{tr('layout.languageName.ja')}</SelectItem>
+                              <SelectItem value="ko">{tr('layout.languageName.ko')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Loading…",
+    "ownerFillHint": "Only you can see this · Fill it in →",
     "loadingData": "Loading data",
     "errorBackendApi": "Can't reach the backend API",
     "retry": "Retry",
@@ -78,7 +79,7 @@
     "signInWithGoogle": "Sign in with Google"
   },
   "hero": {
-    "description": "{{site}}, {{author}}'s personal site: notes, murmurs, work and collection."
+    "description": "{{author}}'s personal site: notes, murmurs, work and collection."
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",

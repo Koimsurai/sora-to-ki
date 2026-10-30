@@ -369,12 +369,13 @@
 .wz-copy-value {
   min-width: 0;
   padding: var(--space-1-5) var(--space-2-5);
-  overflow-x: auto;
   background: var(--wash);
   color: var(--ink-body);
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  white-space: nowrap;
+  /* 長的指令與網址換行，不要橫向捲：捲軸藏起來的話，看起來就像整串到此為止（backend-rs 只看得到 backend） */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .wz-copy-btn {

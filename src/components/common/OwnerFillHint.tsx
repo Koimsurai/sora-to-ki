@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/contexts/auth';
 import type { PageTab } from '@/components/admin/pageTabs';
@@ -11,11 +12,12 @@ import './OwnerFillHint.css';
 
 export default function OwnerFillHint({ page }: { page: PageTab }) {
   const { isAdmin } = useAuth();
+  const { t } = useTranslation();
   // 登入狀態只在瀏覽器裡知道，伺服器那一輪 isAdmin 一定是 false，不會碰到 document
   if (!isAdmin) return null;
   return createPortal(
     <Link to="/admin/pages" search={{ tab: page }} className="owner-fill-hint">
-      只有你看得到 · 去填內容 →
+      {t('common.ownerFillHint')}
     </Link>,
     document.body,
   );

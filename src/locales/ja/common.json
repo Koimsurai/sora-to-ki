@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "読み込み中…",
+    "ownerFillHint": "あなたにだけ見えています · 内容を書く →",
     "loadingData": "データを読み込み中",
     "errorBackendApi": "バックエンド API に接続できません",
     "retry": "再試行",
@@ -78,7 +79,7 @@
     "signInWithGoogle": "Google でログイン"
   },
   "hero": {
-    "description": "{{site}}、{{author}} の個人サイト。ノート、つぶやき、作品、コレクション。"
+    "description": "{{author}} の個人サイト。ノート、つぶやき、作品、コレクション。"
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",

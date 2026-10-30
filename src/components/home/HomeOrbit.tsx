@@ -131,6 +131,7 @@ export default function HomeOrbit() {
   const post = digest?.posts[0];
   const thought = digest?.thoughts[0];
   const short = (s: string) => dotDate(parseServerDate(s), true);
+  const watchTotal = watch ? watch.animeCount + watch.filmCount + watch.tvSeriesCount : 0;
   const lines: Partial<Record<string, { line: string; n: string }>> = {
     notes: {
       line: post ? clip(post.title.split(/[：:]\s?/)[0] ?? post.title, 26) : '',
@@ -146,16 +147,18 @@ export default function HomeOrbit() {
           n: t('home.orbit.worksCount', { count: newestWorks.length }),
         }
       : { line: '', n: '' },
-    collection: {
-      line: watch
-        ? t('home.orbit.collectionLine', {
-            anime: watch.animeCount,
-            films: watch.filmCount,
-            series: watch.tvSeriesCount,
-          })
-        : '',
-      n: watch ? String(watch.animeCount + watch.filmCount + watch.tvSeriesCount) : '',
-    },
+    // 一部都沒有（新站、沒接 Simkl）就跟其他幾顆一樣留白，不寫「在看 0 部動畫…」
+    collection:
+      watch && watchTotal > 0
+        ? {
+            line: t('home.orbit.collectionLine', {
+              anime: watch.animeCount,
+              films: watch.filmCount,
+              series: watch.tvSeriesCount,
+            }),
+            n: String(watchTotal),
+          }
+        : { line: '', n: '' },
     // 第一章的年份（關於頁沒填就不寫）
     about: firstYear
       ? { line: t('home.orbit.aboutLine', { year: firstYear }), n: t('home.orbit.aboutCount', { year: firstYear }) }

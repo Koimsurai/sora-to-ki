@@ -35,19 +35,50 @@ pub async fn notify_on_post_write(req: Request, next: Next) -> Response {
     res
 }
 
-/// 請前端清 ISR 快取。不是經過 HTTP 寫入文章的地方（排程 worker）要自己呼叫。
-pub async fn fire() {
-    // 兩個 env 都要有值才啟用;缺任一 = 功能沒開,安靜跳過。
-    // 注意要擋空字串:compose 用 ${REVALIDATE_SECRET:-} 替換,未設定時傳進來的是空字串而非「不存在」,
-    // env::var 會回 Ok("") —— 不擋的話每次發文都會送出空密鑰、被前端擋掉,然後在 log 噴 warn。
-    let (Ok(url), Ok(secret)) =
-        (std::env::var("FRONTEND_REVALIDATE_URL"), std::env::var("REVALIDATE_SECRET"))
-    else {
-        return;
-    };
-    if url.is_empty() || secret.is_empty() {
+/// 有值的環境變數。compose 用 `${X:-}` 替換,未設定時傳進來的是空字串而非「不存在」,
+/// env::var 會回 Ok("") —— 不擋的話每次發文都會送出空密鑰、被前端擋掉,然後在 log 噴 warn。
+fn env_set(key: &str) -> Option<String> {
+    std::env::var(key).ok().filter(|v| !v.is_empty())
+}
+
+/// 前後端共用的密鑰:`REVALIDATE_SECRET` 有填就用它;沒填就讀 `REVALIDATE_SECRET_FILE` 那個檔。
+///
+/// 自架的人多半不會去填 `REVALIDATE_SECRET`(範本裡是選填),結果改了站名、跑完初次設定精靈,
+/// 前台還掛著舊的快取一小時。所以 compose 把同一個 volume 掛給前後端,後端開機時沒有就產生一把
+/// (`ensure_secret_file`),前端的 `/_revalidate` 讀同一個檔(server/routes/_revalidate.ts)。
+fn secret() -> Option<String> {
+    env_set("REVALIDATE_SECRET").or_else(|| {
+        let raw = std::fs::read_to_string(env_set("REVALIDATE_SECRET_FILE")?).ok()?;
+        Some(raw.trim().to_string()).filter(|s| !s.is_empty())
+    })
+}
+
+/// 開機時呼叫:沒填 `REVALIDATE_SECRET`、檔案又還不存在,就產生一把寫進 `REVALIDATE_SECRET_FILE`。
+pub fn ensure_secret_file() {
+    if env_set("REVALIDATE_SECRET").is_some() {
         return;
     }
+    let Some(path) = env_set("REVALIDATE_SECRET_FILE") else { return };
+    if std::path::Path::new(&path).exists() {
+        return;
+    }
+    let key: String = {
+        use rand::RngExt;
+        let mut rng = rand::rng();
+        const HEX: &[u8] = b"0123456789abcdef";
+        (0..64).map(|_| char::from(HEX[rng.random_range(0..HEX.len())])).collect()
+    };
+    if let Err(e) = std::fs::write(&path, key) {
+        tracing::warn!("清快取的密鑰寫不進 {path}: {e}(前台要等快取自然過期)");
+    }
+}
+
+/// 請前端清 ISR 快取。不是經過 HTTP 寫入文章的地方（排程 worker）要自己呼叫。
+pub async fn fire() {
+    // 網址與密鑰都要有才啟用;缺任一 = 功能沒開,安靜跳過。
+    let (Some(url), Some(secret)) = (env_set("FRONTEND_REVALIDATE_URL"), secret()) else {
+        return;
+    };
 
     let res = reqwest::Client::new()
         .post(&url)
@@ -163,5 +194,28 @@ mod tests {
         for p in ["/api/thoughts", "/api/books", "/api/admin/users/1/role", "/"] {
             assert!(!is_content_mutation(p), "{p} 不該清快取");
         }
+    }
+
+    // 沒填 REVALIDATE_SECRET 的自架站:開機產生一把寫進共用檔,之後讀到的都是同一把;有填的話檔案不用
+    // （env 是 process 全域的:nextest 每個測試各一個 process,所以這裡改 env 不會干擾別的測試）
+    #[test]
+    fn 沒填密鑰時開機產生一把_有填就用填的() {
+        let path = std::env::temp_dir().join(format!("revalidate-secret-{}", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        // SAFETY: 這個測試自己一個 process,沒有別的執行緒在讀 env。
+        unsafe {
+            std::env::set_var("REVALIDATE_SECRET", "");
+            std::env::set_var("REVALIDATE_SECRET_FILE", &path);
+        }
+        super::ensure_secret_file();
+        let first = super::secret().expect("要產生一把");
+        assert_eq!(first.len(), 64);
+        super::ensure_secret_file();
+        assert_eq!(super::secret().as_deref(), Some(first.as_str()), "已經有了就不要換,前端讀的是同一個檔");
+
+        // SAFETY: 同上。
+        unsafe { std::env::set_var("REVALIDATE_SECRET", "s3cret") };
+        assert_eq!(super::secret().as_deref(), Some("s3cret"));
+        let _ = std::fs::remove_file(&path);
     }
 }
