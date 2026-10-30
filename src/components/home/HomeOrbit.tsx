@@ -19,6 +19,7 @@ import { useWorkEntries } from '@/data/works';
 import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
+import { transitionValue, type TransitionValue } from '@/lib/cssTransition';
 import { saturnFrame } from '@/lib/saturnSpec';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
@@ -63,6 +64,8 @@ const FLAT_AFTER_MS = 2500;
 const PREDICT_MAX_MS = 50;
 /** 字卡、小標註透明之後還要再跟幾毫秒：淡出的轉場（HomeOrbit.css 的 0.3 秒）跑完之前它還看得到 */
 const FADE_OUT_MS = 400;
+/** 字卡淡入淡出的時間（跟 HomeOrbit.css 的 --dur-300 與 ease 一樣；有 3D 時由這裡算，見 frame） */
+const LABEL_FADE_MS = 300;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
 const SATURN_COLLAPSE_MS = 500;
 
@@ -185,6 +188,9 @@ export default function HomeOrbit() {
     // 在慢手機上一幀要好幾毫秒（CPU 降速 4 倍時首頁閒置只剩 20fps），而字卡大部分時間是透明的
     const labelLitAt: number[] = [];
     const tagLitAt: number[] = [];
+    /** 字卡透明度的轉場，照 CSS 的規則在這裡算（lib/cssTransition） */
+    const labelFade: TransitionValue[] = [];
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     /** 上一次寫進去的值：值沒變就不再寫 */
     const written = new WeakMap<HTMLElement, Partial<Record<'transform' | 'translate' | 'opacity', string>>>();
     const setStyle = (el: HTMLElement, prop: 'transform' | 'translate' | 'opacity', value: string) => {
@@ -379,7 +385,16 @@ export default function HomeOrbit() {
           el.dataset.tx = tx;
           el.dataset.ty = ty;
         }
-        setStyle(el, 'opacity', String(show));
+        // 透明度照 CSS 的 0.3 秒 ease 轉場算好再寫，字卡本身不帶 transition（HomeOrbit.css）：閒置提示讓目標
+        // 每一幀都在變，交給 CSS 的話每一幀都要取消舊的轉場、建新的，CPU 降速 4 倍時光這件事每秒約 200ms。
+        // 算法跟瀏覽器的一樣（含中途改目標、反轉縮短），逐幀比對 Chrome 自己跑的值，差不到 8 位元的一階
+        let fade = labelFade[i] as TransitionValue | undefined;
+        if (!fade) {
+          fade = transitionValue(0);
+          labelFade[i] = fade;
+        }
+        fade.set(show, now, reduceMotion.matches ? 0 : LABEL_FADE_MS);
+        setStyle(el, 'opacity', String(fade.at(now)));
         el.classList.toggle('is-on', show > 0.6);
 
         // 常駐的小標註：像星圖上的標註，讓第一次來的人一眼看出有五個地方可以去。

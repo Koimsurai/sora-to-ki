@@ -38,6 +38,13 @@
   pointer-events: auto;
 }
 
+/* 有 3D 時字卡的淡入淡出由 JS 照同一個轉場算好再寫（HomeOrbit 的 frame、lib/cssTransition），
+   元素本身不帶 transition：目標每一幀都在變，交給 CSS 會每一幀都重建轉場。
+   平面版（.is-flat）照舊用上面那條，切過去時的淡入不變 */
+.horbit:not(.is-flat) .horbit-label {
+  transition: none;
+}
+
 .horbit-label:focus-visible {
   outline: 1px solid var(--ink-muted);
   outline-offset: 6px;
