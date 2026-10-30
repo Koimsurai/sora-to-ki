@@ -38,6 +38,7 @@
     "sky": "Sky",
     "skyNames": {"saturn": "Saturn", "neptune": "Neptune", "blackhole": "Black hole", "betelgeuse": "Betelgeuse"},
     "skySignal": {"saturn": "Amber", "neptune": "Ice blue", "blackhole": "Lilac", "betelgeuse": "Red ochre"},
+    "skyNamesInline": {"saturn": "Saturn", "neptune": "Neptune", "blackhole": "the black hole", "betelgeuse": "Betelgeuse"},
     "skyNotes": {"saturn": "Ringed in ice, bound to give it back.", "neptune": "Known before it was seen.", "blackhole": "Light turns back; time stands still.", "betelgeuse": "Breath by breath, becoming stardust."},
     "skyStories": {"saturn": "It wears a ring of ice, and is slowly losing it.\nEnceladus breathes a mist of ice from its south pole, laying down a new ring; the old ice falls back into Saturn, grain by grain.\nThe ring you see is fading and being born at the same time.", "neptune": "It was found on paper first.\nIn 1846, someone worked out from the wandering path of Uranus that another world was hiding in the dark. The telescope followed the math, and there it was, as if it had been waiting a long time.\nIn 1989, Voyager 2 turned on its gravity and never looked back. That bent course, and four arcs of ring that never close, are what it leaves for those who travel far.", "blackhole": "This is the forbidden zone of the universe.\nLight turns back here. Time stops here.\nEverything falls in, and nothing finds its way home.\nNot one law we have written survives here.", "betelgeuse": "The shoulder of Orion takes one breath every four hundred days.\nWith each breath it casts itself into space; the dimming of 2019 was its own dust, veiling its own light.\nIt is still here, breathing slowly. But one day it will burn out and outshine every night."},
     "signIn": "Sign in",
@@ -747,9 +748,9 @@
     "title_type": "Three typefaces",
     "text_type": "One for Chinese and every mixed sentence, one for large all-English display text, one for dates and numbers.",
     "title_sky": "One sky",
-    "text_sky": "Every page is one kind of thing in this sky, all made from the dots and lines of the dotted Saturn on the home page.",
+    "text_sky": "Every page is one kind of thing in this sky, all made from the dots and lines of {{bodyInline}} on the home page.",
     "title_rule1": "One signal per screen",
-    "text_rule1": "The Saturn on the home page was drawn one step at a time. Walk through them in order; at the satellites step you can pick one yourself.",
+    "text_rule1": "On the home page, {{bodyInline}} was drawn one step at a time. Walk through the steps in order; at step five you can pick one yourself.",
     "title_rule2": "Only dots and lines",
     "text_rule2": "Every photo on the photos page is received like this. In the last step, see what happens with nothing but dots.",
     "title_rule3": "Grown from data",
@@ -763,8 +764,8 @@
     "fontLatin": "Instrument Serif: only large all-English text, never bold",
     "fontMono": "Monospace: dates and numbers",
     "homePage": "Home",
+    "skyIsHome": {"saturn": "moons around Saturn", "neptune": "moons around Neptune", "blackhole": "stars around the black hole", "betelgeuse": "dust shells thrown off by Betelgeuse"},
     "skyIs": {
-      "home": "moons around Saturn",
       "notes": "rings of star trails",
       "moments": "passing comets",
       "works": "a spiral course outward",
@@ -783,7 +784,7 @@
     "genCommits": "Commits",
     "genMain": "Main language",
     "genOther": "Other",
-    "saturnToy": "The home page Saturn, drawn up to the current step",
+    "bodyToy": "Home page: {{bodyInline}}, drawn up to the current step",
     "photoToy": "A photo from the gallery, received up to the current step",
     "workToy": "A body grown from the numbers below",
     "stepsLabel": "Steps",
@@ -812,6 +813,84 @@
         "satellites": {
           "t": "Only one lights up",
           "d": "Five orbits outside, one satellite each, matching the five sections on the home page. {{signal}} goes to only one at a time: try tapping another."
+        },
+        "trails": {
+          "t": "Long exposure",
+          "d": "Last comes the background: with the shutter held open, every star drags an arc around the pole. The notes page keeps this idea, where each post is one star trail."
+        }
+      },
+      "neptune": {
+        "light": {
+          "t": "A sphere and a light",
+          "d": "It starts as a sphere and a sun shining from the upper left. The lit side is bright, the far side is dark."
+        },
+        "strokes": {
+          "t": "Fine strokes",
+          "d": "Rows of horizontal lines again, but thinner and denser than Saturn's, and almost unbroken: Neptune is wrapped in haze and looks like a smooth ball."
+        },
+        "clouds": {
+          "t": "Dark spots and cirrus",
+          "d": "In 1989 Voyager 2 photographed the Great Dark Spot at 22° south, with a white cloud along its southern edge; in 2018 Hubble saw another one in the north. A dark spot is an oval where the lines thin out, ringed by bright cloud. The long bright streaks are high cirrus."
+        },
+        "rings": {
+          "t": "Thin rings and arcs",
+          "d": "The rings are faint, so only the two clearest are drawn: Le Verrier and Adams. The Adams ring has four brighter arcs, named Courage, Liberté, Égalité and Fraternité. Together they span only about 40°; here they are stretched so you can see them."
+        },
+        "satellites": {
+          "t": "Triton goes backwards",
+          "d": "Five orbits outside, one moon each, matching the five sections on the home page. The fourth is Triton, the only large moon in the solar system that orbits backwards. The fifth is Nereid, with the most eccentric orbit of any moon; it is drawn less stretched here. {{signal}} goes to only one at a time: try tapping another."
+        },
+        "trails": {
+          "t": "Long exposure",
+          "d": "Last comes the background: with the shutter held open, every star drags an arc around the pole. The notes page keeps this idea, where each post is one star trail."
+        }
+      },
+      "blackhole": {
+        "shadow": {
+          "t": "A shadow",
+          "d": "The black hole itself is invisible. What you see is what it blocks: a shadow larger than the event horizon. The thin photon ring at its edge is light that was pulled around the hole before escaping."
+        },
+        "disk": {
+          "t": "The accretion disk",
+          "d": "Before falling in, matter swirls into a disk. The closer in, the faster, hotter and brighter it is, and the difference in speed drags it into spiral streaks. The disk stops at the innermost stable orbit; anything further in simply falls."
+        },
+        "doppler": {
+          "t": "One side brighter",
+          "d": "The disk spins at nearly the speed of light: the side turning toward us brightens, the side turning away dims. The 2019 Event Horizon Telescope image of M87* is brighter on one side too."
+        },
+        "lens": {
+          "t": "Bent light",
+          "d": "The far side of the disk should be hidden behind the shadow, but gravity bends its light around, leaving an image of the disk above and below the shadow. This is how Gargantua looks in Interstellar."
+        },
+        "satellites": {
+          "t": "S stars",
+          "d": "Around the black hole at the center of the Milky Way is a group of stars on tilted, elongated ellipses, and the ellipses themselves slowly turn. Two teams tracked them for thirty years and used them to prove there is a black hole of four million solar masses there, winning the 2020 Nobel Prize in Physics. The five here match the five sections on the home page. {{signal}} goes to only one at a time: try tapping another."
+        },
+        "trails": {
+          "t": "Long exposure",
+          "d": "Last comes the background: with the shutter held open, every star drags an arc around the pole. The notes page keeps this idea, where each post is one star trail."
+        }
+      },
+      "betelgeuse": {
+        "light": {
+          "t": "Its own light",
+          "d": "Betelgeuse is a star: its light comes from itself, so there is no terminator. It is bright in the middle and darker toward the edge, where you are looking at higher, cooler gas."
+        },
+        "strokes": {
+          "t": "Horizontal lines",
+          "d": "A planet is engraved row by row along its latitudes, so the lines curve with the cloud bands. A star uses straight horizontal lines across the picture instead, the way an engraving builds up the shading of a sphere."
+        },
+        "cells": {
+          "t": "Convection cells and dust",
+          "d": "The surface has only a few huge convection cells, bright patches and dark ones; Betelgeuse is one of the few stars whose surface has been imaged directly. The dark patch in the south is the Great Dimming of 2019: it threw off a cloud of material that cooled into dust and blocked its own light."
+        },
+        "breath": {
+          "t": "Breathing",
+          "d": "It is a semiregular variable star that swells and shrinks about every 400 days, compressed here into a few seconds. The faint concentric lines around it are its far-reaching atmosphere."
+        },
+        "satellites": {
+          "t": "Companion and dust shells",
+          "d": "The small dot hugging it is its companion, Siwarha, confirmed only in 2025. Betelgeuse has no known planets; the five dotted lines are the five sections of the home page, drawn as shells of dust it has thrown off. {{signal}} goes to only one at a time: try tapping another."
         },
         "trails": {
           "t": "Long exposure",

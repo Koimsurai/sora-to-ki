@@ -50,6 +50,8 @@ import {
   ORBITS,
   PLANETS,
   RING_COVER,
+  DISK_COVER,
+  DISK_SHEAR,
   RING_ROWS,
   ROLL,
   satellitePhase,
@@ -326,10 +328,6 @@ const smoothstep01 = (t: number) => {
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
 
-/** 吸積盤的螺旋條紋有多斜：角度隨 ln(半徑) 偏移幾倍（越大越像緊緊捲起來的螺旋） */
-const DISK_SHEAR = 3.2;
-/** 吸積盤的刷痕最濃時佔一列的幾成：比土星的環（RING_COVER）密，盤看起來是厚實的一層 */
-const DISK_COVER = 0.8;
 /** 重力透鏡的愛因斯坦半徑是陰影半徑的幾倍（貼著光子環外面那一圈的星被拉成弧） */
 const LENS_EINSTEIN = 2.2;
 /** 透鏡的軟化半徑（愛因斯坦半徑的幾成）：放大倍率的上限，星在那一帶才不會一幀跳一大段 */

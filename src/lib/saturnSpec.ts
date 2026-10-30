@@ -1,4 +1,4 @@
-// 首頁那顆土星的設定：3D 版（lib/starfieldGpu）與此站點遊樂場的平面版（about/colophonSaturn）共用這一份，
+// 首頁那顆土星的設定：3D 版（lib/starfieldGpu）與此站點遊樂場的平面版（about/colophonBody）共用這一份，
 // 兩邊畫出來的才是同一顆。只有數字，不碰 three。
 import type { Theme } from './theme';
 import type { Fold } from './viewportFold';
@@ -80,6 +80,10 @@ export const RING_ROWS = 34;
 /** 最濃的地方線也只佔一列的幾成：線與線之間永遠留一道黑縫 */
 export const PLANET_COVER = 0.76;
 export const RING_COVER = 0.64;
+/** 吸積盤的螺旋條紋有多斜：角度隨 ln(半徑) 偏移幾倍（越大越像緊緊捲起來的螺旋） */
+export const DISK_SHEAR = 3.2;
+/** 吸積盤的刷痕最濃時佔一列的幾成：比土星的環（RING_COVER）密，盤看起來是厚實的一層 */
+export const DISK_COVER = 0.8;
 
 /**
  * 主星的長相（主題預設，lib/theme）：3D（lib/starfieldGpu）與開場的小環（__root.tsx）照這份畫。

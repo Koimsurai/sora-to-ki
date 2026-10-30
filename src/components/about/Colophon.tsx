@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LinkCard } from '@/components/common/LinkCard';
 import { usePageTransition } from '@/hooks/usePageTransition';
-import { useSignalName } from '@/hooks/useTheme';
+import { useSignalName, useTheme } from '@/hooks/useTheme';
 import { LocaleLink } from '@/i18n/locale-link';
 import { onPalette, palette } from '@/lib/palette';
 import { lookupOr } from '@/lib/tableLookup';
@@ -26,7 +26,7 @@ import {
   turnFor,
   type StarKey,
 } from './colophonSky';
-import { PhotoToy, SaturnToy, WorkToy } from './colophonToys';
+import { BodyToy, PhotoToy, WorkToy } from './colophonToys';
 import './Colophon.css';
 
 /** 視線從望遠鏡拉到星要多久（秒） */
@@ -66,7 +66,13 @@ const stripNumber = (q: string) => q.replace(/^(\d+\.\s*|Q:\s*)/, '');
 
 export default function Colophon() {
   const { t, i18n } = useTranslation();
-  const signal = useSignalName();
+  const theme = useTheme();
+  // 文案裡的訊號色與主星跟著主題換（首頁那顆主星、它的訊號色）
+  const vars = {
+    ...useSignalName(),
+    body: t(`siteNav.skyNames.${theme}`),
+    bodyInline: t(`siteNav.skyNamesInline.${theme}`),
+  };
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const qa = lookupOr(COLOPHON_QA, lang, COLOPHON_QA['zh-TW']);
   /** 問答目前看的是第幾題 */
@@ -341,7 +347,7 @@ export default function Colophon() {
         </li>
         <li>
           <i className="is-amber" />
-          {t('colophon.swatchSignal', signal)}
+          {t('colophon.swatchSignal', vars)}
         </li>
       </ul>
     ),
@@ -368,12 +374,12 @@ export default function Colophon() {
         {SKY_PAGES.map(([to, key]) => (
           <li key={key}>
             <LocaleLink to={to}>{key === 'home' ? t('colophon.homePage') : t(`siteNav.${key}`)}</LocaleLink>
-            <span>{t(`colophon.skyIs.${key}`)}</span>
+            <span>{key === 'home' ? t(`colophon.skyIsHome.${theme}`) : t(`colophon.skyIs.${key}`)}</span>
           </li>
         ))}
       </ul>
     ),
-    rule1: <SaturnToy />,
+    rule1: <BodyToy />,
     rule2: <PhotoToy />,
     rule3: <WorkToy />,
     qa: (
@@ -453,7 +459,7 @@ export default function Colophon() {
         >
           <span className="cl-k">{t(`colophon.star.${target}`)}</span>
           <h2 id="cl-eyepiece-title">{target === 'qa' ? qa.qaHeading : t(`colophon.title_${target}`)}</h2>
-          <p>{target === 'qa' ? qa.intro : t(`colophon.text_${target}`, signal)}</p>
+          <p>{target === 'qa' ? qa.intro : t(`colophon.text_${target}`, vars)}</p>
           <div className="cl-content">{panel[target]}</div>
         </section>
       </div>
