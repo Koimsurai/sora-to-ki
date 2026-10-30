@@ -109,6 +109,21 @@
   outline-offset: -2px;
 }
 
+/* 天體：每一格是小圖示、名字、訊號色的名字，由上往下 */
+.sf-themes label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-3) var(--space-1);
+}
+
+.sf-themes em {
+  color: var(--ink-subtle);
+  font-size: var(--fs-11);
+  font-style: normal;
+}
+
 .sf-checks {
   display: grid;
   grid-template-columns: 1fr 1fr;

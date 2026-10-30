@@ -676,26 +676,6 @@
   }
 }
 
-/* 天體（換主題，layout/ThemeMenu）：導覽列最右邊那個小圖示，與手機選單裡的一排。圖示是髮絲線畫的 */
-.sky-glyph {
-  display: block;
-  overflow: visible;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1;
-}
-.sky-glyph * {
-  vector-effect: non-scaling-stroke;
-}
-.sky-glyph .is-faint {
-  stroke-opacity: 0.45;
-}
-.sky-glyph .is-solid {
-  fill: var(--ground);
-}
-.sky-glyph .is-dotted {
-  stroke-dasharray: 1 2;
-}
 .snav-page-sky .snav-row-stamp {
   color: var(--ink-muted);
 }

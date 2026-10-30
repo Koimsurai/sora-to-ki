@@ -13,6 +13,8 @@ export interface Draft {
   email: string;
   github: string;
   disabled_pages: string[];
+  /** 預設天體（lib/theme 的 THEMES）：只有站台設定頁改，初次設定的精靈不問 */
+  theme: string;
 }
 
 /** 頁面開關分三組，照它們在前台出現的位置：首頁的軌道、「關於」選單、「更多」選單 */
@@ -33,6 +35,7 @@ export function draftOf(config: SiteConfig, defaultLocale = config.default_local
     email: config.email,
     github: config.github,
     disabled_pages: config.disabled_pages,
+    theme: config.theme,
   };
 }
 

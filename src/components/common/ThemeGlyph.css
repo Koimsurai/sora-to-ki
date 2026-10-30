@@ -1,0 +1,20 @@
+/* 天體的小圖示（common/ThemeGlyph）：髮絲線，顏色跟著字 */
+.sky-glyph {
+  display: block;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+.sky-glyph * {
+  vector-effect: non-scaling-stroke;
+}
+.sky-glyph .is-faint {
+  stroke-opacity: 0.45;
+}
+.sky-glyph .is-solid {
+  fill: var(--ground);
+}
+.sky-glyph .is-dotted {
+  stroke-dasharray: 1 2;
+}

@@ -4,6 +4,7 @@
     "latin": "Site",
     "meta": "Name, languages and which pages to show",
     "identityHead": "Identity",
+    "themeHead": "Sky",
     "localesHead": "Languages",
     "pagesHead": "Pages",
     "pagesNote": "A page you turn off takes its orbit on the home page with it, and readers lose the way in. The content stays; turn it back on and it's there.",
@@ -37,6 +38,22 @@
       "descriptionTooLong": "The description can be at most {{max}} characters",
       "email": "That email address doesn't look right",
       "github": "A GitHub username only has letters, digits and hyphens, up to 39 characters"
+    }
+  },
+  "theme": {
+    "label": "Default body",
+    "note": "What first-time readers see: the body on the home page, the site's colors and the share images all follow it. Readers who pick one in the top bar keep their own choice.",
+    "name": {
+      "saturn": "Saturn",
+      "neptune": "Neptune",
+      "blackhole": "Black hole",
+      "betelgeuse": "Betelgeuse"
+    },
+    "signal": {
+      "saturn": "Amber",
+      "neptune": "Ice blue",
+      "blackhole": "Lilac",
+      "betelgeuse": "Red ochre"
     }
   },
   "pages": {
