@@ -55,7 +55,7 @@ function storedLang(): Locale | null {
 }
 
 /** 這個瀏覽器的後台該用哪個語言 */
-export function initialAdminLang(): Locale {
+function initialAdminLang(): Locale {
   return storedLang() ?? pickSupported(navigator.languages.join(','));
 }
 
