@@ -18,6 +18,14 @@ import { useEnabledSections } from '@/data/siteConfig';
 const describeInit = (t?: InitTiming) =>
   `就緒於 ${Math.round(performance.now())} ms${t ? `（偵測 ${t.probe}・GPU ${t.device}・編譯 ${t.compile}・首幀 ${t.first}）` : ''}`;
 import { takeSpaceWorker } from './prewarm';
+import { htmlInCanvasEnabled } from '@/lib/htmlInCanvas';
+import {
+  applyLabelGeometry,
+  retryLabels,
+  setCanvasDrawables,
+  setCanvasHost,
+  type LabelGeometry,
+} from '@/store/canvasLabels';
 import { isArriving } from '@/store/pageTransition';
 import { onShowcase, setShowcaseReady, showcaseShowing, skyBorrowed } from '@/store/themeShowcase';
 import { skyPan, subscribeSkyPan } from '@/store/skyPan';
@@ -112,6 +120,8 @@ export default function StarfieldGpu({
   const [failed, setFailed] = useState(false);
   const [perf, setPerf] = useState<PerfReport | null>(null);
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
+  // 首頁標註畫進這張 canvas（HTML-in-Canvas，store/canvasLabels）：只走 worker 的路徑
+  const drawable = useMemo(() => canOffscreen && htmlInCanvasEnabled(), []);
   // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
   const controlRef = useRef<{
     scroll(y: number): void;
@@ -293,6 +303,7 @@ export default function StarfieldGpu({
       // 主程式一開始就先建好的那個（backdrop/prewarm，three.js 多半已經載好了）；重建時是新的一個
       const worker = takeSpaceWorker();
       const offscreen = canvas.transferControlToOffscreen();
+      if (drawable) setCanvasHost({ canvas, post: (message, transfer) => worker.postMessage(message, transfer ?? []) });
       const cancelStart = whenSkyNeeded(() =>
         worker.postMessage(
           {
@@ -337,13 +348,18 @@ export default function StarfieldGpu({
           positions?: SatelliteScreen[];
           at?: number;
           grow?: SaturnGrow;
+          drawables?: boolean;
+          geometry?: LabelGeometry;
         }>,
       ) => {
         if (e.data.type === 'satellites') publishSatellites(e.data.positions ?? [], e.data.at);
+        else if (e.data.type === 'labelGeometry' && e.data.geometry) applyLabelGeometry(e.data.geometry);
+        else if (e.data.type === 'labelsRetry') retryLabels();
         else if (e.data.type === 'saturnGrow' && e.data.grow) publishSaturnGrow(e.data.grow);
         else if (e.data.type === 'ready') {
-          setBackend(`${e.data.backend} · worker`);
+          setBackend(`${e.data.backend} · worker${drawable && e.data.drawables ? ' · HTML-in-Canvas' : ''}`);
           setInitInfo(describeInit(e.data.timing));
+          if (drawable) setCanvasDrawables(e.data.drawables === true);
         } else if (e.data.type === 'perf') setPerf(e.data.report ?? null);
         else if (e.data.type === 'lost') recover(e.data.message ?? 'GPU device lost');
         else if (e.data.type === 'error') {
@@ -375,6 +391,7 @@ export default function StarfieldGpu({
         // 讀者去推敲 addEventListener 的對應在哪。
         worker.removeEventListener('message', onMsg);
         worker.terminate();
+        if (drawable) setCanvasHost(null);
       };
     }
 
@@ -452,7 +469,7 @@ export default function StarfieldGpu({
       runnerHandle?.dispose();
     };
     // generation 變化 = device lost 之後要整組重建（canvas 換了新的 DOM 節點，見上面的註解）
-  }, [generation, recover]);
+  }, [generation, recover, drawable]);
 
   // 初始化失敗（無 WebGPU 也無 WebGL 的機器）→ 優雅消失，頁面留下 CSS 星空
   if (failed) return null;
@@ -466,6 +483,7 @@ export default function StarfieldGpu({
       <canvas
         key={generation}
         ref={canvasRef}
+        content={drawable ? 'drawable' : undefined}
         style={{
           ...canvasStyle,
           zIndex,
