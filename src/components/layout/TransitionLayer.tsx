@@ -290,6 +290,8 @@ interface Run {
   longFrames: number;
   /** 這一頁其實沒換（換主題之後接回來，store/pageTransition 的 arriveFrom）：不走頁面那段路、不重演它的進場 */
   quiet: boolean;
+  /** quiet 那一趟走了幾成（0 到 1）：沒有 flight，黑洞照它決定什麼時候收起來 */
+  quietU?: number;
 }
 
 const mainOf = () => document.querySelector<HTMLElement>('.main-content-container > main');
@@ -549,7 +551,7 @@ export default function TransitionLayer() {
       const grow = easeOut(clamp((now - h.at) / 320));
       // 點逃遠了、光也吞得差不多了，黑洞就收起來（不一直留在那裡）
       const f = r.flight;
-      const progress = r.phase === 'grow' ? 1 : f ? clamp((now - f.at - f.acquire) / f.dur) : 0;
+      const progress = r.phase === 'grow' ? 1 : f ? clamp((now - f.at - f.acquire) / f.dur) : (r.quietU ?? 0);
       const fade = 1 - smooth(0.4, 0.75, progress);
       if (grow * fade <= 0.01) return;
       const radius = HOLE_R * grow * (0.4 + 0.6 * fade);
@@ -1014,6 +1016,9 @@ export default function TransitionLayer() {
         const total = Math.max(1, cum.at(-1) ?? 1);
         const target = route.at(-1) ?? r.from;
         const pace = line && line.length > 1 ? page.handle?.rejoinPace : undefined;
+        // 黑洞：一樣是逃出來的（起步被拖住、越逃越快），從新主星收成的那一點逃出來
+        const ease = THEME === 'blackhole' ? escape : (x: number) => smooth(0, 1, x);
+        const prev = r.pos;
         let u: number;
         // 頁面淡回來的進度：兩拍的話在第一拍就淡完，滑下去時看得到那條線
         let shown: number;
@@ -1027,21 +1032,53 @@ export default function TransitionLayer() {
           shown = clamp(el / first);
           r.pos =
             el < first
-              ? pointAt({ points: route, cum }, smooth(0, 1, el / first) * reach)
+              ? pointAt({ points: route, cum }, ease(el / first) * reach)
               : pointAt({ points: route, cum }, reach + smooth(0, 1, (el - first) / second) * (total - reach));
         } else {
           // 路越長走越久（沿著線走一次要看得清楚），但有上限
-          const dur = clamp(total / QUIET_SPEED, QUIET_MS, QUIET_MAX_MS);
+          const dur = clamp(total / QUIET_SPEED, QUIET_MS, QUIET_MAX_MS) * (THEME === 'blackhole' ? BH_DILATE : 1);
           u = clamp((now - r.launchAt) / dur);
           shown = u;
-          r.pos = pointAt({ points: route, cum }, smooth(0, 1, u) * total);
+          r.pos = pointAt({ points: route, cum }, ease(u) * total);
         }
+        r.quietU = u;
+        const dt = Math.min(50, now - r.last);
+        const moved = { x: r.pos.x - prev.x, y: r.pos.y - prev.y };
         const lastPt = r.trail.at(-1);
         if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos, t: now });
         r.main.style.opacity = String(smooth(0.3, 1, shown));
-        tail(r.trail, now);
+        // 各主題自己的那一筆，跟一般換頁一樣：土星的彗尾塵埃、黑洞（光被拉回身後的小黑洞、麵條化、重力波）、
+        // 參宿四一路拋出的塵埃殼、海王星的預言落點。沒有的只有海王星的彈弓：這一趟的路是頁面的線
+        if (len(moved) > 0.2 && THEME === 'saturn') emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
+        if (THEME === 'blackhole' && !r.hole) r.hole = { c: { ...r.from }, at: now };
+        if (THEME === 'betelgeuse' && len(moved) > 0.2) {
+          const lastShell = r.shells.at(-1);
+          if (!lastShell || now - lastShell.at > SHELL_EVERY)
+            r.shells.push({
+              c: { ...r.pos },
+              at: now,
+              phase: Array.from({ length: 5 }, () => Math.random() * Math.PI * 2),
+            });
+        }
+        let stretch: Stretch | undefined;
+        if (THEME === 'blackhole') {
+          const k = u > 0 ? 1 - smooth(0.08, 0.5, u) : 0;
+          if (k > 0 && len(moved) > 0.01) stretch = { k, angle: Math.atan2(moved.y, moved.x) };
+          while (r.chirp < CHIRP.length && u >= CHIRP[r.chirp][0]) {
+            r.waves.push({ at: now, c: target, strength: CHIRP[r.chirp][1] });
+            r.chirp++;
+          }
+        }
+        world(() => {
+          drawDust(r, dt, 1);
+          tail(r.trail, now, r.hole?.c);
+          drawHole(r, now);
+          dustShells(r, now);
+          gravityWaves(r, now);
+          if (THEME === 'neptune') predicted(target, 0.45 * smooth(0.3, 0.6, u), 1);
+        });
         track(r, r.pos, now);
-        dot(r.pos, 3);
+        dot(r.pos, 3, 1, stretch);
         r.last = now;
         if (u < 1) return;
         r.to = target;
