@@ -2,6 +2,7 @@ import { createI18n, isLocaleLoaded } from '@/i18n/start-i18n';
 import { type Locale } from '@/lib/locales';
 import { pageMeta } from './seoMeta';
 import { lookup } from '@/lib/tableLookup';
+import { pageDescription, siteAuthor, siteName } from '@/lib/siteIdentity';
 
 // 各頁的 SEO 標題／描述，以 localePage 的 basePath 為 key 集中管理。
 //
@@ -19,12 +20,15 @@ interface SeoEntry {
   descKey?: string;
   title?: string;
   description?: string;
-  /** 這一頁的分享圖（後端 handlers/og.rs 的 PAGES）；沒寫就是首頁那張 */
+  /**
+   * 這一頁的分享圖（後端 handlers/og.rs 的 PAGES）；沒寫就是首頁那張。
+   * 同一個 key 也是站長自己寫的描述（站台設定的 page_descriptions）用的那一格
+   */
   og?: string;
 }
 
 const PAGE_SEO: Record<string, SeoEntry> = {
-  // 首頁（basePath = ''）：title 留 null → 站台預設名（宙と木 · Koimsurai），描述用 hero 標語。
+  // 首頁（basePath = ''）：title 留 null → 站台預設名（站名 · 作者），描述用 hero 標語。
   // 原本首頁 head() 只出 links → SSR 完全沒有 og/description（Hero 的 <SEOHead> 是 helmet、爬蟲看不到）。
   '': { descKey: 'hero.description', og: 'home' },
   // 有 i18n 翻譯的
@@ -60,12 +64,28 @@ function i18nFor(locale: Locale) {
   return inst;
 }
 
+/**
+ * 某一格介紹文字（站台設定 page_descriptions 的 key）沒寫時用的通用句子：後台的「介紹文字」拿它當提示字。
+ * 那個語系的字串要先載好（loadLocale），沒載好回空字串
+ */
+export function builtinDescription(page: string, locale: Locale): string {
+  if (!isLocaleLoaded(locale)) return '';
+  const who = { author: siteAuthor(), site: siteName() };
+  const t = i18nFor(locale).t;
+  if (page === 'aboutLead') return t('siteNav.aboutLead', who);
+  const entry = Object.values(PAGE_SEO).find((e) => (e.og ?? 'home') === page);
+  return entry?.descKey ? t(entry.descKey, who) : '';
+}
+
 /** 依 basePath 產出該頁的 SSR meta；沒登記的頁回 undefined（維持現有行為，不強加預設）。 */
 export function seoMetaFor(basePath: string, locale: Locale, canonicalPath: string) {
   const entry = lookup(PAGE_SEO, basePath);
   if (!entry) return undefined;
   const t = i18nFor(locale).t;
-  const title = entry.titleKey ? t(entry.titleKey) : (entry.title ?? null);
-  const description = entry.descKey ? t(entry.descKey) : (entry.description ?? '');
+  const who = { author: siteAuthor(), site: siteName() };
+  const title = entry.titleKey ? t(entry.titleKey, who) : (entry.title ?? null);
+  // 站長在站台設定寫過就用那段，沒寫才用字串檔的通用句子
+  const description =
+    pageDescription(entry.og ?? 'home', locale) ?? (entry.descKey ? t(entry.descKey, who) : (entry.description ?? ''));
   return pageMeta(title, description, canonicalPath, locale, entry.og);
 }

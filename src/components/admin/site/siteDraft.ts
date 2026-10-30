@@ -13,7 +13,26 @@ export interface Draft {
   email: string;
   github: string;
   disabled_pages: string[];
+  /** 介紹文字：哪一頁 → 語系 → 字（站台設定頁的「介紹文字」那段） */
+  page_descriptions: Record<string, Record<string, string>>;
 }
+
+/** 介紹文字的格子，照前台的位置排：首頁、「關於」選單開頭那一句、各頁 */
+export const DESCRIBABLE = [
+  'home',
+  'aboutLead',
+  'notes',
+  'moments',
+  'works',
+  'collection',
+  'about',
+  'setup',
+  'log',
+  'messages',
+  'photos',
+  'friends',
+  'colophon',
+] as const;
 
 /** 頁面開關分三組，照它們在前台出現的位置：首頁的軌道、「關於」選單、「更多」選單 */
 export const TOGGLE_GROUPS = [
@@ -33,6 +52,7 @@ export function draftOf(config: SiteConfig, defaultLocale = config.default_local
     email: config.email,
     github: config.github,
     disabled_pages: config.disabled_pages,
+    page_descriptions: config.page_descriptions,
   };
 }
 
