@@ -17,11 +17,12 @@ import { discoverRoutes } from './routes';
 const LEAKED_VALUES = ['Invalid Date', 'NaN', 'undefined', '[object Object]', 'null null'];
 
 /**
- * 第三方整合在 CI 沒有金鑰，端點會回 500 +「未配置」。那是**刻意的降級路徑**，
+ * 第三方整合在 CI 沒有金鑰，這幾支會回 500 ＋說明。那是**刻意的降級路徑**，
  * 不是壞掉，所以從「不該有錯誤」這條斷言裡排掉；降級後的形狀由 api-contract 單獨驗。
+ * Steam、WakaTime 沒設定時回 200（自架站多半不接，讀者的 console 不該冒紅字），所以不在這裡。
  * ⚠️ 只排這幾支，別擴大：這條 allowlist 一長，這個測試就沒有意義了。
  */
-const UNCONFIGURED = ['/api/steam/', '/api/wakatime/', '/api/spotify/', '/api/github/'];
+const UNCONFIGURED = ['/api/spotify/', '/api/github/'];
 const isUnconfigured = (url: string) => UNCONFIGURED.some((p) => url.includes(p));
 
 interface PageProbe {

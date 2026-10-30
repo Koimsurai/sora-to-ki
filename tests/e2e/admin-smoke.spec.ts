@@ -24,10 +24,11 @@ import { discoverAdminRoutes } from './routes';
 const LEAKED_VALUES = ['Invalid Date', 'NaN', 'undefined', '[object Object]', 'null null'];
 
 /**
- * 第三方整合在 e2e 沒有金鑰，端點會回 500 +「未配置」——刻意的降級路徑，不是壞掉。
+ * 第三方整合在 e2e 沒有金鑰，這幾支會回 500 ＋說明——刻意的降級路徑，不是壞掉。
+ * Steam、WakaTime 沒設定時回 200，所以不在這裡。
  * ⚠️ 只排這幾支，別擴大：這條 allowlist 一長，這個測試就沒有意義了。
  */
-const UNCONFIGURED = ['/api/steam/', '/api/wakatime/', '/api/spotify/', '/api/github/'];
+const UNCONFIGURED = ['/api/spotify/', '/api/github/'];
 const isUnconfigured = (url: string) => UNCONFIGURED.some((p) => url.includes(p));
 
 interface PageProbe {
