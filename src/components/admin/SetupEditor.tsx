@@ -1,18 +1,26 @@
 import { useState, type MouseEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { SetupBay, SetupContent, SetupPart } from '@koimsurai/api-types';
 
+import { recentPostsFullQueryOptions } from '@/data/blogList';
 import { setupContentQueryOptions } from '@/data/pageContent';
 import { authHeaders } from '@/lib/authToken';
+import { defaultLocale } from '@/lib/locales';
 import { at, useAdminT } from '@/i18n/admin-i18n';
 import { SHEETS, sheetById } from '@/components/about/setupSheetRegistry';
+import { artSrc, BASE_CALLS, type Pt } from '@/components/about/setupSheets';
 import { AdminSelect } from './AdminFields';
 import AdminLoading from './AdminLoading';
 import { SectionHead } from './AdminPage';
-import { move, replaceAt, usePageDraft, usePageLang } from './pageDraft';
+import PostLinkModal from './PostLinkModal';
+import { move, replaceAt, usePageDraft, usePageLang, type I18n } from './pageDraft';
 import { I18nInput, LangBar, RowActions, SaveBar } from './pageEditorKit';
 
-// 設備頁：太空梭貨艙的四格與遠處的第五站。每一格選一張圖紙（內建的、custom/setup/ 的圖紙包），
+// 設備頁：太空梭貨艙的四格與遠處的第五站（衛星）。每一格選一張圖紙（內建的、custom/setup/ 的圖紙包），
 // 或上傳自己的圖、在圖上點一下放部件。沒開的那一格照樣畫在畫面上，只是點不開。
+//
+// 後台的名字跟前台一致：分頁寫這一艙的大標（「01 主力機」），欄位照它在前台出現的位置命名，
+// 部件旁邊放同一張圖紙、編號跟前台一樣（隱藏的部件不佔號），滑到哪一列圖上就亮哪一個。
 
 const UPLOAD = '__upload__';
 const EMPTY_BAY: SetupBay = {
@@ -40,14 +48,18 @@ function normalizeSetup(raw: SetupContent): SetupContent {
   };
 }
 
-/** 文章 id：逗號隔開 */
-const idsOf = (s: string) =>
-  s
-    .split(/[,，\s]+/)
-    .map(Number)
-    .filter((n) => Number.isInteger(n) && n > 0);
+const pad2 = (n: number) => String(n).padStart(2, '0');
 
 const clamp = (v: number) => Math.round(Math.min(100, Math.max(0, v)) * 10) / 10;
+
+/** 分頁上的名字：這一艙的大標（編輯中的語系，沒寫就用預設語系那份）；都沒寫是 undefined */
+function nameOf(label: I18n | undefined, lang: string): string | undefined {
+  for (const l of [lang, defaultLocale()]) {
+    const v = label?.[l]?.trim();
+    if (v) return v;
+  }
+  return undefined;
+}
 
 /** 上傳一張圖：回傳網址與高寬比 */
 async function upload(file: File): Promise<{ url: string; ratio: number }> {
@@ -64,6 +76,119 @@ async function upload(file: File): Promise<{ url: string; ratio: number }> {
     img.src = url;
   });
   return { url, ratio };
+}
+
+interface Call {
+  /** 對到哪一列（列上輸入框的 id 用它） */
+  id: string;
+  at: Pt;
+  b: Pt;
+  /** 圓圈裡的數字（跟前台一樣：隱藏的不佔號） */
+  n: number;
+}
+
+/**
+ * 圖紙縮圖：底稿加上引線與編號圈，跟前台打開這一艙時同一個位置。
+ * `hot` 那一個亮起來；點編號圈跳到那一列的輸入框
+ */
+function SheetPreview({
+  artUrl,
+  ratio,
+  calls,
+  hot,
+  label,
+}: {
+  artUrl: string;
+  ratio: number;
+  calls: Call[];
+  hot: string | null;
+  label: string;
+}) {
+  const { t } = useAdminT();
+  return (
+    <figure className="pg-sheet" aria-label={label} data-hot={hot ? '' : undefined}>
+      <div className="pg-placer-art" style={{ aspectRatio: `1 / ${ratio}` }}>
+        <img src={artUrl} alt="" draggable={false} />
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          {calls.map((c) => (
+            <line key={c.id} x1={c.at[0]} y1={c.at[1]} x2={c.b[0]} y2={c.b[1]} data-hot={hot === c.id || undefined} />
+          ))}
+        </svg>
+        {calls.map((c) => (
+          <span key={c.id}>
+            <i
+              className="pg-placer-at"
+              style={{ left: `${c.at[0]}%`, top: `${c.at[1]}%` }}
+              data-hot={hot === c.id || undefined}
+            />
+            <button
+              type="button"
+              className="pg-placer-b"
+              style={{ left: `${c.b[0]}%`, top: `${c.b[1]}%` }}
+              data-hot={hot === c.id || undefined}
+              aria-label={t('pageSetup.partJump', { n: c.n })}
+              onClick={() => document.getElementById(c.id)?.focus()}
+            >
+              {c.n}
+            </button>
+          </span>
+        ))}
+      </div>
+    </figure>
+  );
+}
+
+/** 列表那一欄：滑過或聚焦哪一列，旁邊的圖就亮哪一個 */
+const hotProps = (id: string, setHot: (id: string | null) => void) => ({
+  onMouseEnter: () => setHot(id),
+  onMouseLeave: () => setHot(null),
+  onFocus: () => setHot(id),
+  onBlur: () => setHot(null),
+});
+
+/** 挑文章：已選的排成標籤片（文章標題），點「挑一篇文章」從清單裡搜 */
+function PostPicks({ ids, onChange }: { ids: number[]; onChange: (ids: number[]) => void }) {
+  const { t } = useAdminT();
+  const [open, setOpen] = useState(false);
+  // 跟挑選框同一份清單（開過一次就在快取裡）
+  const { data: posts = [] } = useQuery({ ...recentPostsFullQueryOptions(300), enabled: ids.length > 0 || open });
+  const titleOf = (id: number) => posts.find((p) => Number(p.id) === id)?.title;
+  return (
+    <div className="pg-posts">
+      {ids.length > 0 && (
+        <ul className="adm-chips">
+          {ids.map((id) => {
+            const title = titleOf(id) ?? t('pageSetup.postMissing', { id });
+            return (
+              <li key={id} className="adm-chip">
+                {title}
+                <button
+                  type="button"
+                  className="adm-chip-x"
+                  aria-label={t('pageSetup.removePost', { title })}
+                  onClick={() => onChange(ids.filter((x) => x !== id))}
+                >
+                  ×
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <button type="button" className="adm-btn pg-add" onClick={() => setOpen(true)}>
+        {t('pageSetup.pickPost')}
+      </button>
+      <PostLinkModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        onSelect={(p) => {
+          const id = Number(p.id);
+          if (!ids.includes(id)) onChange([...ids, id]);
+          setOpen(false);
+        }}
+      />
+    </div>
+  );
 }
 
 /** 上傳的圖上放部件：點圖新增一個部件（落點），或替選中的那個部件放落點／編號圈 */
@@ -147,10 +272,44 @@ function Placer({ bay, onChange }: { bay: SetupBay; onChange: (parts: SetupPart[
   );
 }
 
-function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onChange: (bay: SetupBay) => void }) {
+/** 一個勾選框，底下一行說明它在前台是什麼樣子 */
+function Check({
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onChange: (on: boolean) => void;
+  label: string;
+  hint?: string;
+}) {
+  return (
+    <div className="adm-field pg-wide">
+      <label className="pg-check">
+        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+        <span>{label}</span>
+      </label>
+      {hint && <p className="adm-meta">{hint}</p>}
+    </div>
+  );
+}
+
+function BayEditor({
+  no,
+  bay,
+  lang,
+  onChange,
+}: {
+  no: number;
+  bay: SetupBay;
+  lang: string;
+  onChange: (bay: SetupBay) => void;
+}) {
   const { t } = useAdminT();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [hot, setHot] = useState<string | null>(null);
   const set = (patch: Partial<SetupBay>) => onChange({ ...bay, ...patch });
   const parts = bay.parts ?? [];
   const sheet = bay.sheet ? sheetById(bay.sheet) : undefined;
@@ -166,15 +325,46 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
         : [...parts, { key, name: '', spec: '', hidden: false, ...patch }],
     });
   };
+  // 前台的編號：隱藏的部件不佔號，後面的往前補
+  let shown = 0;
+  const numbered = (sheet?.parts ?? []).map((sp) => ({
+    sp,
+    id: `pg-part-${no}-${sp.key}`,
+    n: filled(sp.key)?.hidden ? 0 : ++shown,
+  }));
+  const extra = bay.extra ?? [];
+  const devices = bay.devices ?? [];
+  const appliances = bay.appliances ?? [];
 
   return (
     <>
+      <SectionHead id="pg-setup-bay">{t('pageSetup.bayHead')}</SectionHead>
       <div className="pg-row">
-        <label className="adm-field pg-check">
-          <input type="checkbox" checked={bay.on ?? false} onChange={(e) => set({ on: e.target.checked })} />
-          <span>{t('pageSetup.bayOn')}</span>
-        </label>
+        <Check
+          checked={bay.on ?? false}
+          onChange={(on) => set({ on })}
+          label={t('pageSetup.bayOn')}
+          hint={t('pageSetup.bayOnHint')}
+        />
         <div className="adm-field">
+          <span className="adm-caps">{t('pageSetup.label')}</span>
+          <I18nInput lang={lang} label={t('pageSetup.label')} value={bay.label} onChange={(label) => set({ label })} />
+          <span className="adm-meta">{t('pageSetup.labelHint')}</span>
+        </div>
+        <label className="adm-field">
+          <span className="adm-caps">{t('pageSetup.eyebrow')}</span>
+          <input
+            value={bay.eyebrow ?? ''}
+            onChange={(e) => set({ eyebrow: e.target.value })}
+            placeholder="THE WHITE BUILD"
+          />
+          <span className="adm-meta">{t('pageSetup.eyebrowHint', { no: pad2(no) })}</span>
+        </label>
+        <div className="adm-field pg-wide">
+          <span className="adm-caps">{t('pageSetup.lede')}</span>
+          <I18nInput lang={lang} label={t('pageSetup.lede')} value={bay.lede} onChange={(lede) => set({ lede })} />
+        </div>
+        <div className="adm-field pg-wide">
           <span className="adm-caps">{t('pageSetup.sheet')}</span>
           <AdminSelect
             label={t('pageSetup.sheet')}
@@ -188,54 +378,59 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
             ]}
             onChange={(v) => set(v === UPLOAD ? { sheet: '' } : { sheet: v })}
           />
-        </div>
-        <label className="adm-field">
-          <span className="adm-caps">{t('pageSetup.eyebrow')}</span>
-          <input
-            value={bay.eyebrow ?? ''}
-            onChange={(e) => set({ eyebrow: e.target.value })}
-            placeholder="THE WHITE BUILD"
-          />
-        </label>
-        <div className="adm-field">
-          <span className="adm-caps">{t('pageSetup.label')}</span>
-          <I18nInput lang={lang} label={t('pageSetup.label')} value={bay.label} onChange={(label) => set({ label })} />
-        </div>
-        <div className="adm-field pg-wide">
-          <span className="adm-caps">{t('pageSetup.lede')}</span>
-          <I18nInput lang={lang} label={t('pageSetup.lede')} value={bay.lede} onChange={(lede) => set({ lede })} />
+          <span className="adm-meta">{t('pageSetup.sheetHint')}</span>
         </div>
       </div>
 
       <SectionHead id="pg-setup-parts">{t('pageSetup.partsHead')}</SectionHead>
       {sheet ? (
-        <>
-          <p className="adm-meta">{t('pageSetup.partsHint')}</p>
-          {sheet.parts.map((sp, k) => {
-            const p = filled(sp.key);
-            return (
-              <div key={sp.key} className="pg-row pg-row-part">
-                <span className="pg-part-no">{String(k + 1).padStart(2, '0')}</span>
-                <label className="adm-field">
-                  <span className="adm-caps">{t('pageSetup.nameKey', { key: sp.key })}</span>
-                  <input value={p?.name ?? ''} onChange={(e) => setFilled(sp.key, { name: e.target.value })} />
-                </label>
-                <label className="adm-field">
-                  <span className="adm-caps">{t('pageSetup.spec')}</span>
-                  <input value={p?.spec ?? ''} onChange={(e) => setFilled(sp.key, { spec: e.target.value })} />
-                </label>
-                <label className="adm-field pg-check">
-                  <input
-                    type="checkbox"
-                    checked={p?.hidden ?? false}
-                    onChange={(e) => setFilled(sp.key, { hidden: e.target.checked })}
-                  />
-                  <span>{t('pageSetup.hidden')}</span>
-                </label>
-              </div>
-            );
-          })}
-        </>
+        <div className="pg-split">
+          <SheetPreview
+            artUrl={sheet.artUrl}
+            ratio={sheet.ratio}
+            calls={numbered.filter((x) => x.n > 0).map((x) => ({ id: x.id, at: x.sp.at, b: x.sp.b, n: x.n }))}
+            hot={hot}
+            label={t('pageSetup.previewLabel', { name: sheet.name })}
+          />
+          <div className="pg-split-list">
+            <p className="adm-meta">{t('pageSetup.partsHint')}</p>
+            {numbered.map(({ sp, id, n }) => {
+              const p = filled(sp.key);
+              return (
+                <div
+                  key={sp.key}
+                  className="pg-row pg-row-part"
+                  data-hot={hot === id || undefined}
+                  data-hidden={n === 0 || undefined}
+                  {...hotProps(id, setHot)}
+                >
+                  <span className="pg-part-no">{n > 0 ? n : '–'}</span>
+                  <label className="adm-field">
+                    <span className="adm-caps">{t('pageSetup.name')}</span>
+                    <input
+                      id={id}
+                      value={p?.name ?? ''}
+                      placeholder={sp.key}
+                      onChange={(e) => setFilled(sp.key, { name: e.target.value })}
+                    />
+                  </label>
+                  <label className="adm-field">
+                    <span className="adm-caps">{t('pageSetup.spec')}</span>
+                    <input value={p?.spec ?? ''} onChange={(e) => setFilled(sp.key, { spec: e.target.value })} />
+                  </label>
+                  <label className="adm-field pg-check">
+                    <input
+                      type="checkbox"
+                      checked={p?.hidden ?? false}
+                      onChange={(e) => setFilled(sp.key, { hidden: e.target.checked })}
+                    />
+                    <span>{t('pageSetup.hidden')}</span>
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       ) : (
         <>
           <div className="pg-row">
@@ -263,7 +458,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
           {parts.map((p, k) => (
             // eslint-disable-next-line @eslint-react/no-array-index-key
             <div key={k} className="pg-row pg-row-part">
-              <span className="pg-part-no">{String(k + 1).padStart(2, '0')}</span>
+              <span className="pg-part-no">{k + 1}</span>
               <label className="adm-field">
                 <span className="adm-caps">{t('pageSetup.name')}</span>
                 <input
@@ -291,78 +486,76 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
       )}
 
       <SectionHead id="pg-setup-extra">{t('pageSetup.extraHead')}</SectionHead>
-      {(bay.extra ?? []).map((x, k) => (
+      <p className="adm-meta">{t('pageSetup.extraHint')}</p>
+      {extra.map((x, k) => (
         // eslint-disable-next-line @eslint-react/no-array-index-key
         <div key={k} className="pg-row pg-row-part">
           <span className="pg-part-no">·</span>
           <label className="adm-field">
             <span className="adm-caps">{t('pageSetup.name')}</span>
-            <input
-              value={x.name}
-              onChange={(e) => set({ extra: replaceAt(bay.extra ?? [], k, { name: e.target.value }) })}
-            />
+            <input value={x.name} onChange={(e) => set({ extra: replaceAt(extra, k, { name: e.target.value }) })} />
           </label>
           <label className="adm-field">
             <span className="adm-caps">{t('pageSetup.spec')}</span>
             <input
               value={x.spec ?? ''}
-              onChange={(e) => set({ extra: replaceAt(bay.extra ?? [], k, { spec: e.target.value }) })}
+              onChange={(e) => set({ extra: replaceAt(extra, k, { spec: e.target.value }) })}
             />
           </label>
           <label className="adm-field pg-check">
             <input
               type="checkbox"
               checked={x.not_drawn ?? false}
-              onChange={(e) => set({ extra: replaceAt(bay.extra ?? [], k, { not_drawn: e.target.checked }) })}
+              onChange={(e) => set({ extra: replaceAt(extra, k, { not_drawn: e.target.checked }) })}
             />
             <span>{t('pageSetup.notDrawn')}</span>
           </label>
           <RowActions
             index={k}
-            length={(bay.extra ?? []).length}
+            length={extra.length}
             name={t('pageSetup.extraN', { n: k + 1 })}
-            onMove={(by) => set({ extra: move(bay.extra ?? [], k, by) })}
-            onRemove={() => set({ extra: (bay.extra ?? []).filter((_, i) => i !== k) })}
+            onMove={(by) => set({ extra: move(extra, k, by) })}
+            onRemove={() => set({ extra: extra.filter((_, i) => i !== k) })}
           />
         </div>
       ))}
       <button
         type="button"
         className="adm-btn pg-add"
-        onClick={() => set({ extra: [...(bay.extra ?? []), { name: '', spec: '', not_drawn: false }] })}
+        onClick={() => set({ extra: [...extra, { name: '', spec: '', not_drawn: false }] })}
       >
         {t('pageSetup.addExtra')}
       </button>
 
-      <SectionHead id="pg-setup-more">{t('pageSetup.moreHead')}</SectionHead>
+      <SectionHead id="pg-setup-telemetry">{t('pageSetup.telemetryHead')}</SectionHead>
       <div className="pg-row">
-        <label className="adm-field pg-check pg-wide">
-          <input
-            type="checkbox"
-            checked={bay.telemetry ?? false}
-            onChange={(e) => set({ telemetry: e.target.checked })}
-          />
-          <span>{t('pageSetup.telemetry')}</span>
-        </label>
+        <Check
+          checked={bay.telemetry ?? false}
+          onChange={(telemetry) => set({ telemetry })}
+          label={t('pageSetup.telemetry')}
+          hint={t('pageSetup.telemetryHint')}
+        />
+      </div>
+
+      <SectionHead id="pg-setup-devices">{t('pageSetup.devicesHead')}</SectionHead>
+      <p className="adm-meta">{t('pageSetup.devicesHint')}</p>
+      <div className="pg-row">
         <div className="adm-field pg-wide">
           <span className="adm-caps">{t('pageSetup.devicesTitle')}</span>
           <I18nInput
             lang={lang}
-            label={t('pageSetup.devicesTitleLabel')}
+            label={t('pageSetup.devicesTitle')}
             value={bay.devices_title}
             onChange={(devices_title) => set({ devices_title })}
           />
         </div>
       </div>
-      {(bay.devices ?? []).map((d, k) => (
+      {devices.map((d, k) => (
         // eslint-disable-next-line @eslint-react/no-array-index-key
         <div key={k} className="pg-row">
           <label className="adm-field">
             <span className="adm-caps">{t('pageSetup.device')}</span>
-            <input
-              value={d.name}
-              onChange={(e) => set({ devices: replaceAt(bay.devices ?? [], k, { name: e.target.value }) })}
-            />
+            <input value={d.name} onChange={(e) => set({ devices: replaceAt(devices, k, { name: e.target.value }) })} />
           </label>
           <div className="adm-field">
             <span className="adm-caps">{t('pageSetup.role')}</span>
@@ -370,40 +563,40 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
               lang={lang}
               label={t('pageSetup.role')}
               value={d.role}
-              onChange={(role) => set({ devices: replaceAt(bay.devices ?? [], k, { role }) })}
+              onChange={(role) => set({ devices: replaceAt(devices, k, { role }) })}
             />
           </div>
-          <label className="adm-field pg-wide">
+          <div className="adm-field pg-wide">
             <span className="adm-caps">{t('pageSetup.devicePosts')}</span>
-            <input
-              defaultValue={(d.posts ?? []).join(', ')}
-              onBlur={(e) => set({ devices: replaceAt(bay.devices ?? [], k, { posts: idsOf(e.target.value) }) })}
-            />
-          </label>
+            <PostPicks ids={d.posts ?? []} onChange={(posts) => set({ devices: replaceAt(devices, k, { posts }) })} />
+          </div>
           <RowActions
             index={k}
-            length={(bay.devices ?? []).length}
+            length={devices.length}
             name={t('pageSetup.deviceN', { n: k + 1 })}
-            onMove={(by) => set({ devices: move(bay.devices ?? [], k, by) })}
-            onRemove={() => set({ devices: (bay.devices ?? []).filter((_, i) => i !== k) })}
+            onMove={(by) => set({ devices: move(devices, k, by) })}
+            onRemove={() => set({ devices: devices.filter((_, i) => i !== k) })}
           />
         </div>
       ))}
       <button
         type="button"
         className="adm-btn pg-add"
-        onClick={() => set({ devices: [...(bay.devices ?? []), { name: '', role: {}, posts: [] }] })}
+        onClick={() => set({ devices: [...devices, { name: '', role: {}, posts: [] }] })}
       >
         {t('pageSetup.addDevice')}
       </button>
-      {(bay.appliances ?? []).map((a, k) => (
+
+      <SectionHead id="pg-setup-appliances">{t('pageSetup.appliancesHead')}</SectionHead>
+      <p className="adm-meta">{t('pageSetup.appliancesHint')}</p>
+      {appliances.map((a, k) => (
         // eslint-disable-next-line @eslint-react/no-array-index-key
         <div key={k} className="pg-row">
           <label className="adm-field">
             <span className="adm-caps">{t('pageSetup.applianceBrand')}</span>
             <input
               value={a.name}
-              onChange={(e) => set({ appliances: replaceAt(bay.appliances ?? [], k, { name: e.target.value }) })}
+              onChange={(e) => set({ appliances: replaceAt(appliances, k, { name: e.target.value }) })}
             />
           </label>
           <div className="adm-field">
@@ -412,33 +605,135 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
               lang={lang}
               label={t('pageSetup.kind')}
               value={a.kind}
-              onChange={(kind) => set({ appliances: replaceAt(bay.appliances ?? [], k, { kind }) })}
+              onChange={(kind) => set({ appliances: replaceAt(appliances, k, { kind }) })}
             />
           </div>
           <RowActions
             index={k}
-            length={(bay.appliances ?? []).length}
+            length={appliances.length}
             name={t('pageSetup.applianceN', { n: k + 1 })}
-            onMove={(by) => set({ appliances: move(bay.appliances ?? [], k, by) })}
-            onRemove={() => set({ appliances: (bay.appliances ?? []).filter((_, i) => i !== k) })}
+            onMove={(by) => set({ appliances: move(appliances, k, by) })}
+            onRemove={() => set({ appliances: appliances.filter((_, i) => i !== k) })}
           />
         </div>
       ))}
       <button
         type="button"
         className="adm-btn pg-add"
-        onClick={() => set({ appliances: [...(bay.appliances ?? []), { name: '', kind: {} }] })}
+        onClick={() => set({ appliances: [...appliances, { name: '', kind: {} }] })}
       >
         {t('pageSetup.addAppliance')}
       </button>
+
+      <SectionHead id="pg-setup-records">{t('pageSetup.recordsHead')}</SectionHead>
+      <p className="adm-meta">{t('pageSetup.recordsHint')}</p>
+      <PostPicks ids={bay.records ?? []} onChange={(records) => set({ records })} />
+    </>
+  );
+}
+
+/** 第五站：遠處軌道上的舊衛星。規格條照順序對到衛星線稿上的編號圈 */
+function BaseEditor({
+  base,
+  lang,
+  onChange,
+}: {
+  base: NonNullable<SetupContent['base']>;
+  lang: string;
+  onChange: (base: NonNullable<SetupContent['base']>) => void;
+}) {
+  const { t } = useAdminT();
+  const [hot, setHot] = useState<string | null>(null);
+  const specs = base.specs ?? [];
+  const set = (patch: Partial<NonNullable<SetupContent['base']>>) => onChange({ ...base, ...patch });
+  const calls: Call[] = specs.slice(0, BASE_CALLS.length).map((_, k) => {
+    const [ax, ay, bx, by] = BASE_CALLS[k];
+    return { id: `pg-spec-${k}`, at: [ax, ay], b: [bx, by], n: k + 1 };
+  });
+
+  return (
+    <>
+      <SectionHead id="pg-setup-base">{t('pageSetup.baseHead')}</SectionHead>
       <div className="pg-row">
-        <label className="adm-field pg-wide">
-          <span className="adm-caps">{t('pageSetup.records')}</span>
-          <input
-            defaultValue={(bay.records ?? []).join(', ')}
-            onBlur={(e) => set({ records: idsOf(e.target.value) })}
+        <Check
+          checked={base.on ?? false}
+          onChange={(on) => set({ on })}
+          label={t('pageSetup.baseOn')}
+          hint={t('pageSetup.baseOnHint')}
+        />
+        <div className="adm-field">
+          <span className="adm-caps">{t('pageSetup.label')}</span>
+          <I18nInput
+            lang={lang}
+            label={t('pageSetup.baseNameLabel')}
+            value={base.label}
+            onChange={(label) => set({ label })}
           />
-        </label>
+          <span className="adm-meta">{t('pageSetup.baseLabelHint')}</span>
+        </div>
+        <div className="adm-field pg-wide">
+          <span className="adm-caps">{t('pageSetup.lede')}</span>
+          <I18nInput
+            lang={lang}
+            label={t('pageSetup.baseLedeLabel')}
+            value={base.lede}
+            onChange={(lede) => set({ lede })}
+          />
+        </div>
+      </div>
+
+      <SectionHead id="pg-setup-specs">{t('pageSetup.specsHead')}</SectionHead>
+      <div className="pg-split">
+        <SheetPreview
+          artUrl={artSrc('bay-satellite')}
+          ratio={1}
+          calls={calls}
+          hot={hot}
+          label={t('pageSetup.basePreviewLabel')}
+        />
+        <div className="pg-split-list">
+          <p className="adm-meta">{t('pageSetup.specsHint', { max: BASE_CALLS.length })}</p>
+          {specs.map((sp, k) => {
+            const id = `pg-spec-${k}`;
+            return (
+              // eslint-disable-next-line @eslint-react/no-array-index-key
+              <div key={k} className="pg-row pg-row-part" data-hot={hot === id || undefined} {...hotProps(id, setHot)}>
+                <span className="pg-part-no">{k + 1}</span>
+                <label className="adm-field">
+                  <span className="adm-caps">{t('pageSetup.specItem')}</span>
+                  <input
+                    id={id}
+                    value={sp.label}
+                    onChange={(e) => set({ specs: replaceAt(specs, k, { label: e.target.value }) })}
+                  />
+                </label>
+                <label className="adm-field">
+                  <span className="adm-caps">{t('pageSetup.spec')}</span>
+                  <input
+                    value={sp.value ?? ''}
+                    onChange={(e) => set({ specs: replaceAt(specs, k, { value: e.target.value }) })}
+                  />
+                </label>
+                <RowActions
+                  index={k}
+                  length={specs.length}
+                  name={t('pageSetup.specN', { n: k + 1 })}
+                  onMove={(by) => set({ specs: move(specs, k, by) })}
+                  onRemove={() => set({ specs: specs.filter((_, i) => i !== k) })}
+                />
+              </div>
+            );
+          })}
+          {specs.length < BASE_CALLS.length && (
+            <button
+              type="button"
+              className="adm-btn pg-add"
+              onClick={() => set({ specs: [...specs, { label: '', value: '' }] })}
+            >
+              {t('pageSetup.addSpec')}
+            </button>
+          )}
+        </div>
       </div>
     </>
   );
@@ -459,106 +754,41 @@ export default function SetupEditor() {
   if (page.isPending || !draft) return <AdminLoading />;
   const bays = draft.bays ?? [];
   const base = draft.base ?? { on: false, label: {}, lede: {}, specs: [] };
-  const specs = base.specs ?? [];
+
+  // 跟前台太空梭上的標籤一樣：四艙是 01～04，衛星是 00
+  const tabs = [
+    ...bays.map((b, i) => ({
+      no: pad2(i + 1),
+      name: nameOf(b.label, lang) ?? t('pageSetup.bayTab', { n: i + 1 }),
+      on: b.on ?? false,
+    })),
+    { no: '00', name: nameOf(base.label, lang) ?? t('pageSetup.base'), on: base.on ?? false },
+  ];
 
   return (
     <div className="adm-form pg-editor">
       <LangBar lang={lang} onChange={setLang} content={page.draft} />
-      <p className="adm-meta">{t('pageSetup.customHint')}</p>
-      <div className="adm-tabs">
-        {[0, 1, 2, 3].map((i) => (
-          <button key={i} type="button" className="adm-tab" aria-pressed={tab === i} onClick={() => setTab(i)}>
-            <span className="adm-tab-dot" aria-hidden="true" />
-            {t('pageSetup.bayTab', { n: String(i + 1).padStart(2, '0') })}
-            <span className="adm-meta">{bays[i]?.on ? '' : t('pageSetup.off')}</span>
+      <fieldset className="pg-bays">
+        <legend className="sr-only">{t('pageSetup.whichBay')}</legend>
+        {tabs.map((b, i) => (
+          <button key={b.no} type="button" className="pg-bay" aria-pressed={tab === i} onClick={() => setTab(i)}>
+            <span className="pg-bay-no">{b.no}</span>
+            <span className="pg-bay-name">{b.name}</span>
+            {!b.on && <span className="pg-bay-off">{t('pageSetup.off')}</span>}
           </button>
         ))}
-        <button type="button" className="adm-tab" aria-pressed={tab === 4} onClick={() => setTab(4)}>
-          <span className="adm-tab-dot" aria-hidden="true" />
-          {t('pageSetup.base')}
-          <span className="adm-meta">{base.on ? '' : t('pageSetup.off')}</span>
-        </button>
-      </div>
+      </fieldset>
 
       {tab < 4 ? (
         <BayEditor
           key={tab}
+          no={tab + 1}
           bay={bays[tab] ?? EMPTY_BAY}
           lang={lang}
           onChange={(bay) => page.set({ bays: bays.map((b, i) => (i === tab ? bay : b)) })}
         />
       ) : (
-        <>
-          <div className="pg-row">
-            <label className="adm-field pg-check pg-wide">
-              <input
-                type="checkbox"
-                checked={base.on ?? false}
-                onChange={(e) => page.set({ base: { ...base, on: e.target.checked } })}
-              />
-              <span>{t('pageSetup.baseOn')}</span>
-            </label>
-            <div className="adm-field">
-              <span className="adm-caps">{t('pageSetup.baseName')}</span>
-              <I18nInput
-                lang={lang}
-                label={t('pageSetup.baseNameLabel')}
-                value={base.label}
-                onChange={(label) => page.set({ base: { ...base, label } })}
-              />
-            </div>
-            <div className="adm-field">
-              <span className="adm-caps">{t('pageSetup.lede')}</span>
-              <I18nInput
-                lang={lang}
-                label={t('pageSetup.baseLedeLabel')}
-                value={base.lede}
-                onChange={(lede) => page.set({ base: { ...base, lede } })}
-              />
-            </div>
-          </div>
-          <SectionHead id="pg-setup-specs">{t('pageSetup.specsHead')}</SectionHead>
-          {specs.map((sp, k) => (
-            // eslint-disable-next-line @eslint-react/no-array-index-key
-            <div key={k} className="pg-row pg-row-part">
-              <span className="pg-part-no">{String(k + 1).padStart(2, '0')}</span>
-              <label className="adm-field">
-                <span className="adm-caps">{t('pageSetup.specItem')}</span>
-                <input
-                  value={sp.label}
-                  onChange={(e) =>
-                    page.set({ base: { ...base, specs: replaceAt(specs, k, { label: e.target.value }) } })
-                  }
-                />
-              </label>
-              <label className="adm-field">
-                <span className="adm-caps">{t('pageSetup.spec')}</span>
-                <input
-                  value={sp.value ?? ''}
-                  onChange={(e) =>
-                    page.set({ base: { ...base, specs: replaceAt(specs, k, { value: e.target.value }) } })
-                  }
-                />
-              </label>
-              <RowActions
-                index={k}
-                length={specs.length}
-                name={t('pageSetup.specN', { n: k + 1 })}
-                onMove={(by) => page.set({ base: { ...base, specs: move(specs, k, by) } })}
-                onRemove={() => page.set({ base: { ...base, specs: specs.filter((_, i) => i !== k) } })}
-              />
-            </div>
-          ))}
-          {specs.length < 7 && (
-            <button
-              type="button"
-              className="adm-btn pg-add"
-              onClick={() => page.set({ base: { ...base, specs: [...specs, { label: '', value: '' }] } })}
-            >
-              {t('pageSetup.addSpec')}
-            </button>
-          )}
-        </>
+        <BaseEditor base={base} lang={lang} onChange={(next) => page.set({ base: next })} />
       )}
 
       <SaveBar dirty={page.dirty} saving={page.saving} onReset={page.reset} onSave={() => void page.save()} />
