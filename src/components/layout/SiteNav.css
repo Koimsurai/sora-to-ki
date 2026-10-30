@@ -41,8 +41,36 @@
   letter-spacing: var(--ls-2);
   line-height: var(--lh-100);
   color: var(--ink);
+}
+
+/* 站名與它的天空（天體，換主題）：收成點時一起縮 */
+.snav-id {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
   transform-origin: left center;
   transition: transform var(--dur-300) var(--easing-out);
+}
+
+/* 天體：現在這顆的縮小版＋名字。比站名小一階、淡一階，讀起來是站名的註腳，不是另一個連結 */
+.snav-sky {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--serif);
+  font-size: var(--fs-13);
+  line-height: var(--lh-100);
+  letter-spacing: var(--ls-8);
+  color: var(--ink-subtle);
+  transition: color var(--dur-200) var(--easing-standard);
+}
+.snav-sky:hover,
+.snav-sky[aria-expanded="true"] {
+  color: var(--ink);
+}
+.snav-sky .sky-glyph {
+  width: 18px;
+  height: 18px;
 }
 
 .snav-row {
@@ -155,7 +183,7 @@
 }
 
 /* 其他頁往下捲收成點時，名字也縮小一點 */
-.snav.is-slim.is-folded .snav-name {
+.snav.is-slim.is-folded .snav-id {
   transform: scale(0.85);
 }
 
@@ -179,6 +207,19 @@
   transition:
     max-height var(--dur-500) var(--easing-out),
     padding var(--dur-500) ease;
+}
+
+/* 天體的選單開在左邊，靠著站名旁的那個按鈕；淡出的那一側跟著換到右邊 */
+.snav.is-sky .snav-more {
+  right: auto;
+  left: 0;
+  padding: 0 calc(var(--space-24) * 2) 0 var(--space-10);
+  mask-image:
+    linear-gradient(to right, #000 calc(100% - var(--space-16)), transparent),
+    linear-gradient(#000 calc(100% - var(--space-12)), transparent);
+}
+.snav.is-sky .snav-deck {
+  margin-left: 0;
 }
 
 .snav.is-more .snav-more {
@@ -611,8 +652,10 @@
     font-size: var(--fs-20);
   }
 
+  /* 天體在手機上是整頁選單裡的一排（layout/ThemeMenu 的 SkyRow） */
   .snav-row,
-  .snav-more {
+  .snav-more,
+  .snav-sky {
     display: none;
   }
 
@@ -652,10 +695,6 @@
 }
 .sky-glyph .is-dotted {
   stroke-dasharray: 1 2;
-}
-.snav-row .snav-sky {
-  display: flex;
-  align-items: center;
 }
 .snav-page-sky .snav-row-stamp {
   color: var(--ink-muted);
