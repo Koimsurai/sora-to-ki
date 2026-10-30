@@ -231,6 +231,11 @@ a.mo-embed:hover b {
   text-align: right;
 }
 
+/* 靠右時參差的是左緣，最後一行短了會孤零零貼在右邊，所以每段的行拉成一樣長 */
+.mo-post.is-left .mo-text {
+  text-wrap: balance;
+}
+
 .mo-post.is-left .mo-post-head,
 .mo-post.is-left .mo-act {
   justify-content: flex-end;
