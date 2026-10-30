@@ -1,7 +1,7 @@
 import type { I18n } from './pageDraft';
 import { defaultLocale } from '@/lib/locales';
 import { at } from '@/i18n/admin-i18n';
-import { editLocales, localeLabel } from './pageTabs';
+import { editLocales, localeLabel } from './pageLabels';
 
 // 後台「頁面」各分頁共用的畫面零件：語系切換、多語輸入框、列尾的上移下移刪除、儲存列（邏輯在 pageDraft.ts）。
 // 每一頁的編輯器只管自己的欄位長什麼樣子。

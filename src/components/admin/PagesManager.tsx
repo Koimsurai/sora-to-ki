@@ -8,7 +8,8 @@ import SetupEditor from './SetupEditor';
 import WorksEditor from './WorksEditor';
 import { PageHead, TabPanel } from './AdminPage';
 import { useAdminT } from '@/i18n/admin-i18n';
-import { PAGE_TABS, pageTabLabel, type PageTab } from './pageTabs';
+import { pageTabLabel } from './pageLabels';
+import { PAGE_TABS, type PageTab } from './pageTabs';
 import './PagesManager.css';
 
 // 頁面內容（2026-10 頁面範本）：前台那幾頁的設計寫在程式裡，這裡只填「放進去的東西」。
