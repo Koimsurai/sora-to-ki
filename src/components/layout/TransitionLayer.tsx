@@ -292,6 +292,12 @@ interface Run {
   quiet: boolean;
   /** quiet 那一趟走了幾成（0 到 1）：沒有 flight，黑洞照它決定什麼時候收起來 */
   quietU?: number;
+  /**
+   * quiet 那一趟的尾巴記的是「走到路的哪裡」（沿著路的長度），不是畫面上的點：頁面的線會動（作品頁的航線、
+   * 手記的星軌一直在轉），尾巴每一幀照現在的路重畫，才會一直貼在線上。quietPath 給現在的路
+   */
+  quietS?: { s: number; t: number }[];
+  quietPath?: () => Pick<Flight, 'points' | 'cum'>;
 }
 
 const mainOf = () => document.querySelector<HTMLElement>('.main-content-container > main');
@@ -1007,12 +1013,17 @@ export default function TransitionLayer() {
       // 頁面給了 rejoin（那條線，終點是它現在的那一點）的話，點先飛到線的起點、再順著線走完
       if (r.phase === 'fly' && r.quiet) {
         const page = currentPage();
-        const line = page.handle?.rejoin?.() ?? null;
         const live = () => page.handle?.rejoin?.()?.at(-1) ?? page.handle?.anchor?.() ?? defaultAnchor(r.main);
-        const route = [r.from, ...(line && line.length > 1 ? line : [live()])];
-        const cum = [0];
-        for (let i = 1; i < route.length; i++)
-          cum.push(cum[i - 1] + len({ x: route[i].x - route[i - 1].x, y: route[i].y - route[i - 1].y }));
+        const pathNow = () => {
+          const line = page.handle?.rejoin?.() ?? null;
+          const points = [r.from, ...(line && line.length > 1 ? line : [live()])];
+          const cum = [0];
+          for (let i = 1; i < points.length; i++)
+            cum.push(cum[i - 1] + len({ x: points[i].x - points[i - 1].x, y: points[i].y - points[i - 1].y }));
+          return { points, cum, line };
+        };
+        const { points: route, cum, line } = pathNow();
+        r.quietPath = pathNow;
         const total = Math.max(1, cum.at(-1) ?? 1);
         const target = route.at(-1) ?? r.from;
         const pace = line && line.length > 1 ? page.handle?.rejoinPace : undefined;
@@ -1020,6 +1031,8 @@ export default function TransitionLayer() {
         const ease = THEME === 'blackhole' ? escape : (x: number) => smooth(0, 1, x);
         const prev = r.pos;
         let u: number;
+        /** 走到路的哪裡（沿著路的長度） */
+        let at: number;
         // 頁面淡回來的進度：兩拍的話在第一拍就淡完，滑下去時看得到那條線
         let shown: number;
         if (pace) {
@@ -1030,22 +1043,22 @@ export default function TransitionLayer() {
           const el = now - r.launchAt;
           u = clamp(el / (first + second));
           shown = clamp(el / first);
-          r.pos =
-            el < first
-              ? pointAt({ points: route, cum }, ease(el / first) * reach)
-              : pointAt({ points: route, cum }, reach + smooth(0, 1, (el - first) / second) * (total - reach));
+          at = el < first ? ease(el / first) * reach : reach + smooth(0, 1, (el - first) / second) * (total - reach);
         } else {
           // 路越長走越久（沿著線走一次要看得清楚），但有上限
           const dur = clamp(total / QUIET_SPEED, QUIET_MS, QUIET_MAX_MS) * (THEME === 'blackhole' ? BH_DILATE : 1);
           u = clamp((now - r.launchAt) / dur);
           shown = u;
-          r.pos = pointAt({ points: route, cum }, ease(u) * total);
+          at = ease(u) * total;
         }
+        r.pos = pointAt({ points: route, cum }, at);
         r.quietU = u;
         const dt = Math.min(50, now - r.last);
         const moved = { x: r.pos.x - prev.x, y: r.pos.y - prev.y };
-        const lastPt = r.trail.at(-1);
-        if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos, t: now });
+        r.quietS ??= [];
+        const lastS = r.quietS.at(-1);
+        if (!lastS || Math.abs(at - lastS.s) > 1.5) r.quietS.push({ s: at, t: now });
+        r.trail = r.quietS.map((q) => ({ ...pointAt({ points: route, cum }, q.s), t: q.t }));
         r.main.style.opacity = String(smooth(0.3, 1, shown));
         // 各主題自己的那一筆，跟一般換頁一樣：土星的彗尾塵埃、黑洞（光被拉回身後的小黑洞、麵條化、重力波）、
         // 參宿四一路拋出的塵埃殼、海王星的預言落點。沒有的只有海王星的彈弓：這一趟的路是頁面的線
@@ -1220,6 +1233,11 @@ export default function TransitionLayer() {
         const c = { x: to.x + r.cam.x, y: to.y + r.cam.y };
         for (const [ms, strength] of RINGDOWN) r.waves.push({ at: now + ms, c, strength });
         r.chirp = CHIRP.length + 1;
+      }
+      // quiet：線還在動，尾巴跟著它（見 Run 的 quietS）
+      if (r.quietS && r.quietPath) {
+        const path = r.quietPath();
+        r.trail = r.quietS.map((q) => ({ ...pointAt(path, q.s), t: q.t }));
       }
       ctx.save();
       ctx.translate(-r.cam.x, -r.cam.y);
