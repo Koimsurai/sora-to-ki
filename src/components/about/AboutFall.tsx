@@ -96,21 +96,37 @@ export default function AboutFall() {
   const dotRef = useRef<Pt | null>(null);
   /** 上一幀量到的版面（接回來時排點的路線要用） */
   const stateRef = useRef<Parameters<typeof meterMark>[0] | null>(null);
+  /**
+   * 這一趟是開場（重新整理、直接打開）：捲動位置是瀏覽器還原的真的位置，不是上一頁留下來還沒重設的。
+   * 開場的標記（html[data-boot]）在點還在飛的時候就拿掉了，所以自己記到點落地為止
+   */
+  const restoredRef = useRef(false);
   const [title, titleStop] = splitStop(t('aboutFall.title'));
   const [land, landStop] = splitStop(t('aboutFall.land'));
 
   // 背景的星星讓位：這一頁的星都畫成下墜的參照
   useBareSky();
+  /**
+   * 點落在哪：平常是「坐穩了。」的句號。捲在下面重新整理（捲動位置被還原）的話句號在畫面外，
+   * 落在讀者現在的位置（高度計上，或著地後「就此落下。」的句號）
+   */
+  const deep = () => {
+    const s = stateRef.current;
+    return Boolean(restoredRef.current && s && s.top >= s.h * REJOIN_RULER_FROM);
+  };
+  const landing = () => (deep() ? dotRef.current : stopPoint(titleStopRef.current));
   usePageTransition({
     // 點飛進來，停成「坐穩了。」的句號
-    anchor: () => stopPoint(titleStopRef.current),
+    anchor: landing,
     // 這一頁是往下掉：點最後是從正上方直直掉進句號的，鏡頭跟著它往下，頁面從下面升上來
     arrive: () => {
-      const p = stopPoint(titleStopRef.current);
+      const p = landing();
       if (!p) return null;
+      // 捲在下面重新整理：頁面就在還原的位置，鏡頭不跟著掉那一大段（跟拍會把整頁拖過來），只看最後那段掉進來
+      const from = deep() ? FALL_SHOWN_PX : FALL_IN_PX;
       const drop: Pt[] = [];
-      for (let d = FALL_IN_PX; d >= 0; d -= 6) drop.push({ x: p.x, y: p.y - d });
-      return { approach: drop, join: Math.round((FALL_IN_PX - FALL_SHOWN_PX) / 6), pace: FALL_PACE };
+      for (let d = from; d >= 0; d -= 6) drop.push({ x: p.x, y: p.y - d });
+      return { approach: drop, join: Math.round((from - FALL_SHOWN_PX) / 6), pace: FALL_PACE };
     },
     // 換主題之後接回來：重新掉一次，落回剛剛的高度。點先到高度計最上面（36,000 km；往下挖時是地表），
     // 順著尺滑到現在的高度（讀數跟著往下數，見下面的 slide），著地之後再落進「就此落下。」的句號。
@@ -186,9 +202,12 @@ export default function AboutFall() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (w < cw) ctx.clearRect(0, 0, cw, h);
       // 換頁的點還在飛：上一頁的捲動位置可能還沒重設，這時一律當作在最上面（不然雲層、高度計會先冒出來一下）。
-      // 換主題之後接回來不一樣：頁面沒換，捲動位置是真的
+      // 換主題之後接回來、重新整理（開場）不一樣：頁面沒換或捲動位置被還原了，捲動位置是真的
       const rejoining = isRejoining();
-      const top = isArriving() && !rejoining ? 0 : window.scrollY - docTop(page);
+      if (root.hasAttribute('data-boot')) restoredRef.current = true;
+      else if (!isArriving()) restoredRef.current = false;
+      const real = rejoining || restoredRef.current;
+      const top = isArriving() && !real ? 0 : window.scrollY - docTop(page);
       const state = {
         w,
         h,
