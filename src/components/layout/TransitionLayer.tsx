@@ -117,29 +117,9 @@ const BH_DILATE = 1.35;
 const QUIET_MS = 650;
 const QUIET_MAX_MS = 1800;
 const QUIET_SPEED = 1.4;
-/**
- * 黑洞的重力波（LIGO 2015 年第一次偵測到的，兩個黑洞合併）：合併前是一聲「啁啾」，波越來越密、越來越強；
- * 合併（點落地）那一下最大；之後幾圈越來越弱的餘振。
- * CHIRP 是點飛到幾成時各放一道（越來越密）與它的強度；RINGDOWN 是落地後幾毫秒各放一道
- */
-const CHIRP: [tau: number, strength: number][] = [
-  [0.55, 0.12],
-  [0.7, 0.16],
-  [0.8, 0.2],
-  [0.87, 0.26],
-  [0.92, 0.32],
-  [0.955, 0.4],
-];
-const RINGDOWN: [ms: number, strength: number][] = [
-  [0, 1],
-  [110, 0.5],
-  [230, 0.25],
-];
-/** 波前往外走多快（px/ms）、活多久（ms）、四極形變最大多少（半徑的幾成）、橫直來回擺一次多久（ms） */
-const WAVE_SPEED = 0.5;
-const WAVE_LIFE = 1300;
-const WAVE_SQUEEZE = 0.16;
-const WAVE_PERIOD = 420;
+/** 黑洞的落地（photonFlash）：那圈光子環一開始多大（px）、縮到點上要多久（ms） */
+const FLASH_R = 34;
+const FLASH_MS = 520;
 /**
  * 時間膨脹：越靠近黑洞時間走得越慢。點是從黑洞旁邊逃出去的：起步那段幾乎停住（速度照 τ³ 長），
  * 越離越遠越快，後段照常減速落地。回傳 0–1 的路程
@@ -263,13 +243,12 @@ interface Run {
   offset: Pt;
   /** 海王星的彈弓繞過的那顆星（世界座標）；沒有彈弓是 null */
   focus: Pt | null;
-  /** 黑洞的重力波：每一道波前從哪裡、什麼時候出發、多強（世界座標）；啁啾已經放到第幾道 */
-  waves: { at: number; c: Pt; strength: number }[];
+  /** 黑洞的落地：那圈光子環在哪裡（世界座標）、什麼時候亮起來；還沒落地是 null */
+  flash: { c: Pt; at: number } | null;
   /** 黑洞：離開的那一點變成的小黑洞（世界座標）與它出現的時間；沒有是 null */
   hole: { c: Pt; at: number } | null;
   /** 參宿四：點飛過的路上甩出的塵埃殼（世界座標、出發的時間、每一圈自己的形狀） */
   shells: { c: Pt; at: number; phase: number[] }[];
-  chirp: number;
   cam: Pt;
   /** 點不用飛（已經在錨點上）：鏡頭不動 */
   still: boolean;
@@ -603,44 +582,27 @@ export default function TransitionLayer() {
     };
 
     /**
-     * 黑洞的重力波，照教科書解釋重力波的那張圖畫：一圈「測試粒子」被波掃過時，整圈在橫的橢圓與直的橢圓之間
-     * 來回擺（四極形變，一個方向拉長、另一個方向壓扁）。每一道波前是一圈細點，從出發點往外走、越遠越淡、
-     * 一邊走一邊擺；合併前的啁啾擺得越來越快。回傳還有沒有沒散完的
+     * 黑洞的落地：點落進去的那一下，周圍亮起一圈很細的光子環（首頁的黑洞也有這一圈），越縮越快、縮到點上消失：
+     * 光被拉進去了。是那一點的光，用點的顏色。回傳還有沒有沒收完的
      */
-    const gravityWaves = (r: Run, now: number) => {
+    const photonFlash = (r: Run, now: number) => {
+      const f = r.flash;
+      if (!f) return false;
+      const k = (now - f.at) / FLASH_MS;
+      if (k >= 1) return false;
+      const radius = FLASH_R * (1 - k * k);
+      const alpha = smooth(0, 0.12, k) * (1 - smooth(0.75, 1, k));
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = `rgba(${AMBER}, ${(0.15 * alpha).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(f.c.x, f.c.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.lineWidth = 1;
-      let alive = false;
-      const keep: Run['waves'] = [];
-      for (const w of r.waves) {
-        const age = now - w.at;
-        if (age < 0) {
-          keep.push(w);
-          alive = true;
-          continue;
-        }
-        const life = age / WAVE_LIFE;
-        if (life >= 1) continue;
-        keep.push(w);
-        alive = true;
-        const radius = 6 + age * WAVE_SPEED;
-        // 越遠越淡（振幅大約照 1/r 掉）、越老越淡
-        const alpha = Math.min(1, 1.1 * w.strength) * Math.pow(1 - life, 1.3) * Math.min(1, 90 / radius) ** 0.5;
-        if (alpha < 0.01) continue;
-        // 一邊走一邊擺：強的那道（合併）擺得慢、弱的（早期的啁啾）擺得快一點
-        const squeeze =
-          WAVE_SQUEEZE *
-          Math.min(1, 0.4 + w.strength) *
-          Math.sin((2 * Math.PI * age) / (WAVE_PERIOD * (0.6 + 0.4 * w.strength)));
-        ctx.fillStyle = `rgba(${INK}, ${alpha.toFixed(3)})`;
-        const n = Math.round(clamp(radius * 0.5, 36, 160));
-        for (let i = 0; i < n; i++) {
-          const a = (i / n) * Math.PI * 2;
-          const rr = radius * (1 + squeeze * Math.cos(2 * a));
-          ctx.fillRect(w.c.x + rr * Math.cos(a) - 0.75, w.c.y + rr * Math.sin(a) - 0.75, 1.5, 1.5);
-        }
-      }
-      r.waves = keep;
-      return alive;
+      ctx.strokeStyle = `rgba(${AMBER}, ${(0.9 * alpha).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(f.c.x, f.c.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      return true;
     };
 
     /**
@@ -1060,7 +1022,7 @@ export default function TransitionLayer() {
         if (!lastS || Math.abs(at - lastS.s) > 1.5) r.quietS.push({ s: at, t: now });
         r.trail = r.quietS.map((q) => ({ ...pointAt({ points: route, cum }, q.s), t: q.t }));
         r.main.style.opacity = String(smooth(0.3, 1, shown));
-        // 各主題自己的那一筆，跟一般換頁一樣：土星的彗尾塵埃、黑洞（光被拉回身後的小黑洞、麵條化、重力波）、
+        // 各主題自己的那一筆，跟一般換頁一樣：土星的彗尾塵埃、黑洞（光被拉回身後的小黑洞、麵條化、落地的光子環）、
         // 參宿四一路拋出的塵埃殼、海王星的預言落點。沒有的只有海王星的彈弓：這一趟的路是頁面的線
         if (len(moved) > 0.2 && THEME === 'saturn') emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
         if (THEME === 'blackhole' && !r.hole) r.hole = { c: { ...r.from }, at: now };
@@ -1077,17 +1039,12 @@ export default function TransitionLayer() {
         if (THEME === 'blackhole') {
           const k = u > 0 ? 1 - smooth(0.08, 0.5, u) : 0;
           if (k > 0 && len(moved) > 0.01) stretch = { k, angle: Math.atan2(moved.y, moved.x) };
-          while (r.chirp < CHIRP.length && u >= CHIRP[r.chirp][0]) {
-            r.waves.push({ at: now, c: target, strength: CHIRP[r.chirp][1] });
-            r.chirp++;
-          }
         }
         world(() => {
           drawDust(r, dt, 1);
           tail(r.trail, now, r.hole?.c);
           drawHole(r, now);
           dustShells(r, now);
-          gravityWaves(r, now);
           if (THEME === 'neptune') predicted(target, 0.45 * smooth(0.3, 0.6, u), 1);
         });
         track(r, r.pos, now);
@@ -1163,7 +1120,6 @@ export default function TransitionLayer() {
           tail(r.trail, now, r.hole?.c);
           drawHole(r, now);
           dustShells(r, now);
-          gravityWaves(r, now);
           // 彈弓繞過的那顆星：點靠近時浮出來，繞過去之後淡掉
           if (r.focus) {
             const d = len({ x: r.pos.x - r.focus.x, y: r.pos.y - r.focus.y });
@@ -1180,19 +1136,13 @@ export default function TransitionLayer() {
         });
         const onScreen = { x: r.pos.x - r.cam.x, y: r.pos.y - r.cam.y };
         track(r, onScreen, now);
-        // 黑洞：剛逃出來的時候點被潮汐力沿著前進方向拉長（麵條化）、光暈變暗（重力紅移），離遠了才恢復；
-        // 重力波的啁啾從落點放出來
+        // 黑洞：剛逃出來的時候點被潮汐力沿著前進方向拉長（麵條化）、光暈變暗（重力紅移），離遠了才恢復
         let stretch: Stretch | undefined;
         if (THEME === 'blackhole' && r.flight && !r.still) {
           const f = r.flight;
           const progress = clamp((now - f.at - f.acquire) / f.dur);
           const k = progress > 0 ? 1 - smooth(0.08, 0.5, progress) : 0;
           if (k > 0 && len(moved) > 0.01) stretch = { k, angle: Math.atan2(moved.y, moved.x) };
-          const goal = f.points.at(-1);
-          while (goal && r.chirp < CHIRP.length && progress >= CHIRP[r.chirp][0]) {
-            r.waves.push({ at: now, c: goal, strength: CHIRP[r.chirp][1] });
-            r.chirp++;
-          }
         }
         if (THEME === 'betelgeuse' && r.flight && !r.still && len(moved) > 0.2) {
           const lastShell = r.shells.at(-1);
@@ -1228,12 +1178,9 @@ export default function TransitionLayer() {
       r.main.style.transform = '';
       // 沒飛的（點本來就在錨點上）這時才淡入
       r.main.style.opacity = String(Math.max(Number(r.main.style.opacity || 0), easeOut(g)));
-      // 黑洞：點落地＝合併，最強的那道與後面的餘振從落點放出來（世界座標：這時鏡頭停在 offset）
-      if (THEME === 'blackhole' && !r.still && r.chirp <= CHIRP.length) {
-        const c = { x: to.x + r.cam.x, y: to.y + r.cam.y };
-        for (const [ms, strength] of RINGDOWN) r.waves.push({ at: now + ms, c, strength });
-        r.chirp = CHIRP.length + 1;
-      }
+      // 黑洞：點落地的那一下亮起光子環（世界座標：這時鏡頭停在 offset）
+      if (THEME === 'blackhole' && !r.still && !r.flash)
+        r.flash = { c: { x: to.x + r.cam.x, y: to.y + r.cam.y }, at: now };
       // quiet：線還在動，尾巴跟著它（見 Run 的 quietS）
       if (r.quietS && r.quietPath) {
         const path = r.quietPath();
@@ -1245,7 +1192,7 @@ export default function TransitionLayer() {
       const alive = tail(r.trail, now, r.hole?.c);
       drawHole(r, now);
       const shedding = dustShells(r, now);
-      const rippling = gravityWaves(r, now);
+      const flashing = photonFlash(r, now);
       ctx.restore();
       r.last = now;
       const landed = r.follow && now < r.followUntil ? r.follow() : to;
@@ -1254,7 +1201,7 @@ export default function TransitionLayer() {
       if (THEME === 'neptune' && !r.still)
         predicted(landed, (0.45 + 0.4 * Math.sin(Math.PI * clamp(g * 2))) * (1 - g), 1 - easeOut(g));
       dot(landed, 3 * (1 - easeOut(g)), 1 - g);
-      if (g >= 1 && !r.dust.length && !alive && !rippling && !shedding) {
+      if (g >= 1 && !r.dust.length && !alive && !flashing && !shedding) {
         cancelAnimationFrame(raf);
         // 正常跑完才上報（出錯、被下一次換頁打斷、元件卸載都不算）
         if (r.report) {
@@ -1340,10 +1287,9 @@ export default function TransitionLayer() {
       followUntil: 0,
       residue: null,
       focus: null,
-      waves: [],
+      flash: null,
       hole: null,
       shells: [],
-      chirp: 0,
       t0: now,
       from: center,
       pos: center,
@@ -1535,10 +1481,9 @@ export default function TransitionLayer() {
           followUntil: performance.now() + (departure.followMs ?? 0),
           residue: departure.residue ?? null,
           focus: null,
-          waves: [],
+          flash: null,
           hole: null,
           shells: [],
-          chirp: 0,
           t0: performance.now(),
           from: departure.point,
           pos: departure.point,
