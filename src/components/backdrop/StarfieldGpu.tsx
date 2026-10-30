@@ -19,7 +19,7 @@ const describeInit = (t?: InitTiming) =>
   `就緒於 ${Math.round(performance.now())} ms${t ? `（偵測 ${t.probe}・GPU ${t.device}・編譯 ${t.compile}・首幀 ${t.first}）` : ''}`;
 import { takeSpaceWorker } from './prewarm';
 import { isArriving } from '@/store/pageTransition';
-import { onShowcase, setShowcaseReady } from '@/store/themeShowcase';
+import { onShowcase, setShowcaseReady, showcaseShowing, skyBorrowed } from '@/store/themeShowcase';
 import { skyPan, subscribeSkyPan } from '@/store/skyPan';
 import {
   publishSatellites,
@@ -50,7 +50,8 @@ const BARE_DEFER_MS = 3000;
  */
 function whenSkyNeeded(start: () => void): () => void {
   const root = document.documentElement;
-  if (root.dataset.sky !== 'bare') {
+  // 借來給主星出場的（手機在首頁以外，store/themeShowcase 的 borrowSky）：出場就在眼前，馬上建
+  if (root.dataset.sky !== 'bare' || skyBorrowed()) {
     start();
     return () => undefined;
   }
@@ -156,9 +157,9 @@ export default function StarfieldGpu({
       window.clearTimeout(timer);
     };
   }, []);
-  // 能不能出場：3D 就緒、不是手機的精簡版（不畫主星）、沒有放棄 3D
+  // 能不能出場：3D 就緒、沒有放棄 3D
   useEffect(() => {
-    setShowcaseReady(backend !== BACKEND_PENDING && !liteRef.current && !failed);
+    setShowcaseReady(backend !== BACKEND_PENDING && !failed);
     return () => setShowcaseReady(false);
   }, [backend, failed]);
   // ── GPU device / WebGL context 掉了之後的重建 ────────────────────────────
@@ -253,6 +254,9 @@ export default function StarfieldGpu({
       // 但開場的 data-boot 還要再過半秒才拿掉。只看 data-pt 的話，最後那次變化就沒人接，土星永遠停在一點
       // data-boot-ring 也要看：首頁交棒那一刻（go）土星就開始長，不等夜色拿掉
       waitArrival.observe(root, { attributes: true, attributeFilter: ['data-pt', 'data-boot', 'data-boot-ring'] });
+    } else if (!isOnHomePage && showcaseShowing()) {
+      // 手機借 3D 來出場（store/themeShowcase 的 borrowSky）：出場的指令比 3D 就緒早到，就緒時補上
+      controlRef.current?.saturn(true, true);
     } else controlRef.current?.saturn(isOnHomePage, animateSaturn);
     wasHomeRef.current = isOnHomePage;
     controlRef.current?.scroll(window.scrollY);

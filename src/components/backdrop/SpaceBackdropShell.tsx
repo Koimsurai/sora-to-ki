@@ -1,10 +1,11 @@
-import { createElement, useEffect, useMemo, useState, type ComponentProps } from 'react';
+import { createElement, useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isBotUserAgent } from '@/lib/bot';
 import BackdropErrorBoundary from './BackdropErrorBoundary';
 import { useHardwareGpu } from '@/hooks/useHardwareGpu';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
+import { onBorrowSky, setSkyBorrowable, skyBorrowed } from '@/store/themeShowcase';
 import { dropSpaceWorker, loadStarfieldGpu } from './prewarm';
 import type * as StarfieldGpuModule from './StarfieldGpu';
 
@@ -119,8 +120,14 @@ export default function SpaceBackdropShell() {
     };
   }, [wantStarfield]);
 
+  // 手機在首頁以外換主題時，主星出場那幾秒把 3D 借回來（layout/ThemeSwitchDot）
+  const borrowed = useSyncExternalStore(onBorrowSky, skyBorrowed, () => false);
+  useEffect(() => {
+    setSkyBorrowable(isMobile && !isOnHomePage && hardwareGpu === true && !isBot);
+  }, [isMobile, isOnHomePage, hardwareGpu, isBot]);
+
   // 爬蟲完全不載 three。手機只在首頁載：首頁的五顆衛星在 3D 裡，其他頁用不到，離開首頁就收掉
-  if (isBot || (isMobile && !isOnHomePage && !lingering)) return null;
+  if (isBot || (isMobile && !isOnHomePage && !lingering && !borrowed)) return null;
 
   return (
     <>

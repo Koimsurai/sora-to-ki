@@ -6,9 +6,16 @@ export type ShowcaseCommand = 'collapse' | 'show' | 'hide' | 'abort';
 type Listener = (cmd: ShowcaseCommand) => void;
 const listeners = new Set<Listener>();
 
+let showing = false;
+
 export function showcase(cmd: ShowcaseCommand) {
+  if (cmd === 'show') showing = true;
+  else if (cmd !== 'collapse') showing = false;
   for (const fn of listeners) fn(cmd);
 }
+
+/** 首頁以外的主星正在出場（show 之後、hide 或 abort 之前）：3D 比出場的指令晚就緒時照這個補上 */
+export const showcaseShowing = () => showing;
 
 export function onShowcase(fn: Listener): () => void {
   listeners.add(fn);
@@ -17,9 +24,33 @@ export function onShowcase(fn: Listener): () => void {
 
 let ready = false;
 
-/** 3D 在跑、而且是會畫主星的那一種（手機的精簡版不畫）：StarfieldGpu 回報 */
+/** 3D 在跑：StarfieldGpu 回報 */
 export function setShowcaseReady(value: boolean) {
   ready = value;
 }
 
 export const showcaseReady = () => ready;
+
+/**
+ * 手機的 3D 只在首頁掛（backdrop/SpaceBackdropShell），其他頁沒有可以出場的主星。
+ * 出場那幾秒把 3D 借回來：borrowable 是這一頁借得到（手機、首頁以外、有 GPU），borrowSky 掛上／還回去
+ */
+let borrowable = false;
+let borrowed = false;
+const borrowListeners = new Set<() => void>();
+
+export function setSkyBorrowable(value: boolean) {
+  borrowable = value;
+}
+export const skyBorrowable = () => borrowable;
+
+export function borrowSky(on: boolean) {
+  if (borrowed === on) return;
+  borrowed = on;
+  for (const fn of borrowListeners) fn();
+}
+export const skyBorrowed = () => borrowed;
+export function onBorrowSky(fn: () => void): () => void {
+  borrowListeners.add(fn);
+  return () => borrowListeners.delete(fn);
+}

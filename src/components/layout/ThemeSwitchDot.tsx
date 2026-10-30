@@ -5,7 +5,7 @@ import { PLANETS, saturnRingOnScreen } from '@/lib/saturnSpec';
 import { currentFold } from '@/lib/viewportFold';
 import { absNow, latestSaturnGrow, subscribeSatellites } from '@/store/homeOrbit';
 import { arriveFrom } from '@/store/pageTransition';
-import { showcase, showcaseReady } from '@/store/themeShowcase';
+import { borrowSky, showcase, showcaseReady, skyBorrowable } from '@/store/themeShowcase';
 import './ThemeSwitchDot.css';
 
 /** 舊的主星收成一點要多久（lib/starfieldGpu 的收約 0.5 秒）；點在收到一半時亮起來，跟它交棒 */
@@ -93,6 +93,7 @@ const lights = (on: boolean) => {
  * 點一下、按 Esc、換頁都直接收尾。
  *
  * 同一時間只演一趟：還沒換色前又選了別的，直接把目標換掉；已經換色了才選，排在這一趟之後接著演。
+ * 手機在首頁以外平常沒有 3D，第一次出場時借回來（store/themeShowcase 的 borrowSky）。
  * 要求減少動態、或沒有 3D：直接換，只有顏色淡入
  */
 export default function ThemeSwitchDot() {
@@ -154,6 +155,7 @@ export default function ThemeSwitchDot() {
     /** 一趟演完：燈亮回來；有排隊的就接著演 */
     const done = () => {
       lights(true);
+      borrowSky(false);
       stop = null;
       target = null;
       const next = queued;
@@ -338,7 +340,11 @@ export default function ThemeSwitchDot() {
         done();
       } else if (planetOnScreen()) onHome();
       else if (showcaseReady()) elsewhere();
-      else {
+      else if (skyBorrowable() && !showcasedBefore()) {
+        // 手機在首頁以外：3D 借回來演第一次出場。還沒就緒也先開始收這一頁，主星等 3D 好了才長（等不到就照樣接回去）
+        borrowSky(true);
+        elsewhere();
+      } else {
         setTheme(next);
         done();
       }
@@ -357,6 +363,7 @@ export default function ThemeSwitchDot() {
       // 換頁（pathname 變了）或卸載：直接收尾
       setThemeDirector(null);
       stop?.();
+      borrowSky(false);
       alive = false;
       window.cancelAnimationFrame(raf);
       clearTimers();
