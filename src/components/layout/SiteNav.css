@@ -718,10 +718,23 @@
   color: var(--ink);
 }
 
-/* 天體那一頁左邊：滑過的那一顆的故事。換一顆就淡入一次（key 換了，元素重建）。
-   故事比其他頁的一句說明長：左欄放寬、字小一號，高度才跟右邊四列差不多，不會撐出選單 */
+/* 天體那一頁：左邊四列（按鈕的正下方），右邊是滑過的那一顆的故事。換一顆就淡入一次（key 換了，元素重建）。
+   故事比其他頁的一句說明長：那一欄放寬、字小一號，高度才跟四列差不多，不會撐出選單 */
 .snav-page-sky {
-  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+}
+/* 圖示只有 16px，不用其他頁放日期的那麼寬一欄 */
+.snav-page-sky .snav-page-list button {
+  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
+  align-items: center;
+}
+/* 選中的那一顆的點放在圖示左邊的留白裡：名字不被推開，四列的名字對齊 */
+.snav-page-sky .is-live .snav-row-title::before {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--space-4) * -1);
+  margin: 0;
+  translate: 0 -50%;
 }
 .snav-sky-story {
   display: flex;

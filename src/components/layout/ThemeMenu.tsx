@@ -39,8 +39,8 @@ export function ThemeGlyph({ theme }: { theme: Theme }) {
 }
 
 /**
- * 下拉面板裡的那一頁：右邊四列，選中的那一列前面一顆訊號色的點；
- * 左邊是滑過（或鍵盤移到）的那一顆在講什麼：它在首頁、換頁時做了什麼，背後是哪件真實的事。沒滑過時是現在這顆
+ * 下拉面板裡的那一頁（開在左邊，靠著站名旁的按鈕）：左邊四列，正下方就是按鈕，選中的那一列前面一顆訊號色的點；
+ * 右邊是滑過（或鍵盤移到）的那一顆的故事。沒滑過時是現在這顆
  */
 export function SkyPage() {
   const { t } = useTranslation();
@@ -49,17 +49,7 @@ export function SkyPage() {
   const shown = looking ?? now;
   return (
     <>
-      <div className="snav-page-lead">
-        {/* 說明一行一段（譯文裡用換行分段） */}
-        <div id="snav-sky-story" className="snav-sky-story" key={shown}>
-          {t(`siteNav.skyStories.${shown}`)
-            .split('\n')
-            .map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-        </div>
-      </div>
-      {/* onMouseLeave 只是讓左邊的說明回到現在這顆，純視覺；每一列本身都是按鈕、都在焦點序列裡 */}
+      {/* onMouseLeave 只是讓右邊的故事回到現在這顆，純視覺；每一列本身都是按鈕、都在焦點序列裡 */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <ol className="snav-page-list" onMouseLeave={() => setLooking(null)}>
         {THEMES.map((theme) => (
@@ -81,6 +71,16 @@ export function SkyPage() {
           </li>
         ))}
       </ol>
+      <div className="snav-page-lead">
+        {/* 說明一行一段（譯文裡用換行分段） */}
+        <div id="snav-sky-story" className="snav-sky-story" key={shown}>
+          {t(`siteNav.skyStories.${shown}`)
+            .split('\n')
+            .map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+        </div>
+      </div>
     </>
   );
 }
