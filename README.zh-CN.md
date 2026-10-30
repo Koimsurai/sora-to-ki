@@ -26,7 +26,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
 [![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
-[![首页：绕着土星的卫星](.github/screenshots/home.jpg)](https://koimsurai.com)
+[![首页，黑洞主题：光亦折返，时间止步](.github/screenshots/home-blackhole.jpg)](https://koimsurai.com/zh-cn?theme=blackhole)
 
 </div>
 
@@ -127,7 +127,19 @@ AI 能做的是把机器准备好、把配置文件填对、在你建好 OAuth A
 
 让你在一组精心做好的选项里挑，而不是给一整排旋钮：每个人的站都有一点「这是我的」，整体的质感也还在。
 
-- **天体**：土星、海王星、黑洞、参宿四四选一，当作读者第一次看到的那颗；读者也能在顶栏自己换
+### 四套星球主题
+
+挑一颗当作读者第一次看到的那颗，读者也能在顶栏自己换。首页、全站的配色与分享图都跟着它。
+
+| | |
+|:---:|:---:|
+| [![土星](.github/screenshots/theme-saturn.jpg)](https://koimsurai.com/zh-cn?theme=saturn) | [![海王星](.github/screenshots/theme-neptune.jpg)](https://koimsurai.com/zh-cn?theme=neptune) |
+| **土星** · *以冰为环，终将归还。* | **海王星** · *未见其形，已知其所在。* |
+| [![黑洞](.github/screenshots/theme-blackhole.jpg)](https://koimsurai.com/zh-cn?theme=blackhole) | [![参宿四](.github/screenshots/theme-betelgeuse.jpg)](https://koimsurai.com/zh-cn?theme=betelgeuse) |
+| **黑洞** · *光亦折返，时间止步。* | **参宿四** · *吐纳之间，渐成星尘。* |
+
+### 其他
+
 - **发射台**：你在哪里。航行日志的火箭从那里升空、地面画那附近的海岸线（内陆的话加上河流与湖），收藏页地球上的琥珀点也在那里
 - **页面**：碎念、作品、收藏、设备、航行日志、留言、照片、朋友、此站点都能关
 - **介绍文字**：每一页在搜索结果里的描述、「关于」菜单开头那一句，五种语言各自写
@@ -204,7 +216,7 @@ flowchart LR
 
 ## 🧪 质量把关
 
-每个 PR 都要通过下面这些才能合并（完整清单在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）：
+每一次改动都要通过下面这些才能合并（完整清单在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）：
 
 - **类型与 lint**：`tsc`、oxlint（含类型感知规则与 `@shadcn/lint`）、Biome（CSS）、CSS token 检查、knip（没用到的文件与 export）
 - **测试**：vitest 单元测试、Playwright e2e（26 支 spec，含无障碍检查、后台的往返操作，以及公开页 11 条 × 3 种宽度加上后台页的计算后样式比对）、后端 cargo-nextest 搭配覆盖率门槛

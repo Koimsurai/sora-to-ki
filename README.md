@@ -26,7 +26,7 @@ This is the source of [**宙と木 (koimsurai.com)**](https://koimsurai.com), an
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
 [![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
-[![Home: moons around Saturn](.github/screenshots/home.jpg)](https://koimsurai.com/en)
+[![Home, black hole theme: light turns back; time stands still](.github/screenshots/home-blackhole.jpg)](https://koimsurai.com/en?theme=blackhole)
 
 </div>
 
@@ -128,7 +128,19 @@ Every page is one kind of thing in the same night sky. Turn off a page you don't
 
 You choose from a set of carefully made options rather than a wall of knobs: every site gets a little "this is mine", and the whole still holds together.
 
-- **Celestial body**: Saturn, Neptune, a black hole or Betelgeuse, as the one readers see first; readers can switch it from the top bar
+### Four celestial bodies
+
+Pick the one readers see first; readers can switch for themselves from the top bar. The home page, the palette and the share images all follow it.
+
+| | |
+|:---:|:---:|
+| [![Saturn](.github/screenshots/theme-saturn.jpg)](https://koimsurai.com/en?theme=saturn) | [![Neptune](.github/screenshots/theme-neptune.jpg)](https://koimsurai.com/en?theme=neptune) |
+| **Saturn** · *Ringed in ice, bound to give it back.* | **Neptune** · *Known before it was seen.* |
+| [![Black hole](.github/screenshots/theme-blackhole.jpg)](https://koimsurai.com/en?theme=blackhole) | [![Betelgeuse](.github/screenshots/theme-betelgeuse.jpg)](https://koimsurai.com/en?theme=betelgeuse) |
+| **Black hole** · *Light turns back; time stands still.* | **Betelgeuse** · *Breath by breath, becoming stardust.* |
+
+### And the rest
+
 - **Launch pad**: where you are. The log's rocket lifts off there over that part of the coastline (with rivers and lakes if you're inland), and it's the amber dot on the Collection globe
 - **Pages**: moments, works, collection, setup, log, messages, photos, friends and the colophon can all be turned off
 - **Descriptions**: each page's description in search results, and the opening line of the About menu, written separately in each language
@@ -205,7 +217,7 @@ flowchart LR
 
 ## 🧪 Quality gates
 
-Every PR has to pass these before it can merge (the full list is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
+Every change has to pass these before it can merge (the full list is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 
 - **Types and lint**: `tsc`, oxlint (with type-aware rules and `@shadcn/lint`), Biome (CSS), the CSS token check, knip (unused files and exports)
 - **Tests**: vitest unit tests; Playwright e2e (26 specs, including accessibility checks, admin round trips, and computed-style comparisons of 11 public routes × 3 widths plus the admin pages); backend cargo-nextest with a coverage threshold
