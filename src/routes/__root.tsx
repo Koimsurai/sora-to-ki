@@ -8,10 +8,17 @@ import '@fontsource-variable/fira-code';
 import '../index.css';
 import '../App.css';
 import { useEffect, type CSSProperties, type ReactNode } from 'react';
-import { Outlet, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from '@tanstack/react-router';
+import {
+  Outlet,
+  createRootRouteWithContext,
+  HeadContent,
+  Scripts,
+  redirect,
+  useRouterState,
+} from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { AuthProvider } from '../contexts/AuthContext';
-import { loadLocale, localeFromPathname } from '@/i18n/start-i18n';
+import { defaultPrefixTarget, loadLocale, localeFromPathname } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { defaultLocale, enabledLocales } from '../lib/locales';
 import { LOCALE_TO_OG } from '@/seo/seoMeta';
@@ -35,6 +42,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   // 先拿站台設定：網址是哪個語系要看預設語系是誰（預設語系不帶前綴）；再載這一頁與預設語系（缺字時退回它）的字串
   beforeLoad: async ({ location, context }) => {
     await context.queryClient.query(siteConfigQueryOptions);
+    // 帶著預設語系前綴的舊網址（換過預設語系的站才有）：導去不帶前綴的那一條。
+    // 用暫時轉址：哪天預設語系換回來，這個前綴又是正常的網址，瀏覽器不能把轉址記住
+    const target = defaultPrefixTarget(location.pathname);
+    if (target !== null) throw redirect({ href: `${target}${location.searchStr}`, statusCode: 302 });
     await Promise.all([loadLocale(localeFromPathname(location.pathname)), loadLocale(defaultLocale())]);
   },
   head: () => ({

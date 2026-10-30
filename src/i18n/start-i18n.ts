@@ -38,6 +38,16 @@ export function localeFromPrefix(prefix: string | undefined): Locale | null {
   return localeOfPrefix(prefix);
 }
 
+/**
+ * 網址帶著預設語系自己的前綴（預設是英文時的 /en/blog）→ 不帶前綴的那一條（/blog）；其他情況 null。
+ * 換過預設語系的站，舊的 /en/… 連結才不會變成找不到頁面。
+ */
+export function defaultPrefixTarget(pathname: string): string | null {
+  const segs = pathname.split('/').filter(Boolean);
+  if (segs[0]?.toLowerCase() !== defaultLocale().toLowerCase()) return null;
+  return `/${segs.slice(1).join('/')}`;
+}
+
 /** 後端 available_locales(字串陣列)→ 我們支援的 Locale[](保序、濾掉不支援的)。給 blog 逐篇 hreflang 用。 */
 export function toLocales(arr: readonly string[] | undefined): Locale[] {
   if (!arr || arr.length === 0) return [defaultLocale()];

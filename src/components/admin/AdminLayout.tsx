@@ -68,6 +68,7 @@ const NAV: NavGroup[] = [
   {
     key: 'station',
     items: [
+      { key: 'site', path: '/admin/site' },
       { key: 'pages', path: '/admin/pages' },
       { key: 'users', path: '/admin/users', ownerOnly: true },
     ],

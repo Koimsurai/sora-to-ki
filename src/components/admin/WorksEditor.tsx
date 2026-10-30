@@ -158,6 +158,24 @@ export default function WorksEditor() {
                 {w.repo}
               </span>
               <span className="adm-meta">{summary(r ?? w.snapshot)}</span>
+              <div className="pg-work-actions">
+                {i > 0 && (
+                  <button
+                    type="button"
+                    className="adm-icon-btn"
+                    onClick={() => page.set([w, ...items.filter((_, k) => k !== i)])}
+                  >
+                    {t('pageWorks.setOrigin')}
+                  </button>
+                )}
+                <RowActions
+                  index={i}
+                  length={items.length}
+                  name={w.repo}
+                  onMove={(by) => page.set(move(items, i, by))}
+                  onRemove={() => page.set(items.filter((_, k) => k !== i))}
+                />
+              </div>
             </div>
             <label className="adm-field">
               <span className="adm-caps">{t('pageWorks.name')}</span>
@@ -174,24 +192,6 @@ export default function WorksEditor() {
                 label={t('pageWorks.what')}
                 value={w.what}
                 onChange={(what) => page.set(replaceAt(items, i, { what }))}
-              />
-            </div>
-            <div className="pg-wide pg-work-actions">
-              {i > 0 && (
-                <button
-                  type="button"
-                  className="adm-icon-btn"
-                  onClick={() => page.set([w, ...items.filter((_, k) => k !== i)])}
-                >
-                  {t('pageWorks.setOrigin')}
-                </button>
-              )}
-              <RowActions
-                index={i}
-                length={items.length}
-                name={w.repo}
-                onMove={(by) => page.set(move(items, i, by))}
-                onRemove={() => page.set(items.filter((_, k) => k !== i))}
               />
             </div>
           </div>

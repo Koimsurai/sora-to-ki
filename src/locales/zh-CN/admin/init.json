@@ -75,64 +75,17 @@
   "lang": {
     "title": "语言",
     "latin": "Languages",
-    "lede": "读者打开网址看到的是默认语言；其他语言各有自己的网址前缀。",
-    "defaultLabel": "默认语言",
-    "othersLabel": "也开放这些语言",
-    "warn": "开站之后再换默认语言，全站的网址会整批改掉，已经分享出去的链接都要跳转一次。最好现在就决定。",
-    "single": "只开一个语言的话，前台不会出现语言菜单。"
+    "lede": "读者打开网址看到的是默认语言；其他语言各有自己的网址前缀。"
   },
   "site": {
     "title": "站点",
     "latin": "Identity",
-    "lede": "会出现在首页、RSS 和分享出去的卡片上，之后在后台都能改。",
-    "name": "站名",
-    "author": "作者",
-    "authorHint": "空着就跟站名一样",
-    "url": "网址",
-    "description": "一句话介绍",
-    "email": "公开邮箱",
-    "github": "GitHub 用户名",
-    "optional": "选填",
-    "shareCard": "分享出去长这样",
-    "errors": {
-      "nameRequired": "站名不能是空的",
-      "nameTooLong": "站名最多 {{max}} 个字",
-      "authorTooLong": "作者名最多 {{max}} 个字",
-      "descriptionTooLong": "介绍最多 {{max}} 个字",
-      "email": "邮箱的格式不对",
-      "github": "GitHub 用户名只能有英文、数字与连字符，最多 39 个字"
-    }
+    "lede": "会出现在首页、RSS 和分享出去的卡片上，之后在后台都能改。"
   },
   "pages": {
     "title": "页面",
     "latin": "Pages",
-    "lede": "星图就是你的首页。关掉的页面连同它的轨道一起拿掉，之后在后台随时能开回来。",
-    "groupOrbit": "首页的轨道",
-    "groupAbout": "「关于」菜单",
-    "groupMore": "「更多」菜单",
-    "alwaysOn": "手记与关于一直都在。",
-    "name": {
-      "moments": "碎念",
-      "works": "作品",
-      "collection": "收藏",
-      "setup": "设备",
-      "log": "航行日志",
-      "messages": "留言",
-      "photos": "照片",
-      "friends": "朋友",
-      "colophon": "此站点"
-    },
-    "desc": {
-      "moments": "短短的一句话",
-      "works": "做过的东西，一件一条时间线",
-      "collection": "在看、在读、在听",
-      "setup": "手绘图纸，或用内置的几张",
-      "log": "从某一年到现在的里程碑",
-      "messages": "留言板",
-      "photos": "要接 NAS 或上传文件夹",
-      "friends": "别人的站与申请表单",
-      "colophon": "这个站怎么做的、问答"
-    }
+    "lede": "星图就是你的首页。关掉的页面连同它的轨道一起拿掉，之后在后台随时能开回来。"
   },
   "done": {
     "kicker": "完成",
@@ -156,14 +109,5 @@
     "latin": "Already set up",
     "lede": "已经有站长了，初次设置不会再打开。站长请从前台用 GitHub 或 Google 登录后台。",
     "home": "回首页"
-  },
-  "sky": {
-    "preview": "预览",
-    "standby": "等待点火",
-    "yourHome": "你的首页",
-    "note": "每走一步，这里就长出一点：站长、语言、站名、轨道。最后看到的就是读者打开首页的样子。",
-    "menuAbout": "关于",
-    "menuMore": "更多",
-    "off": "关"
   }
 }

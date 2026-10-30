@@ -74,6 +74,16 @@ test.describe('語言切換', () => {
     await expect(page.locator('main').first()).toContainText('第一篇測試文章');
   });
 
+  /** 換過預設語系的站：帶著預設語系自己前綴的舊連結，轉到不帶前綴的那一條，而不是找不到頁面 */
+  test('帶著預設語系前綴的網址會轉到不帶前綴的那一條', async ({ page }) => {
+    const res = await page.request.get('/zh-tw/blog?page=1', { maxRedirects: 0 });
+    expect(res.status()).toBe(302);
+    expect(res.headers().location).toMatch(/^(https?:\/\/[^/]+)?\/blog\?page=1$/);
+    await page.goto('/zh-tw/blog');
+    await expect(page).toHaveURL(/\/blog\/?$/);
+    await expect(page.locator('main').first()).toContainText('第一篇測試文章');
+  });
+
   /** 目前語系要標 `aria-current`——沒有它，用報讀器的人不知道現在是哪一個。 */
   test('目前語系有標記出來', async ({ page }) => {
     await page.goto('/en/blog');
