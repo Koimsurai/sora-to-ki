@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { at } from '@/i18n/admin-i18n';
+import { sameTitle } from '@/lib/pageTitle';
 import { localeCoverage, nameCoverage, type LocaleCoverage, type LocaleNamed, type LocalePost } from './adminFormat';
 import './AdminPage.css';
 
@@ -39,8 +40,8 @@ export function PageHead({
         <h1 className="adm-h1">
           {title}
           {/* 英文名只是裝飾（同一個名字的另一種寫法），報讀器念頁名就好。
-              後台是英文時頁名本身就是它，不再重複一次 */}
-          {latin !== title && (
+              後台是英文時頁名已經含著它（Site settings／Site），不再重複一次 */}
+          {!sameTitle(title, latin) && (
             <span className="adm-latin" aria-hidden="true">
               {latin}
             </span>
