@@ -747,3 +747,10 @@
     translate: 0 var(--space-1);
   }
 }
+
+/* 換主題時（index.css 的 html.theme-switching）收著的那幾頁（.snav-page）不跟著淡：它們透明，淡了也看不到，
+   卻有兩百多個元素每一幀都要重算樣式。按下天體時選單就收了（0.25 秒淡完），換色最快也在 0.32 秒後 */
+html.theme-switching .snav-page:not(.is-open),
+html.theme-switching .snav-page:not(.is-open) * {
+  transition-property: none;
+}

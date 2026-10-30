@@ -58,8 +58,12 @@ export function onTheme(fn: ThemeListener): () => void {
 const SWITCH_FADE_MS = 700;
 let fadeTimer = 0;
 
-/** 換主題：記下來、換 <html data-theme>，通知畫布、3D 與轉場 */
-export function setTheme(next: Theme) {
+/**
+ * 換主題：記下來、換 <html data-theme>，通知畫布、3D 與轉場。
+ * pageHidden：換色這一刻這一頁收在點裡（layout/ThemeSwitchDot 首頁以外的換主題）——
+ * 頁面裡的東西不跟著淡（index.css 的 html.theme-switching-offstage），底色與導覽列照常淡
+ */
+export function setTheme(next: Theme, { pageHidden = false }: { pageHidden?: boolean } = {}) {
   if (next === currentTheme()) return;
   const root = document.documentElement;
   try {
@@ -68,8 +72,12 @@ export function setTheme(next: Theme) {
     // 存不了（無痕、被擋）就只換這一次
   }
   root.classList.add('theme-switching');
+  root.classList.toggle('theme-switching-offstage', pageHidden);
   window.clearTimeout(fadeTimer);
-  fadeTimer = window.setTimeout(() => root.classList.remove('theme-switching'), SWITCH_FADE_MS + 100);
+  fadeTimer = window.setTimeout(
+    () => root.classList.remove('theme-switching', 'theme-switching-offstage'),
+    SWITCH_FADE_MS + 100,
+  );
   if (next === 'saturn') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', next);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', hex(palette().ground));
