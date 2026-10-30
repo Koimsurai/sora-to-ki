@@ -26,9 +26,8 @@ const OBLIQUITY = 23.44 * DEG;
 const NEAREST = 0.2;
 /** 地球半徑（光秒） */
 const EARTH_LS = 0.02127;
-/** 琥珀點在地球上的哪裡：台灣（緯度、經度） */
-const HOME_LAT = 23.7;
-const HOME_LON = 121;
+/** 琥珀點在地球上的哪裡：站長設的發射台（站台設定的 launch_pad），沒設是台灣 */
+const DEFAULT_HOME = { lat: 23.7, lon: 121 };
 /** 地球用幾個點畫 */
 const GLOBE_DOTS = 640;
 /** 最遠至少看到哪裡（光年）：天狼星在畫面邊上 */
@@ -390,7 +389,7 @@ export function visibleArcs(cx: number, cy: number, rx: number, ry: number, w: n
   return arcs;
 }
 
-export function createSignalSky(signals: Signal[], now0: number) {
+export function createSignalSky(signals: Signal[], now0: number, home = DEFAULT_HOME) {
   const sent = signals.filter((s) => s.at !== null);
   const homes = signals.filter((s) => s.home);
   const broadcasting = signals.some((s) => s.on);
@@ -414,8 +413,8 @@ export function createSignalSky(signals: Signal[], now0: number) {
     lat: Math.asin(1 - (2 * (i + 0.5)) / GLOBE_DOTS) / DEG,
     lon: ((i * 137.508) % 360) - 180,
   }));
-  // 鏡頭一開始轉到台灣朝向畫面（稍微偏一點，看得出是球）
-  const home0 = surface(HOME_LAT, HOME_LON, (now0 - J2000) / DAY_MS);
+  // 鏡頭一開始轉到站長那裡朝向畫面（稍微偏一點，看得出是球）
+  const home0 = surface(home.lat, home.lon, (now0 - J2000) / DAY_MS);
   const psi0 = Math.PI / 2 - Math.atan2(home0.y, home0.x) - 0.35;
 
   // 歐特雲：內外緣之間的冰塵，四面八方都有
@@ -515,9 +514,9 @@ export function createSignalSky(signals: Signal[], now0: number) {
     return { x: v.ex + (F * x) / into, y: v.ey + (F * (y * v.sinE - d.z * v.cosE)) / into };
   };
 
-  /** 琥珀點：台灣在畫面上的位置（地球縮成一點時就是地球） */
+  /** 琥珀點：站長那裡在畫面上的位置（地球縮成一點時就是地球） */
   const homeDot = (v: View, now: number) => {
-    const p = surface(HOME_LAT, HOME_LON, (now - J2000) / DAY_MS);
+    const p = surface(home.lat, home.lon, (now - J2000) / DAY_MS);
     return project(v, { x: p.x * EARTH_LS, y: p.y * EARTH_LS, z: p.z * EARTH_LS });
   };
 

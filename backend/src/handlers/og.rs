@@ -328,6 +328,8 @@ type LogDates = (chrono::NaiveDate, Vec<chrono::NaiveDate>);
 /// 背景要用到的站長內容：航行日誌的起點與里程碑、設備頁第一艙是不是原站的白色主機圖紙
 struct PageInputs {
     log: LogDates,
+    /// 航行日誌的地面：站長設的發射台周圍
+    ground: std::sync::Arc<crate::handlers::ground::Ground>,
     /// false：畫空貨艙（別人的站分享出去不能還是原作者的主機）
     setup_white_build: bool,
 }
@@ -337,7 +339,7 @@ fn page_scene(key: &str, sky: &[SkyPost], inputs: &PageInputs) -> Box<dyn Scene>
     match key {
         "notes" => Box::new(Notes::new(sky, 0)),
         "about" => Box::new(About::new()),
-        "log" => Box::new(Log::new(inputs.log.0, &inputs.log.1)),
+        "log" => Box::new(Log::new(inputs.log.0, &inputs.log.1, &inputs.ground)),
         "works" => Box::new(Works::new()),
         "colophon" => Box::new(Colophon::new()),
         "setup" if inputs.setup_white_build => Box::new(Setup::new()),
@@ -566,17 +568,21 @@ async fn prepare_page(state: &AppState, page: &Page, locale: &str) -> Prepared {
     // 頁名與副標改了（語系檔跟著部署）快取也要失效：指紋直接用 HTML；航行日誌再加上起點與里程碑
     let setup_white_build = page.key == "setup"
         && crate::handlers::page_content::setup_uses_white_build(&state.pool).await.unwrap_or(false);
+    // 發射台換了，地面跟著換（還在預設的台灣就不放進指紋，快取的 key 跟以前一樣）
+    let pad = crate::handlers::site_config::launch_pad();
     let dates = match page.key {
-        "log" => format!("{log:?}"),
+        "log" if pad == crate::handlers::ground::DEFAULT_PAD => format!("{log:?}"),
+        "log" => format!("{log:?}{pad:?}"),
         "setup" => format!("{setup_white_build}"),
         _ => String::new(),
     };
     let key = format!("{:x}::{sig:x}::{:x}", fnv1a(&html), fnv1a(&dates));
+    let ground = crate::handlers::ground::ground_for(pad);
     (
         format!("page:{}:{locale}", page.key),
         key,
         html,
-        page_scene(page.key, &sky, &PageInputs { log, setup_white_build }),
+        page_scene(page.key, &sky, &PageInputs { log, ground, setup_white_build }),
     )
 }
 
@@ -700,7 +706,11 @@ mod tests {
             Box::new(Body::new("betelgeuse")),
             Box::new(Notes::new(&sky, 0)),
             Box::new(About::new()),
-            Box::new(Log::new(chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期"), &[])),
+            Box::new(Log::new(
+                chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期"),
+                &[],
+                &crate::handlers::ground::ground_for(crate::handlers::ground::DEFAULT_PAD),
+            )),
             Box::new(Works::new()),
             Box::new(Colophon::new()),
             Box::new(Setup::new()),
@@ -746,7 +756,11 @@ mod tests {
         let sky: Vec<SkyPost> =
             (0..48).map(|i| SkyPost::of(&format!("篇 {i}"), 800 + (i * 977) % 9000, 9800)).collect();
         let start = chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期");
-        let sample = PageInputs { log: (start, vec![start]), setup_white_build: true };
+        let sample = PageInputs {
+            log: (start, vec![start]),
+            ground: crate::handlers::ground::ground_for(crate::handlers::ground::DEFAULT_PAD),
+            setup_white_build: true,
+        };
         for loc in locales.split(',') {
             for page in PAGES.iter().filter(|p| wanted(p.key)) {
                 let png =

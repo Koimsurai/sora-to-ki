@@ -173,6 +173,7 @@ impl Modify for SecurityAddon {
         handlers::watch::watch_stats,
         handlers::site_config::get_site_config,
         handlers::site_config::update_site_config,
+        handlers::ground::get_ground,
         handlers::init::status,
         handlers::init::check,
         handlers::init::claim,
@@ -191,6 +192,8 @@ impl Modify for SecurityAddon {
     components(schemas(
         handlers::site_config::SiteConfig,
         handlers::site_config::SiteConfigUpdate,
+        handlers::ground::LaunchPad,
+        handlers::ground::Ground,
         handlers::init::InitStatus,
         handlers::init::CodeBody,
         handlers::page_content::AboutContent,

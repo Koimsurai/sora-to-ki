@@ -28,6 +28,7 @@ use koimsurai_web_backend::handlers::friends::{FriendPost, FriendStar};
 use koimsurai_web_backend::handlers::gallery::{
     ExifValue, GalleryPhoto, GalleryPhotosResponse, PhotoExif, PhotoGps, PhotoUrls, PhotosManifest,
 };
+use koimsurai_web_backend::handlers::ground::Ground;
 use koimsurai_web_backend::handlers::home::{
     DigestComment, DigestPost, DigestResponse, DigestThought, DigestTimeline,
 };
@@ -136,6 +137,7 @@ fn main() {
         .register::<PollResponse>()
         .register::<CountResponse>()
         .register::<SiteConfig>()
+        .register::<Ground>()
         .register::<InitStatus>()
         .register::<AboutContent>()
         .register::<LogContent>()

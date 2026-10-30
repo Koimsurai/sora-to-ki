@@ -28,6 +28,7 @@ beforeAll(() => {
     locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
     theme: 'saturn',
     page_descriptions: {},
+    launch_pad: { lat: 23.7, lon: 121 },
   });
 });
 

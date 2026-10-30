@@ -794,6 +794,16 @@ export type GithubUserResponse = {
 	error: string | null,
 };
 
+/**  `GET /api/site/ground` 的回應 */
+export type Ground = {
+	lat: number | null,
+	lon: number | null,
+	/**  陸地：[塊][環][經度×100, 緯度×100, …]，環首尾相接（最後一點不重複） */
+	land: number[][][],
+	/**  河流與湖：[線][經度×100, 緯度×100, …]，線不封閉（湖的環已經把起點接在最後）。海邊的發射台是空的 */
+	water: number[][],
+};
+
 /**  不公開的一筆（給後台列「藏了哪些」，Spotify 的歌不在最近播放裡也看得到） */
 export type HiddenItem = {
 	kind: string,
@@ -818,6 +828,12 @@ export type KeywordFilterRow = {
 
 export type KeywordFiltersResponse = {
 	filters: KeywordFilterRow[],
+};
+
+/**  發射台：緯度、經度（度） */
+export type LaunchPad = {
+	lat: number | null,
+	lon: number | null,
 };
 
 export type LinkPreviewResponse = {
@@ -1300,6 +1316,8 @@ export type SiteConfig = {
 	theme: string,
 	/**  站長自己寫的介紹文字：哪一頁 → 語系 → 字。沒有的就用通用句子 */
 	page_descriptions: { [key in string]: { [key in string]: string } },
+	/**  發射台（站長在哪裡）；沒設就是台灣 */
+	launch_pad: LaunchPad,
 };
 
 /**  一個來源與從它進站時先看的那幾頁 */

@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import type {
   GithubContributionsResponse,
+  Ground,
   SteamGamesResponse,
   WakatimeStatsResponse,
   WakatimeTodayResponse,
@@ -11,6 +12,17 @@ import { siteGithub } from '@/lib/siteIdentity';
 // 航行日誌（about/Log）的資料：從站點誕生那天起每天的 GitHub 貢獻、今天寫了多久程式、這週的語言、最近在玩什麼。
 // 都是第三方的資料，拿不到就是 null（那一塊顯示「沒有收到」），不讓整頁進錯誤狀態。
 const STALE = 10 * 60 * 1000;
+
+/** 發射台周圍的地面（海岸線、內陸的話加上河流與湖）：站長改了發射台才會變，頁面守門時先抓好（pageContent.ts） */
+export const groundQueryOptions = queryOptions({
+  queryKey: ['site', 'ground'],
+  queryFn: async (): Promise<Ground> => {
+    const res = await fetch(apiUrl('/api/site/ground'));
+    if (!res.ok) throw new Error(`GET /api/site/ground ${res.status}`);
+    return (await res.json()) as Ground;
+  },
+  staleTime: 60 * 60 * 1000,
+});
 
 export interface DayCount {
   /** `YYYY-MM-DD` */

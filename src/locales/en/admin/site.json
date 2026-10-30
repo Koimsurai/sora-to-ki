@@ -49,13 +49,21 @@
     "github": "GitHub username",
     "optional": "optional",
     "shareCard": "What a shared link looks like",
+    "launchPad": "Launch pad",
+    "launchPadHint": "where you are: the log's rocket lifts off here, and it's the amber dot on the Collection globe. A rough city is enough; only one decimal place is kept",
+    "lat": "Latitude",
+    "lon": "Longitude",
+    "locate": "Use my location",
+    "locating": "Locating…",
+    "locateFailed": "Couldn't get your location (no browser permission, or the site isn't on https). Typing the coordinates works just as well",
     "errors": {
       "nameRequired": "The site name can't be empty",
       "nameTooLong": "The site name can be at most {{max}} characters",
       "authorTooLong": "The author name can be at most {{max}} characters",
       "descriptionTooLong": "The description can be at most {{max}} characters",
       "email": "That email address doesn't look right",
-      "github": "A GitHub username only has letters, digits and hyphens, up to 39 characters"
+      "github": "A GitHub username only has letters, digits and hyphens, up to 39 characters",
+      "launchPad": "Latitude must be between -{{max}} and {{max}}, longitude between -180 and 180"
     }
   },
   "theme": {

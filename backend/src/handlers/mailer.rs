@@ -48,8 +48,8 @@ pub(crate) async fn send_one(
     html: &str,
 ) -> Result<(), String> {
     let key =
-        std::env::var("RESEND_API_KEY").ok().filter(|k| !k.is_empty()).ok_or("沒有設定 RESEND_API_KEY")?;
-    let from = newsletter_from().ok_or("沒有設定 NEWSLETTER_FROM")?;
+        std::env::var("RESEND_API_KEY").ok().filter(|k| !k.is_empty()).ok_or("RESEND_API_KEY is not set")?;
+    let from = newsletter_from().ok_or("NEWSLETTER_FROM is not set")?;
     let mut body = json!({ "from": from, "to": [to], "subject": subject, "text": text, "html": html });
     if let Some(r) = reply_to() {
         body["reply_to"] = json!(r);

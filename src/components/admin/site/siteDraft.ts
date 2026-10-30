@@ -17,7 +17,14 @@ export interface Draft {
   theme: string;
   /** 介紹文字：哪一頁 → 語系 → 字（站台設定頁的「介紹文字」那段） */
   page_descriptions: Record<string, Record<string, string>>;
+  /** 發射台：站長在哪裡（航行日誌的火箭從這裡升空、收藏頁地球上的琥珀點） */
+  launch_pad: { lat: number; lon: number };
 }
+
+/** 沒設發射台時是台灣（後端 handlers/ground.rs 的 DEFAULT_PAD） */
+const DEFAULT_PAD = { lat: 23.7, lon: 121 };
+/** 緯度能填到哪（後端的 LAT_LIMIT） */
+export const LAT_LIMIT = 70;
 
 /** 介紹文字的格子，照前台的位置排：首頁、「關於」選單開頭那一句、各頁 */
 export const DESCRIBABLE = [
@@ -56,6 +63,10 @@ export function draftOf(config: SiteConfig, defaultLocale = config.default_local
     disabled_pages: config.disabled_pages,
     theme: config.theme,
     page_descriptions: config.page_descriptions,
+    launch_pad: {
+      lat: config.launch_pad.lat ?? DEFAULT_PAD.lat,
+      lon: config.launch_pad.lon ?? DEFAULT_PAD.lon,
+    },
   };
 }
 
@@ -67,7 +78,8 @@ export type SiteProblem =
   | { field: 'author'; key: 'authorTooLong'; max: number }
   | { field: 'description'; key: 'descriptionTooLong'; max: number }
   | { field: 'email'; key: 'email' }
-  | { field: 'github'; key: 'github' };
+  | { field: 'github'; key: 'github' }
+  | { field: 'launch_pad'; key: 'launchPad'; max: number };
 
 /** 站台身分擋得住的錯，規則照後端的 `apply`（那邊一樣會擋，這裡只是早一點說） */
 export function siteProblems(d: Draft): SiteProblem[] {
@@ -87,5 +99,8 @@ export function siteProblems(d: Draft): SiteProblem[] {
     .replace(/\/$/, '');
   if (github && (!/^[A-Za-z0-9-]+$/.test(github) || github.length > LIMITS.github))
     out.push({ field: 'github', key: 'github' });
+  const { lat, lon } = d.launch_pad;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > LAT_LIMIT || Math.abs(lon) > 180)
+    out.push({ field: 'launch_pad', key: 'launchPad', max: LAT_LIMIT });
   return out;
 }

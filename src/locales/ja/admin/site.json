@@ -49,13 +49,21 @@
     "github": "GitHub ユーザー名",
     "optional": "任意",
     "shareCard": "共有するとこう見えます",
+    "launchPad": "発射台",
+    "launchPadHint": "あなたのいる場所：航行日誌のロケットはここから打ち上がり、コレクションの地球の琥珀色の点もここ。だいたいの都市で十分、小数点以下一桁だけ保存します",
+    "lat": "緯度",
+    "lon": "経度",
+    "locate": "現在地を使う",
+    "locating": "位置を取得中…",
+    "locateFailed": "位置を取得できませんでした（ブラウザの許可がないか、https ではない）。緯度経度を直接入力しても同じです",
     "errors": {
       "nameRequired": "サイト名は空にできません",
       "nameTooLong": "サイト名は {{max}} 文字までです",
       "authorTooLong": "作者名は {{max}} 文字までです",
       "descriptionTooLong": "紹介は {{max}} 文字までです",
       "email": "メールアドレスの形式が正しくありません",
-      "github": "GitHub ユーザー名は英数字とハイフンのみ、39 文字までです"
+      "github": "GitHub ユーザー名は英数字とハイフンのみ、39 文字までです",
+      "launchPad": "緯度は -{{max}}〜{{max}}、経度は -180〜180 の間にしてください"
     }
   },
   "theme": {

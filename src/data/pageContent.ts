@@ -11,6 +11,7 @@ import type {
   WorksContent,
 } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
+import { groundQueryOptions } from './logData';
 
 // 頁面內容：關於、作品…這幾頁由站長在後台或 MCP 填的資料（後端 handlers/page_content）。
 // 頁面守門（i18n/localePage 的 beforeLoad）會先抓好，SSR 首幀就是填好的樣子，不會先空一下再長出來。
@@ -135,7 +136,7 @@ export function useWorksContent(enabled = true): WorkItem[] {
 const CONTENT_OF: Record<string, (qc: QueryClient) => Promise<unknown>> = {
   '': (qc) => Promise.all([qc.query(aboutContentQueryOptions), qc.query(worksContentQueryOptions)]),
   about: (qc) => qc.query(aboutContentQueryOptions),
-  history: (qc) => qc.query(logContentQueryOptions),
+  history: (qc) => Promise.all([qc.query(logContentQueryOptions), qc.query(groundQueryOptions)]),
   portfolio: (qc) => qc.query(worksContentQueryOptions),
   'about-site': (qc) => Promise.all([qc.query(worksContentQueryOptions), qc.query(qaContentQueryOptions)]),
   setup: (qc) => qc.query(setupContentQueryOptions),
