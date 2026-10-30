@@ -1,4 +1,4 @@
-// 頂欄的天體選單（layout/SiteNav 最右邊那個小圖示，NavMenus 的 sky 那一頁）：換主題（lib/theme）。
+// 頂欄的天體選單（layout/SiteNav 站名旁那個小圖示，NavMenus 的 sky 那一頁）：換主題（lib/theme）。
 // 每一個天體是一個 16px 的小圖示，用站上的髮絲線畫，跟首頁主星同一個長相的縮寫：
 //   土星：圓加一道斜環　海王星：圓加一道很淡的細環　黑洞：實心的暗圓加光子環　參宿四：圓外一圈點線（拋出去的物質）
 import { useState } from 'react';
@@ -85,25 +85,35 @@ export function SkyPage() {
   );
 }
 
-/** 手機選單裡的一排：四個圖示加名字 */
+/** 手機選單裡的一排：四個圖示加名字，下面是現在這顆的故事（手機沒有滑過，點了就換，所以只講現在這顆） */
 export function SkyRow() {
   const { t } = useTranslation();
   const now = useTheme();
   return (
-    <fieldset className="snav-menu-sky">
-      <legend className="sr-only">{t('siteNav.sky')}</legend>
-      {THEMES.map((theme) => (
-        <button
-          key={theme}
-          type="button"
-          className={theme === now ? 'is-on' : undefined}
-          aria-pressed={theme === now}
-          onClick={() => requestTheme(theme)}
-        >
-          <ThemeGlyph theme={theme} />
-          {t(`siteNav.skyNames.${theme}`)}
-        </button>
-      ))}
-    </fieldset>
+    <div className="snav-menu-sky">
+      <fieldset>
+        <legend className="sr-only">{t('siteNav.sky')}</legend>
+        {THEMES.map((theme) => (
+          <button
+            key={theme}
+            type="button"
+            className={theme === now ? 'is-on' : undefined}
+            aria-pressed={theme === now}
+            aria-describedby={theme === now ? 'snav-menu-sky-story' : undefined}
+            onClick={() => requestTheme(theme)}
+          >
+            <ThemeGlyph theme={theme} />
+            {t(`siteNav.skyNames.${theme}`)}
+          </button>
+        ))}
+      </fieldset>
+      <div id="snav-menu-sky-story" className="snav-sky-story" key={now}>
+        {t(`siteNav.skyStories.${now}`)
+          .split('\n')
+          .map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+      </div>
+    </div>
   );
 }

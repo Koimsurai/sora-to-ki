@@ -700,12 +700,27 @@
   color: var(--ink-muted);
 }
 .snav-menu-sky {
+  width: 100%;
+  max-width: 560px;
+  margin-top: var(--space-8);
+}
+.snav-menu-sky fieldset {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
   margin: 0;
   padding: 0;
   border: 0;
+}
+/* 故事：跟桌機選單右欄同一段字，字小一號、淡一階 */
+.snav-menu-sky .snav-sky-story {
+  margin-top: var(--space-4);
+}
+.snav-menu-sky .snav-sky-story p {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+  color: var(--ink-muted);
 }
 .snav-menu-sky button {
   display: inline-flex;
