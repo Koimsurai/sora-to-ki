@@ -9,6 +9,7 @@ import { adminLang, useAdminT } from '@/i18n/admin-i18n';
 import { apiErrorText } from '@/lib/apiError';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { SUPPORTED_LOCALES } from '@/lib/locales';
+import { sameTitle } from '@/lib/pageTitle';
 import AdminLangSwitch from '../AdminLangSwitch';
 import AdminLoading from '../AdminLoading';
 import OrbitPreview from '../site/OrbitPreview';
@@ -47,7 +48,7 @@ function PageHead({ kicker, title, latin, lede }: { kicker?: string; title: stri
       {kicker && <p className="wz-kicker">{kicker}</p>}
       <div className="wz-h">
         <h1>{title}</h1>
-        <span lang="en">{latin}</span>
+        {!sameTitle(title, latin) && <span lang="en">{latin}</span>}
       </div>
       <p className="wz-lede">{lede}</p>
     </>
