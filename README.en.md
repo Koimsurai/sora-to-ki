@@ -216,6 +216,23 @@ docker compose logs backend-rs | grep setup   # the first-time setup link
 - To use your own hand-drawn sheets on the setup page (with whole parts lighting up on hover), drop a sheet pack into
   `custom/setup/`; the format, and how to ask an AI to make one, are in [`custom/setup/README.md`](custom/setup/README.md)
 
+### Let an AI set it up
+
+An AI that can run commands on the server (Claude Code, Codex…) can do this too. Paste it the following, with the `<…>` filled in:
+
+```text
+Set up https://github.com/Koimsurai/sora-to-ki on this server, following "Run your own site" in the README.
+The domain is <blog.example.com>, the site name is <name>, the default language is <en>.
+- .env: put the domain in SITE_URL and CADDY_ADDRESS; generate JWT_SECRET in .env.backend with `openssl rand -hex 32`
+- If ports 80/443 are already taken by something else, don't stop it: write a docker-compose.override.yml as described at the top of docker-compose.yml
+- When it's up, give me the URL from `docker compose logs backend-rs | grep setup`; I'll sign in and claim the site myself
+- Don't commit .env or .env.backend, and don't paste them anywhere
+```
+
+Signing in has to be you: the GitHub/Google OAuth app is created under your own account, and the wizard's first step
+walks you through it. What the AI can do is get the machine ready, fill in the config, and, once you've made the OAuth
+app, put the two values into `.env.backend` and restart the backend.
+
 ## ⚙️ Local development
 
 You need **Node.js ≥ 26**, **pnpm 12** and **Rust stable** (edition 2024), or just Docker.

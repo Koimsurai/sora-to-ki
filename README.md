@@ -215,6 +215,22 @@ docker compose logs backend-rs | grep setup   # 初次設定的網址
 - 設備頁想用自己的手繪圖紙、讓滑過的部件整個亮起來：做一個圖紙包放進 `custom/setup/`，
   格式與交給 AI 的說法見 [`custom/setup/README.md`](custom/setup/README.md)
 
+### 交給 AI 架
+
+用 Claude Code、Codex 這類能在主機上跑指令的 AI 也可以，把下面這段貼給它（`<…>` 換成你的）：
+
+```text
+在這台主機上架 https://github.com/Koimsurai/sora-to-ki ，照 README「架自己的站」做。
+網域是 <blog.example.com>，站名 <站名>，預設語系 <zh-TW>。
+- .env：SITE_URL、CADDY_ADDRESS 填網域；.env.backend 的 JWT_SECRET 用 `openssl rand -hex 32` 產生
+- 80／443 已經被別的服務用了的話，不要停掉它：照 docker-compose.yml 開頭的說明寫 docker-compose.override.yml
+- 起來之後把 `docker compose logs backend-rs | grep setup` 那行網址給我，登入與認領我自己來
+- .env、.env.backend 不要提交、不要貼到別的地方
+```
+
+登入一定要你本人來：GitHub／Google 的 OAuth App 是用你的帳號建的，精靈第一步會一步一步帶你做。
+AI 能做的是把機器準備好、把設定檔填對、在你建好 OAuth App 之後把兩串值填進 `.env.backend` 並重開後端。
+
 ## ⚙️ 本機開發
 
 需要 **Node.js ≥ 26**、**pnpm 12**、**Rust stable**（edition 2024），或者只要 Docker。
