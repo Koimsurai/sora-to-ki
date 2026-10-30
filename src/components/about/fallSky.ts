@@ -68,6 +68,8 @@ export interface FallState {
   mono: string;
   /** 琥珀點（讀者）在畫面上的位置；null 是轉場正在畫它，這裡不畫 */
   dot: Pt | null;
+  /** 換主題之後接回來時點正沿著尺往下滑：記號與讀數跟著點（0 是尺頂、1 是尺底），平常是 null，照捲動位置 */
+  slide: number | null;
 }
 
 /** 下墜的三個進度：落下了多少、著地了沒、挖了多深（像素） */
@@ -82,13 +84,24 @@ export function phases(s: Pick<FallState, 'h' | 'top' | 'landTop' | 'layerTop'>)
 }
 
 /** 高度計上的記號在畫面上的位置（琥珀點下墜時就停在這裡） */
-export function meterMark(s: Pick<FallState, 'w' | 'h' | 'top' | 'landTop' | 'layerTop' | 'maxScroll'>): Pt {
+export function meterMark(
+  s: Pick<FallState, 'w' | 'h' | 'top' | 'landTop' | 'layerTop' | 'maxScroll'>,
+  slide: number | null = null,
+): Pt {
+  const y0 = METER_TOP;
+  const y1 = s.h - METER_BOTTOM;
+  return { x: s.w - (s.w < 760 ? 28 : 60), y: y0 + (y1 - y0) * (slide ?? meterProgress(s)) };
+}
+
+/** 高度計的尺在畫面上的上下兩端（離視窗上緣、下緣幾 px） */
+export const METER_TOP = 96;
+export const METER_BOTTOM = 80;
+
+/** 記號在尺上的哪裡（0 到 1）：下墜時是落下了幾成，往下挖時是挖了幾成 */
+export function meterProgress(s: Pick<FallState, 'h' | 'top' | 'landTop' | 'layerTop' | 'maxScroll'>) {
   const { pFall, dig } = phases(s);
-  const y0 = 96;
-  const y1 = s.h - 80;
   const digSpan = Math.max(1, s.maxScroll - (s.layerTop - s.h * 0.75));
-  const mark = dig > 0 ? clamp01(dig / digSpan) : pFall;
-  return { x: s.w - (s.w < 760 ? 28 : 60), y: y0 + (y1 - y0) * mark };
+  return dig > 0 ? clamp01(dig / digSpan) : pFall;
 }
 
 /**
@@ -412,9 +425,10 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
     }
 
     // 高度計：一條尺、每一年一道刻度、記號旁邊寫著現在的高度（或深度）
-    const mark = meterMark(s);
-    const y0 = 96;
-    const y1 = h - 80;
+    const mark = meterMark(s, s.slide);
+    const at = s.slide ?? meterProgress(s);
+    const y0 = METER_TOP;
+    const y1 = h - METER_BOTTOM;
     const digging = dig > 0;
     ctx.strokeStyle = `rgba(${INK}, 0.22)`;
     ctx.beginPath();
@@ -440,8 +454,8 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
     ctx.textAlign = 'right';
     ctx.fillStyle = `rgba(${INK}, 0.75)`;
     const reading = digging
-      ? `${fmt(Math.round(clamp01(dig / Math.max(1, s.maxScroll - (s.layerTop - h * 0.75))) * CORE_M))} m`
-      : `${fmt(Math.round(TOP_KM * Math.pow(1 - pFall, 1.7)))} km`;
+      ? `${fmt(Math.round(at * CORE_M))} m`
+      : `${fmt(Math.round(TOP_KM * Math.pow(1 - at, 1.7)))} km`;
     ctx.fillText(reading, mark.x - 14, mark.y + 4);
     ctx.fillStyle = `rgba(${INK}, 0.35)`;
     ctx.fillText(digging ? s.labels.dig : s.labels.fall, mark.x - 12, y0 - 16);

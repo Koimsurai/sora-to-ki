@@ -90,6 +90,11 @@ export interface PageTransitionHandle {
    * 接回來時線早就畫好了，點順著它走到現在的位置才對。每一幀都會重讀，線在動也跟得上。不給就直直飛到 anchor
    */
   rejoin?: () => Pt[] | null;
+  /**
+   * 給了的話，點走那條線另外用這個速度（px/ms），而且先停在線的起點再走：飛過去、沿著線走是兩拍。
+   * 關於頁的線（高度計）很短、又是重點（讀數一路往下數），跟飛過去混成一段會一下就滑完
+   */
+  rejoinPace?: number;
 }
 
 let current: PageTransitionHandle | null = null;
@@ -222,3 +227,13 @@ export function setArrive(fn: Arrive | null) {
  * 這一頁原樣淡回來。重演的話有些頁（關於的整段下墜）要好幾秒
  */
 export const arriveFrom: Arrive = (from, opts) => arrive?.(from, opts) ?? false;
+
+/**
+ * 正在 quiet 地接回這一頁（上面的 arriveFrom）：isArriving() 這時也是 true，但頁面沒換、捲動位置也是真的，
+ * 只是點還在飛（例如關於頁照常用捲動位置畫，只把高度計交給那顆點）。由 layout/TransitionLayer 設
+ */
+let rejoining = false;
+export const setRejoining = (value: boolean) => {
+  rejoining = value;
+};
+export const isRejoining = () => rejoining;

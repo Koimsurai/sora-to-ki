@@ -29,6 +29,7 @@ import {
   currentPage,
   markTransitionFrom,
   setArrive,
+  setRejoining,
   setTransitionDot,
   takeTransitionFrom,
   type Departure,
@@ -454,6 +455,7 @@ export default function TransitionLayer() {
       r.main.style.opacity = '';
       r.main.style.transition = '';
       delete root.dataset.pt;
+      setRejoining(false);
       // 星空停在鏡頭最後的位置，不歸位（歸位那一下會像整片背景被拉回去）
       skyBase = { x: skyBase.x - r.cam.x * SKY_PARALLAX, y: skyBase.y - r.cam.y * SKY_PARALLAX };
       setSkyPan(skyBase.x, skyBase.y);
@@ -1010,14 +1012,33 @@ export default function TransitionLayer() {
         for (let i = 1; i < route.length; i++)
           cum.push(cum[i - 1] + len({ x: route[i].x - route[i - 1].x, y: route[i].y - route[i - 1].y }));
         const total = Math.max(1, cum.at(-1) ?? 1);
-        // 路越長走越久（沿著線走一次要看得清楚），但有上限
-        const dur = clamp(total / QUIET_SPEED, QUIET_MS, QUIET_MAX_MS);
-        const u = clamp((now - r.launchAt) / dur);
         const target = route.at(-1) ?? r.from;
-        r.pos = pointAt({ points: route, cum }, smooth(0, 1, u) * total);
+        const pace = line && line.length > 1 ? page.handle?.rejoinPace : undefined;
+        let u: number;
+        // 頁面淡回來的進度：兩拍的話在第一拍就淡完，滑下去時看得到那條線
+        let shown: number;
+        if (pace) {
+          // 兩拍：先飛到線的起點，再用頁面給的速度沿著線走
+          const reach = cum[1];
+          const first = clamp(reach / QUIET_SPEED, QUIET_MS * 0.6, QUIET_MAX_MS);
+          const second = clamp((total - reach) / pace, QUIET_MS * 0.6, QUIET_MAX_MS);
+          const el = now - r.launchAt;
+          u = clamp(el / (first + second));
+          shown = clamp(el / first);
+          r.pos =
+            el < first
+              ? pointAt({ points: route, cum }, smooth(0, 1, el / first) * reach)
+              : pointAt({ points: route, cum }, reach + smooth(0, 1, (el - first) / second) * (total - reach));
+        } else {
+          // 路越長走越久（沿著線走一次要看得清楚），但有上限
+          const dur = clamp(total / QUIET_SPEED, QUIET_MS, QUIET_MAX_MS);
+          u = clamp((now - r.launchAt) / dur);
+          shown = u;
+          r.pos = pointAt({ points: route, cum }, smooth(0, 1, u) * total);
+        }
         const lastPt = r.trail.at(-1);
         if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos, t: now });
-        r.main.style.opacity = String(smooth(0.3, 1, u));
+        r.main.style.opacity = String(smooth(0.3, 1, shown));
         tail(r.trail, now);
         track(r, r.pos, now);
         dot(r.pos, 3);
@@ -1310,6 +1331,7 @@ export default function TransitionLayer() {
       main.style.clipPath = '';
       run = { ...arrivalRun(from, main, performance.now()), quiet: Boolean(opts?.quiet) };
       root.dataset.pt = 'fly';
+      setRejoining(run.quiet);
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(frame);
       return true;
