@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 import { adminPostsQueryOptions } from '@/data/adminData';
+import { useAdminT } from '@/i18n/admin-i18n';
 import { authHeaders } from '@/lib/authToken';
 import {
   AlertDialog,
@@ -19,7 +20,7 @@ import {
 import { postPath } from '../../lib/postPath';
 import AdminLoading from './AdminLoading';
 import { LocaleDots, PageHead, TabPanel } from './AdminPage';
-import { STATUS_LABEL, TRASH_KEEP_DAYS, formatWhen, missingTranslations, trashDaysLeft } from './adminFormat';
+import { TRASH_KEEP_DAYS, formatWhen, missingTranslations, statusLabel, trashDaysLeft } from './adminFormat';
 
 // 手記列表（2026-10 後台提案）：狀態用分頁切、可以只看缺譯文的，每篇後面五顆語系點。
 // 篩選放在網址上（routes/admin/posts/index.tsx 的 validateSearch），總覽的「等你處理」直接連得進來。
@@ -51,12 +52,13 @@ interface PostsSearch {
 const ALL_POSTS = 'limit=500';
 const TRASHED_POSTS = 'status=trashed&limit=500';
 
+/** label 是語系檔的 key */
 const TABS = [
-  { key: undefined, label: '全部' },
-  { key: 'published', label: '已發佈' },
-  { key: 'draft', label: '草稿' },
-  { key: 'scheduled', label: '排程' },
-  { key: 'trashed', label: '回收' },
+  { key: undefined, label: 'posts.tabAll' },
+  { key: 'published', label: 'common.status.published' },
+  { key: 'draft', label: 'common.status.draft' },
+  { key: 'scheduled', label: 'common.status.scheduled' },
+  { key: 'trashed', label: 'common.status.trashed' },
 ] as const;
 
 const touched = (p: AdminPostFull) => p.updated_at ?? p.created_at;
@@ -68,6 +70,7 @@ function matches(post: AdminPostFull, q: string): boolean {
 }
 
 export default function PostsList() {
+  const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { status, missing } = readFilters(useSearch({ strict: false }));
   const navigate = useNavigate();
@@ -97,23 +100,23 @@ export default function PostsList() {
   const restore = async (post: AdminPostFull) => {
     try {
       await send(`/api/admin/posts/${post.id}/restore`, 'POST');
-      toast.success(`〈${post.title}〉已還原`);
+      toast.success(t('posts.restored', { title: post.title }));
       refresh();
     } catch (e) {
-      toast.error(`還原失敗：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('posts.restoreFailed', { message: e instanceof Error ? e.message : '' }));
     }
   };
 
   const moveToTrash = async (post: AdminPostFull) => {
     try {
       await send(`/api/admin/posts/${post.id}`, 'DELETE');
-      toast(`〈${post.title}〉丟進回收桶了`, {
-        description: `${TRASH_KEEP_DAYS} 天後自動清掉`,
-        action: { label: '還原', onClick: () => void restore(post) },
+      toast(t('posts.trashedToast', { title: post.title }), {
+        description: t('posts.trashedDesc', { days: TRASH_KEEP_DAYS }),
+        action: { label: t('posts.restore'), onClick: () => void restore(post) },
       });
       refresh();
     } catch (e) {
-      toast.error(`刪除失敗：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('posts.deleteFailed', { message: e instanceof Error ? e.message : '' }));
     }
   };
 
@@ -121,10 +124,10 @@ export default function PostsList() {
     if (!purgeTarget) return;
     try {
       await send(`/api/admin/posts/${purgeTarget.id}?permanent=true`, 'DELETE');
-      toast.success('已永久刪除');
+      toast.success(t('posts.purged'));
       refresh();
     } catch (e) {
-      toast.error(`刪除失敗：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('posts.deleteFailed', { message: e instanceof Error ? e.message : '' }));
     } finally {
       setPurgeTarget(null);
     }
@@ -143,42 +146,44 @@ export default function PostsList() {
 
   /** 時間欄：排程的是預定發佈的時間、回收的是還剩幾天、其他是最後更新 */
   const whenOf = (post: AdminPostFull) => {
-    if (post.status === 'scheduled') return `${formatWhen(post.publish_at, 'MM.dd HH:mm')} 發佈`;
-    if (post.status === 'trashed') return `還剩 ${trashDaysLeft(post.trashed_at, now)} 天`;
+    if (post.status === 'scheduled')
+      return t('posts.whenScheduled', { when: formatWhen(post.publish_at, 'MM.dd HH:mm') });
+    if (post.status === 'trashed') return t('posts.whenTrashed', { days: trashDaysLeft(post.trashed_at, now) });
     return formatWhen(touched(post), 'yyyy.MM.dd');
   };
 
   return (
     <div className="adm-page">
       <PageHead
-        title="手記"
+        title={t('nav.posts')}
         latin="Notes"
         meta={
           isPending
-            ? '載入中'
-            : `${posts.length} 篇 · 草稿 ${countOf('draft')}${scheduledCount ? ` · 排程 ${scheduledCount}` : ''}`
+            ? t('common.loading')
+            : t('posts.meta', { total: posts.length, drafts: countOf('draft') }) +
+              (scheduledCount ? t('posts.metaScheduled', { n: scheduledCount }) : '')
         }
         actions={
           <Link to="/admin/posts/create" className="adm-btn adm-btn-primary">
-            新寫一篇
+            {t('posts.newPost')}
           </Link>
         }
       />
 
-      <section className="adm-stack" aria-label="手記清單">
+      <section className="adm-stack" aria-label={t('posts.listLabel')}>
         <div className="adm-toolbar">
           <div className="adm-tabs">
-            {TABS.map((t) => (
+            {TABS.map((tab) => (
               <button
-                key={t.label}
+                key={tab.label}
                 type="button"
                 className="adm-tab"
-                aria-pressed={status === t.key}
-                onClick={() => setFilters({ status: t.key, missing })}
+                aria-pressed={status === tab.key}
+                onClick={() => setFilters({ status: tab.key, missing })}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                {t.label}
-                <span className="adm-meta">{isPending ? '' : countOf(t.key)}</span>
+                {t(tab.label)}
+                <span className="adm-meta">{isPending ? '' : countOf(tab.key)}</span>
               </button>
             ))}
             <button
@@ -188,40 +193,39 @@ export default function PostsList() {
               onClick={() => setFilters({ status, missing: missing ? undefined : true })}
             >
               <span className="adm-tab-dot" aria-hidden="true" />
-              缺譯文
+              {t('posts.missing')}
             </button>
           </div>
           <label className="adm-prompt">
             <span className="adm-prompt-mark" aria-hidden="true">
               &gt;
             </span>
-            <span className="sr-only">搜尋手記</span>
+            <span className="sr-only">{t('posts.searchLabel')}</span>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="標題、分類、標籤"
+              placeholder={t('posts.searchPlaceholder')}
             />
           </label>
         </div>
 
         <TabPanel tab={`${status ?? 'all'}:${missing ? 'missing' : ''}`}>
-          {status === 'trashed' && (
-            <p className="adm-form-note">丟進回收的手記讀者看不到，放滿 {TRASH_KEEP_DAYS} 天會自動清掉。</p>
-          )}
+          {status === 'trashed' && <p className="adm-form-note">{t('posts.trashNote', { days: TRASH_KEEP_DAYS })}</p>}
 
           {isPending ? (
             <AdminLoading />
           ) : filtered.length === 0 ? (
             <div className="adm-empty">
               {status === 'trashed' ? (
-                '回收桶是空的。'
+                t('posts.emptyTrash')
               ) : posts.length === 0 ? (
                 <>
-                  還沒有手記。<Link to="/admin/posts/create">寫第一篇 →</Link>
+                  {t('posts.noPosts')}
+                  <Link to="/admin/posts/create">{t('posts.writeFirst')}</Link>
                 </>
               ) : (
-                '沒有符合的手記。'
+                t('posts.noMatch')
               )}
             </div>
           ) : (
@@ -229,13 +233,13 @@ export default function PostsList() {
               <table className="adm-table">
                 <thead>
                   <tr>
-                    <th scope="col">標題</th>
-                    <th scope="col">分類</th>
-                    <th scope="col">語系</th>
-                    <th scope="col">狀態</th>
-                    <th scope="col">時間</th>
+                    <th scope="col">{t('posts.col.title')}</th>
+                    <th scope="col">{t('posts.col.category')}</th>
+                    <th scope="col">{t('posts.col.locales')}</th>
+                    <th scope="col">{t('posts.col.status')}</th>
+                    <th scope="col">{t('posts.col.when')}</th>
                     <th scope="col">
-                      <span className="sr-only">動作</span>
+                      <span className="sr-only">{t('posts.col.actions')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -255,14 +259,14 @@ export default function PostsList() {
                         )}
                       </td>
                       <td>
-                        <span className="adm-cell-text">{post.category ?? '未分類'}</span>
+                        <span className="adm-cell-text">{post.category ?? t('posts.uncategorized')}</span>
                       </td>
                       <td>
                         <LocaleDots post={post} />
                       </td>
                       <td>
                         <span className="adm-status" data-status={post.status}>
-                          {STATUS_LABEL[post.status] ?? post.status}
+                          {statusLabel(post.status)}
                         </span>
                       </td>
                       <td>
@@ -274,18 +278,18 @@ export default function PostsList() {
                             <button
                               type="button"
                               className="adm-icon-btn"
-                              aria-label={`還原〈${post.title}〉`}
+                              aria-label={t('posts.restoreAria', { title: post.title })}
                               onClick={() => void restore(post)}
                             >
-                              還原
+                              {t('posts.restore')}
                             </button>
                             <button
                               type="button"
                               className="adm-icon-btn adm-icon-btn-flare"
-                              aria-label={`永久刪除〈${post.title}〉`}
+                              aria-label={t('posts.purgeAria', { title: post.title })}
                               onClick={() => setPurgeTarget(post)}
                             >
-                              永久刪除
+                              {t('posts.purge')}
                             </button>
                           </div>
                         ) : (
@@ -294,16 +298,16 @@ export default function PostsList() {
                               to="/admin/posts/edit/$id"
                               params={{ id: String(post.id) }}
                               className="adm-icon-btn"
-                              aria-label={`編輯〈${post.title}〉`}
+                              aria-label={t('posts.editAria', { title: post.title })}
                             >
-                              編輯
+                              {t('posts.edit')}
                             </Link>
                             {post.status === 'published' && (
                               <Link
                                 to={postPath(post)}
                                 target="_blank"
                                 className="adm-icon-btn"
-                                aria-label={`在前台開〈${post.title}〉`}
+                                aria-label={t('posts.openAria', { title: post.title })}
                               >
                                 ↗
                               </Link>
@@ -311,10 +315,10 @@ export default function PostsList() {
                             <button
                               type="button"
                               className="adm-icon-btn adm-icon-btn-flare"
-                              aria-label={`刪除〈${post.title}〉`}
+                              aria-label={t('posts.deleteAria', { title: post.title })}
                               onClick={() => void moveToTrash(post)}
                             >
-                              刪除
+                              {t('common.delete')}
                             </button>
                           </div>
                         )}
@@ -327,9 +331,7 @@ export default function PostsList() {
           )}
 
           {!isPending && (
-            <p className="adm-meta">
-              顯示 {filtered.length} / {source.length} 篇
-            </p>
+            <p className="adm-meta">{t('posts.shown', { shown: filtered.length, total: source.length })}</p>
           )}
         </TabPanel>
       </section>
@@ -337,18 +339,18 @@ export default function PostsList() {
       <AlertDialog open={!!purgeTarget} onOpenChange={() => setPurgeTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>永久刪除〈{purgeTarget?.title}〉？</AlertDialogTitle>
-            <AlertDialogDescription>刪了就找不回來，連同它的標籤關聯。</AlertDialogDescription>
+            <AlertDialogTitle>{t('posts.purgeTitle', { title: purgeTarget?.title ?? '' })}</AlertDialogTitle>
+            <AlertDialogDescription>{t('posts.purgeBody')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>留著</AlertDialogCancel>
+            <AlertDialogCancel>{t('posts.keep')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 void purge();
               }}
               variant="destructive"
             >
-              永久刪除
+              {t('posts.purge')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

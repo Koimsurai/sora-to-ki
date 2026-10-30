@@ -187,6 +187,35 @@ Every PR has to pass these before it can merge (the full list is in [`.github/wo
 - **Performance**: Lighthouse CI budgets
 - **Also** (manual, not in CI): mutation testing (Stryker, cargo-mutants) to find code that tests run through but don't actually check
 
+## 🛰️ Run your own site
+
+All you need is a machine with Docker and a domain pointing at it.
+
+```bash
+git clone https://github.com/Koimsurai/sora-to-ki.git
+cd sora-to-ki
+cp .env.example .env                  # URL, domain, site name, contact
+cp .env.backend.example .env.backend  # JWT_SECRET, GitHub or Google sign-in
+docker compose up -d
+docker compose logs backend-rs | grep setup   # the first-time setup link
+```
+
+- The images are built at release time ([GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)), so nothing compiles on your machine; add `--build` to build from source instead
+- Caddy is built in: put your domain in `CADDY_ADDRESS` in `.env` and HTTPS is set up automatically. To try it locally, use `:80` and open <http://localhost>
+- On first start the backend logs a line like `setup: open …/admin/init?code=…`. Open it to claim the site by signing in
+  with GitHub or Google, then pick the languages, name the site and choose which pages to show. The wizard walks you
+  through setting up sign-in step by step. If `OWNER_EMAIL` is set in `.env.backend` there's no wizard: whoever signs in
+  with that address is the owner
+- The admin is at `/admin` and only takes GitHub or Google sign-in (`ADMIN_USERNAME` / `ADMIN_PASSWORD` is a machine
+  account for MCP, not for people). The site name, description and which pages are on can all be changed there (or over MCP) afterwards
+- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.1.0` in `.env`
+- The database is backed up to `./backups` every day
+
+- The about, works, log, colophon Q&A and setup pages are filled in from Admin → Pages (or over MCP). On a new site
+  setup and photos start switched off (one needs sheets picked, the other a photo source); turn them on in the site settings when ready
+- To use your own hand-drawn sheets on the setup page (with whole parts lighting up on hover), drop a sheet pack into
+  `custom/setup/`; the format, and how to ask an AI to make one, are in [`custom/setup/README.md`](custom/setup/README.md)
+
 ## ⚙️ Local development
 
 You need **Node.js ≥ 26**, **pnpm 12** and **Rust stable** (edition 2024), or just Docker.
@@ -197,15 +226,7 @@ cd sora-to-ki
 pnpm install
 ```
 
-### Run everything with Docker (easiest)
-
-```bash
-cp backend/.env.example .env.backend   # fill in JWT_SECRET
-docker compose up -d --build
-# → http://localhost:13588
-```
-
-### Run frontend and backend separately (for development)
+### Run frontend and backend separately
 
 ```bash
 # Backend: reads backend/.env
@@ -227,8 +248,8 @@ Only `DATABASE_URL` and `JWT_SECRET` are required (both are in the example file)
 | Purpose | Variables |
 |---|---|
 | Basics | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
-| Admin account | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
-| OAuth sign-in | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` |
+| Sign-in (owner and readers) | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
+| MCP machine account | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
 | Activity page | `GITHUB_TOKEN` `WAKATIME_API_KEY` `STEAM_API_KEY` `STEAM_ID` |
 | Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
 | Film and TV | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN` `BAHAMUT_UID` `BAHAMUT_PASSWORD` |
@@ -283,11 +304,11 @@ Working notes for AI assistants (Claude Code and the like) live in [`CLAUDE.md`]
 
 ## 🍴 Borrowing or forking
 
-Feel free to borrow any of the code or fork it to run your own site. A few things first:
+Feel free to borrow any of the code. If you just want to run a site, follow "Run your own site" above; no fork needed. A few things first:
 
 - The code is **AGPL-3.0**: if you modify it and **run it as a public website**, you have to publish your modified source under the same licence
 - The site's **articles, photos, moments, avatar and logo are not covered by the licence** (see below); replace them with your own after forking
-- A lot of content is tied to my accounts: Steam / GitHub / WakaTime on the activity page, the Bahamut sync, the introductions on the home and about pages, and the hardware list on the setup page. Change these to your own or remove them
+- Pull requests are not accepted
 - If you want the pre-rebuild version, start from the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)
 - Questions and bug reports are welcome as [issues](https://github.com/Koimsurai/sora-to-ki/issues)
 

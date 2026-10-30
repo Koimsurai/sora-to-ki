@@ -30,13 +30,15 @@ import {
 import { toast } from 'sonner';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import { defaultLocale } from '@/lib/locales';
 // 改名：這個檔已經有一個叫 format 的狀態（文章是 md 還是 mdx）
 import { format as formatDate } from 'date-fns';
 import AdminLoading, { BusyDot } from './AdminLoading';
 import { AdminDateField, AdminTimeField } from './AdminFields';
-import { STATUS_LABEL, formatWhen, localInputToIso, toLocalInput } from './adminFormat';
+import { formatWhen, localInputToIso, statusLabel, toLocalInput } from './adminFormat';
 import { setEditorScheduledAt } from '@/store/editorScheduleStore';
 import { useConfirm } from '@/hooks/useConfirm';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import './AdminPage.css';
 import './PostEditor.css';
 
@@ -54,6 +56,9 @@ type LocalizedField =
   | 'title_zh_cn'
   | 'content_zh_cn'
   | 'summary_zh_cn'
+  | 'title_zh_tw'
+  | 'content_zh_tw'
+  | 'summary_zh_tw'
   | 'title_ja'
   | 'content_ja'
   | 'summary_ja'
@@ -73,6 +78,7 @@ function TagSearchInput({
   selectedTags: TagOption[];
   onChange: (tags: TagOption[]) => void;
 }) {
+  const { t: tr } = useAdminT();
   const [tagSearch, setTagSearch] = useState('');
   const selectedValues = new Set(selectedTags.map((t) => t.value));
   const filteredTags = tags.filter(
@@ -87,7 +93,7 @@ function TagSearchInput({
   return (
     <div className="relative">
       <Input
-        placeholder="搜尋標籤..."
+        placeholder={tr('editor.tagSearchPlaceholder')}
         value={tagSearch}
         onChange={(e) => setTagSearch(e.target.value)}
         variant="glass"
@@ -109,7 +115,7 @@ function TagSearchInput({
       )}
       {tagSearch && filteredTags.length === 0 && (
         <div className="absolute left-0 right-0 mt-1.5 border border-border bg-popover p-3 z-50">
-          <p className="text-center text-xs text-muted-foreground/60">沒有找到相關標籤</p>
+          <p className="text-center text-xs text-muted-foreground/60">{tr('editor.tagNotFound')}</p>
         </div>
       )}
     </div>
@@ -117,12 +123,13 @@ function TagSearchInput({
 }
 
 // ─── i18n 編輯常數 ──────────────────────────────
+// label 是各語言自己的寫法，不跟著後台語言翻（語言切換慣例：認得自己的語言最直覺）
 const LOCALE_TABS = [
-  { code: 'zh-TW', label: '繁體', column: null }, // source 候選
+  { code: 'zh-TW', label: '繁體', column: 'zh_tw' }, // i18n-ignore
   { code: 'en', label: 'English', column: 'en' },
-  { code: 'zh-CN', label: '简体', column: 'zh_cn' },
-  { code: 'ja', label: '日本語', column: 'ja' },
-  { code: 'ko', label: '한국어', column: 'ko' },
+  { code: 'zh-CN', label: '简体', column: 'zh_cn' }, // i18n-ignore
+  { code: 'ja', label: '日本語', column: 'ja' }, // i18n-ignore
+  { code: 'ko', label: '한국어', column: 'ko' }, // i18n-ignore
 ];
 /**
  * API 回來的值 → 表單要的字串。
@@ -147,9 +154,9 @@ function asText(v: string | number | null | undefined): string {
 function firstErrorText(errors: Record<string, unknown>): string {
   for (const [field, err] of Object.entries(errors)) {
     const message = (err as { message?: unknown } | undefined)?.message;
-    if (typeof message === 'string' && message) return `${field}：${message}`;
+    if (typeof message === 'string' && message) return at('editor.fieldError', { field, message });
   }
-  return '表單有欄位沒通過驗證';
+  return at('editor.invalidForm');
 }
 
 // 依 activeLocale + sourceLanguage 取得表單 field 名稱
@@ -168,6 +175,8 @@ export default function PostEditor() {
   // strict: false —— 這個元件同時服務 /admin/posts/create（沒有 id）與
   // /admin/posts/edit/$id（有 id）。綁死單一路由的 Route.useParams() 在 create 那條會炸。
   const { id } = useParams({ strict: false });
+  // 叫 tr 不叫 t：這個元件裡 t 已經是很多 callback 的參數名（語系分頁、計時器、標籤）
+  const { t: tr } = useAdminT();
   const navigate = useNavigate();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -186,7 +195,7 @@ export default function PostEditor() {
     enabled: !!id,
   });
   const isLoading = !!id && postPending; // 編輯模式載入文章時的骨架 gate
-  const [activeLocale, setActiveLocale] = useState('zh-TW');
+  const [activeLocale, setActiveLocale] = useState<string>(defaultLocale);
   const [zenMode, setZenMode] = useState(false);
   // 推送電子報、覆蓋簡中之前問一句（後台樣式的對話框，不是瀏覽器的 confirm）
   const { confirm, confirmDialog } = useConfirm();
@@ -229,13 +238,16 @@ export default function PostEditor() {
       allow_comments: true,
       send_newsletter: false,
       // i18n
-      source_language: 'zh-TW',
+      source_language: defaultLocale() as PostFormInput['source_language'],
       title_en: '',
       content_en: '',
       summary_en: '',
       title_zh_cn: '',
       content_zh_cn: '',
       summary_zh_cn: '',
+      title_zh_tw: '',
+      content_zh_tw: '',
+      summary_zh_tw: '',
       title_ja: '',
       content_ja: '',
       summary_ja: '',
@@ -248,7 +260,7 @@ export default function PostEditor() {
     },
   });
 
-  const sourceLanguage = form.watch('source_language') ?? 'zh-TW';
+  const sourceLanguage = form.watch('source_language') ?? defaultLocale();
   const publishAt = form.watch('publish_at') ?? '';
   const currentStatus = form.watch('status') ?? 'draft';
 
@@ -277,7 +289,7 @@ export default function PostEditor() {
     // 修正失效的 tab 選擇：LOCALE_TABS 由 sourceLanguage 推導，改動時舊的 activeLocale
     // 可能已不在清單裡。這是「校正外部變動造成的無效選擇」，不是可推導的衍生值。
     // eslint-disable-next-line @eslint-react/set-state-in-effect
-    if (!LOCALE_TABS.find((t) => t.code === activeLocale)) setActiveLocale(sourceLanguage);
+    if (!LOCALE_TABS.some((t) => t.code === activeLocale)) setActiveLocale(sourceLanguage);
   }, [activeLocale, sourceLanguage]);
 
   // ── localStorage 自動備份草稿（debounce 1.2s）──
@@ -320,9 +332,9 @@ export default function PostEditor() {
       const current = form.getValues();
       if ((current.title || current.content).trim()) return;
       const ago = Math.round((Date.now() - savedAt) / 60000);
-      toast(`偵測到 ${ago} 分鐘前的未儲存草稿`, {
+      toast(at('editor.draftFound', { minutes: ago }), {
         action: {
-          label: '還原',
+          label: at('editor.restore'),
           onClick: () => {
             form.reset(values);
             flashStatus('restoring');
@@ -342,7 +354,7 @@ export default function PostEditor() {
   const frameRef = useRef<HTMLDivElement>(null);
   const buildPreviewSnapshot = useCallback((): PostPreviewSnapshot => {
     const v = form.getValues();
-    const source = v.source_language ?? 'zh-TW';
+    const source = v.source_language ?? defaultLocale();
     const texts: Record<string, PreviewText> = {};
     for (const t of LOCALE_TABS) {
       const pick = (base: 'title' | 'content' | 'summary') => {
@@ -448,13 +460,16 @@ export default function PostEditor() {
       // （第一次修完 category 又冒出 series_order），所以這裡改成統一走同一個函式。
       category: asText(postData.category),
       slug: asText(postData.slug),
-      source_language: postData.source_language ?? 'zh-TW',
+      source_language: postData.source_language ?? defaultLocale(),
       title_en: asText(postData.title_en),
       content_en: asText(postData.content_en),
       summary_en: asText(postData.excerpt_en),
       title_zh_cn: asText(postData.title_zh_cn),
       content_zh_cn: asText(postData.content_zh_cn),
       summary_zh_cn: asText(postData.excerpt_zh_cn),
+      title_zh_tw: asText(postData.title_zh_tw),
+      content_zh_tw: asText(postData.content_zh_tw),
+      summary_zh_tw: asText(postData.excerpt_zh_tw),
       title_ja: asText(postData.title_ja),
       content_ja: asText(postData.content_ja),
       summary_ja: asText(postData.excerpt_ja),
@@ -471,7 +486,7 @@ export default function PostEditor() {
     form.reset(formattedData as PostFormInput);
     // 載入既有文章 → 把編輯器狀態同步成該篇的值。資料是非同步來的，render 期沒有。
     // eslint-disable-next-line @eslint-react/set-state-in-effect
-    setActiveLocale(postData.source_language ?? 'zh-TW');
+    setActiveLocale(postData.source_language ?? defaultLocale());
     // eslint-disable-next-line @eslint-react/set-state-in-effect
     setExcerptLinks(postData.excerpt_links);
     // reset 完成 → 讓下方 Select 依 key 重新 mount、以正確值初始化（此 set-state 是刻意的）
@@ -523,9 +538,9 @@ export default function PostEditor() {
    */
   const handleSendNewsletter = async () => {
     const ok = await confirm({
-      title: '現在推送給所有訂閱者？',
-      description: '寄出去就收不回來了。',
-      confirmLabel: '推送',
+      title: tr('editor.newsletter.confirmTitle'),
+      description: tr('editor.newsletter.confirmBody'),
+      confirmLabel: tr('editor.newsletter.confirmLabel'),
       danger: true,
     });
     if (!ok) return;
@@ -536,12 +551,12 @@ export default function PostEditor() {
       });
       const data = (await res.json()) as { error?: string; sent?: number; failed?: number };
       if (!res.ok) {
-        toast.error(data.error ?? '推送失敗');
+        toast.error(data.error ?? tr('editor.newsletter.failed'));
         return;
       }
-      toast.success(`已寄出 ${data.sent} 封，失敗 ${data.failed}`);
+      toast.success(tr('editor.newsletter.sent', { sent: data.sent, failed: data.failed }));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '推送失敗');
+      toast.error(e instanceof Error ? e.message : tr('editor.newsletter.failed'));
     }
   };
 
@@ -550,12 +565,13 @@ export default function PostEditor() {
     const tagsArray = Array.isArray(data.tags)
       ? data.tags.map((tag) => (typeof tag === 'string' ? tag : tag.label))
       : [];
-    const { summary, summary_en, summary_zh_cn, summary_ja, summary_ko, ...rest } = data;
+    const { summary, summary_en, summary_zh_cn, summary_zh_tw, summary_ja, summary_ko, ...rest } = data;
     return {
       ...rest,
       excerpt: summary,
       excerpt_en: summary_en,
       excerpt_zh_cn: summary_zh_cn,
+      excerpt_zh_tw: summary_zh_tw,
       excerpt_ja: summary_ja,
       excerpt_ko: summary_ko,
       tags: tagsArray,
@@ -570,7 +586,7 @@ export default function PostEditor() {
 
   const onSaveDraft = async (data: PostFormInput, opts: { exit?: boolean } = {}) => {
     if (submitLockRef.current) {
-      toast.info('正在儲存中，請稍候');
+      toast.info(tr('editor.busySaving'));
       return;
     }
     submitLockRef.current = true;
@@ -587,7 +603,7 @@ export default function PostEditor() {
       });
 
       if (response.ok) {
-        toast.success('草稿已儲存');
+        toast.success(tr('editor.draftSaved'));
         try {
           localStorage.removeItem(autosaveKey);
         } catch {
@@ -603,11 +619,11 @@ export default function PostEditor() {
           void navigate({ to: '/admin/posts/edit/$id', params: { id: String(newId) } });
         }
       } else {
-        toast.error('儲存失敗');
+        toast.error(tr('editor.saveFailed'));
       }
     } catch (error) {
-      console.error('儲存失敗:', error);
-      toast.error('儲存失敗');
+      console.error('儲存失敗:', error); // i18n-ignore：開發者看的 console，不是介面
+      toast.error(tr('editor.saveFailed'));
     } finally {
       setIsSavingDraft(false);
       submitLockRef.current = false;
@@ -616,13 +632,13 @@ export default function PostEditor() {
 
   const onPublish = async (data: PostFormInput) => {
     if (submitLockRef.current) {
-      toast.info('正在處理中，請稍候');
+      toast.info(tr('editor.busyProcessing'));
       return;
     }
     // 填了排程時間就是排程發佈；時間已經過了就停下來問人，不擅自當成「立刻發」
     const scheduleAt = localInputToIso(data.publish_at ?? '');
     if (scheduleAt && new Date(scheduleAt).getTime() <= Date.now()) {
-      toast.error('排程時間已經過了：改一個未來的時間，或清空它直接發佈');
+      toast.error(tr('editor.schedulePast'));
       return;
     }
     submitLockRef.current = true;
@@ -642,15 +658,20 @@ export default function PostEditor() {
       });
 
       if (response.ok) {
-        toast.success(scheduleAt ? `已排程：${formatWhen(new Date(scheduleAt), 'MM.dd HH:mm')} 發佈` : '文章已發佈');
+        toast.success(
+          scheduleAt
+            ? tr('editor.scheduledToast', { when: formatWhen(new Date(scheduleAt), 'MM.dd HH:mm') })
+            : tr('editor.publishedToast'),
+        );
         // 若有勾「發佈時推送 Newsletter」，後端會在 data.newsletter 回寄送結果
         try {
           const body = (await response.json()) as {
             data?: { newsletter?: { sent?: number; failed?: number; error?: string } };
           };
           const nl = body.data?.newsletter;
-          if (nl?.error) toast.error(`電子報寄送失敗：${nl.error}`);
-          else if (nl) toast.success(`電子報已寄出 ${nl.sent ?? 0} 封，失敗 ${nl.failed ?? 0}`);
+          if (nl?.error) toast.error(tr('editor.newsletter.publishFailed', { error: nl.error }));
+          else if (nl)
+            toast.success(tr('editor.newsletter.publishSent', { sent: nl.sent ?? 0, failed: nl.failed ?? 0 }));
         } catch {
           /* 回應非 JSON 不影響發佈成功 */
         }
@@ -663,34 +684,34 @@ export default function PostEditor() {
       } else {
         // 排程時間不對之類的 400 會帶理由，照實顯示
         const err = (await response.json().catch(() => ({}))) as { error?: string };
-        toast.error(err.error ?? '發佈失敗');
+        toast.error(err.error ?? tr('editor.publishFailed'));
       }
     } catch (error) {
-      console.error('發佈失敗:', error);
-      toast.error('發佈失敗');
+      console.error('發佈失敗:', error); // i18n-ignore：開發者看的 console，不是介面
+      toast.error(tr('editor.publishFailed'));
     } finally {
       setIsPublishing(false);
       submitLockRef.current = false;
     }
   };
 
-  // ── OpenCC：由 zh-TW 自動產生简体中文（純字詞轉換，不丟 LLM） ──
+  // ── OpenCC：由繁中（原稿或繁中譯文）自動產生简体中文（純字詞轉換，不丟 LLM） ──
   const handleGenerateZhCN = async () => {
     if (!id) {
-      toast.error('請先儲存草稿，取得文章 ID 後再執行');
+      toast.error(tr('editor.zhCn.needId'));
       return;
     }
-    if (sourceLanguage !== 'zh-TW') {
-      toast.error('只能從 zh-TW 原文自動產生简体中文');
+    if (sourceLanguage !== 'zh-TW' && !postData?.title_zh_tw) {
+      toast.error(tr('editor.zhCn.needSource'));
       return;
     }
     const existing = form.getValues('title_zh_cn') ?? form.getValues('content_zh_cn');
     if (
       existing &&
       !(await confirm({
-        title: '覆蓋現在的簡中？',
-        description: '已經有简体中文的內容了，重新從繁中轉一次會把它蓋掉。',
-        confirmLabel: '覆蓋',
+        title: tr('editor.zhCn.overwriteTitle'),
+        description: tr('editor.zhCn.overwriteBody'),
+        confirmLabel: tr('editor.zhCn.overwriteLabel'),
         danger: true,
       }))
     )
@@ -711,7 +732,7 @@ export default function PostEditor() {
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? `API 錯誤 (${res.status})`);
+        throw new Error(err.error ?? tr('editor.apiError', { status: res.status }));
       }
       const data = (await res.json()) as {
         title_zh_cn?: string;
@@ -724,11 +745,11 @@ export default function PostEditor() {
       form.setValue('summary_zh_cn', data.excerpt_zh_cn ?? '');
       // 後端把繁體的摘要連結也轉好存進去了；手上這份是轉之前的，不換掉的話下次存檔會蓋回去
       setExcerptLinks((prev) => ({ ...prev, 'zh-CN': data.excerpt_links_zh_cn ?? [] }));
-      toast.success('简体中文已生成（OpenCC 繁轉簡）');
+      toast.success(tr('editor.zhCn.done'));
       setActiveLocale('zh-CN');
     } catch (e) {
-      console.error('OpenCC 生成失敗:', e);
-      toast.error(`生成失敗：${e instanceof Error ? e.message : String(e)}`);
+      console.error('OpenCC 生成失敗:', e); // i18n-ignore：開發者看的 console，不是介面
+      toast.error(tr('editor.zhCn.failed', { message: e instanceof Error ? e.message : String(e) }));
     } finally {
       setIsGeneratingZhCN(false);
     }
@@ -741,7 +762,7 @@ export default function PostEditor() {
     const content = form.getValues(contentName);
 
     if (!content || content.trim().length < 50) {
-      toast.error('文章內容太短，無法生成摘要');
+      toast.error(tr('editor.summary.tooShort'));
       return;
     }
 
@@ -755,21 +776,25 @@ export default function PostEditor() {
           messages: [
             {
               role: 'system',
-              content: `你是一個部落格文章元資料生成器。請以 ${activeLocale} 撰寫，根據提供的文章內容產生：
-1. summary：120-220 字（或對應語言的合適長度）的文章摘要，以第三人稱視角撰寫，聚焦文章主軸，不腦補不存在的內容。風格簡潔、資訊密度高。
-2. tags：3-8 個相關標籤，每個標籤是簡短的關鍵詞（如 React、Docker、CSS 等）。
-
-回傳嚴格的 JSON 格式：
-{
-  "summary": "摘要文字",
-  "tags": ["標籤1", "標籤2", "標籤3"]
-}
-
-只回傳 JSON，不要其他文字。`,
+              // 給模型的提示詞不是介面文字，不跟著後台語言換（要的語言已經用 activeLocale 講了）。
+              // 一行一個字串，才能在每一行標 i18n-ignore；接起來跟原本的樣板字串一字不差
+              content: [
+                `你是一個部落格文章元資料生成器。請以 ${activeLocale} 撰寫，根據提供的文章內容產生：`, // i18n-ignore
+                '1. summary：120-220 字（或對應語言的合適長度）的文章摘要，以第三人稱視角撰寫，聚焦文章主軸，不腦補不存在的內容。風格簡潔、資訊密度高。', // i18n-ignore
+                '2. tags：3-8 個相關標籤，每個標籤是簡短的關鍵詞（如 React、Docker、CSS 等）。', // i18n-ignore
+                '',
+                '回傳嚴格的 JSON 格式：', // i18n-ignore
+                '{',
+                '  "summary": "摘要文字",', // i18n-ignore
+                '  "tags": ["標籤1", "標籤2", "標籤3"]', // i18n-ignore
+                '}',
+                '',
+                '只回傳 JSON，不要其他文字。', // i18n-ignore
+              ].join('\n'),
             },
             {
               role: 'user',
-              content: `文章標題：${title ?? '未命名'}\n\n文章內容：\n${content.substring(0, 8000)}`,
+              content: `文章標題：${title ?? '未命名'}\n\n文章內容：\n${content.substring(0, 8000)}`, // i18n-ignore：給模型的提示詞
             },
           ],
           max_tokens: 512,
@@ -777,7 +802,7 @@ export default function PostEditor() {
         }),
       });
 
-      if (!response.ok) throw new Error(`API 錯誤 (${response.status})`);
+      if (!response.ok) throw new Error(tr('editor.apiError', { status: response.status }));
 
       const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
       const resultText = data.choices?.[0]?.message?.content ?? '';
@@ -798,7 +823,7 @@ export default function PostEditor() {
 
       if (parsed?.summary) {
         form.setValue(summaryName, parsed.summary);
-        toast.success(`摘要已生成（${activeLocale}）`);
+        toast.success(tr('editor.summary.done', { locale: activeLocale }));
 
         // 如果 AI 也回傳了標籤，且目前標籤為空，則自動填入
         if ((parsed.tags?.length ?? 0) > 0) {
@@ -809,21 +834,21 @@ export default function PostEditor() {
               value: t.toLowerCase().replace(/\s+/g, '-'),
             }));
             form.setValue('tags', formattedTags);
-            toast.info(`同時生成了 ${formattedTags.length} 個標籤建議`);
+            toast.info(tr('editor.summary.tagsSuggested', { n: formattedTags.length }));
           }
         }
       } else {
-        toast.error('AI 回傳格式異常，請重試');
+        toast.error(tr('editor.summary.badFormat'));
       }
     } catch (err) {
-      console.error('AI 摘要生成失敗:', err);
-      toast.error(`摘要生成失敗：${err instanceof Error ? err.message : String(err)}`);
+      console.error('AI 摘要生成失敗:', err); // i18n-ignore：開發者看的 console，不是介面
+      toast.error(tr('editor.summary.failed', { message: err instanceof Error ? err.message : String(err) }));
     } finally {
       setIsGeneratingSummary(false);
     }
   };
 
-  if (isLoading) return <AdminLoading label="打開這篇" page />;
+  if (isLoading) return <AdminLoading label={tr('editor.loadingPost')} page />;
 
   return (
     <>
@@ -891,11 +916,11 @@ export default function PostEditor() {
                     >
                       <span className="adm-tab-dot" aria-hidden="true" />
                       {t.label}
-                      {isSource && <span className="adm-meta">原稿</span>}
+                      {isSource && <span className="adm-meta">{tr('editor.sourceBadge')}</span>}
                     </button>
                   );
                 })}
-                {sourceLanguage === 'zh-TW' && (
+                {sourceLanguage !== 'zh-CN' && (
                   <button
                     type="button"
                     onClick={() => {
@@ -903,17 +928,17 @@ export default function PostEditor() {
                     }}
                     disabled={isGeneratingZhCN}
                     className="adm-btn adm-btn-small pe-locale-action"
-                    title="OpenCC 繁→簡，純字詞轉換不丟 LLM"
+                    title={tr('editor.zhCn.buttonTitle')}
                   >
                     {isGeneratingZhCN && <BusyDot />}
-                    從繁中產生简中
+                    {tr('editor.zhCn.button')}
                   </button>
                 )}
               </div>
 
               {/* i18n 多語系提示 */}
               <p className="adm-meta pe-hint">
-                正在編 {LOCALE_TABS.find((t) => t.code === activeLocale)?.label} · 所有已填語系會一起儲存／發佈
+                {tr('editor.editingHint', { locale: LOCALE_TABS.find((t) => t.code === activeLocale)?.label ?? '' })}
               </p>
 
               {/* Title (per-locale) — 直接用 form.watch/setValue，避免 FormField 動態 name 的 bug */}
@@ -921,8 +946,8 @@ export default function PostEditor() {
                 key={`title-${activeLocale}`}
                 value={titleValue}
                 onChange={(e) => form.setValue(titleName, e.target.value, { shouldDirty: true })}
-                placeholder="這篇的標題"
-                aria-label="標題"
+                placeholder={tr('editor.titlePlaceholder')}
+                aria-label={tr('editor.titleLabel')}
                 className="pe-title"
               />
 
@@ -935,7 +960,7 @@ export default function PostEditor() {
                     aria-pressed={editorView === 'edit'}
                     onClick={() => setEditorView('edit')}
                   >
-                    編輯
+                    {tr('editor.view.edit')}
                   </button>
                   <button
                     type="button"
@@ -943,7 +968,7 @@ export default function PostEditor() {
                     aria-pressed={editorView === 'split'}
                     onClick={() => setEditorView('split')}
                   >
-                    分割
+                    {tr('editor.view.split')}
                   </button>
                   <button
                     type="button"
@@ -951,23 +976,23 @@ export default function PostEditor() {
                     aria-pressed={editorView === 'preview'}
                     onClick={() => setEditorView('preview')}
                   >
-                    預覽
+                    {tr('editor.view.preview')}
                   </button>
                   <button
                     type="button"
                     className="adm-tab pe-view"
-                    title="開一個分頁，用讀者看到的文章頁畫這份草稿（還沒存的也算）；這裡改了那邊跟著更新"
+                    title={tr('editor.view.frontTitle')}
                     onClick={openPreview}
                   >
-                    在前台預覽 ↗
+                    {tr('editor.view.front')}
                   </button>
                   <div className="pe-frame-status">
-                    {autosaveStatus === 'saved' && <span className="adm-meta">已自動備份</span>}
-                    {autosaveStatus === 'restoring' && <span className="adm-meta">已還原草稿</span>}
+                    {autosaveStatus === 'saved' && <span className="adm-meta">{tr('editor.autosaved')}</span>}
+                    {autosaveStatus === 'restoring' && <span className="adm-meta">{tr('editor.restored')}</span>}
                     <button
                       type="button"
-                      title={zenMode ? '退出 Zen（Esc）' : 'Zen 模式（F11）'}
-                      aria-label={zenMode ? '退出專注模式' : '專注模式'}
+                      title={zenMode ? tr('editor.zen.exitTitle') : tr('editor.zen.enterTitle')}
+                      aria-label={zenMode ? tr('editor.zen.exitLabel') : tr('editor.zen.enterLabel')}
                       onClick={() => setZenMode((z) => !z)}
                       className="adm-icon-btn"
                     >
@@ -1009,7 +1034,7 @@ export default function PostEditor() {
                 <div>
                   <h3 className="pe-side-head">
                     <Folder className="h-3.5 w-3.5" />
-                    分類與標籤
+                    {tr('editor.side.categoryTags')}
                   </h3>
                   <div className="space-y-4">
                     <FormField
@@ -1017,7 +1042,7 @@ export default function PostEditor() {
                       name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>分類</FormLabel>
+                          <FormLabel>{tr('editor.side.category')}</FormLabel>
                           <Select
                             // hydrated + categories.length 進 key：載入完成或選項到齊時重新 mount，
                             // 讓觸發器顯示已載入的分類（Radix Select 不反映 mount 後才變的受控值）。
@@ -1027,7 +1052,7 @@ export default function PostEditor() {
                           >
                             <FormControl>
                               <SelectTrigger variant="glass" size="compact">
-                                <SelectValue placeholder="選擇分類" />
+                                <SelectValue placeholder={tr('editor.side.categoryPlaceholder')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -1051,11 +1076,13 @@ export default function PostEditor() {
                         return (
                           <FormItem>
                             <FormLabel>
-                              標籤
-                              <span className="text-muted-foreground/50 ml-1">({tags.length} 個可用)</span>
+                              {tr('editor.side.tags')}
+                              <span className="text-muted-foreground/50 ml-1">
+                                {tr('editor.side.tagsAvailable', { n: tags.length })}
+                              </span>
                             </FormLabel>
                             <div className="text-fs-11 text-muted-foreground/60 mb-1">
-                              已選擇 {selectedTags.length} 項
+                              {tr('editor.side.tagsSelected', { n: selectedTags.length })}
                             </div>
                             <div className="flex flex-wrap gap-1.5 mb-2">
                               {selectedTags.map((tag) => (
@@ -1089,7 +1116,7 @@ export default function PostEditor() {
                 <div>
                   <h3 className="pe-side-head">
                     <FileText className="h-3.5 w-3.5" />
-                    系列文（選填）
+                    {tr('editor.series.head')}
                   </h3>
                   <div className="space-y-3">
                     <FormField
@@ -1097,11 +1124,11 @@ export default function PostEditor() {
                       name="series_name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>系列名稱</FormLabel>
+                          <FormLabel>{tr('editor.series.name')}</FormLabel>
                           <FormControl>
                             <input
                               {...field}
-                              placeholder="如：Rust 學習筆記"
+                              placeholder={tr('editor.series.namePlaceholder')}
                               className="h-8 w-full border px-2 text-sm outline-hidden"
                             />
                           </FormControl>
@@ -1114,12 +1141,12 @@ export default function PostEditor() {
                       name="series_order"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>順序（數字越小越前面）</FormLabel>
+                          <FormLabel>{tr('editor.series.order')}</FormLabel>
                           <FormControl>
                             <input
                               type="number"
                               {...field}
-                              placeholder="例：1"
+                              placeholder={tr('editor.series.orderPlaceholder')}
                               className="h-8 w-full border px-2 text-sm outline-hidden"
                             />
                           </FormControl>
@@ -1134,14 +1161,14 @@ export default function PostEditor() {
                 <div>
                   <h3 className="pe-side-head">
                     <Clock className="h-3.5 w-3.5" />
-                    發佈設定
+                    {tr('editor.publishing.head')}
                   </h3>
                   <div className="space-y-4">
                     {/* 狀態由頂列按下的那顆按鈕決定，這裡只顯示現在是什麼 */}
                     <p className="pe-state">
-                      <span className="adm-caps">現在</span>
+                      <span className="adm-caps">{tr('editor.publishing.now')}</span>
                       <span className="adm-status" data-status={currentStatus}>
-                        {STATUS_LABEL[currentStatus] ?? currentStatus}
+                        {statusLabel(currentStatus)}
                       </span>
                     </p>
 
@@ -1158,24 +1185,30 @@ export default function PostEditor() {
                         };
                         return (
                           <FormItem>
-                            <FormLabel>排程發佈</FormLabel>
+                            <FormLabel>{tr('editor.publishing.schedule')}</FormLabel>
                             <div className="pe-schedule">
-                              <AdminDateField label="排程發佈日期" value={day} onChange={(d) => setSchedule(d, time)} />
-                              <AdminTimeField label="排程發佈時間" value={time} onChange={(t) => setSchedule(day, t)} />
+                              <AdminDateField
+                                label={tr('editor.publishing.scheduleDate')}
+                                value={day}
+                                onChange={(d) => setSchedule(d, time)}
+                              />
+                              <AdminTimeField
+                                label={tr('editor.publishing.scheduleTime')}
+                                value={time}
+                                onChange={(t) => setSchedule(day, t)}
+                              />
                               {field.value && (
                                 <button
                                   type="button"
                                   className="adm-btn adm-btn-small"
                                   onClick={() => form.setValue('publish_at', '', { shouldDirty: true })}
                                 >
-                                  清空
+                                  {tr('editor.publishing.clear')}
                                 </button>
                               )}
                             </div>
                             <p className="pe-side-hint">
-                              {field.value
-                                ? '按「排程發佈」之後，到這個時間才會出現在前台（最多晚一分鐘）。'
-                                : '留空＝按「發佈文章」立刻發佈。'}
+                              {field.value ? tr('editor.publishing.hintScheduled') : tr('editor.publishing.hintEmpty')}
                             </p>
                             <FormMessage />
                           </FormItem>
@@ -1190,7 +1223,7 @@ export default function PostEditor() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-1.5">
                             <Languages className="h-3 w-3" />
-                            原文語言
+                            {tr('editor.publishing.sourceLanguage')}
                           </FormLabel>
                           <Select
                             key={`srclang-${hydrated ? 'r' : 'i'}`}
@@ -1198,7 +1231,7 @@ export default function PostEditor() {
                               field.onChange(v);
                               if (activeLocale === sourceLanguage) setActiveLocale(v);
                             }}
-                            value={field.value ?? 'zh-TW'}
+                            value={field.value ?? defaultLocale()}
                           >
                             <FormControl>
                               <SelectTrigger variant="glass" size="compact">
@@ -1206,10 +1239,10 @@ export default function PostEditor() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="zh-TW">繁體中文</SelectItem>
-                              <SelectItem value="zh-CN">简体中文</SelectItem>
-                              <SelectItem value="en">English</SelectItem>
-                              <SelectItem value="ja">日本語</SelectItem>
+                              <SelectItem value="zh-TW">{tr('layout.languageName.zh-TW')}</SelectItem>
+                              <SelectItem value="zh-CN">{tr('layout.languageName.zh-CN')}</SelectItem>
+                              <SelectItem value="en">{tr('layout.languageName.en')}</SelectItem>
+                              <SelectItem value="ja">{tr('layout.languageName.ja')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -1222,7 +1255,7 @@ export default function PostEditor() {
                       name="slug"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>網址 slug</FormLabel>
+                          <FormLabel>{tr('editor.publishing.slug')}</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -1231,10 +1264,7 @@ export default function PostEditor() {
                               size="compact"
                             />
                           </FormControl>
-                          <p className="text-fs-10 text-muted-foreground/60">
-                            文章網址是 /blog/&lt;slug&gt;。留空會自動從英文標題產生；改了也不會斷——舊網址會自動 301
-                            到新的。
-                          </p>
+                          <p className="text-fs-10 text-muted-foreground/60">{tr('editor.publishing.slugHint')}</p>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1247,7 +1277,7 @@ export default function PostEditor() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-1.5">
                             <LayoutTemplate className="h-3 w-3" />
-                            樣板類型
+                            {tr('editor.publishing.layout')}
                           </FormLabel>
                           <Select
                             key={`layout-${hydrated ? 'r' : 'i'}`}
@@ -1260,8 +1290,8 @@ export default function PostEditor() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="record">📅 紀錄（時效性）</SelectItem>
-                              <SelectItem value="column">💎 專欄（無時間性）</SelectItem>
+                              <SelectItem value="record">{tr('editor.publishing.layoutRecord')}</SelectItem>
+                              <SelectItem value="column">{tr('editor.publishing.layoutColumn')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -1274,7 +1304,7 @@ export default function PostEditor() {
                       name="allow_comments"
                       render={({ field }) => (
                         <FormItem className="flex items-center justify-between">
-                          <FormLabel>允許留言</FormLabel>
+                          <FormLabel>{tr('editor.publishing.allowComments')}</FormLabel>
                           <FormControl>
                             <Switch checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
@@ -1289,9 +1319,9 @@ export default function PostEditor() {
                       render={({ field }) => (
                         <FormItem className="flex items-center justify-between">
                           <div className="flex flex-col gap-0.5">
-                            <FormLabel>發佈時推送 Newsletter</FormLabel>
+                            <FormLabel>{tr('editor.newsletter.onPublish')}</FormLabel>
                             <span className="text-fs-10 text-muted-foreground/60">
-                              按「發佈文章」時寄；排程的話等時間到了才寄
+                              {tr('editor.newsletter.onPublishHint')}
                             </span>
                           </div>
                           <FormControl>
@@ -1311,7 +1341,7 @@ export default function PostEditor() {
                           void handleSendNewsletter();
                         }}
                       >
-                        立即推送 Newsletter
+                        {tr('editor.newsletter.sendNow')}
                       </button>
                     )}
                   </div>
@@ -1321,7 +1351,7 @@ export default function PostEditor() {
                 <div>
                   <h3 className="pe-side-head">
                     <ImageIcon className="h-3.5 w-3.5" />
-                    封面圖片
+                    {tr('editor.cover.head')}
                   </h3>
                   <div className="space-y-4">
                     <FormField
@@ -1329,7 +1359,7 @@ export default function PostEditor() {
                       name="cover"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>圖片網址</FormLabel>
+                          <FormLabel>{tr('editor.cover.url')}</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -1340,7 +1370,7 @@ export default function PostEditor() {
                           </FormControl>
                           {field.value && (
                             <div className="mt-2 overflow-hidden border">
-                              <img src={field.value} alt="封面預覽" className="w-full h-auto" />
+                              <img src={field.value} alt={tr('editor.cover.alt')} className="w-full h-auto" />
                             </div>
                           )}
                           <FormMessage />
@@ -1351,7 +1381,8 @@ export default function PostEditor() {
                     <div>
                       <div className="flex items-center justify-between">
                         <label className="text-xs text-muted-foreground">
-                          摘要 <span className="text-muted-foreground/50">({activeLocale})</span>
+                          {tr('editor.summary.label')}{' '}
+                          <span className="text-muted-foreground/50">({activeLocale})</span>
                         </label>
                         <button
                           type="button"
@@ -1364,12 +1395,12 @@ export default function PostEditor() {
                           {isGeneratingSummary ? (
                             <>
                               <BusyDot />
-                              生成中
+                              {tr('editor.summary.generating')}
                             </>
                           ) : (
                             <>
                               <Sparkles className="size-3" />
-                              AI 生成
+                              {tr('editor.summary.generate')}
                             </>
                           )}
                         </button>
@@ -1378,7 +1409,7 @@ export default function PostEditor() {
                         key={`summary-${activeLocale}`}
                         value={summaryValue}
                         onChange={(e) => form.setValue(summaryName, e.target.value, { shouldDirty: true })}
-                        placeholder="文章摘要（點擊右上角 AI 生成或手動輸入）..."
+                        placeholder={tr('editor.summary.placeholder')}
                         rows={4}
                         className="w-full border px-3 py-2 text-sm resize-none focus:outline-hidden mt-1"
                       />

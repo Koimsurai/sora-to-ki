@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, queryOptions } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { apiUrl } from '@/lib/api';
+import { isOwnUrl, siteHost, siteUrl } from '@/lib/siteIdentity';
 import type { LinkPreviewResponse } from '@koimsurai/api-types';
 import './link-hover-preview.css';
 
@@ -72,7 +73,7 @@ export function LinkHoverPreview({
   // 文章裡連自己站的常寫成相對路徑（/blog/…）：原樣送給後端的話它不知道去哪裡抓，只好給沒有圖的降級卡
   const target = useMemo(() => {
     try {
-      return new URL(href, 'https://koimsurai.com').href;
+      return new URL(href, siteUrl()).href;
     } catch {
       return href;
     }
@@ -106,14 +107,14 @@ export function LinkHoverPreview({
     if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
-  const isInternal = /^\/(blog|thinking)\//.test(href) || href.includes('koimsurai.com');
+  const isInternal = /^\/(blog|thinking)\//.test(href) || isOwnUrl(href);
   // 站內的頁面（文章、碎念，含各語系前綴）走路由換頁，跟站上其他連結一樣有轉場；
   // 普通 <a> 的話是整頁重新載入。/uploads/ 這種檔案不是頁面，照原樣開
   const navigate = useNavigate();
   const routePath = useMemo(() => {
     try {
-      const u = new URL(href, 'https://koimsurai.com');
-      if (u.hostname !== 'koimsurai.com') return null;
+      const u = new URL(href, siteUrl());
+      if (u.hostname.replace(/^www\./, '') !== siteHost()) return null;
       return /^\/(?:(?:en|ja|ko|zh-cn)\/)?(?:blog|thinking)(?:\/|$)/i.test(u.pathname)
         ? u.pathname + u.search + u.hash
         : null;
@@ -181,9 +182,7 @@ export function LinkHoverPreview({
                         }}
                       />
                     )}
-                    <span className="lhp-site">
-                      {data?.site_name ?? new URL(href, 'https://koimsurai.com').hostname}
-                    </span>
+                    <span className="lhp-site">{data?.site_name ?? new URL(href, siteUrl()).hostname}</span>
                   </div>
                 )}
                 <div className="lhp-body">

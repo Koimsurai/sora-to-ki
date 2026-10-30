@@ -46,11 +46,13 @@ import { Route as AdminCommentsRouteImport } from './routes/admin/comments'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminFriendsRouteImport } from './routes/admin/friends'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminPagesRouteImport } from './routes/admin/pages'
 import { Route as AdminPhotosRouteImport } from './routes/admin/photos'
 import { Route as AdminSubscribersRouteImport } from './routes/admin/subscribers'
 import { Route as AdminTagsRouteImport } from './routes/admin/tags'
 import { Route as AdminThoughtsRouteImport } from './routes/admin/thoughts'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminInitRouteImport } from './routes/admin_.init'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
@@ -254,6 +256,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminPagesRoute = AdminPagesRouteImport.update({
+  id: '/pages',
+  path: '/pages',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminPhotosRoute = AdminPhotosRouteImport.update({
   id: '/photos',
   path: '/photos',
@@ -278,6 +285,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminInitRoute = AdminInitRouteImport.update({
+  id: '/admin_/init',
+  path: '/admin/init',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
@@ -401,11 +413,13 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/pages': typeof AdminPagesRoute
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/init': typeof AdminInitRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/preview/post': typeof PreviewPostRoute
@@ -461,11 +475,13 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/pages': typeof AdminPagesRoute
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/init': typeof AdminInitRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/preview/post': typeof PreviewPostRoute
@@ -523,11 +539,13 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/pages': typeof AdminPagesRoute
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin_/init': typeof AdminInitRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/preview/post': typeof PreviewPostRoute
@@ -586,11 +604,13 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/friends'
     | '/admin/login'
+    | '/admin/pages'
     | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/thoughts'
     | '/admin/users'
+    | '/admin/init'
     | '/auth/callback'
     | '/blog/$id'
     | '/preview/post'
@@ -646,11 +666,13 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/friends'
     | '/admin/login'
+    | '/admin/pages'
     | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/thoughts'
     | '/admin/users'
+    | '/admin/init'
     | '/auth/callback'
     | '/blog/$id'
     | '/preview/post'
@@ -707,11 +729,13 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/friends'
     | '/admin/login'
+    | '/admin/pages'
     | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/thoughts'
     | '/admin/users'
+    | '/admin_/init'
     | '/auth/callback'
     | '/blog/$id'
     | '/preview/post'
@@ -761,6 +785,7 @@ export interface RootRouteChildren {
   LocalePortfolioRoute: typeof LocalePortfolioRoute
   LocaleSetupRoute: typeof LocaleSetupRoute
   LocaleUnsubscribeRoute: typeof LocaleUnsubscribeRoute
+  AdminInitRoute: typeof AdminInitRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   BlogIdRoute: typeof BlogIdRoute
   PreviewPostRoute: typeof PreviewPostRoute
@@ -1039,6 +1064,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/pages': {
+      id: '/admin/pages'
+      path: '/pages'
+      fullPath: '/admin/pages'
+      preLoaderRoute: typeof AdminPagesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/photos': {
       id: '/admin/photos'
       path: '/photos'
@@ -1073,6 +1105,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/admin_/init': {
+      id: '/admin_/init'
+      path: '/admin/init'
+      fullPath: '/admin/init'
+      preLoaderRoute: typeof AdminInitRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
       id: '/auth/callback'
@@ -1205,6 +1244,7 @@ interface AdminRouteRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminFriendsRoute: typeof AdminFriendsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminPagesRoute: typeof AdminPagesRoute
   AdminPhotosRoute: typeof AdminPhotosRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminTagsRoute: typeof AdminTagsRoute
@@ -1225,6 +1265,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminFriendsRoute: AdminFriendsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminPagesRoute: AdminPagesRoute,
   AdminPhotosRoute: AdminPhotosRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminTagsRoute: AdminTagsRoute,
@@ -1268,6 +1309,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocalePortfolioRoute: LocalePortfolioRoute,
   LocaleSetupRoute: LocaleSetupRoute,
   LocaleUnsubscribeRoute: LocaleUnsubscribeRoute,
+  AdminInitRoute: AdminInitRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   BlogIdRoute: BlogIdRoute,
   PreviewPostRoute: PreviewPostRoute,

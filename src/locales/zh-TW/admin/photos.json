@@ -1,0 +1,63 @@
+{
+  "count": "{{count}} 張",
+  "lastSync": "上次同步 {{date}}",
+  "filter": {
+    "all": "全部",
+    "featured": "精選",
+    "untitled": "缺標題",
+    "hidden": "藏起來的"
+  },
+  "syncDone": "同步好了：新增 {{processed}}、略過 {{skipped}}",
+  "syncFailed": "同步失敗：{{error}}",
+  "syncing": "同步中",
+  "syncFromNas": "從 NAS 同步",
+  "loadingPhotos": "讀照片",
+  "emptyAll": "還沒有照片。按「從 NAS 同步」把照片拉進來。",
+  "emptyFilter": "這裡沒有照片。",
+  "wall": "照片牆",
+  "featuredMark": "（精選）",
+  "hiddenMark": "（藏起來的）",
+  "untitledTag": "未命名",
+  "thisPhoto": "這張照片",
+  "saveFailed": "沒有存到：{{error}}",
+  "saved": "存好了",
+  "field": {
+    "title": "標題",
+    "originalName": "原本的檔名是 {{name}}；清空就改回它。",
+    "description": "介紹 · 選填",
+    "tags": "標籤 · 用頓號或逗號分開",
+    "tagsEn": "英文標籤"
+  },
+  "savingFile": "存檔中",
+  "exif": {
+    "lens": "鏡頭",
+    "exposure": "曝光",
+    "taken": "拍攝",
+    "size": "尺寸",
+    "location": "位置",
+    "hasGps": "有 GPS",
+    "noGps": "沒有"
+  },
+  "featuredOn": "標成精選了",
+  "featuredOff": "拿掉精選了",
+  "featured": "精選",
+  "featuredNote": "前台排在最上面",
+  "shownOn": "前台看得到了",
+  "hiddenOn": "藏起來了",
+  "showOnSite": "前台顯示",
+  "showNote": "關掉就只有這裡看得到",
+  "picker": {
+    "loginFirst": "請先登入後台再同步",
+    "syncFailed": "同步失敗",
+    "syncComplete": "同步完成：新增 {{processed}}，略過 {{skipped}}",
+    "unknownError": "未知錯誤",
+    "title": "從 NAS 選照片",
+    "syncNas": "同步 NAS",
+    "close": "關閉",
+    "searchPlaceholder": "搜尋標題、描述或標籤",
+    "searchLabel": "搜尋照片",
+    "loading": "從 NAS 讀照片",
+    "empty": "沒有符合的照片",
+    "clickToInsert": "點一張插入文章"
+  }
+}

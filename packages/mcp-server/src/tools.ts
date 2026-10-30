@@ -58,7 +58,7 @@ function idOf(args: Record<string, unknown>): string {
   throw new Error('缺少 id（必須是數字或非空字串）');
 }
 
-// i18n 欄位（4 語 × 3 欄）。zh-TW 是來源（存在 title/content/excerpt），這裡是譯文欄。
+// i18n 譯文欄（5 語 × 3 欄）。原稿存在 title/content/excerpt（哪一語看 source_language），這裡是譯文欄。
 const I18N_FIELDS = [
   'title_en',
   'content_en',
@@ -72,6 +72,9 @@ const I18N_FIELDS = [
   'title_zh_cn',
   'content_zh_cn',
   'excerpt_zh_cn',
+  'title_zh_tw',
+  'content_zh_tw',
+  'excerpt_zh_tw',
 ] as const;
 
 const POST_WRITE_FIELDS = [
@@ -150,7 +153,8 @@ const postWriteProps = {
   source_language: {
     type: 'string',
     enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
-    description: "來源語言（title/content 用哪一語寫的），預設 'zh-TW'。其餘語言放 *_en/*_ja/*_ko/*_zh_cn 欄。",
+    description:
+      '來源語言（title/content 用哪一語寫的），預設是站台的預設語系。其餘語言放 *_en/*_ja/*_ko/*_zh_cn/*_zh_tw 欄。',
   },
   ...i18nProps(),
   files: {
@@ -232,14 +236,25 @@ async function writePost(api: ApiClient, a: Record<string, unknown>, id?: string
   return result;
 }
 
-/** 4 語 × 3 欄的 i18n 屬性。zh-TW 是來源（存 title/content/excerpt）；這裡放各譯文語言。 */
+/** 5 語 × 3 欄的 i18n 屬性。原稿存 title/content/excerpt；這裡放各譯文語言。 */
 function i18nProps(): Record<string, { type: 'string'; description: string }> {
-  const langLabel: Record<string, string> = { en: '英文', ja: '日文', ko: '韓文', zh_cn: '簡體中文' };
+  const langLabel: Record<string, string> = {
+    en: '英文',
+    ja: '日文',
+    ko: '韓文',
+    zh_cn: '簡體中文',
+    zh_tw: '繁體中文',
+  };
   const fieldLabel: Record<string, string> = { title: '標題', content: '內文', excerpt: '摘要' };
   const out: Record<string, { type: 'string'; description: string }> = {};
-  for (const lang of ['en', 'ja', 'ko', 'zh_cn'] as const) {
+  for (const lang of ['en', 'ja', 'ko', 'zh_cn', 'zh_tw'] as const) {
     for (const field of ['title', 'content', 'excerpt'] as const) {
-      const zhcnNote = lang === 'zh_cn' ? '；簡體通常改用 generate_post_zh_cn 自動轉，不必手填' : '';
+      const zhcnNote =
+        lang === 'zh_cn'
+          ? '；簡體通常改用 generate_post_zh_cn 自動轉，不必手填'
+          : lang === 'zh_tw'
+            ? '；原稿不是繁中時才用'
+            : '';
       out[`${field}_${lang}`] = {
         type: 'string',
         description: `${langLabel[lang]}${fieldLabel[field]}（譯文，可選）${zhcnNote}`,
@@ -720,7 +735,8 @@ export function makeTools(api: ApiClient): Tool[] {
     {
       name: 'koimsurai_get_site_config',
       description:
-        '讀站台設定：網址（唯讀，部署時的 SITE_URL）、站名、作者、一句話介紹、關掉的頁面（disabled_pages）。改之前先讀一次看現況。',
+        '讀站台設定：網址（唯讀，部署時的 SITE_URL）、站名、作者、一句話介紹、關掉的頁面（disabled_pages）、' +
+        '聯絡方式、預設語系與有開的語系。改之前先讀一次看現況。',
       inputSchema: EMPTY,
       handler: () => api.request('GET', '/api/site/config', { auth: false }),
     },
@@ -746,13 +762,79 @@ export function makeTools(api: ApiClient): Tool[] {
             },
             description: '要關掉的頁面（整份換掉）。給空陣列＝全部打開',
           },
+          email: { type: 'string', description: '聯絡信箱（關於選單、朋友頁、留言頁）；給空字串＝不顯示' },
+          github: { type: 'string', description: 'GitHub 帳號名（不是網址）；給空字串＝不顯示' },
+          default_locale: {
+            type: 'string',
+            enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+            description:
+              '預設語系：不帶前綴的網址、沒翻譯時退回的語言。⚠ 改了全站網址整批換（原本不帶前綴的會多一個前綴），' +
+              '搜尋引擎要重新收錄；開站之後非必要不要改，改之前先跟站長確認',
+          },
+          locales: {
+            type: 'array',
+            items: { type: 'string', enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'] },
+            description: '有開的語系（整份換掉）；預設語系一定算在裡面。只開一個時語系選單不出現，沒開的語系網址是 404',
+          },
         },
         additionalProperties: false,
       },
       handler: (a) =>
         api.request('PUT', '/api/admin/site/config', {
-          body: pick(a, ['name', 'author', 'description', 'disabled_pages']),
+          body: pick(a, [
+            'name',
+            'author',
+            'description',
+            'disabled_pages',
+            'email',
+            'github',
+            'default_locale',
+            'locales',
+          ]),
         }),
+    },
+
+    // ── 頁面內容（關於、作品…）─────────────────────────────────
+    {
+      name: 'koimsurai_get_page_content',
+      description:
+        '讀某一頁由站長填的內容（JSON）。改之前先讀，改完整份送回 koimsurai_update_page_content。' +
+        '\nabout（關於）：chapters（每一年：year、title、subtitle、line）、skills（label、items）、' +
+        'jobs（period、title、role）、quote（text、cite）。' +
+        '\nlog（航行日誌）：start（站點誕生那一刻，帶時區，例如 2025-04-01T00:00:00+08:00；空字串＝第一篇文章那天）、' +
+        'milestones（date YYYY-MM-DD、level 0 小點／1 中點／2 名字標在軌跡上、text）。' +
+        '\nworks（作品）：items（每一件：repo 寫 owner/name、name 空的＝repo 名、what 一句話、snapshot 最後量到的數字，可以不帶）；' +
+        '順序就是作品頁螺旋的順序，第一件是起點。星球的樣子由 GitHub 的數據決定。' +
+        '\nqa（此站點的問答）：items（每一題：q 問題、a 答案）。答案的寫法：空一行分段、`程式碼`、[文字](網址)、' +
+        '單獨一段的網址會變成文章卡；一題都沒有時那顆星不出現。' +
+        '\nsetup（設備）：bays（最多四格；每格 on、sheet 圖紙 id 或空字串＋image 上傳的圖、eyebrow、label、lede、' +
+        'parts（key 對圖紙上的部件；name、spec、hidden；上傳的圖用 at／b 百分比座標）、extra、telemetry、devices_title、devices、appliances、records）、' +
+        'base（第五站：on、label、lede、specs 最多 7 條）。沒開的格子照畫但點不開。' +
+        '\n會翻譯的欄位是「語系 → 字」的物件（zh-TW、zh-CN、en、ja、ko），zh-TW 必填，其他留空就顯示 zh-TW。',
+      inputSchema: {
+        type: 'object',
+        properties: { page: { type: 'string', enum: ['about', 'works', 'log', 'qa', 'setup'], description: '哪一頁' } },
+        required: ['page'],
+        additionalProperties: false,
+      },
+      handler: (a) => api.request('GET', `/api/pages/${String(a.page)}`, { auth: false }),
+    },
+    {
+      name: 'koimsurai_update_page_content',
+      description:
+        '整份覆蓋某一頁的內容（不是合併：沒帶的區塊會被清空），回傳存好的那份。改完前台的快取會立刻清掉。' +
+        '\n格式跟 koimsurai_get_page_content 讀到的一樣。about 的 chapters 年份寫 NOW 會顯示成「現在」，' +
+        '那一章的標題也會出現在落地處；首頁「從某年往下掉到現在」取第一章的年份。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          page: { type: 'string', enum: ['about', 'works', 'log', 'qa', 'setup'], description: '哪一頁' },
+          content: { type: 'object', description: '那一頁的整份內容' },
+        },
+        required: ['page', 'content'],
+        additionalProperties: false,
+      },
+      handler: (a) => api.request('PUT', `/api/admin/pages/${String(a.page)}`, { body: a.content }),
     },
 
     // ── 分類 ──────────────────────────────────────────────────
@@ -784,6 +866,9 @@ export function makeTools(api: ApiClient): Tool[] {
           description_ja: { type: 'string', description: '日文描述（可選）' },
           description_ko: { type: 'string', description: '韓文描述（可選）' },
           description_zh_cn: { type: 'string', description: '簡中描述（可選）' },
+          name_zh_tw: { type: 'string', description: '繁中顯示名（可選；原名不是繁中的站才用）' },
+          short_description_zh_tw: { type: 'string', description: '繁中簡述（可選）' },
+          description_zh_tw: { type: 'string', description: '繁中描述（可選）' },
         },
         required: ['name'],
         additionalProperties: false,
@@ -807,6 +892,9 @@ export function makeTools(api: ApiClient): Tool[] {
             'description_ja',
             'description_ko',
             'description_zh_cn',
+            'name_zh_tw',
+            'short_description_zh_tw',
+            'description_zh_tw',
           ]),
         }),
     },
@@ -833,6 +921,9 @@ export function makeTools(api: ApiClient): Tool[] {
           description_ja: { type: 'string', description: '日文描述（可選）' },
           description_ko: { type: 'string', description: '韓文描述（可選）' },
           description_zh_cn: { type: 'string', description: '簡中描述（可選）' },
+          name_zh_tw: { type: 'string', description: '繁中顯示名（可選；原名不是繁中的站才用）' },
+          short_description_zh_tw: { type: 'string', description: '繁中簡述（可選）' },
+          description_zh_tw: { type: 'string', description: '繁中描述（可選）' },
         },
         required: ['id'],
         additionalProperties: false,
@@ -856,6 +947,9 @@ export function makeTools(api: ApiClient): Tool[] {
             'description_ja',
             'description_ko',
             'description_zh_cn',
+            'name_zh_tw',
+            'short_description_zh_tw',
+            'description_zh_tw',
           ]),
         }),
     },
@@ -897,13 +991,16 @@ export function makeTools(api: ApiClient): Tool[] {
           description_ja: { type: 'string', description: '日文描述（可選）' },
           description_ko: { type: 'string', description: '韓文描述（可選）' },
           description_zh_cn: { type: 'string', description: '簡中描述（可選）' },
+          name_zh_tw: { type: 'string', description: '繁中顯示名（可選；原名不是繁中的站才用）' },
+          short_description_zh_tw: { type: 'string', description: '繁中簡述（可選）' },
+          description_zh_tw: { type: 'string', description: '繁中描述（可選）' },
         },
         required: ['name'],
         additionalProperties: false,
       },
       handler: (a) =>
         api.request('POST', '/api/admin/tags', {
-          body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn']),
+          body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn', 'name_zh_tw']),
         }),
     },
     {
@@ -918,13 +1015,14 @@ export function makeTools(api: ApiClient): Tool[] {
           name_ja: { type: 'string', description: '日文顯示名（可選）' },
           name_ko: { type: 'string', description: '韓文顯示名（可選）' },
           name_zh_cn: { type: 'string', description: '簡中顯示名（可選）' },
+          name_zh_tw: { type: 'string', description: '繁中顯示名（可選；原名不是繁中的站才用）' },
         },
         required: ['id', 'name'],
         additionalProperties: false,
       },
       handler: (a) =>
         api.request('PUT', `/api/admin/tags/${idOf(a)}`, {
-          body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn']),
+          body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn', 'name_zh_tw']),
         }),
     },
     {

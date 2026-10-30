@@ -1,0 +1,153 @@
+{
+  "loadingPost": "この記事を開いています",
+  "tagSearchPlaceholder": "タグを検索...",
+  "tagNotFound": "該当するタグがありません",
+  "fieldError": "{{field}}：{{message}}",
+  "invalidForm": "入力内容に問題のある項目があります",
+  "apiError": "API エラー（{{status}}）",
+  "draftFound": "{{minutes}} 分前の未保存の下書きがあります",
+  "restore": "復元",
+  "busySaving": "保存中です。しばらくお待ちください",
+  "busyProcessing": "処理中です。しばらくお待ちください",
+  "draftSaved": "下書きを保存しました",
+  "saveFailed": "保存できませんでした",
+  "schedulePast": "予約日時がすでに過ぎています。未来の日時にするか、空にしてすぐ公開してください",
+  "scheduledToast": "予約しました：{{when}} に公開",
+  "publishedToast": "記事を公開しました",
+  "publishFailed": "公開できませんでした",
+  "newsletter": {
+    "confirmTitle": "今すぐ全購読者に配信しますか？",
+    "confirmBody": "送信すると取り消せません。",
+    "confirmLabel": "配信",
+    "failed": "配信できませんでした",
+    "sent": "送信 {{sent}} 件、失敗 {{failed}} 件",
+    "publishFailed": "ニュースレターの送信に失敗しました：{{error}}",
+    "publishSent": "ニュースレターを送信しました：{{sent}} 件、失敗 {{failed}} 件",
+    "onPublish": "公開時にニュースレターを配信",
+    "onPublishHint": "「公開する」を押したときに送信。予約の場合は公開時刻に送信します",
+    "sendNow": "今すぐニュースレターを配信"
+  },
+  "zhCn": {
+    "needId": "先に下書きを保存して記事 ID を取得してから実行してください",
+    "needSource": "原文が繁体字ではありません。先に繁体字の翻訳を入れて保存し、そこから簡体字を生成してください",
+    "overwriteTitle": "今の簡体字を上書きしますか？",
+    "overwriteBody": "簡体字の内容がすでにあります。繁体字からもう一度変換すると上書きされます。",
+    "overwriteLabel": "上書き",
+    "done": "簡体字を生成しました（OpenCC 繁→簡）",
+    "failed": "生成できませんでした：{{message}}",
+    "button": "繁体字から簡体字を生成",
+    "buttonTitle": "OpenCC 繁→簡。字句を置き換えるだけで LLM は使いません"
+  },
+  "summary": {
+    "tooShort": "本文が短すぎて要約を生成できません",
+    "done": "要約を生成しました（{{locale}}）",
+    "tagsSuggested": "タグの候補も {{n}} 件生成しました",
+    "badFormat": "AI の応答形式が不正です。もう一度お試しください",
+    "failed": "要約を生成できませんでした：{{message}}",
+    "label": "要約",
+    "generating": "生成中",
+    "generate": "AI で生成",
+    "placeholder": "記事の要約（右上の「AI で生成」を押すか、直接入力）..."
+  },
+  "sourceBadge": "原文",
+  "editingHint": "{{locale}} を編集中 · 入力済みの言語はまとめて保存／公開されます",
+  "titlePlaceholder": "この記事のタイトル",
+  "titleLabel": "タイトル",
+  "view": {
+    "edit": "編集",
+    "split": "分割",
+    "preview": "プレビュー",
+    "front": "サイトでプレビュー ↗",
+    "frontTitle": "読者が見る記事ページでこの下書きを表示するタブを開きます（未保存の内容も含む）。ここでの変更はすぐ反映されます"
+  },
+  "autosaved": "自動バックアップしました",
+  "restored": "下書きを復元しました",
+  "zen": {
+    "enterTitle": "Zen モード（F11）",
+    "exitTitle": "Zen を終了（Esc）",
+    "enterLabel": "集中モード",
+    "exitLabel": "集中モードを終了"
+  },
+  "side": {
+    "categoryTags": "カテゴリとタグ",
+    "category": "カテゴリ",
+    "categoryPlaceholder": "カテゴリを選択",
+    "tags": "タグ",
+    "tagsAvailable": "（{{n}} 件使用可能）",
+    "tagsSelected": "{{n}} 件選択中"
+  },
+  "series": {
+    "head": "シリーズ（任意）",
+    "name": "シリーズ名",
+    "namePlaceholder": "例：Rust 学習ノート",
+    "order": "順番（小さいほど前）",
+    "orderPlaceholder": "例：1"
+  },
+  "publishing": {
+    "head": "公開設定",
+    "now": "現在",
+    "schedule": "予約投稿",
+    "scheduleDate": "予約投稿の日付",
+    "scheduleTime": "予約投稿の時刻",
+    "clear": "クリア",
+    "hintScheduled": "「予約投稿」を押すと、この時刻になってからサイトに表示されます（最大 1 分遅れ）。",
+    "hintEmpty": "空欄＝「公開する」ですぐに公開。",
+    "sourceLanguage": "原文の言語",
+    "slug": "URL スラッグ",
+    "slugHint": "記事の URL は /blog/<slug> です。空欄なら英語タイトルから自動生成。変更してもリンクは切れません（旧 URL は新 URL へ自動で 301 リダイレクト）。",
+    "layout": "テンプレート",
+    "layoutRecord": "📅 記録（時事性あり）",
+    "layoutColumn": "💎 コラム（時事性なし）",
+    "allowComments": "コメントを許可"
+  },
+  "cover": {
+    "head": "カバー画像",
+    "url": "画像 URL",
+    "alt": "カバーのプレビュー"
+  },
+  "links": {
+    "blockedNoExcerpt": "先に要約を書くと、要約の文字を章にリンクできます。",
+    "blockedNoChapters": "本文にまだ ## の章がないため、要約のリンク先がありません。",
+    "bar": "要約リンク · {{n}} 箇所リンク済み",
+    "edit": "リンクを編集",
+    "hint": "記事ページで要約内のリンク済み箇所をクリックすると、リンク先の章へ移動します。",
+    "title": "要約リンク",
+    "description": "左の要約で文字を選択し、右の章をクリックするとリンクされます。リンク済みの箇所をクリックすると、別の章に付け替えたり解除したりできます。",
+    "statusLinked": "「{{text}}」は {{to}} にリンクしています。右の別の章をクリックして付け替えるか、リンクを解除してください。",
+    "statusPick": "「{{text}}」をどの章にリンクしますか？右の章をクリックしてください。",
+    "statusCount": "{{n}} 箇所リンク済み（1 言語につき最大 {{max}} 箇所）。",
+    "missingChapter": "（本文にこの章がありません）",
+    "unlink": "この箇所のリンクを解除",
+    "orphans": "要約が変更されたため、次の箇所が見つかりません（保存時にバックエンドでも無視されます）：",
+    "remove": "削除",
+    "problem": {
+      "empty": "まず要約の中の文字を選択してください",
+      "tooLong": "1か所は最大 {{max}} 文字です（この選択は {{n}} 文字）",
+      "outside": "要約の中の文字だけ選べます",
+      "full": "1言語につき最大 {{max}} か所までです",
+      "overlap": "リンク済みの「{{text}}」と重なっています"
+    }
+  },
+  "preview": {
+    "mdxFailed": "⚠ MDX のコンパイルに失敗しました（公開前に直してください。直さないとプレーンな Markdown で表示されます）",
+    "mdFailed": "⚠ Markdown のコンパイルに失敗しました",
+    "preparing": "プレビューを準備中…",
+    "empty": "まだ内容がありません"
+  },
+  "draft": {
+    "noSnapshot": "管理画面の記事エディタで「サイトでプレビュー」を押してこのページを開いてください",
+    "mdxFailed": "MDX のコンパイルに失敗しました（このまま公開するとプレーンな Markdown で表示されます）：{{error}}",
+    "badge": "下書きプレビュー · エディタと同期して更新 · 読者には見えません",
+    "pageTitle": "下書きプレビュー · {{site}}"
+  },
+  "linkModal": {
+    "searchPlaceholder": "記事のタイトルや要約を検索",
+    "searchLabel": "記事を検索",
+    "close": "閉じる",
+    "loading": "記事一覧を読み込み中",
+    "notFound": "該当する記事がありません",
+    "none": "選べる記事がありません",
+    "foot": "Enter で先頭を選択 · Esc で閉じる",
+    "count": "{{shown}} / {{total}} 件"
+  }
+}

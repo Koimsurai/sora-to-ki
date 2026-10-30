@@ -9,22 +9,22 @@ use crate::{error::AppError, state::AppState};
 
 #[derive(Debug, Deserialize)]
 pub struct DigestQuery {
-    /// 'en' | 'ja' | 'ko' | 'zh-CN'；省略或未知 → 用來源語言（繁中）。
+    /// 語系；省略或未知 → 原文標題。
     pub locale: Option<String>,
 }
 
 /// locale → 文章標題欄位運算式。欄名取自白名單（不是把使用者輸入拼進 SQL）；
-/// 譯文為空字串或 NULL 都 fallback 回原文標題。prefix 是表別名（如 "p."）。
+/// 原稿就是這個語系的讀本體欄位，其他的讀譯文，譯文為空字串或 NULL 都 fallback 回原文標題。
+/// prefix 是表別名（如 "p."）。
 fn title_expr(locale: Option<&str>, prefix: &str) -> String {
-    let col = match locale.unwrap_or_default() {
-        "en" => Some("title_en"),
-        "ja" => Some("title_ja"),
-        "ko" => Some("title_ko"),
-        "zh-CN" | "zh-cn" => Some("title_zh_cn"),
-        _ => None,
+    let Some(locale) = crate::handlers::posts::parse_locale(locale) else {
+        return format!("{prefix}title");
     };
-    match col {
-        Some(c) => format!("COALESCE(NULLIF({prefix}{c}, ''), {prefix}title)"),
+    match crate::handlers::posts::locale_suffix(locale) {
+        Some(s) => format!(
+            "CASE WHEN COALESCE({prefix}source_language, 'zh-TW') = '{locale}' THEN {prefix}title \
+             ELSE COALESCE(NULLIF({prefix}title_{s}, ''), {prefix}title) END"
+        ),
         None => format!("{prefix}title"),
     }
 }

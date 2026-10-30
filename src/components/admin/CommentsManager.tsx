@@ -26,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading from './AdminLoading';
 import { AdminSelect } from './AdminFields';
@@ -42,35 +43,29 @@ type Comment = AdminCommentRow;
 type Status = 'pending' | 'approved' | 'spam' | 'trash';
 type View = Status | 'all' | 'blacklist' | 'keywords';
 
-const STATUS_LABEL: Record<Status, string> = {
-  pending: '待審',
-  approved: '已批准',
-  spam: '垃圾',
-  trash: '垃圾桶',
-};
-
-/** 動作做完的 toast：說「做了什麼」 */
-const DONE: Record<Status, string> = {
-  pending: '已退回待審',
-  approved: '已批准',
-  spam: '已標成垃圾',
-  trash: '已丟進垃圾桶',
-};
+const STATUSES: readonly string[] = ['pending', 'approved', 'spam', 'trash'] satisfies Status[];
 
 const PAGE_SIZE = 50;
 
 /** 狀態名；後端回了這裡沒列到的值（或 null）就照原樣顯示 */
-const statusLabel = (s: string | null) => (s ? ((STATUS_LABEL as Record<string, string | undefined>)[s] ?? s) : '');
+const statusLabel = (s: string | null) => (s ? (STATUSES.includes(s) ? at(`comments.status.${s}`) : s) : '');
 
 /** 這則留言留在哪裡：手記、碎念，或兩者都不是的留言板 */
 function placeOf(c: Comment): { label: string; href: string | null } {
   if (c.post_id)
-    return { label: c.post_title ? `〈${c.post_title}〉` : `手記 #${c.post_id}`, href: `/blog/${c.post_id}` };
-  if (c.thought_id) return { label: `碎念 #${c.thought_id}`, href: `/thinking/${c.thought_id}` };
-  return { label: '留言板', href: '/messages' };
+    return {
+      label: c.post_title
+        ? at('comments.place.titled', { title: c.post_title })
+        : at('comments.place.post', { id: c.post_id }),
+      href: `/blog/${c.post_id}`,
+    };
+  if (c.thought_id)
+    return { label: at('comments.place.thought', { id: c.thought_id }), href: `/thinking/${c.thought_id}` };
+  return { label: at('comments.place.board'), href: '/messages' };
 }
 
 export default function CommentsManager() {
+  const { t } = useAdminT();
   const queryClient = useQueryClient();
   const [view, setView] = useState<View>('pending');
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,13 +126,13 @@ export default function CommentsManager() {
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
-        toast.success(DONE[status]);
+        toast.success(t(`comments.done.${status}`));
         void invalidateComments();
       } else {
-        toast.error('操作失敗');
+        toast.error(t('comments.actionFailed'));
       }
     } catch {
-      toast.error('操作失敗');
+      toast.error(t('comments.actionFailed'));
     }
   };
 
@@ -150,14 +145,14 @@ export default function CommentsManager() {
         body: JSON.stringify({ content: replyText }),
       });
       if (res.ok) {
-        toast.success('已回覆');
+        toast.success(t('comments.replied'));
         setReplyText('');
         void invalidateComments();
       } else {
-        toast.error('回覆失敗');
+        toast.error(t('comments.replyFailed'));
       }
     } catch {
-      toast.error('回覆失敗');
+      toast.error(t('comments.replyFailed'));
     }
   };
 
@@ -170,12 +165,12 @@ export default function CommentsManager() {
         body: JSON.stringify({ content: editText }),
       });
       if (res.ok) {
-        toast.success('已修改');
+        toast.success(t('comments.edited'));
         setEditDialog({ open: false, comment: null });
         void invalidateComments();
       }
     } catch {
-      toast.error('修改失敗');
+      toast.error(t('comments.editFailed'));
     }
   };
 
@@ -183,12 +178,12 @@ export default function CommentsManager() {
     try {
       const res = await fetch(`/api/admin/comments/${deleteId}`, { method: 'DELETE', headers: jsonAuthHeaders() });
       if (res.ok) {
-        toast.success('已永久刪除');
+        toast.success(t('comments.deleted'));
         setDeleteId(null);
         void invalidateComments();
       }
     } catch {
-      toast.error('刪除失敗');
+      toast.error(t('comments.deleteFailed'));
     }
   };
 
@@ -197,11 +192,11 @@ export default function CommentsManager() {
       const res = await fetch('/api/admin/blacklist', {
         method: 'POST',
         headers: jsonAuthHeaders(),
-        body: JSON.stringify({ ip, reason: '來自留言管理封鎖' }),
+        body: JSON.stringify({ ip, reason: t('comments.blockReason') }),
       });
-      if (res.ok) toast.success(`已封鎖 IP：${ip}`);
+      if (res.ok) toast.success(t('comments.blocked', { ip }));
     } catch {
-      toast.error('封鎖失敗');
+      toast.error(t('comments.blockFailed'));
     }
   };
 
@@ -214,13 +209,13 @@ export default function CommentsManager() {
         body: JSON.stringify({ ip: newBlacklistIp, reason: newBlacklistReason }),
       });
       if (res.ok) {
-        toast.success('已加入封鎖名單');
+        toast.success(t('comments.blacklistAdded'));
         setNewBlacklistIp('');
         setNewBlacklistReason('');
         void invalidateBlacklist();
       }
     } catch {
-      toast.error('操作失敗');
+      toast.error(t('comments.actionFailed'));
     }
   };
 
@@ -228,11 +223,11 @@ export default function CommentsManager() {
     try {
       const res = await fetch(`/api/admin/blacklist/${id}`, { method: 'DELETE', headers: jsonAuthHeaders() });
       if (res.ok) {
-        toast.success('已移除');
+        toast.success(t('comments.removed'));
         void invalidateBlacklist();
       }
     } catch {
-      toast.error('操作失敗');
+      toast.error(t('comments.actionFailed'));
     }
   };
 
@@ -245,12 +240,12 @@ export default function CommentsManager() {
         body: JSON.stringify({ keyword: newKeyword, action: newKeywordAction }),
       });
       if (res.ok) {
-        toast.success('已新增過濾詞');
+        toast.success(t('comments.keywordAdded'));
         setNewKeyword('');
         void invalidateKeywords();
       }
     } catch {
-      toast.error('操作失敗');
+      toast.error(t('comments.actionFailed'));
     }
   };
 
@@ -258,11 +253,11 @@ export default function CommentsManager() {
     try {
       const res = await fetch(`/api/admin/keyword-filters/${id}`, { method: 'DELETE', headers: jsonAuthHeaders() });
       if (res.ok) {
-        toast.success('已移除');
+        toast.success(t('comments.removed'));
         void invalidateKeywords();
       }
     } catch {
-      toast.error('操作失敗');
+      toast.error(t('comments.actionFailed'));
     }
   };
 
@@ -304,37 +299,37 @@ export default function CommentsManager() {
 
   const totalAll = counts.pending + counts.approved + counts.spam + counts.trash;
   const tabs: { key: View; label: string; count?: number }[] = [
-    { key: 'pending', label: STATUS_LABEL.pending, count: counts.pending },
-    { key: 'approved', label: STATUS_LABEL.approved, count: counts.approved },
-    { key: 'spam', label: STATUS_LABEL.spam, count: counts.spam },
-    { key: 'trash', label: STATUS_LABEL.trash, count: counts.trash },
-    { key: 'all', label: '全部', count: totalAll },
-    { key: 'blacklist', label: '封鎖名單' },
-    { key: 'keywords', label: '關鍵字' },
+    { key: 'pending', label: t('comments.status.pending'), count: counts.pending },
+    { key: 'approved', label: t('comments.status.approved'), count: counts.approved },
+    { key: 'spam', label: t('comments.status.spam'), count: counts.spam },
+    { key: 'trash', label: t('comments.status.trash'), count: counts.trash },
+    { key: 'all', label: t('comments.tabs.all'), count: totalAll },
+    { key: 'blacklist', label: t('comments.tabs.blacklist') },
+    { key: 'keywords', label: t('comments.tabs.keywords') },
   ];
 
   return (
     <div className="adm-page">
       <PageHead
-        title="留言"
+        title={t('nav.comments')}
         latin="Signals"
-        meta={commentsData ? `待審 ${counts.pending} · 全部 ${totalAll}` : '載入中'}
+        meta={commentsData ? t('comments.meta', { pending: counts.pending, total: totalAll }) : t('common.loading')}
       />
 
-      <section className="adm-stack" aria-label="留言審核">
+      <section className="adm-stack" aria-label={t('comments.reviewLabel')}>
         <div className="adm-toolbar">
           <div className="adm-tabs">
-            {tabs.map((t) => (
+            {tabs.map((tab) => (
               <button
-                key={t.key}
+                key={tab.key}
                 type="button"
                 className="adm-tab"
-                aria-pressed={view === t.key}
-                onClick={() => switchView(t.key)}
+                aria-pressed={view === tab.key}
+                onClick={() => switchView(tab.key)}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                {t.label}
-                {t.count !== undefined && <span className="adm-meta">{t.count}</span>}
+                {tab.label}
+                {tab.count !== undefined && <span className="adm-meta">{tab.count}</span>}
               </button>
             ))}
           </div>
@@ -343,10 +338,10 @@ export default function CommentsManager() {
               <span className="adm-prompt-mark" aria-hidden="true">
                 &gt;
               </span>
-              <span className="sr-only">搜尋留言</span>
+              <span className="sr-only">{t('comments.searchLabel')}</span>
               <input
                 type="text"
-                placeholder="內容、名字、信箱"
+                placeholder={t('comments.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -363,18 +358,22 @@ export default function CommentsManager() {
               <AdminLoading />
             ) : comments.length === 0 ? (
               <p className="adm-empty">
-                {searchQuery ? '找不到符合的留言。' : `${statusLabel(view === 'all' ? null : view)}沒有留言。`}
+                {searchQuery
+                  ? t('comments.noMatch')
+                  : view === 'all'
+                    ? t('comments.empty')
+                    : t('comments.emptyIn', { status: statusLabel(view) })}
               </p>
             ) : (
               <div className="adm-review">
-                <ul className="adm-review-list" aria-label="留言">
+                <ul className="adm-review-list" aria-label={t('comments.listLabel')}>
                   {comments.map((c) => (
                     <li key={c.id}>
                       <button
                         type="button"
                         className="adm-review-item"
                         aria-pressed={selected?.id === c.id}
-                        aria-label={`${c.author}：${c.content}`}
+                        aria-label={t('comments.itemLabel', { author: c.author, content: c.content })}
                         onClick={() => setSelectedId(c.id)}
                       >
                         <span className="adm-tab-dot" aria-hidden="true" />
@@ -395,12 +394,12 @@ export default function CommentsManager() {
                 </ul>
 
                 {selected && (
-                  <section className="adm-review-detail" aria-label="這則留言">
+                  <section className="adm-review-detail" aria-label={t('comments.detailLabel')}>
                     <div className="adm-review-head">
                       <div className="adm-head-text">
                         <span className="adm-review-name">
                           {selected.author}
-                          {selected.is_admin ? <span className="adm-meta"> · 站長</span> : null}
+                          {selected.is_admin ? <span className="adm-meta"> · {t('comments.owner')}</span> : null}
                         </span>
                         <span className="adm-meta">
                           {formatWhen(selected.created_at, 'yyyy.MM.dd HH:mm')}
@@ -416,12 +415,14 @@ export default function CommentsManager() {
                           rel="noreferrer"
                           className="adm-row-action"
                         >
-                          在{placeOf(selected).label}裡開 ↗
+                          {t('comments.openIn', { place: placeOf(selected).label })}
                         </a>
                       )}
                     </div>
 
-                    {selected.parent_id ? <p className="adm-meta">這是一則回覆（回覆 #{selected.parent_id}）</p> : null}
+                    {selected.parent_id ? (
+                      <p className="adm-meta">{t('comments.replyTo', { id: selected.parent_id })}</p>
+                    ) : null}
                     <p className="adm-review-body">{selected.content}</p>
 
                     <div className="adm-review-actions">
@@ -431,7 +432,7 @@ export default function CommentsManager() {
                           className="adm-btn adm-btn-primary"
                           onClick={() => void updateStatus(selected.id, 'approved')}
                         >
-                          批准 <kbd>A</kbd>
+                          {t('comments.approve')} <kbd>A</kbd>
                         </button>
                       )}
                       {selected.status !== 'spam' && (
@@ -440,7 +441,7 @@ export default function CommentsManager() {
                           className="adm-btn"
                           onClick={() => void updateStatus(selected.id, 'spam')}
                         >
-                          標成垃圾 <kbd>S</kbd>
+                          {t('comments.markSpam')} <kbd>S</kbd>
                         </button>
                       )}
                       {selected.status !== 'trash' && (
@@ -449,7 +450,7 @@ export default function CommentsManager() {
                           className="adm-btn"
                           onClick={() => void updateStatus(selected.id, 'trash')}
                         >
-                          丟進垃圾桶
+                          {t('comments.toTrash')}
                         </button>
                       )}
                       <button
@@ -460,7 +461,7 @@ export default function CommentsManager() {
                           setEditText(selected.content);
                         }}
                       >
-                        編輯
+                        {t('comments.edit')}
                       </button>
                       <span className="adm-review-gap" />
                       {selected.ip && (
@@ -471,7 +472,7 @@ export default function CommentsManager() {
                             if (selected.ip) void blockIp(selected.ip);
                           }}
                         >
-                          封鎖這個 IP
+                          {t('comments.blockIp')}
                         </button>
                       )}
                       {selected.status === 'trash' && (
@@ -480,7 +481,7 @@ export default function CommentsManager() {
                           className="adm-icon-btn adm-icon-btn-flare"
                           onClick={() => setDeleteId(selected.id)}
                         >
-                          永久刪除…
+                          {t('comments.deleteForever')}
                         </button>
                       )}
                     </div>
@@ -493,7 +494,7 @@ export default function CommentsManager() {
                       }}
                     >
                       <label className="adm-caps" htmlFor="adm-reply">
-                        以站長身分回覆 · R
+                        {t('comments.replyAs')}
                       </label>
                       <div className="adm-prompt adm-prompt-multi">
                         <span className="adm-prompt-mark" aria-hidden="true">
@@ -504,7 +505,7 @@ export default function CommentsManager() {
                           ref={replyRef}
                           rows={3}
                           value={replyText}
-                          placeholder="寫點什麼；回覆會帶著站長的標記"
+                          placeholder={t('comments.replyPlaceholder')}
                           onChange={(e) => setReplyText(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -515,9 +516,9 @@ export default function CommentsManager() {
                         />
                       </div>
                       <div className="adm-review-reply-foot">
-                        <span className="adm-meta">j k 上下 · a 批准 · s 垃圾 · r 回覆</span>
+                        <span className="adm-meta">{t('comments.shortcuts')}</span>
                         <button type="submit" className="adm-btn" disabled={!replyText.trim()}>
-                          送出回覆 ⌘↵
+                          {t('comments.sendReply')}
                         </button>
                       </div>
                     </form>
@@ -534,18 +535,16 @@ export default function CommentsManager() {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                ← 上一頁
+                {t('comments.prev')}
               </button>
-              <span className="adm-meta">
-                第 {page} 頁 · 共 {total} 則
-              </span>
+              <span className="adm-meta">{t('comments.pageInfo', { page, total })}</span>
               <button
                 type="button"
                 className="adm-btn adm-btn-small"
                 disabled={comments.length < PAGE_SIZE}
                 onClick={() => setPage((p) => p + 1)}
               >
-                下一頁 →
+                {t('comments.next')}
               </button>
             </div>
           )}
@@ -563,27 +562,27 @@ export default function CommentsManager() {
                   <span className="adm-prompt-mark" aria-hidden="true">
                     &gt;
                   </span>
-                  <span className="sr-only">IP 位址</span>
+                  <span className="sr-only">{t('comments.ip')}</span>
                   <input
-                    placeholder="IP 位址"
+                    placeholder={t('comments.ip')}
                     value={newBlacklistIp}
                     onChange={(e) => setNewBlacklistIp(e.target.value)}
                   />
                 </label>
                 <label className="adm-prompt adm-grow">
-                  <span className="sr-only">原因</span>
+                  <span className="sr-only">{t('comments.reason')}</span>
                   <input
-                    placeholder="原因（選填）"
+                    placeholder={t('comments.reasonPlaceholder')}
                     value={newBlacklistReason}
                     onChange={(e) => setNewBlacklistReason(e.target.value)}
                   />
                 </label>
                 <button type="submit" className="adm-btn">
-                  封鎖
+                  {t('comments.block')}
                 </button>
               </form>
               {blacklist.length === 0 ? (
-                <p className="adm-empty">封鎖名單是空的。</p>
+                <p className="adm-empty">{t('comments.blacklistEmpty')}</p>
               ) : (
                 <ul className="adm-list">
                   {blacklist.map((b) => (
@@ -598,10 +597,10 @@ export default function CommentsManager() {
                       <button
                         type="button"
                         className="adm-icon-btn"
-                        aria-label={`解除封鎖 ${b.ip}`}
+                        aria-label={t('comments.unblockLabel', { ip: b.ip })}
                         onClick={() => void removeBlacklist(b.id)}
                       >
-                        解除
+                        {t('comments.unblock')}
                       </button>
                     </li>
                   ))}
@@ -623,36 +622,42 @@ export default function CommentsManager() {
                   <span className="adm-prompt-mark" aria-hidden="true">
                     &gt;
                   </span>
-                  <span className="sr-only">關鍵字</span>
-                  <input placeholder="關鍵字" value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} />
+                  <span className="sr-only">{t('comments.keyword')}</span>
+                  <input
+                    placeholder={t('comments.keyword')}
+                    value={newKeyword}
+                    onChange={(e) => setNewKeyword(e.target.value)}
+                  />
                 </label>
                 <div className="adm-prompt">
                   <AdminSelect
-                    label="碰到時怎麼辦"
+                    label={t('comments.keywordAction')}
                     value={newKeywordAction}
                     onChange={setNewKeywordAction}
                     options={[
-                      { value: 'spam', label: '標成垃圾' },
-                      { value: 'reject', label: '直接拒絕' },
+                      { value: 'spam', label: t('comments.actionSpam') },
+                      { value: 'reject', label: t('comments.actionReject') },
                     ]}
                   />
                 </div>
                 <button type="submit" className="adm-btn">
-                  新增
+                  {t('comments.add')}
                 </button>
               </form>
               {keywordFilters.length === 0 ? (
-                <p className="adm-empty">還沒有過濾的關鍵字。</p>
+                <p className="adm-empty">{t('comments.keywordsEmpty')}</p>
               ) : (
                 <ul className="adm-chips">
                   {keywordFilters.map((f) => (
                     <li key={f.id} className="adm-chip">
                       {f.keyword}
-                      <span className="adm-meta">{f.action === 'reject' ? '拒絕' : '垃圾'}</span>
+                      <span className="adm-meta">
+                        {f.action === 'reject' ? t('comments.chipReject') : t('comments.chipSpam')}
+                      </span>
                       <button
                         type="button"
                         className="adm-chip-x"
-                        aria-label={`拿掉 ${f.keyword}`}
+                        aria-label={t('comments.removeKeyword', { keyword: f.keyword })}
                         onClick={() => void removeKeyword(f.id)}
                       >
                         ×
@@ -669,21 +674,21 @@ export default function CommentsManager() {
       <Dialog open={editDialog.open} onOpenChange={(o) => setEditDialog({ open: o, comment: editDialog.comment })}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>編輯留言</DialogTitle>
-            <DialogDescription>修改之後讀者看到的就是新的版本。</DialogDescription>
+            <DialogTitle>{t('comments.editTitle')}</DialogTitle>
+            <DialogDescription>{t('comments.editDesc')}</DialogDescription>
           </DialogHeader>
           <textarea
             value={editText}
             onChange={(e) => setEditText(e.target.value)}
-            aria-label="留言內容"
+            aria-label={t('comments.contentLabel')}
             className="adm-dialog-textarea"
           />
           <DialogFooter>
             <button type="button" className="adm-btn" onClick={() => setEditDialog({ open: false, comment: null })}>
-              取消
+              {t('comments.cancel')}
             </button>
             <button type="button" className="adm-btn adm-btn-primary" onClick={() => void handleEdit()}>
-              儲存修改
+              {t('comments.saveEdit')}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -697,13 +702,13 @@ export default function CommentsManager() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>永久刪除留言？</AlertDialogTitle>
-            <AlertDialogDescription>刪掉就拿不回來，留言會從資料庫裡完全移除。</AlertDialogDescription>
+            <AlertDialogTitle>{t('comments.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('comments.deleteDesc')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('comments.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void handleDelete()} variant="destructive">
-              永久刪除
+              {t('comments.deleteConfirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

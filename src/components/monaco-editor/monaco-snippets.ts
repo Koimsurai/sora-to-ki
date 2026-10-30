@@ -12,6 +12,7 @@
  *
  * label 必須以 `/` 開頭；body 支援 Monaco snippet 語法（`$0`、`${1:placeholder}`）。
  */
+import { at } from '@/i18n/admin-i18n';
 
 export interface Snippet {
   label: string;
@@ -19,19 +20,39 @@ export interface Snippet {
   body: string;
 }
 
-const BUILTIN_SNIPPETS: Snippet[] = [
-  { label: '/note', detail: 'GitHub Callout: Note', body: '> [!NOTE]\n> $0' },
-  { label: '/tip', detail: 'GitHub Callout: Tip', body: '> [!TIP]\n> $0' },
-  { label: '/important', detail: 'GitHub Callout: Important', body: '> [!IMPORTANT]\n> $0' },
-  { label: '/warning', detail: 'GitHub Callout: Warning', body: '> [!WARNING]\n> $0' },
-  { label: '/caution', detail: 'GitHub Callout: Caution', body: '> [!CAUTION]\n> $0' },
-  { label: '/code', detail: '程式碼區塊', body: '```${1:ts}\n$0\n```' },
-  { label: '/mermaid', detail: 'Mermaid 圖表', body: '```mermaid\nflowchart LR\n  A[$1] --> B[$0]\n```' },
-  { label: '/table', detail: '表格', body: '| ${1:標題} | ${2:標題} |\n| --- | --- |\n| $3 | $0 |' },
-  { label: '/details', detail: '可摺疊區塊', body: '<details>\n<summary>${1:點我展開}</summary>\n\n$0\n\n</details>' },
-  { label: '/img', detail: '圖片', body: '![${1:alt}](${2:url})' },
-  { label: '/fn', detail: '腳註', body: '${1:內文}[^${2:1}]\n\n[^${2:1}]: $0' },
-];
+// 說明與佔位字跟著後台語言，所以每次叫的時候才組（插進文章的語法本身不變）
+function builtinSnippets(): Snippet[] {
+  const header = at('monaco.snippet.tableHeader');
+  return [
+    { label: '/note', detail: 'GitHub Callout: Note', body: '> [!NOTE]\n> $0' },
+    { label: '/tip', detail: 'GitHub Callout: Tip', body: '> [!TIP]\n> $0' },
+    { label: '/important', detail: 'GitHub Callout: Important', body: '> [!IMPORTANT]\n> $0' },
+    { label: '/warning', detail: 'GitHub Callout: Warning', body: '> [!WARNING]\n> $0' },
+    { label: '/caution', detail: 'GitHub Callout: Caution', body: '> [!CAUTION]\n> $0' },
+    { label: '/code', detail: at('monaco.snippet.code'), body: '```${1:ts}\n$0\n```' },
+    {
+      label: '/mermaid',
+      detail: at('monaco.snippet.mermaid'),
+      body: '```mermaid\nflowchart LR\n  A[$1] --> B[$0]\n```',
+    },
+    {
+      label: '/table',
+      detail: at('monaco.snippet.table'),
+      body: `| \${1:${header}} | \${2:${header}} |\n| --- | --- |\n| $3 | $0 |`,
+    },
+    {
+      label: '/details',
+      detail: at('monaco.snippet.details'),
+      body: `<details>\n<summary>\${1:${at('monaco.snippet.detailsSummary')}}</summary>\n\n$0\n\n</details>`,
+    },
+    { label: '/img', detail: at('monaco.snippet.img'), body: '![${1:alt}](${2:url})' },
+    {
+      label: '/fn',
+      detail: at('monaco.snippet.footnote'),
+      body: `\${1:${at('monaco.snippet.footnoteText')}}[^\${2:1}]\n\n[^\${2:1}]: $0`,
+    },
+  ];
+}
 
 const USER_SNIPPETS_KEY = 'koimsurai_user_snippets';
 
@@ -49,7 +70,7 @@ function loadUserSnippets(): Snippet[] {
       })
       .map((s) => ({
         label: s.label,
-        detail: typeof s.detail === 'string' ? s.detail : '使用者自訂',
+        detail: typeof s.detail === 'string' ? s.detail : at('monaco.snippet.userDefined'),
         body: s.body,
       }));
   } catch {
@@ -62,7 +83,8 @@ function loadUserSnippets(): Snippet[] {
  */
 export function getActiveSnippets(): Snippet[] {
   const user = loadUserSnippets();
-  if (user.length === 0) return BUILTIN_SNIPPETS;
+  const builtin = builtinSnippets();
+  if (user.length === 0) return builtin;
   const userLabels = new Set(user.map((s) => s.label));
-  return [...user, ...BUILTIN_SNIPPETS.filter((s) => !userLabels.has(s.label))];
+  return [...user, ...builtin.filter((s) => !userLabels.has(s.label))];
 }

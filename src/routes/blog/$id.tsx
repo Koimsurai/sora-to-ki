@@ -2,7 +2,7 @@ import { createFileRoute, notFound, redirect } from '@tanstack/react-router';
 import { postIdent } from '../../lib/postPath';
 import { buildAlternateLinks, toLocales } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
-import { DEFAULT_LOCALE } from '../../lib/locales';
+import { defaultLocale } from '../../lib/locales';
 import FullBlogPost from '@/components/blog/BlogPost';
 import { postDetailQueryOptions, recentPostsQueryOptions, blogCategoriesDetailQueryOptions } from '@/data/blogList';
 import { articleJsonLd, articleMeta } from '@/seo/seoMeta';
@@ -27,9 +27,9 @@ export const Route = createFileRoute('/blog/$id')({
     // 「重新整理」時 scroll restoration 已把讀者固定在深處 → 位移落在視口內 → 實測 CLS 0.3763。
     try {
       const [post] = await Promise.all([
-        context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, 'zh-TW')),
-        context.queryClient.prefetchQuery(recentPostsQueryOptions(200, 'zh-TW')),
-        context.queryClient.prefetchQuery(blogCategoriesDetailQueryOptions('zh-TW')),
+        context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, defaultLocale())),
+        context.queryClient.prefetchQuery(recentPostsQueryOptions(200, defaultLocale())),
+        context.queryClient.prefetchQuery(blogCategoriesDetailQueryOptions(defaultLocale())),
       ]);
       // 網址正規化：文章的 canonical 是 slug。用數字 id 或改名前的舊 slug 進來時
       // 一律 301 到 canonical 網址——舊網址（含 GSC 已索引的 /blog/<id>）永遠有效，
@@ -56,11 +56,11 @@ export const Route = createFileRoute('/blog/$id')({
     return {
       // og/twitter 也在這裡出 —— head() 是唯一會進 SSR HTML 的地方,而社群爬蟲不執行 JS。
       // (元件內的 <SEOHead> 走 helmet,hydrate 後才掛,爬蟲永遠看不到)
-      meta: articleMeta(post, `/blog/${postIdent(post)}`, DEFAULT_LOCALE),
+      meta: articleMeta(post, `/blog/${postIdent(post)}`, defaultLocale()),
       // hreflang 逐篇照 available_locales —— 只連這篇真的有的語言,不造假 alternate。
-      links: buildAlternateLinks(`blog/${postIdent(post)}`, DEFAULT_LOCALE, toLocales(post.available_locales)),
+      links: buildAlternateLinks(`blog/${postIdent(post)}`, defaultLocale(), toLocales(post.available_locales)),
       // BlogPosting 結構化資料進 SSR（取代退休的 SEOHead JSON-LD）。
-      scripts: [articleJsonLd(post, `/blog/${postIdent(post)}`, DEFAULT_LOCALE)],
+      scripts: [articleJsonLd(post, `/blog/${postIdent(post)}`, defaultLocale())],
     };
   },
   component: RouteComponent,
@@ -68,7 +68,7 @@ export const Route = createFileRoute('/blog/$id')({
 
 function RouteComponent() {
   return (
-    <LocaleProvider locale={DEFAULT_LOCALE}>
+    <LocaleProvider locale={defaultLocale()}>
       <FullBlogPost />
     </LocaleProvider>
   );

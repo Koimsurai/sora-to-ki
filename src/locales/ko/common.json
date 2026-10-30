@@ -122,13 +122,13 @@
   },
   "home": {
     "orbit": {
-      "title": "Koimsurai의 개인 사이트: 노트, 혼잣말, 작품, 컬렉션",
+      "title": "{{author}}의 개인 사이트: 노트, 혼잣말, 작품, 컬렉션",
       "notesCount": "{{count}}편 · 최근 {{date}}",
       "momentsCount": "최근 {{date}}",
       "worksCount": "{{count}}개",
       "collectionLine": "애니메이션 {{anime}}편, 영화 {{films}}편, 시리즈 {{series}}편 시청",
-      "aboutLine": "2004년부터 지금까지 떨어져 온 길",
-      "aboutCount": "2004 –"
+      "aboutLine": "{{year}}년부터 지금까지 떨어져 온 길",
+      "aboutCount": "{{year}} –"
     }
   },
   "commandPalette": {
@@ -304,48 +304,10 @@
     "description": "Koimsurai의 장비 목록: 메인 PC, 이 사이트를 돌리는 홈 서버, 네트워크와 스마트홈, 그리고 집 안 연결도.",
     "heroTitle": "장비",
     "subtitle": "정밀함을 해체하고, 집착을 내려놓을 자리를 만든다.",
-    "cat": {
-      "main-rig": {
-        "short": "메인 PC"
-      },
-      "server": {
-        "short": "서버"
-      },
-      "network": {
-        "short": "네트워크·모바일"
-      },
-      "smart-home": {
-        "short": "스마트홈"
-      },
-      "peripherals": {
-        "short": "주변기기"
-      },
-      "base-ii": {
-        "short": "본가"
-      }
-    },
-    "roles": {
-      "nanokvm": "원격 전원·BIOS 접속. 서버가 멈춰도 들어갈 수 있다",
-      "headless": "모니터 없는 서버가 디스플레이가 있다고 인식하게 해 GPU 출력을 정상화",
-      "googleTv": "집의 Matter 허브",
-      "hub3": "조도·온습도·재실 감지를 Matter로 보고. 야간 조명 자동 보정은 이 조도 값에 의존",
-      "rm4": "에어컨 적외선 코드를 학습해 Home Assistant로 제어",
-      "esp32": "보드 두 장으로 만든 433MHz 송신기. 천장등 순정 리모컨을 흉내 낸다",
-      "doorbell": "배터리 도어벨, 허브를 통해 연결"
-    },
     "appliances": {
-      "title": "그 밖의 스마트 가전",
-      "types": {
-        "dehumidifier": "제습기",
-        "airPurifier": "공기청정기",
-        "catTower": "반려동물 공기청정기 + 온열 캣타워",
-        "feeder": "자동 급식기",
-        "camera": "카메라",
-        "plug": "스마트 플러그"
-      }
+      "title": "그 밖의 스마트 가전"
     },
     "sheet": {
-      "memoryText": "본가에 갔을 때 쓰는 예비 기지. 사진이 없어서 사양은 기억에 의존했습니다.",
       "telemetry": "텔레메트리",
       "telemetryEvery": "이 서버가 30초마다 보내오는 값",
       "telemetryWait": "신호 대기 중"
@@ -354,18 +316,11 @@
       "canvas": "우주왕복선 화물칸의 선화: 네 개의 페이로드와, 먼 궤도에 있는 본가의 그 컴퓨터",
       "hintWide": "태그나 화물칸의 페이로드를 클릭 · ←→ 로 전환 · Esc 로 전체 보기",
       "hintTouch": "태그나 페이로드를 탭 · 좌우로 밀어서 전환",
-      "lede": {
-        "main-rig": "매일 그 앞에 앉는 메인 PC. 전부 흰색으로 맞췄다.",
-        "server": "항상 켜져 있는 서버. Home Assistant가 여기서 돌고, 집의 스마트 기기는 모두 여기에 연결된다.",
-        "network": "메시 라우터 한 대가 집 전체를 맡는다. 유선은 스위치를 거치고, 나머지는 무선.",
-        "peripherals": "책상 위에서 매일 손에 닿는 것들."
-      },
       "count_one": "{{count}}개",
       "count_other": "{{count}}개",
       "specCount_one": "{{count}}항목",
       "specCount_other": "{{count}}항목",
       "notDrawn": "도면에 없음",
-      "devices": "이 서버에 연결된 기기 · Home Assistant",
       "records": "이 서버에 관한 기록",
       "prev": "이전",
       "next": "다음",
@@ -481,23 +436,12 @@
     "kick": "소개",
     "title": "꽉 잡으세요.",
     "hint": "아래로 스크롤",
+    "now": "지금",
     "landPre": "서툴고 헤매던 수많은 어제를 지나,",
     "land": "여기 내려앉다.",
     "surface": "지표",
     "surfaceTitle": "손에 쥔 것",
     "surfaceSub": "줄곧 들고 다닌 것들.",
-    "skill": {
-      "frontend": "프런트엔드",
-      "backend": "백엔드",
-      "mobile": "모바일",
-      "devops": "데브옵스",
-      "design": "디자인 · 미디어",
-      "data": "데이터 저장",
-      "network": "네트워크",
-      "productivity": "생산성",
-      "ai": "AI 개발",
-      "teaching": "교육 도구"
-    },
     "layer1": "첫째 층",
     "layer1Title": "해 온 일",
     "core": "핵",
@@ -659,7 +603,8 @@
     "emptyText": "첫 메시지는 이 선 위에 나타납니다.",
     "privatePre": "공개하기 어려운 내용은 메일로:",
     "privateMid": ". 버그 제보나 기능 제안은",
-    "privatePost": "에 남겨 주세요."
+    "privatePost": "에 남겨 주세요.",
+    "privateEnd": "."
   },
   "signal": {
     "formTitle": "신호 보내기",
@@ -756,7 +701,8 @@
     "title_rule3": "데이터에서 자란다",
     "text_rule3": "작품 페이지 나선 위의 별은 모두 한 저장소의 숫자로부터 자라났다. 숫자를 바꿔 하나를 만들고, 자라는 과정을 한 단계씩 보자.",
     "title_license": "라이선스",
-    "text_license": "코드는 AGPL-3.0으로 공개합니다. 글, 사진과 그 밖의 콘텐츠는 모든 권리를 보유합니다.",
+    "qaHeading": "자주 묻는 질문 Q&A",
+    "text_license": "이 사이트는 sora-to-ki로 만들었습니다. 코드는 AGPL-3.0으로 공개하며, 글, 사진과 그 밖의 콘텐츠는 모든 권리를 보유합니다.",
     "swatchGround": "검정은 종이",
     "swatchPaper": "흰색은 잉크",
     "swatchSignal": "{{signal}}은 신호",

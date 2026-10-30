@@ -11,9 +11,10 @@ import {
   adminStatsQueryOptions,
   vitalsStatsQueryOptions,
 } from '@/data/adminData';
+import { adminLang, useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { LocaleDots, PageHead, SectionHead } from './AdminPage';
-import { STATUS_LABEL, formatWhen, missingTranslations } from './adminFormat';
+import { formatWhen, missingTranslations, statusLabel } from './adminFormat';
 
 // 總覽「此刻」（2026-10 後台提案）：最上面是「等你處理」——要你動手的事一件一行；
 // 再來是四個數字、最近動過的手記、前台的 Web Vitals。
@@ -29,15 +30,16 @@ const DAY = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 /** Web Vitals 的門檻（web.dev 的定義）：≤ good 是好、≤ poor 是待改善、再上去是差 */
 const VITALS = [
-  { metric: 'LCP', good: 2500, poor: 4000, limit: '好 ≤ 2.5 s', show: (v: number) => `${(v / 1000).toFixed(2)} s` },
-  { metric: 'INP', good: 200, poor: 500, limit: '好 ≤ 200 ms', show: (v: number) => `${Math.round(v)} ms` },
-  { metric: 'CLS', good: 0.1, poor: 0.25, limit: '好 ≤ 0.1', show: (v: number) => v.toFixed(3) },
+  { metric: 'LCP', good: 2500, poor: 4000, limit: '≤ 2.5 s', show: (v: number) => `${(v / 1000).toFixed(2)} s` },
+  { metric: 'INP', good: 200, poor: 500, limit: '≤ 200 ms', show: (v: number) => `${Math.round(v)} ms` },
+  { metric: 'CLS', good: 0.1, poor: 0.25, limit: '≤ 0.1', show: (v: number) => v.toFixed(3) },
 ] as const;
 
-const num = (n: number | undefined) => (n === undefined ? '—' : n.toLocaleString('zh-TW'));
+const num = (n: number | undefined) => (n === undefined ? '—' : n.toLocaleString(adminLang()));
 const touched = (p: AdminPostFull) => p.updated_at ?? p.created_at;
 
 export default function AdminDashboard() {
+  const { t } = useAdminT();
   // 頁首的日期：打開這頁的那一刻（render 裡直接 new Date() 不是純函式）
   const [now] = useState(() => new Date());
   const posts = useQuery(adminPostsQueryOptions(ALL_POSTS));
@@ -72,16 +74,20 @@ export default function AdminDashboard() {
           ○
         </span>
         <span className="adm-row-main">
-          <span className="adm-row-title">{pendingCount} 則留言等你審</span>
+          <span className="adm-row-title">{t('dashboard.todo.comments', { count: pendingCount })}</span>
           {newestPending && (
             <span className="adm-row-sub">
-              最新一則是 {newestPending.author}，留在
-              {newestPending.post_title ? `〈${newestPending.post_title}〉` : '碎念或留言板'}
+              {newestPending.post_title
+                ? t('dashboard.todo.newestCommentOnPost', {
+                    author: newestPending.author,
+                    title: newestPending.post_title,
+                  })
+                : t('dashboard.todo.newestCommentElsewhere', { author: newestPending.author })}
             </span>
           )}
         </span>
         <Link to="/admin/comments" className="adm-row-action">
-          去審 →
+          {t('dashboard.go.review')}
         </Link>
       </li>,
     );
@@ -95,15 +101,15 @@ export default function AdminDashboard() {
           ○
         </span>
         <span className="adm-row-main">
-          <span className="adm-row-title">{friendCounts.pending} 份友鏈申請還沒看</span>
+          <span className="adm-row-title">{t('dashboard.todo.friends', { count: friendCounts.pending })}</span>
           {newest && (
             <span className="adm-row-sub">
-              最新一份是〈{newest.name}〉，{formatWhen(newest.created_at, 'MM.dd')} 送來的
+              {t('dashboard.todo.newestFriend', { name: newest.name, date: formatWhen(newest.created_at, 'MM.dd') })}
             </span>
           )}
         </span>
         <Link to="/admin/friends" className="adm-row-action">
-          去看 →
+          {t('dashboard.go.look')}
         </Link>
       </li>,
     );
@@ -115,15 +121,18 @@ export default function AdminDashboard() {
           ○
         </span>
         <span className="adm-row-main">
-          <span className="adm-row-title">{drafts.length} 篇草稿</span>
+          <span className="adm-row-title">{t('dashboard.todo.drafts', { count: drafts.length })}</span>
           {stalestDraft && (
             <span className="adm-row-sub">
-              最久沒動的是〈{stalestDraft.title}〉，停在 {formatWhen(touched(stalestDraft), 'yyyy.MM.dd')}
+              {t('dashboard.todo.stalestDraft', {
+                title: stalestDraft.title,
+                date: formatWhen(touched(stalestDraft), 'yyyy.MM.dd'),
+              })}
             </span>
           )}
         </span>
         <Link to="/admin/posts" search={{ status: 'draft' }} className="adm-row-action">
-          繼續寫 →
+          {t('dashboard.go.continue')}
         </Link>
       </li>,
     );
@@ -135,13 +144,13 @@ export default function AdminDashboard() {
           ○
         </span>
         <span className="adm-row-main">
-          <span className="adm-row-title">{gaps.length} 篇已發佈的手記少了譯文</span>
+          <span className="adm-row-title">{t('dashboard.todo.gaps', { count: gaps.length })}</span>
           <span className="adm-row-sub">
-            缺 EN {gapCount('en')} · 日 {gapCount('ja')} · 韓 {gapCount('ko')}（简中由繁中轉換，不算在內）
+            {t('dashboard.todo.gapsDetail', { en: gapCount('en'), ja: gapCount('ja'), ko: gapCount('ko') })}
           </span>
         </span>
         <Link to="/admin/posts" search={{ missing: true }} className="adm-row-action">
-          看清單 →
+          {t('dashboard.go.list')}
         </Link>
       </li>,
     );
@@ -155,10 +164,10 @@ export default function AdminDashboard() {
         </span>
         <span className="adm-row-main">
           <span className="adm-row-title">
-            {b.ok ? `巴哈姆特的登入再 ${b.daysLeft} 天就過期` : '巴哈姆特的 cookie 失效了'}
+            {b.ok ? t('dashboard.todo.bahamutExpiring', { days: b.daysLeft }) : t('dashboard.todo.bahamutExpired')}
           </span>
           <span className="adm-row-sub">
-            {b.ok ? '過期之後收藏頁的「在看」就不會再更新' : '收藏頁的「在看」停在上一次同步，要重新登入一次'}
+            {b.ok ? t('dashboard.todo.bahamutExpiringDetail') : t('dashboard.todo.bahamutExpiredDetail')}
           </span>
         </span>
       </li>,
@@ -170,55 +179,63 @@ export default function AdminDashboard() {
   return (
     <div className="adm-page">
       <PageHead
-        title="此刻"
+        title={t('dashboard.title')}
         latin="Now"
         meta={`${formatWhen(now, 'yyyy.MM.dd')} · ${DAY[now.getDay()]} · ${formatWhen(now, 'HH:mm')}`}
         actions={
           <>
             <Link to="/thinking" className="adm-btn">
-              寫一則碎念
+              {t('dashboard.writeThought')}
             </Link>
             <Link to="/admin/posts/create" className="adm-btn adm-btn-primary">
-              新寫一篇手記
+              {t('dashboard.writePost')}
             </Link>
           </>
         }
       />
 
       <section aria-labelledby="todo-h">
-        <SectionHead id="todo-h">等你處理{loadingTodos ? '' : ` · ${todos.length} 件`}</SectionHead>
+        <SectionHead id="todo-h">
+          {loadingTodos ? t('dashboard.todo.heading') : t('dashboard.todo.headingCount', { count: todos.length })}
+        </SectionHead>
         {loadingTodos ? (
-          <AdminLoading label="看看有什麼事" />
+          <AdminLoading label={t('dashboard.todo.loading')} />
         ) : todos.length > 0 ? (
           <ul className="adm-list">{todos}</ul>
         ) : (
-          <p className="adm-empty">沒有要處理的事。</p>
+          <p className="adm-empty">{t('dashboard.todo.empty')}</p>
         )}
       </section>
 
-      <section aria-label="站上的數字" className="adm-tiles">
+      <section aria-label={t('dashboard.tiles.label')} className="adm-tiles">
         <div className="adm-tile">
-          <span className="adm-caps">手記</span>
+          <span className="adm-caps">{t('dashboard.tiles.posts')}</span>
           <span className="adm-tile-num">{num(s?.publishedPosts)}</span>
           <span className="adm-tile-sub">
-            已發佈 · 草稿 {num(s?.draftPosts)}
-            {s?.nextScheduledAt && ` · 下一篇排程 ${formatWhen(s.nextScheduledAt, 'MM.dd HH:mm')}`}
+            {s?.nextScheduledAt
+              ? t('dashboard.tiles.postsSubScheduled', {
+                  drafts: num(s.draftPosts),
+                  when: formatWhen(s.nextScheduledAt, 'MM.dd HH:mm'),
+                })
+              : t('dashboard.tiles.postsSub', { drafts: num(s?.draftPosts) })}
           </span>
         </div>
         <div className="adm-tile">
-          <span className="adm-caps">近 30 天</span>
+          <span className="adm-caps">{t('dashboard.tiles.recent')}</span>
           <span className="adm-tile-num">{num(s?.postsThisMonth)}</span>
-          <span className="adm-tile-sub">篇新寫的</span>
+          <span className="adm-tile-sub">{t('dashboard.tiles.recentSub')}</span>
         </div>
         <div className="adm-tile">
-          <span className="adm-caps">留言</span>
+          <span className="adm-caps">{t('dashboard.tiles.comments')}</span>
           <span className="adm-tile-num">{num(s?.commentsThisWeek)}</span>
-          <span className="adm-tile-sub">近 7 天 · 待審 {pending.isPending ? '—' : pendingCount}</span>
+          <span className="adm-tile-sub">
+            {t('dashboard.tiles.commentsSub', { pending: pending.isPending ? '—' : pendingCount })}
+          </span>
         </div>
         <div className="adm-tile">
-          <span className="adm-caps">瀏覽</span>
+          <span className="adm-caps">{t('dashboard.tiles.views')}</span>
           <span className="adm-tile-num">{num(s?.visitors)}</span>
-          <span className="adm-tile-sub">所有手記加起來</span>
+          <span className="adm-tile-sub">{t('dashboard.tiles.viewsSub')}</span>
         </div>
       </section>
 
@@ -227,17 +244,17 @@ export default function AdminDashboard() {
           <SectionHead
             id="recent-h"
             action={
-              <Link to="/admin/posts" aria-label="全部手記">
-                全部 →
+              <Link to="/admin/posts" aria-label={t('dashboard.recent.allLabel')}>
+                {t('dashboard.recent.all')}
               </Link>
             }
           >
-            最近動過
+            {t('dashboard.recent.heading')}
           </SectionHead>
           {posts.isPending ? (
             <AdminLoading />
           ) : recent.length === 0 ? (
-            <p className="adm-empty">還沒有手記。</p>
+            <p className="adm-empty">{t('dashboard.recent.empty')}</p>
           ) : (
             <ul className="adm-list">
               {recent.map((post) => (
@@ -246,12 +263,15 @@ export default function AdminDashboard() {
                     <span className="adm-row-main">
                       <span className="adm-row-title">{post.title}</span>
                       <span className="adm-meta">
-                        手記 · {post.category ?? '未分類'} · {formatWhen(touched(post))}
+                        {t('dashboard.recent.meta', {
+                          category: post.category ?? t('dashboard.recent.uncategorized'),
+                          when: formatWhen(touched(post)),
+                        })}
                       </span>
                     </span>
                     <LocaleDots post={post} />
                     <span className="adm-status" data-status={post.status}>
-                      {STATUS_LABEL[post.status] ?? post.status}
+                      {statusLabel(post.status)}
                     </span>
                   </Link>
                 </li>
@@ -261,13 +281,13 @@ export default function AdminDashboard() {
         </section>
 
         <section aria-labelledby="vitals-h" className="adm-split-side">
-          <SectionHead id="vitals-h">訊號 · 近 {VITALS_DAYS} 天</SectionHead>
+          <SectionHead id="vitals-h">{t('dashboard.vitals.heading', { days: VITALS_DAYS })}</SectionHead>
           <ul className="adm-list">
             {VITALS.map((v) => (
               <VitalRow key={v.metric} spec={v} stat={vitals.data?.metrics.find((m) => m.metric === v.metric)} />
             ))}
           </ul>
-          <p className="adm-meta adm-footnote">p75 · 不含 /admin · 來源 web_vitals</p>
+          <p className="adm-meta adm-footnote">{t('dashboard.vitals.footnote')}</p>
         </section>
       </div>
     </div>
@@ -275,14 +295,20 @@ export default function AdminDashboard() {
 }
 
 function VitalRow({ spec, stat }: { spec: (typeof VITALS)[number]; stat: MetricStat | undefined }) {
+  const { t } = useAdminT();
   const p75 = stat?.p75 ?? null;
-  const rating = p75 === null ? null : p75 <= spec.good ? '好' : p75 <= spec.poor ? '待改善' : '差';
+  const rating = p75 === null ? null : p75 <= spec.good ? 'good' : p75 <= spec.poor ? 'needsWork' : 'poor';
   return (
     <li className="adm-row adm-vital">
       <span className="adm-vital-name">{spec.metric}</span>
       <span className="adm-vital-value">{p75 === null ? '—' : spec.show(p75)}</span>
-      <span className="adm-meta" data-tone={rating === '差' ? 'flare' : undefined}>
-        {rating ? `${rating} · ${stat?.count ?? 0} 筆` : '沒有樣本'}
+      <span className="adm-meta" data-tone={rating === 'poor' ? 'flare' : undefined}>
+        {rating
+          ? t('dashboard.vitals.ratingCount', {
+              rating: t(`dashboard.vitals.rating.${rating}`),
+              count: stat?.count ?? 0,
+            })
+          : t('dashboard.vitals.noSamples')}
       </span>
     </li>
   );

@@ -1,7 +1,14 @@
-import { describe, expect, it } from 'vite-plus/test';
+import { beforeAll, describe, expect, it } from 'vite-plus/test';
 import type { AdminTrackItem, AdminWatchItem, BookRow } from '@koimsurai/api-types';
 
+import { loadAdminI18n, setAdminLang } from '@/i18n/admin-i18n';
 import { candidates, episodeProgress, fromBook, fromTrack, fromWatch } from './thoughtCandidates';
+
+// 小字（種類、來源）走後台語系檔；下面比對的是繁中原稿
+beforeAll(async () => {
+  await loadAdminI18n();
+  await setAdminLang('zh-TW');
+});
 
 const watch = (w: Partial<AdminWatchItem>): AdminWatchItem => ({
   kind: 'anime',

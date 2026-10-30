@@ -23,6 +23,8 @@ import { expect, type Page } from '@playwright/test';
 
 export const JWT_SECRET = 'e2e-secret';
 export const TOKEN_KEY = 'koimsurai_user_token';
+/** 跟 src/i18n/admin-i18n.ts 的 STORAGE_KEY 一致 */
+export const ADMIN_LANG_KEY = 'koimsurai_admin_lang';
 
 export function ownerToken(): string {
   const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
@@ -46,11 +48,20 @@ export function ownerToken(): string {
  */
 export async function signIn(page: Page) {
   await page.goto('/');
+  await writeSession(page);
+}
+
+/**
+ * token 之外再釘死後台語言：後台跟著瀏覽器語言，而 Playwright 的瀏覽器是英文，
+ * 不釘的話後台會變成英文版，各條測試用中文找按鈕全部找不到。英文版另有自己的測試。
+ */
+async function writeSession(page: Page) {
   await page.evaluate(
-    ([key, value]) => {
+    ([key, value, langKey]) => {
       window.localStorage.setItem(key, value);
+      window.localStorage.setItem(langKey, 'zh-TW');
     },
-    [TOKEN_KEY, ownerToken()] as const,
+    [TOKEN_KEY, ownerToken(), ADMIN_LANG_KEY] as const,
   );
 }
 
@@ -78,12 +89,7 @@ export async function signOut(page: Page) {
  */
 export async function gotoAdmin(page: Page, path: string, heading: string | RegExp) {
   await expect(async () => {
-    await page.evaluate(
-      ([key, value]) => {
-        window.localStorage.setItem(key, value);
-      },
-      [TOKEN_KEY, ownerToken()] as const,
-    );
+    await writeSession(page);
     await page.goto(path);
     await expect(page.getByRole('heading', { name: heading })).toBeVisible({ timeout: 8_000 });
   }).toPass({ timeout: 60_000 });
@@ -101,12 +107,7 @@ export async function gotoAdmin(page: Page, path: string, heading: string | RegE
 export async function gotoAdminUntil(page: Page, path: string, ready: (p: Page) => ReturnType<Page['locator']>) {
   if (page.url() === 'about:blank') await signIn(page);
   await expect(async () => {
-    await page.evaluate(
-      ([key, value]) => {
-        window.localStorage.setItem(key, value);
-      },
-      [TOKEN_KEY, ownerToken()] as const,
-    );
+    await writeSession(page);
     await page.goto(path);
     await expect(ready(page)).toBeVisible({ timeout: 8_000 });
   }).toPass({ timeout: 60_000 });

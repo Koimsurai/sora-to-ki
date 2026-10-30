@@ -26,7 +26,14 @@ export const LIST_DEFAULT_FIELDS = [
 export const LOCALES = ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'] as const;
 
 /** 內文欄位（會拿去驗 MDX 的那些） */
-export const CONTENT_FIELDS = ['content', 'content_en', 'content_ja', 'content_ko', 'content_zh_cn'] as const;
+export const CONTENT_FIELDS = [
+  'content',
+  'content_en',
+  'content_ja',
+  'content_ko',
+  'content_zh_cn',
+  'content_zh_tw',
+] as const;
 
 export function project(post: Post, fields: readonly string[]): Post {
   const out: Post = {};
@@ -38,12 +45,10 @@ export const sourceOf = (post: Post): string =>
   (typeof post.source_language === 'string' && post.source_language) || 'zh-TW';
 
 /**
- * 某語系的 title/content/excerpt 存在哪一欄。來源語言存在不帶後綴的那三欄，其餘是 `_en`、`_zh_cn`…。
- * 不是來源的 zh-TW 沒有欄位（回 null）。
+ * 某語系的 title/content/excerpt 存在哪一欄。來源語言存在不帶後綴的那三欄，其餘是 `_en`、`_zh_cn`、`_zh_tw`…。
  */
-function suffixFor(locale: string, source: string): string | null {
+function suffixFor(locale: string, source: string): string {
   if (locale === source) return '';
-  if (locale === 'zh-TW') return null;
   return `_${locale.toLowerCase().replace('-', '_')}`;
 }
 
@@ -52,14 +57,13 @@ const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 /** 讀者在這個語系實際看到的欄位：譯文空的話前台退回來源語言 */
 export function effective(post: Post, field: 'title' | 'content' | 'excerpt', locale: string): string {
   const suffix = suffixFor(locale, sourceOf(post));
-  const own = suffix === null ? '' : str(post[`${field}${suffix}`]);
+  const own = str(post[`${field}${suffix}`]);
   return own || str(post[field]);
 }
 
 /** get_post 帶 locale 時：共用的中繼資料 + 那個語系的三欄 + 那個語系的摘要連結 */
 export function postForLocale(post: Post, locale: string): Post {
   const suffix = suffixFor(locale, sourceOf(post));
-  if (suffix === null) throw new Error(`這篇的來源語言是 ${sourceOf(post)}，沒有 ${locale} 的欄位`);
   const meta = project(post, [
     'id',
     'slug',

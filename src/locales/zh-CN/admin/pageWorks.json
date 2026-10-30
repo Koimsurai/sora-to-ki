@@ -1,0 +1,18 @@
+{
+  "saved": "作品页已更新",
+  "noNumbers": "还没有数据",
+  "noLanguages": "没有语言数据",
+  "pick": "从你的 GitHub 挑选",
+  "pickAs": "从你的 GitHub 挑选（{{account}}）",
+  "noAccount": "站点设置里还没填 GitHub 账号，只能用下面粘贴网址的方式添加。",
+  "added": "已添加",
+  "addArrow": "添加 →",
+  "paste": "别人或组织的 repo · 粘贴网址或 owner/name",
+  "add": "添加",
+  "listHead": "作品 · 顺序就是螺旋的顺序，第一件是起点",
+  "empty": "还没有作品；从上面挑一件，作品页就会长出第一颗星球。",
+  "origin": "螺旋的起点",
+  "name": "显示的名字 · 留空则用 repo 名",
+  "what": "一句话介绍",
+  "setOrigin": "设为起点"
+}

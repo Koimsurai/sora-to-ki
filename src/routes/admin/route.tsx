@@ -2,6 +2,8 @@ import { ClientOnly, createFileRoute } from '@tanstack/react-router';
 import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 
 import AdminLoading from '@/components/admin/AdminLoading';
+import { loadAdminI18n } from '@/i18n/admin-i18n';
+import type { InitStatus } from '@koimsurai/api-types';
 import { useAuth } from '../../contexts/auth';
 
 // /admin/* 的版面層。整段包在 ClientOnly 裡 → 後台一行都不 SSR、不 prerender
@@ -10,7 +12,11 @@ import { useAuth } from '../../contexts/auth';
 // 歷史：這裡原本掛的是一個用 react-router 的 island（components/AdminApp.tsx），
 // 整包 BrowserRouter + Routes 疊在 TanStack 的 /admin/$ splat 之下。改成真正的
 // file route 之後全站只剩一個 router，連結也變成對著 route tree 做型別檢查。
-const AdminLayout = lazy(() => import('../../components/admin/AdminLayout'));
+//
+// 後台的介面字串（i18n/admin-i18n）跟版面一起等：第一格畫出來就是站長的語言，不會先閃一下繁中。
+const AdminLayout = lazy(() =>
+  Promise.all([import('../../components/admin/AdminLayout'), loadAdminI18n()]).then(([m]) => m),
+);
 
 const LoadingFallback = () => <AdminLoading page />;
 
@@ -29,7 +35,16 @@ function RequireAdmin({ children }: { children: ReactNode }) {
   const { user, isLoggedIn, loading } = useAuth();
   const allowed = isLoggedIn && (user?.role === 'ADMIN' || user?.role === 'OWNER');
   useEffect(() => {
-    if (!loading && !allowed) window.location.replace('/');
+    if (loading || allowed) return;
+    // 還沒有站長的全新站台：帶去初次設定（routes/admin_.init）認領，其他人照樣回首頁
+    const ac = new AbortController();
+    void fetch('/api/init/status', { signal: ac.signal })
+      .then((r) => (r.ok ? (r.json() as Promise<InitStatus>) : null))
+      .catch(() => null)
+      .then((s) => {
+        if (!ac.signal.aborted) window.location.replace(s?.needed ? '/admin/init' : '/');
+      });
+    return () => ac.abort();
   }, [loading, allowed]);
   if (loading || !allowed) return <LoadingFallback />;
   return children;

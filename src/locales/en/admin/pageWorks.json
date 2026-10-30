@@ -1,0 +1,18 @@
+{
+  "saved": "Works page updated",
+  "noNumbers": "No numbers yet",
+  "noLanguages": "No language data",
+  "pick": "Pick from your GitHub",
+  "pickAs": "Pick from your GitHub ({{account}})",
+  "noAccount": "No GitHub account in the site settings yet; you can only add repos by pasting a URL below.",
+  "added": "Added",
+  "addArrow": "Add →",
+  "paste": "Someone else's or an organization's repo · paste a URL or owner/name",
+  "add": "Add",
+  "listHead": "Works · the order is the spiral's order; the first one is the origin",
+  "empty": "No works yet. Pick one above and the works page grows its first planet.",
+  "origin": "Origin of the spiral",
+  "name": "Display name · leave empty to use the repo name",
+  "what": "One-line intro",
+  "setOrigin": "Set as origin"
+}

@@ -124,6 +124,7 @@ pub struct AdminTagRow {
     pub name_ja: Option<String>,
     pub name_ko: Option<String>,
     pub name_zh_cn: Option<String>,
+    pub name_zh_tw: Option<String>,
 }
 
 /// `GET /api/admin/tags` —— requireAdmin。回應為**裸陣列**（對齊 Express `res.json(rows)`）。
@@ -139,10 +140,10 @@ pub async fn admin_tags(
 ) -> Result<Json<Vec<AdminTagRow>>, AppError> {
     let rows = sqlx::query_as::<_, AdminTagRow>(
         "SELECT t.id, t.name, t.created_at, COUNT(pt.post_id) as post_count, \
-         t.name_en, t.name_ja, t.name_ko, t.name_zh_cn \
+         t.name_en, t.name_ja, t.name_ko, t.name_zh_cn, t.name_zh_tw \
          FROM tags t \
          LEFT JOIN post_tags pt ON t.id = pt.tag_id \
-         GROUP BY t.id, t.name, t.created_at, t.name_en, t.name_ja, t.name_ko, t.name_zh_cn \
+         GROUP BY t.id, t.name, t.created_at, t.name_en, t.name_ja, t.name_ko, t.name_zh_cn, t.name_zh_tw \
          ORDER BY t.name ASC",
     )
     .fetch_all(&state.pool)
@@ -177,6 +178,9 @@ pub struct AdminCategoryRow {
     pub short_description_ja: Option<String>,
     pub short_description_ko: Option<String>,
     pub short_description_zh_cn: Option<String>,
+    pub name_zh_tw: Option<String>,
+    pub description_zh_tw: Option<String>,
+    pub short_description_zh_tw: Option<String>,
 }
 
 #[utoipa::path(get, path = "/api/admin/categories", tag = "admin", security(("bearer" = [])),
@@ -193,11 +197,13 @@ pub async fn admin_categories(
          c.name_en, c.name_ja, c.name_ko, c.name_zh_cn, \
          c.description_en, c.description_ja, c.description_ko, c.description_zh_cn, \
          c.short_description_en, c.short_description_ja, c.short_description_ko, c.short_description_zh_cn, \
+         c.name_zh_tw, c.description_zh_tw, c.short_description_zh_tw, \
                 COUNT(p.id) as post_count \
          FROM categories c \
          LEFT JOIN posts p ON p.category = c.name \
          GROUP BY c.id, c.name, c.slug, c.description, c.short_description, c.created_at, c.updated_at, \
-                  c.name_en, c.name_ja, c.name_ko, c.name_zh_cn, c.description_en, c.description_ja, c.description_ko, c.description_zh_cn, c.short_description_en, c.short_description_ja, c.short_description_ko, c.short_description_zh_cn \
+                  c.name_en, c.name_ja, c.name_ko, c.name_zh_cn, c.description_en, c.description_ja, c.description_ko, c.description_zh_cn, c.short_description_en, c.short_description_ja, c.short_description_ko, c.short_description_zh_cn, \
+                  c.name_zh_tw, c.description_zh_tw, c.short_description_zh_tw \
          ORDER BY c.name ASC",
     )
     .fetch_all(&state.pool)
@@ -371,6 +377,10 @@ pub struct AdminPostFull {
     pub trashed_at: Option<String>,
     /// 丟進回收之前的狀態（還原時回到這裡）
     pub trashed_from: Option<String>,
+    /// 繁中譯文（原稿不是繁中時才用得到）
+    pub title_zh_tw: Option<String>,
+    pub content_zh_tw: Option<String>,
+    pub excerpt_zh_tw: Option<String>,
     pub tags: Vec<String>,
 }
 
@@ -413,6 +423,9 @@ impl AdminPostFull {
             newsletter_pending: r.newsletter_pending.unwrap_or(0) != 0,
             trashed_at: r.trashed_at.clone(),
             trashed_from: r.trashed_from.clone(),
+            title_zh_tw: r.title_zh_tw.clone(),
+            content_zh_tw: r.content_zh_tw.clone(),
+            excerpt_zh_tw: r.excerpt_zh_tw.clone(),
             tags: split_tags(r.tags.as_deref()),
         }
     }
@@ -679,6 +692,7 @@ pub struct TagBody {
     name_ja: Option<String>,
     name_ko: Option<String>,
     name_zh_cn: Option<String>,
+    name_zh_tw: Option<String>,
 }
 
 // 狀態碼逐一宣告（不只 200/401）：Schemathesis 的 status_code_conformance 目前是關的，
@@ -704,14 +718,15 @@ pub async fn create_tag(
             .into_response();
     }
     match sqlx::query(
-        "INSERT INTO tags (name, name_en, name_ja, name_ko, name_zh_cn, created_at) \
-         VALUES (?, ?, ?, ?, ?, datetime('now'))",
+        "INSERT INTO tags (name, name_en, name_ja, name_ko, name_zh_cn, name_zh_tw, created_at) \
+         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
     )
     .bind(&name)
     .bind(body.name_en.as_deref().filter(|v| !v.is_empty()))
     .bind(body.name_ja.as_deref().filter(|v| !v.is_empty()))
     .bind(body.name_ko.as_deref().filter(|v| !v.is_empty()))
     .bind(body.name_zh_cn.as_deref().filter(|v| !v.is_empty()))
+    .bind(body.name_zh_tw.as_deref().filter(|v| !v.is_empty()))
     .execute(&state.pool)
     .await
     {
@@ -748,13 +763,14 @@ pub async fn update_tag(
             .into_response();
     }
     match sqlx::query(
-        "UPDATE tags SET name = ?, name_en = ?, name_ja = ?, name_ko = ?, name_zh_cn = ? WHERE id = ?",
+        "UPDATE tags SET name = ?, name_en = ?, name_ja = ?, name_ko = ?, name_zh_cn = ?, name_zh_tw = ? WHERE id = ?",
     )
     .bind(&name)
     .bind(body.name_en.as_deref().filter(|v| !v.is_empty()))
     .bind(body.name_ja.as_deref().filter(|v| !v.is_empty()))
     .bind(body.name_ko.as_deref().filter(|v| !v.is_empty()))
     .bind(body.name_zh_cn.as_deref().filter(|v| !v.is_empty()))
+    .bind(body.name_zh_tw.as_deref().filter(|v| !v.is_empty()))
     .bind(id)
     .execute(&state.pool)
     .await
@@ -819,6 +835,9 @@ pub struct CategoryBody {
     short_description_ja: Option<String>,
     short_description_ko: Option<String>,
     short_description_zh_cn: Option<String>,
+    name_zh_tw: Option<String>,
+    description_zh_tw: Option<String>,
+    short_description_zh_tw: Option<String>,
 }
 
 /// 產生文章網址用的唯一 slug。
@@ -892,8 +911,8 @@ pub async fn create_category(
     let short_description = body.short_description.clone().unwrap_or_default();
     match sqlx::query(
         "INSERT INTO categories (name, slug, description, short_description, \
-         name_en, name_ja, name_ko, name_zh_cn, description_en, description_ja, description_ko, description_zh_cn, short_description_en, short_description_ja, short_description_ko, short_description_zh_cn, created_at, updated_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+         name_en, name_ja, name_ko, name_zh_cn, description_en, description_ja, description_ko, description_zh_cn, short_description_en, short_description_ja, short_description_ko, short_description_zh_cn, name_zh_tw, description_zh_tw, short_description_zh_tw, created_at, updated_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
     )
     .bind(&name)
     .bind(&slug)
@@ -911,6 +930,9 @@ pub async fn create_category(
     .bind(body.short_description_ja.as_deref().filter(|v| !v.is_empty()))
     .bind(body.short_description_ko.as_deref().filter(|v| !v.is_empty()))
     .bind(body.short_description_zh_cn.as_deref().filter(|v| !v.is_empty()))
+    .bind(body.name_zh_tw.as_deref().filter(|v| !v.is_empty()))
+    .bind(body.description_zh_tw.as_deref().filter(|v| !v.is_empty()))
+    .bind(body.short_description_zh_tw.as_deref().filter(|v| !v.is_empty()))
     .execute(&state.pool)
     .await
     {
@@ -975,7 +997,7 @@ pub async fn update_category(
     let short_description = body.short_description.clone().unwrap_or_default();
     let updated = match sqlx::query(
         "UPDATE categories SET name = ?, slug = ?, description = ?, short_description = ?, \
-         name_en = ?, name_ja = ?, name_ko = ?, name_zh_cn = ?, description_en = ?, description_ja = ?, description_ko = ?, description_zh_cn = ?, short_description_en = ?, short_description_ja = ?, short_description_ko = ?, short_description_zh_cn = ?, updated_at = datetime('now') WHERE id = ?",
+         name_en = ?, name_ja = ?, name_ko = ?, name_zh_cn = ?, description_en = ?, description_ja = ?, description_ko = ?, description_zh_cn = ?, short_description_en = ?, short_description_ja = ?, short_description_ko = ?, short_description_zh_cn = ?, name_zh_tw = ?, description_zh_tw = ?, short_description_zh_tw = ?, updated_at = datetime('now') WHERE id = ?",
     )
     .bind(&name)
     .bind(&slug)
@@ -993,6 +1015,9 @@ pub async fn update_category(
     .bind(body.short_description_ja.as_deref().filter(|v| !v.is_empty()))
     .bind(body.short_description_ko.as_deref().filter(|v| !v.is_empty()))
     .bind(body.short_description_zh_cn.as_deref().filter(|v| !v.is_empty()))
+    .bind(body.name_zh_tw.as_deref().filter(|v| !v.is_empty()))
+    .bind(body.description_zh_tw.as_deref().filter(|v| !v.is_empty()))
+    .bind(body.short_description_zh_tw.as_deref().filter(|v| !v.is_empty()))
     .bind(id)
     .execute(&state.pool)
     .await
@@ -1459,7 +1484,7 @@ pub async fn admin_create_post(
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "缺少必填欄位: title, content" })))
             .into_response();
     }
-    // source_language：缺 → 'zh-TW'；有值但非合法 locale → 400（含 null → "null"）
+    // source_language：缺 → 站台的預設語系；有值但非合法 locale → 400（含 null → "null"）
     let source_language = if let Some(v) = b.get("source_language") {
         let s = v.as_str().unwrap_or("").to_string();
         if !I18N_LOCALES.contains(&s.as_str()) {
@@ -1475,7 +1500,7 @@ pub async fn admin_create_post(
         }
         s
     } else {
-        "zh-TW".to_string()
+        crate::handlers::site_config::default_locale()
     };
 
     let title = b.get("title").and_then(to_s);
@@ -1528,9 +1553,9 @@ pub async fn admin_create_post(
     let mut q = sqlx::query(
         "INSERT INTO posts (slug, title, content, excerpt, category, status, author, layout_type, format, source_language, \
          title_en, content_en, excerpt_en, title_zh_cn, content_zh_cn, excerpt_zh_cn, \
-         title_ja, content_ja, excerpt_ja, title_ko, content_ko, excerpt_ko, \
+         title_ja, content_ja, excerpt_ja, title_ko, content_ko, excerpt_ko, title_zh_tw, content_zh_tw, excerpt_zh_tw, \
          series_name, series_order, allow_comments, excerpt_links, created_at, updated_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
     )
     .bind(&slug)
     .bind(&title)
@@ -1555,6 +1580,9 @@ pub async fn admin_create_post(
         "title_ko",
         "content_ko",
         "excerpt_ko",
+        "title_zh_tw",
+        "content_zh_tw",
+        "excerpt_zh_tw",
     ] {
         q = q.bind(i18n(k));
     }
@@ -1749,6 +1777,9 @@ pub async fn admin_update_post(
          title_ko = CASE WHEN ? = 1 THEN ? ELSE title_ko END, \
          content_ko = CASE WHEN ? = 1 THEN ? ELSE content_ko END, \
          excerpt_ko = CASE WHEN ? = 1 THEN ? ELSE excerpt_ko END, \
+         title_zh_tw = CASE WHEN ? = 1 THEN ? ELSE title_zh_tw END, \
+         content_zh_tw = CASE WHEN ? = 1 THEN ? ELSE content_zh_tw END, \
+         excerpt_zh_tw = CASE WHEN ? = 1 THEN ? ELSE excerpt_zh_tw END, \
          series_name = CASE WHEN ? = 1 THEN ? ELSE series_name END, \
          series_order = CASE WHEN ? = 1 THEN ? ELSE series_order END, \
          allow_comments = CASE WHEN ? = 1 THEN ? ELSE allow_comments END, \
@@ -1777,6 +1808,9 @@ pub async fn admin_update_post(
         "title_ko",
         "content_ko",
         "excerpt_ko",
+        "title_zh_tw",
+        "content_zh_tw",
+        "excerpt_zh_tw",
     ] {
         let (f, v) = nullable(k);
         q = q.bind(f).bind(v);

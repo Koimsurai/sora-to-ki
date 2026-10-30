@@ -1,0 +1,23 @@
+{
+  "group": {
+    "now": "Now",
+    "write": "Write",
+    "keep": "Keep",
+    "reply": "Reply",
+    "station": "Station"
+  },
+  "dashboard": "Overview",
+  "analytics": "Traffic",
+  "posts": "Posts",
+  "thoughts": "Thoughts",
+  "categories": "Categories",
+  "tags": "Tags",
+  "collection": "Collection",
+  "books": "Bookshelf",
+  "photos": "Photos",
+  "comments": "Comments",
+  "friends": "Friends",
+  "subscribers": "Newsletter",
+  "pages": "Pages",
+  "users": "Accounts"
+}

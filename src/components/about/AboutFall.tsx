@@ -2,10 +2,12 @@
 // 之後繼續往地底挖：地表是手上的東西，第一層是做過的事，最深的地心才是「Stay hungry, stay foolish.」。
 // 近景（掠過的細線、地平線與樹、返回艙、地層、高度計）畫在 fallSky。
 import { Fragment, useEffect, useRef } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useTranslation } from 'react-i18next';
-import { MILESTONE_BEATS_BY_LANG, MILESTONE_STATIC, MILESTONES_BY_LANG, YEAR_LABELS } from '@/data/journeyData';
-import { SKILL_GROUPS, WORK_BY_LANG, WORK_PERIODS } from '@/data/aboutData';
-import { lookupOr } from '@/lib/tableLookup';
+import { useAboutContent } from '@/data/pageContent';
+import { useSiteConfig } from '@/data/siteConfig';
+import { pickText } from '@/lib/i18nText';
+import OwnerFillHint from '@/components/common/OwnerFillHint';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { currentFold } from '@/lib/viewportFold';
 import { useBareSky } from '@/hooks/useBareSky';
@@ -21,8 +23,6 @@ import { sameTitle } from '@/lib/pageTitle';
  */
 const LAYOUTS = ['left', 'split', 'right', 'wide', 'left', 'right', 'split', 'wide'] as const;
 
-/** 每一年留哪一句（MILESTONE_BEATS_BY_LANG 裡的第幾個片段）：一年只說一句話 */
-const KEY_BEAT = [0, 2, 2, 2, 1, 0, 3, 2];
 const CHUTE_SRC = '/illustrations/reentry-parachute.webp';
 
 /** 句號拆出來：琥珀點就是它（「坐穩了。」「就此落下。」） */
@@ -58,30 +58,24 @@ const docTop = (el: HTMLElement) => {
 
 export default function AboutFall() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const years = lookupOr(YEAR_LABELS, lang, YEAR_LABELS['zh-TW']);
-  const texts = lookupOr(MILESTONES_BY_LANG, lang, MILESTONES_BY_LANG['zh-TW']);
-  const beats = lang in MILESTONE_BEATS_BY_LANG ? MILESTONE_BEATS_BY_LANG[lang] : undefined;
-  const work = lookupOr(WORK_BY_LANG, lang, WORK_BY_LANG['zh-TW']);
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
+  // 每一年、技能、經歷、地心那一句都是站長填的（後台「頁面」或 MCP）；沒填的區塊整塊不出現
+  const about = useAboutContent();
+  const { description } = useSiteConfig();
   const zh = lang.startsWith('zh');
   // 期間寫成「2025/7 — Now」；這一頁不用破折號，中文介面也把 Now 換成「現在」
   const period = (p: string) => p.replace(' — ', ' ～ ').replace('Now', zh ? '現在' : 'Now');
 
-  const chapters = MILESTONE_STATIC.flatMap((m, i) => {
-    if (m.year === 'FUTURE') return [];
-    const text = texts[i];
-    const beat = beats?.[i]?.[KEY_BEAT[i] ?? 0] ?? text.description;
-    return [
-      {
-        id: m.id,
-        now: m.year === 'NOW',
-        year: m.year === 'NOW' ? years.NOW : m.year.replace('-', ' – '),
-        ...text,
-        beat,
-      },
-    ];
-  });
+  const chapters = about.chapters.map((c, i) => ({
+    key: `${i}-${c.year}`,
+    now: c.year === 'NOW',
+    year: c.year === 'NOW' ? t('aboutFall.now') : c.year.replace('-', ' – '),
+    title: pickText(c.title, lang),
+    subtitle: pickText(c.subtitle, lang),
+    line: pickText(c.line, lang),
+  }));
   const now = chapters.find((c) => c.now);
+  const empty = chapters.length === 0 && about.skills.length === 0 && about.jobs.length === 0;
 
   const pageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -285,11 +279,11 @@ export default function AboutFall() {
 
       <div id="journey">
         {chapters.map((c, i) => (
-          <section key={c.id} className={`af-ch af-ch--${LAYOUTS[i % LAYOUTS.length]}`} aria-label={c.year}>
+          <section key={c.key} className={`af-ch af-ch--${LAYOUTS[i % LAYOUTS.length]}`} aria-label={c.year}>
             <div className={c.now ? 'af-year is-word' : 'af-year'}>{c.year}</div>
             <h2 className="af-title">{c.title}</h2>
             <div className="af-sub">{c.subtitle}</div>
-            <p className="af-beat">{c.beat}</p>
+            <p className="af-beat">{c.line}</p>
           </section>
         ))}
       </div>
@@ -302,62 +296,84 @@ export default function AboutFall() {
             {landStop}
           </span>
         </h2>
-        {now && (
+        {now ? (
           <p className="af-now">
             <span>Now</span>
             {now.title}
           </p>
+        ) : (
+          // 沒有「現在」那一章（含還沒填）：落地處放站台的一句話介紹
+          description && <p className="af-now">{description}</p>
         )}
       </section>
 
-      <section className="af-layer" ref={layerRef}>
-        <span className="af-lab">{t('aboutFall.surface')}</span>
-        <h2>
-          {t('aboutFall.surfaceTitle')}
-          <small>{t('aboutFall.surfaceSub')}</small>
-        </h2>
-        <ul className="af-skills">
-          {SKILL_GROUPS.map((g) => (
-            <li key={g.key}>
-              <span>{t(`aboutFall.skill.${g.key}`)}</span>
-              <p>
-                {g.items.map((s) => (
-                  <Fragment key={s}>
-                    <span>{s}</span>{' '}
-                  </Fragment>
-                ))}
-              </p>
-            </li>
-          ))}
-        </ul>
+      {/* 地表這一層一定要在：天空用它的位置算「開始往下挖」，沒有技能也留著它 */}
+      <section className={about.skills.length > 0 ? 'af-layer' : 'af-layer is-bare'} ref={layerRef}>
+        {about.skills.length > 0 && (
+          <>
+            <span className="af-lab">{t('aboutFall.surface')}</span>
+            <h2>
+              {t('aboutFall.surfaceTitle')}
+              <small>{t('aboutFall.surfaceSub')}</small>
+            </h2>
+            <ul className="af-skills">
+              {about.skills.map((g, gi) => (
+                // eslint-disable-next-line @eslint-react/no-array-index-key
+                <li key={gi}>
+                  <span>{pickText(g.label, lang)}</span>
+                  <p>
+                    {g.items.map((s) => (
+                      <Fragment key={s}>
+                        <span>{s}</span>{' '}
+                      </Fragment>
+                    ))}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </section>
 
-      <section className="af-layer">
-        <span className="af-lab">{t('aboutFall.layer1')}</span>
-        <h2>{t('aboutFall.layer1Title')}</h2>
-        <ul className="af-jobs">
-          {work.map((j, i) => (
-            <li key={j.title}>
-              <time>{period(WORK_PERIODS[i] ?? '')}</time>
-              <p>
-                <b>{j.title}</b>
-                <span>{j.role}</span>
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {about.jobs.length > 0 && (
+        <section className="af-layer">
+          <span className="af-lab">{t('aboutFall.layer1')}</span>
+          <h2>{t('aboutFall.layer1Title')}</h2>
+          <ul className="af-jobs">
+            {about.jobs.map((j, i) => (
+              // eslint-disable-next-line @eslint-react/no-array-index-key
+              <li key={i}>
+                <time>{period(j.period)}</time>
+                <p>
+                  <b>{pickText(j.title, lang)}</b>
+                  <span>{pickText(j.role, lang)}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="af-core" ref={coreRef}>
         <span className="af-lab">{t('aboutFall.core')}</span>
         <p>{t('aboutFall.coreLine')}</p>
-        <blockquote>
-          Stay hungry,
-          <br />
-          stay foolish.
-        </blockquote>
-        <cite>Steve Jobs</cite>
+        {about.quote?.text && (
+          <>
+            <blockquote>
+              {about.quote.text.split('\n').map((line, i, all) => (
+                // eslint-disable-next-line @eslint-react/no-array-index-key
+                <Fragment key={i}>
+                  {line}
+                  {i < all.length - 1 && <br />}
+                </Fragment>
+              ))}
+            </blockquote>
+            {about.quote.cite && <cite>{about.quote.cite}</cite>}
+          </>
+        )}
       </section>
+
+      {empty && <OwnerFillHint page="about" />}
     </div>
   );
 }

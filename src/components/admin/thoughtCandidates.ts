@@ -3,6 +3,7 @@
 
 import type { AdminTrackItem, AdminWatchItem, BookRow } from '@koimsurai/api-types';
 
+import { at as tr } from '@/i18n/admin-i18n';
 import type { MediaKind } from '@/lib/thoughtRef';
 import { parseDbTime } from './adminFormat';
 
@@ -20,8 +21,10 @@ export interface Candidate {
   ref: { type: 'media'; url?: string; json: Record<string, unknown> };
 }
 
-const SOURCE_LABEL: Record<string, string> = { bahamut: '巴哈', simkl: 'Simkl', trakt: 'Trakt' };
-const KIND_LABEL: Record<MediaKind, string> = { anime: '動畫', film: '電影', tv: '影集', book: '書', track: '歌' };
+/** 巴哈要翻（是簡稱），其他是服務名 */
+const SOURCE_NAME: Record<string, string> = { simkl: 'Simkl', trakt: 'Trakt' };
+const sourceLabel = (s: string) => (s === 'bahamut' ? tr('thoughts.bahamut') : (SOURCE_NAME[s] ?? s));
+const kindLabel = (k: MediaKind) => tr(`thoughts.kind.${k}`);
 
 /**
  * 巴哈的集數是原樣的字（「[03]」「特別篇」）。前台原樣顯示 progress、而且不分語系，
@@ -53,9 +56,9 @@ export function fromWatch(w: AdminWatchItem): Candidate | null {
     cover: w.cover,
     when: w.watched_at,
     facts: [
-      KIND_LABEL[kind],
-      kind === 'anime' && w.detail ? `看到 ${w.detail}` : w.detail,
-      w.source ? (SOURCE_LABEL[w.source] ?? w.source) : null,
+      kindLabel(kind),
+      kind === 'anime' && w.detail ? tr('thoughts.watchedUpTo', { detail: w.detail }) : w.detail,
+      w.source ? sourceLabel(w.source) : null,
     ].filter((v): v is string => !!v),
     ref: { type: 'media', json },
   };
@@ -73,7 +76,7 @@ export function fromTrack(t: AdminTrackItem): Candidate | null {
     title: t.name,
     cover: t.cover,
     when: t.played_at,
-    facts: [KIND_LABEL.track, t.artists, 'Spotify'].filter(Boolean),
+    facts: [kindLabel('track'), t.artists, 'Spotify'].filter(Boolean),
     ref: { type: 'media', url, json },
   };
 }
@@ -92,7 +95,11 @@ export function fromBook(b: BookRow): Candidate | null {
     title: b.title,
     cover: b.cover_url,
     when: b.date_finished ?? b.date_started ?? b.date_updated ?? b.date_added,
-    facts: [KIND_LABEL.book, b.reading_status === 'read' ? '讀完' : '在讀', b.authors].filter((v): v is string => !!v),
+    facts: [
+      kindLabel('book'),
+      b.reading_status === 'read' ? tr('thoughts.bookRead') : tr('thoughts.bookReading'),
+      b.authors,
+    ].filter((v): v is string => !!v),
     ref: { type: 'media', json },
   };
 }

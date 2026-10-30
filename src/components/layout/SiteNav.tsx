@@ -12,11 +12,11 @@ import { useTranslation } from 'react-i18next';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import { LocaleLink } from '@/i18n/locale-link';
 import { LOCALE_LABELS, loadLocale, stripLocalePrefix } from '@/i18n/start-i18n';
-import { SUPPORTED_LOCALES, LOCALE_PREFIX, type Locale } from '@/lib/locales';
+import { enabledLocales, prefixOf, type Locale } from '@/lib/locales';
 import { useAuth } from '@/contexts/auth';
 import { openCommandPalette } from '@/store/commandPaletteStore';
 import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS, type SiteSection } from '@/data/siteSections';
-import { useEnabledSections } from '@/data/siteConfig';
+import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import NavMenus, { type MenuKey } from './NavMenus';
 import { SkyRow, ThemeGlyph } from './ThemeMenu';
 import { useTheme } from '@/hooks/useTheme';
@@ -39,6 +39,7 @@ const CLOSE_AFTER_MS = 320;
 const OPENING_MS = 500;
 export default function SiteNav() {
   const { t, i18n } = useTranslation();
+  const { author } = useSiteConfig();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const bare = stripLocalePrefix(pathname);
   const isHome = bare === '';
@@ -223,7 +224,7 @@ export default function SiteNav() {
     void i18n.changeLanguage(code);
     // 同一個路徑換語系前綴：一定要換網址。頁面內容由 LocaleProvider 依「網址」建的 i18n instance 驅動，
     // 只呼叫 changeLanguage 只會換到外殼，內容不會跟著換
-    const prefix = LOCALE_PREFIX[code];
+    const prefix = prefixOf(code);
     const target = `/${[prefix, bare].filter(Boolean).join('/')}`;
     if (target !== pathname) void navigate({ href: target });
   };
@@ -238,23 +239,26 @@ export default function SiteNav() {
         {t('siteNav.search')}
         <kbd>⌘K</kbd>
       </button>
-      <fieldset className="snav-util-group">
-        <legend className="sr-only">{t('siteNav.language')}</legend>
-        {SUPPORTED_LOCALES.map((code) => (
-          <button
-            key={code}
-            type="button"
-            lang={code}
-            className={code === current ? 'is-on' : undefined}
-            aria-current={code === current ? 'true' : undefined}
-            onPointerEnter={() => void loadLocale(code)}
-            onFocus={() => void loadLocale(code)}
-            onClick={() => void switchLocale(code)}
-          >
-            {LOCALE_LABELS[code]}
-          </button>
-        ))}
-      </fieldset>
+      {/* 站台設定只開了一個語系就沒得切，整組不出現 */}
+      {enabledLocales().length > 1 && (
+        <fieldset className="snav-util-group">
+          <legend className="sr-only">{t('siteNav.language')}</legend>
+          {enabledLocales().map((code) => (
+            <button
+              key={code}
+              type="button"
+              lang={code}
+              className={code === current ? 'is-on' : undefined}
+              aria-current={code === current ? 'true' : undefined}
+              onPointerEnter={() => void loadLocale(code)}
+              onFocus={() => void loadLocale(code)}
+              onClick={() => void switchLocale(code)}
+            >
+              {LOCALE_LABELS[code]}
+            </button>
+          ))}
+        </fieldset>
+      )}
       <fieldset className="snav-util-group">
         <legend className="sr-only">{t('siteNav.account')}</legend>
         {isLoggedIn ? (
@@ -316,7 +320,7 @@ export default function SiteNav() {
             畫的是現在這顆的縮小版（layout/ThemeMenu），旁邊是它的名字 */}
         <div className="snav-id">
           <LocaleLink to="/" className="snav-name" aria-label={t('siteNav.home')}>
-            Koimsurai
+            {author}
           </LocaleLink>
           <button
             type="button"

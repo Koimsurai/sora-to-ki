@@ -41,7 +41,7 @@ use crate::util::escape_html;
 
 use scenes::{
     About, Collection, Colophon, Friends, Log, Messages, Moments, Notes, Photos, Saturn, Scene, Setup,
-    SkyPost, Works,
+    SetupBare, SkyPost, Works,
 };
 
 /// 主標與副標：跟前端 `lib/blogReading.ts` 的 `splitTitle` 同一套規則——全形冒號，
@@ -305,15 +305,26 @@ fn render(html: &str, locale: &str, scene: &dyn Scene) -> anyhow::Result<Vec<u8>
     apng::encode(scene.frames(), scene.frame_ms(), |i| apng::compose(&scene.frame(i), &overlay))
 }
 
-/// 這一頁的背景。`sky` 是手記星軌要用的文章清單（只有 notes 用得到）
-fn page_scene(key: &str, sky: &[SkyPost]) -> Box<dyn Scene> {
+/// 航行日誌的起點那天與里程碑的日期（站長填的，見 `page_content::log_dates`）
+type LogDates = (chrono::NaiveDate, Vec<chrono::NaiveDate>);
+
+/// 背景要用到的站長內容：航行日誌的起點與里程碑、設備頁第一艙是不是原站的白色主機圖紙
+struct PageInputs {
+    log: LogDates,
+    /// false：畫空貨艙（別人的站分享出去不能還是原作者的主機）
+    setup_white_build: bool,
+}
+
+/// 這一頁的背景。`sky` 是手記星軌要用的文章清單（只有 notes 用得到），`log` 只有航行日誌用得到
+fn page_scene(key: &str, sky: &[SkyPost], inputs: &PageInputs) -> Box<dyn Scene> {
     match key {
         "notes" => Box::new(Notes::new(sky, 0)),
         "about" => Box::new(About::new()),
-        "log" => Box::new(Log::new()),
+        "log" => Box::new(Log::new(inputs.log.0, &inputs.log.1)),
         "works" => Box::new(Works::new()),
         "colophon" => Box::new(Colophon::new()),
-        "setup" => Box::new(Setup::new()),
+        "setup" if inputs.setup_white_build => Box::new(Setup::new()),
+        "setup" => Box::new(SetupBare::new()),
         "messages" => Box::new(Messages::new()),
         "moments" => Box::new(Moments::new()),
         "friends" => Box::new(Friends::new()),
@@ -409,7 +420,9 @@ pub async fn og_png(
     let Some(stem) = file.strip_suffix(".png") else {
         return text_resp(StatusCode::NOT_FOUND, "not found");
     };
-    let locale = parse_locale(q.l.as_deref()).unwrap_or("zh-TW");
+    // 沒帶 ?l= 就是站台的預設語系（分享圖的網址只有非預設語系才帶 ?l=）
+    let default = crate::handlers::site_config::default_locale();
+    let locale = parse_locale(q.l.as_deref()).or_else(|| parse_locale(Some(&default))).unwrap_or("zh-TW");
     let inm = headers.get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok()).map(String::from);
 
     // 位置、內容指紋、字那一層的 HTML、背景
@@ -473,18 +486,22 @@ async fn prepare_post(state: &AppState, id: i64, locale: &str) -> Option<Prepare
     .fetch_optional(&state.pool)
     .await
     .ok()??;
-    // 這個語系的手記清單裡有它就用它的譯名與位置；沒有（沒譯、還沒發布）就退回繁中的清單
+    // 這個語系的手記清單裡有它就用它的譯名與位置；沒有（沒譯、還沒發布）就退回預設語系的清單
     let mut list = sky_list(&state.pool, locale).await.unwrap_or_default();
     let mut text_locale = locale;
     if !list.iter().any(|p| p.0 == post_id) {
-        list = sky_list(&state.pool, "zh-TW").await.unwrap_or_default();
-        text_locale = "zh-TW";
+        let fallback = parse_locale(Some(&crate::handlers::site_config::default_locale())).unwrap_or("zh-TW");
+        list = sky_list(&state.pool, fallback).await.unwrap_or_default();
+        text_locale = fallback;
     }
     let found = list.iter().position(|p| p.0 == post_id);
     let lit = found.unwrap_or(0);
     let title = found.map_or_else(|| title.unwrap_or_default(), |i| list[i].1.clone());
-    // 分類的譯名在 categories 表（name_en…）；沒有譯名就用原名
-    let category = match (category.as_deref(), crate::handlers::posts::locale_suffix(text_locale)) {
+    // 分類的原名是站台預設語系的名稱，其他語系的譯名在 categories 表（name_en…）；沒有譯名就用原名
+    let suffix = Some(text_locale)
+        .filter(|l| *l != crate::handlers::site_config::default_locale())
+        .and_then(crate::handlers::posts::locale_suffix);
+    let category = match (category.as_deref(), suffix) {
         (Some(c), Some(sfx)) if !c.is_empty() => {
             let sql = format!("SELECT name_{sfx} FROM categories WHERE name = ?");
             let localized = sqlx::query_scalar::<_, Option<String>>(sqlx::AssertSqlSafe(sql.as_str()))
@@ -513,10 +530,30 @@ async fn prepare_page(state: &AppState, page: &Page, locale: &str) -> Prepared {
     } else {
         (Vec::new(), 0)
     };
+    // 航行日誌的軌道照站長填的起點與里程碑擺；讀不到就從今天畫起、沒有節點（圖還是要出得來）
+    let log = if page.key == "log" {
+        crate::handlers::page_content::log_dates(&state.pool)
+            .await
+            .unwrap_or_else(|_| (chrono::Utc::now().date_naive(), Vec::new()))
+    } else {
+        (chrono::Utc::now().date_naive(), Vec::new())
+    };
     let html = page_card_html(page, locale);
-    // 頁名與副標改了（語系檔跟著部署）快取也要失效：指紋直接用 HTML
-    let key = format!("{:x}::{sig:x}", fnv1a(&html));
-    (format!("page:{}:{locale}", page.key), key, html, page_scene(page.key, &sky))
+    // 頁名與副標改了（語系檔跟著部署）快取也要失效：指紋直接用 HTML；航行日誌再加上起點與里程碑
+    let setup_white_build = page.key == "setup"
+        && crate::handlers::page_content::setup_uses_white_build(&state.pool).await.unwrap_or(false);
+    let dates = match page.key {
+        "log" => format!("{log:?}"),
+        "setup" => format!("{setup_white_build}"),
+        _ => String::new(),
+    };
+    let key = format!("{:x}::{sig:x}::{:x}", fnv1a(&html), fnv1a(&dates));
+    (
+        format!("page:{}:{locale}", page.key),
+        key,
+        html,
+        page_scene(page.key, &sky, &PageInputs { log, setup_white_build }),
+    )
 }
 
 #[cfg(test)]
@@ -636,7 +673,7 @@ mod tests {
             Box::new(Saturn::new()),
             Box::new(Notes::new(&sky, 0)),
             Box::new(About::new()),
-            Box::new(Log::new()),
+            Box::new(Log::new(chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期"), &[])),
             Box::new(Works::new()),
             Box::new(Colophon::new()),
             Box::new(Setup::new()),
@@ -678,10 +715,13 @@ mod tests {
         let locales = std::env::var("OG_LOCALES").unwrap_or_else(|_| "zh-TW".into());
         let sky: Vec<SkyPost> =
             (0..48).map(|i| SkyPost::of(&format!("篇 {i}"), 800 + (i * 977) % 9000, 9800)).collect();
+        let start = chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期");
+        let sample = PageInputs { log: (start, vec![start]), setup_white_build: true };
         for loc in locales.split(',') {
             for page in PAGES.iter().filter(|p| wanted(p.key)) {
                 let png =
-                    render(&page_card_html(page, loc), loc, page_scene(page.key, &sky).as_ref()).unwrap();
+                    render(&page_card_html(page, loc), loc, page_scene(page.key, &sky, &sample).as_ref())
+                        .unwrap();
                 let path = dir.join(format!("{}-{loc}.png", page.key));
                 std::fs::write(&path, &png).unwrap();
                 println!("{} → {} bytes", path.display(), png.len());

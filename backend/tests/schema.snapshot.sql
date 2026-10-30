@@ -88,7 +88,7 @@ table books
   CREATE TABLE books ( id INTEGER PRIMARY KEY AUTOINCREMENT, isbn TEXT, title TEXT NOT NULL, authors TEXT, publisher TEXT, published_date TEXT, description TEXT, cover_url TEXT, page_count INTEGER, language TEXT, categories TEXT, reading_status TEXT DEFAULT 'to-read', rating REAL, personal_notes TEXT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, date_updated DATETIME DEFAULT CURRENT_TIMESTAMP, date_started DATETIME, date_finished DATETIME )
 
 table categories
-  CREATE TABLE categories ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, short_description TEXT DEFAULT '' , name_en TEXT, name_ja TEXT, name_ko TEXT, name_zh_cn TEXT, description_en TEXT, description_ja TEXT, description_ko TEXT, description_zh_cn TEXT, short_description_en TEXT, short_description_ja TEXT, short_description_ko TEXT, short_description_zh_cn TEXT)
+  CREATE TABLE categories ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, short_description TEXT DEFAULT '' , name_en TEXT, name_ja TEXT, name_ko TEXT, name_zh_cn TEXT, description_en TEXT, description_ja TEXT, description_ko TEXT, description_zh_cn TEXT, short_description_en TEXT, short_description_ja TEXT, short_description_ko TEXT, short_description_zh_cn TEXT, name_zh_tw TEXT, description_zh_tw TEXT, short_description_zh_tw TEXT)
 
 table collection_hidden
   CREATE TABLE collection_hidden ( kind TEXT NOT NULL, key TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', hidden_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (kind, key) )
@@ -120,6 +120,9 @@ table newsletter_subscribers
 table oauth_users
   CREATE TABLE oauth_users ( id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT NOT NULL, provider_id TEXT NOT NULL, display_name TEXT NOT NULL, email TEXT DEFAULT '', avatar_url TEXT DEFAULT '', role TEXT NOT NULL DEFAULT 'USER', linked_to INTEGER DEFAULT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(provider, provider_id) )
 
+table page_content
+  CREATE TABLE page_content ( key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')) )
+
 table photo_meta
   CREATE TABLE photo_meta ( photo_id TEXT PRIMARY KEY, title TEXT, description TEXT, tags TEXT, tags_en TEXT, featured INTEGER NOT NULL DEFAULT 0, hidden INTEGER NOT NULL DEFAULT 0, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP )
 
@@ -136,7 +139,7 @@ table post_tags
   CREATE TABLE post_tags ( post_id INTEGER, tag_id INTEGER, PRIMARY KEY (post_id, tag_id), FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE, FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE )
 
 table posts
-  CREATE TABLE posts ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, excerpt TEXT, category TEXT, status TEXT DEFAULT 'published', author TEXT DEFAULT 'Koimsurai', view_count INTEGER DEFAULT 0, likes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, layout_type TEXT DEFAULT 'record', source_language TEXT DEFAULT 'zh-TW', title_en TEXT, content_en TEXT, excerpt_en TEXT, title_zh_cn TEXT, content_zh_cn TEXT, excerpt_zh_cn TEXT, title_ja TEXT, content_ja TEXT, excerpt_ja TEXT, title_ko TEXT, content_ko TEXT, excerpt_ko TEXT, series_name TEXT DEFAULT NULL, series_order INTEGER DEFAULT NULL, allow_comments INTEGER DEFAULT 1 , format TEXT DEFAULT 'markdown', slug TEXT, excerpt_links TEXT, publish_at DATETIME, newsletter_pending INTEGER NOT NULL DEFAULT 0, trashed_at DATETIME, trashed_from TEXT)
+  CREATE TABLE posts ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, excerpt TEXT, category TEXT, status TEXT DEFAULT 'published', author TEXT DEFAULT 'Koimsurai', view_count INTEGER DEFAULT 0, likes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, layout_type TEXT DEFAULT 'record', source_language TEXT DEFAULT 'zh-TW', title_en TEXT, content_en TEXT, excerpt_en TEXT, title_zh_cn TEXT, content_zh_cn TEXT, excerpt_zh_cn TEXT, title_ja TEXT, content_ja TEXT, excerpt_ja TEXT, title_ko TEXT, content_ko TEXT, excerpt_ko TEXT, series_name TEXT DEFAULT NULL, series_order INTEGER DEFAULT NULL, allow_comments INTEGER DEFAULT 1 , format TEXT DEFAULT 'markdown', slug TEXT, excerpt_links TEXT, publish_at DATETIME, newsletter_pending INTEGER NOT NULL DEFAULT 0, trashed_at DATETIME, trashed_from TEXT, title_zh_tw TEXT, content_zh_tw TEXT, excerpt_zh_tw TEXT)
 
 table reaction_events
   CREATE TABLE reaction_events ( id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL DEFAULT (datetime('now')), kind TEXT NOT NULL, target_id INTEGER, value TEXT NOT NULL, delta INTEGER NOT NULL, country TEXT, referrer TEXT, device TEXT, locale TEXT )
@@ -151,7 +154,7 @@ table sync_state
   CREATE TABLE sync_state ( key TEXT PRIMARY KEY, value TEXT, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 
 table tags
-  CREATE TABLE tags ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP , name_en TEXT, name_ja TEXT, name_ko TEXT, name_zh_cn TEXT)
+  CREATE TABLE tags ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP , name_en TEXT, name_ja TEXT, name_ko TEXT, name_zh_cn TEXT, name_zh_tw TEXT)
 
 table thoughts
   CREATE TABLE thoughts ( id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT NOT NULL, ref_type TEXT, ref_url TEXT, ref_json TEXT, likes INTEGER DEFAULT 0, dislikes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME, edited INTEGER DEFAULT 0 , verb TEXT)

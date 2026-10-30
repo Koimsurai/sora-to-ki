@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
+import { defaultLocale } from '@/lib/locales';
 import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
 import Notes from '@/components/blog/Notes';
 import { blogCategoriesQueryOptions, postsListQueryOptions } from '@/data/blogList';
@@ -13,7 +14,7 @@ export const Route = createFileRoute('/$locale/blog/')({
   // useLocale() 同值，key 才對得上。
   loader: async ({ context, params }) => {
     const locale = localeFromPrefix(params.locale);
-    if (!locale || locale === 'zh-TW') throw notFound();
+    if (!locale || locale === defaultLocale()) throw notFound();
     await Promise.all([
       context.queryClient.prefetchQuery(postsListQueryOptions(locale, 'newest')),
       context.queryClient.prefetchQuery(blogCategoriesQueryOptions(locale)),

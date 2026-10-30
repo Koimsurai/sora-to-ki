@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import { at, useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading, { BusyDot } from './AdminLoading';
 import { AdminDateField, AdminSelect } from './AdminFields';
 import { PageHead, TabPanel } from './AdminPage';
@@ -68,26 +69,23 @@ const EMPTY: BookFormData = {
   date_finished: '',
 };
 
-const STATUS_LABEL: Record<Status, string> = { 'to-read': '想讀', reading: '在讀', read: '讀完' };
-const TABS: { key: Status | 'all'; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'reading', label: '在讀' },
-  { key: 'to-read', label: '想讀' },
-  { key: 'read', label: '讀完' },
-];
+const STATUSES: Status[] = ['to-read', 'reading', 'read'];
+const TABS: (Status | 'all')[] = ['all', 'reading', 'to-read', 'read'];
 
-const statusLabel = (s: string | null) => (s ? ((STATUS_LABEL as Record<string, string | undefined>)[s] ?? s) : '');
+const isStatus = (s: string): s is Status => (STATUSES as string[]).includes(s);
+const statusLabel = (s: string | null) => (s ? (isStatus(s) ? at(`books.status.${s}`) : s) : '');
 const today = () => new Date().toLocaleDateString('sv-SE'); // sv-SE 的格式剛好是 YYYY-MM-DD（本地時區）
 
 /** 這本書的一行小字：出版社、頁數、讀的時間 */
 function bookMeta(b: Book): string {
-  const parts = [b.publisher, b.page_count ? `${b.page_count} 頁` : null];
-  if (b.date_finished) parts.push(`${formatWhen(b.date_finished, 'yyyy.MM.dd')} 讀完`);
-  else if (b.date_started) parts.push(`${formatWhen(b.date_started, 'yyyy.MM.dd')} 開始`);
+  const parts = [b.publisher, b.page_count ? at('books.pages', { count: b.page_count }) : null];
+  if (b.date_finished) parts.push(at('books.finishedOn', { date: formatWhen(b.date_finished, 'yyyy.MM.dd') }));
+  else if (b.date_started) parts.push(at('books.startedOn', { date: formatWhen(b.date_started, 'yyyy.MM.dd') }));
   return parts.filter(Boolean).join(' · ');
 }
 
 export default function BooksManager() {
+  const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { data: books = [], isPending } = useQuery(adminBooksQueryOptions);
   const invalidateBooks = () => queryClient.invalidateQueries({ queryKey: adminBooksQueryOptions.queryKey });
@@ -142,7 +140,7 @@ export default function BooksManager() {
   // 搜外部書目（後端依序問 Google Books、OpenLibrary、國圖）
   const searchExternal = async () => {
     if (!externalQuery.trim()) {
-      toast.error('請輸入 ISBN 或書名');
+      toast.error(t('books.toast.needQuery'));
       return;
     }
     setIsSearching(true);
@@ -154,14 +152,14 @@ export default function BooksManager() {
         // 來源壞掉（例如 Google Books 額度用完）時要講出來，不然看起來就像「這本書不存在」
         for (const w of data.warnings ?? []) toast.warning(w, { duration: 10000 });
         if (data.books.length === 0) {
-          toast.info(data.warnings?.length ? '備用來源（OpenLibrary）也沒有這本' : '找不到這本書');
+          toast.info(data.warnings?.length ? t('books.toast.fallbackEmpty') : t('books.toast.notFound'));
         }
       } else {
-        toast.error('搜尋失敗');
+        toast.error(t('books.toast.searchFailed'));
       }
     } catch (error) {
-      console.error('搜尋書籍失敗:', error);
-      toast.error('搜尋失敗，請稍後再試');
+      console.error('搜尋書籍失敗:', error); // i18n-ignore：開發者看的 console，不是介面文字
+      toast.error(t('books.toast.searchFailedRetry'));
     } finally {
       setIsSearching(false);
     }
@@ -183,7 +181,7 @@ export default function BooksManager() {
     });
     setResults([]);
     setExternalQuery('');
-    toast.success('已帶入書目');
+    toast.success(t('books.toast.picked'));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -195,15 +193,15 @@ export default function BooksManager() {
         body: JSON.stringify(form),
       });
       if (response.ok) {
-        toast.success(editing ? '已更新' : '已放上書架');
+        toast.success(editing ? t('books.toast.updated') : t('books.toast.added'));
         setDialogOpen(false);
         void invalidateBooks();
       } else {
-        toast.error('操作失敗');
+        toast.error(t('books.toast.actionFailed'));
       }
     } catch (error) {
-      console.error('保存書籍失敗:', error);
-      toast.error('保存失敗');
+      console.error('保存書籍失敗:', error); // i18n-ignore：開發者看的 console，不是介面文字
+      toast.error(t('books.toast.saveFailed'));
     }
   };
 
@@ -212,14 +210,14 @@ export default function BooksManager() {
     try {
       const response = await fetch(`/api/books/${deleteId}`, { method: 'DELETE', headers: authHeaders() });
       if (response.ok) {
-        toast.success('已從書架拿掉');
+        toast.success(t('books.toast.removed'));
         void invalidateBooks();
       } else {
-        toast.error('刪除失敗');
+        toast.error(t('books.toast.deleteFailed'));
       }
     } catch (error) {
-      console.error('刪除書籍失敗:', error);
-      toast.error('刪除失敗');
+      console.error('刪除書籍失敗:', error); // i18n-ignore：開發者看的 console，不是介面文字
+      toast.error(t('books.toast.deleteFailed'));
     } finally {
       setDeleteId(null);
     }
@@ -228,30 +226,30 @@ export default function BooksManager() {
   return (
     <div className="adm-page adm-page-narrow">
       <PageHead
-        title="書架"
+        title={t('nav.books')}
         latin="Shelf"
-        meta={isPending ? '載入中' : `${books.length} 本 · 在讀 ${countOf('reading')}`}
+        meta={isPending ? t('common.loading') : t('books.meta', { count: books.length, reading: countOf('reading') })}
         actions={
           <button type="button" className="adm-btn adm-btn-primary" onClick={openCreate}>
-            加一本書
+            {t('books.add')}
           </button>
         }
       />
 
-      <section className="adm-stack" aria-label="書單">
+      <section className="adm-stack" aria-label={t('books.listLabel')}>
         <div className="adm-toolbar">
           <div className="adm-tabs">
-            {TABS.map((t) => (
+            {TABS.map((key) => (
               <button
-                key={t.key}
+                key={key}
                 type="button"
                 className="adm-tab"
-                aria-pressed={tab === t.key}
-                onClick={() => setTab(t.key)}
+                aria-pressed={tab === key}
+                onClick={() => setTab(key)}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                {t.label}
-                <span className="adm-meta">{isPending ? '' : countOf(t.key)}</span>
+                {key === 'all' ? t('books.tabAll') : t(`books.status.${key}`)}
+                <span className="adm-meta">{isPending ? '' : countOf(key)}</span>
               </button>
             ))}
           </div>
@@ -259,12 +257,12 @@ export default function BooksManager() {
             <span className="adm-prompt-mark" aria-hidden="true">
               &gt;
             </span>
-            <span className="sr-only">搜尋書架</span>
+            <span className="sr-only">{t('books.searchShelf')}</span>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="書名、作者、ISBN"
+              placeholder={t('books.searchPlaceholder')}
             />
           </label>
         </div>
@@ -273,7 +271,7 @@ export default function BooksManager() {
           {isPending ? (
             <AdminLoading />
           ) : shown.length === 0 ? (
-            <p className="adm-empty">{books.length === 0 ? '書架還是空的。' : '沒有符合的書。'}</p>
+            <p className="adm-empty">{books.length === 0 ? t('books.emptyShelf') : t('books.noMatch')}</p>
           ) : (
             <ul className="adm-list">
               {shown.map((book) => (
@@ -299,18 +297,18 @@ export default function BooksManager() {
                     <button
                       type="button"
                       className="adm-icon-btn"
-                      aria-label={`編輯《${book.title}》`}
+                      aria-label={t('books.editAria', { title: book.title })}
                       onClick={() => openEdit(book)}
                     >
-                      編輯
+                      {t('books.edit')}
                     </button>
                     <button
                       type="button"
                       className="adm-icon-btn adm-icon-btn-flare"
-                      aria-label={`刪除《${book.title}》`}
+                      aria-label={t('books.deleteAria', { title: book.title })}
                       onClick={() => setDeleteId(book.id)}
                     >
-                      刪除
+                      {t('common.delete')}
                     </button>
                   </span>
                 </li>
@@ -323,12 +321,8 @@ export default function BooksManager() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editing ? '編輯這本書' : '加一本書'}</DialogTitle>
-            <DialogDescription>
-              {editing
-                ? '改完按「更新」。'
-                : '先用 ISBN 或書名搜外部書目帶入，再補自己的狀態、評分與筆記；也可以全部手打。'}
-            </DialogDescription>
+            <DialogTitle>{editing ? t('books.dialog.editTitle') : t('books.add')}</DialogTitle>
+            <DialogDescription>{editing ? t('books.dialog.editDesc') : t('books.dialog.addDesc')}</DialogDescription>
           </DialogHeader>
 
           <form className="adm-form" onSubmit={(e) => void handleSubmit(e)}>
@@ -339,7 +333,7 @@ export default function BooksManager() {
                     <span className="adm-prompt-mark" aria-hidden="true">
                       &gt;
                     </span>
-                    <span className="sr-only">搜尋外部書目</span>
+                    <span className="sr-only">{t('books.external.label')}</span>
                     <input
                       value={externalQuery}
                       onChange={(e) => setExternalQuery(e.target.value)}
@@ -349,7 +343,7 @@ export default function BooksManager() {
                           void searchExternal();
                         }
                       }}
-                      placeholder="ISBN 或書名（Google Books、OpenLibrary、國圖）"
+                      placeholder={t('books.external.placeholder')}
                     />
                   </label>
                   <button
@@ -359,11 +353,11 @@ export default function BooksManager() {
                     onClick={() => void searchExternal()}
                   >
                     {isSearching && <BusyDot />}
-                    {isSearching ? '搜尋中' : '搜尋'}
+                    {isSearching ? t('books.external.searching') : t('books.external.search')}
                   </button>
                 </div>
                 {results.length > 0 && (
-                  <ul className="adm-list adm-hits" aria-label="搜尋結果">
+                  <ul className="adm-list adm-hits" aria-label={t('books.external.results')}>
                     {results.map((hit) => (
                       // OpenLibrary 的結果可能沒有 ISBN；來源＋ISBN＋書名才夠分辨
                       <li key={`${hit.source ?? ''}-${hit.isbn ?? ''}-${hit.title}`}>
@@ -377,7 +371,7 @@ export default function BooksManager() {
                             <span className="adm-row-title">{hit.title}</span>
                             <span className="adm-meta">
                               {[
-                                hit.source === 'ncl' ? '國圖（沒有封面與簡介）' : null,
+                                hit.source === 'ncl' ? t('books.external.ncl') : null,
                                 hit.authors,
                                 hit.isbn && `ISBN ${hit.isbn}`,
                               ]
@@ -394,16 +388,16 @@ export default function BooksManager() {
             )}
 
             <label className="adm-field">
-              <span className="adm-caps">書名</span>
+              <span className="adm-caps">{t('books.field.title')}</span>
               <input value={form.title} onChange={(e) => set({ title: e.target.value })} required />
             </label>
             <div className="adm-form-grid">
               <label className="adm-field">
-                <span className="adm-caps">作者</span>
+                <span className="adm-caps">{t('books.field.authors')}</span>
                 <input value={form.authors} onChange={(e) => set({ authors: e.target.value })} />
               </label>
               <label className="adm-field">
-                <span className="adm-caps">出版社</span>
+                <span className="adm-caps">{t('books.field.publisher')}</span>
                 <input value={form.publisher} onChange={(e) => set({ publisher: e.target.value })} />
               </label>
               <label className="adm-field">
@@ -412,50 +406,54 @@ export default function BooksManager() {
               </label>
               <div className="adm-field">
                 <span className="adm-caps" aria-hidden="true">
-                  出版日期
+                  {t('books.field.publishedDate')}
                 </span>
                 <AdminDateField
-                  label="出版日期"
+                  label={t('books.field.publishedDate')}
                   value={form.published_date}
                   onChange={(v) => set({ published_date: v })}
                 />
               </div>
               <label className="adm-field">
-                <span className="adm-caps">頁數</span>
+                <span className="adm-caps">{t('books.field.pageCount')}</span>
                 <input type="number" value={form.page_count} onChange={(e) => set({ page_count: e.target.value })} />
               </label>
               <label className="adm-field">
-                <span className="adm-caps">語言</span>
+                <span className="adm-caps">{t('books.field.language')}</span>
                 <input value={form.language} onChange={(e) => set({ language: e.target.value })} placeholder="zh-TW" />
               </label>
             </div>
             <label className="adm-field">
-              <span className="adm-caps">分類</span>
+              <span className="adm-caps">{t('books.field.categories')}</span>
               <input value={form.categories} onChange={(e) => set({ categories: e.target.value })} />
             </label>
             <div className="adm-book-cover-field">
               <label className="adm-field adm-grow">
-                <span className="adm-caps">封面網址</span>
+                <span className="adm-caps">{t('books.field.coverUrl')}</span>
                 <input value={form.cover_url} onChange={(e) => set({ cover_url: e.target.value })} />
               </label>
               {form.cover_url && (
-                <img className="adm-cover adm-cover-large" src={proxiedImage(form.cover_url)} alt="封面預覽" />
+                <img
+                  className="adm-cover adm-cover-large"
+                  src={proxiedImage(form.cover_url)}
+                  alt={t('books.field.coverPreview')}
+                />
               )}
             </div>
             <label className="adm-field">
-              <span className="adm-caps">簡介</span>
+              <span className="adm-caps">{t('books.field.description')}</span>
               <textarea value={form.description} onChange={(e) => set({ description: e.target.value })} />
             </label>
 
             <div className="adm-form-section">
-              <span className="adm-caps">我讀這本</span>
+              <span className="adm-caps">{t('books.field.myReading')}</span>
               <div className="adm-form-grid">
                 <div className="adm-field">
                   <span className="adm-caps" aria-hidden="true">
-                    狀態
+                    {t('books.field.status')}
                   </span>
                   <AdminSelect
-                    label="狀態"
+                    label={t('books.field.status')}
                     value={form.reading_status}
                     onChange={(status) => {
                       // 切到「在讀／讀完」時順手補今天的日期（只補空的，已經填過的不動）
@@ -465,15 +463,11 @@ export default function BooksManager() {
                         date_finished: status === 'read' && !form.date_finished ? today() : form.date_finished,
                       });
                     }}
-                    options={[
-                      { value: 'to-read', label: '想讀' },
-                      { value: 'reading', label: '在讀' },
-                      { value: 'read', label: '讀完' },
-                    ]}
+                    options={STATUSES.map((s) => ({ value: s, label: t(`books.status.${s}`) }))}
                   />
                 </div>
                 <label className="adm-field">
-                  <span className="adm-caps">評分 · 0–5</span>
+                  <span className="adm-caps">{t('books.field.rating')}</span>
                   <input
                     type="number"
                     min="0"
@@ -485,29 +479,37 @@ export default function BooksManager() {
                 </label>
                 <div className="adm-field">
                   <span className="adm-caps" aria-hidden="true">
-                    開始讀
+                    {t('books.field.started')}
                   </span>
-                  <AdminDateField label="開始讀" value={form.date_started} onChange={(v) => set({ date_started: v })} />
+                  <AdminDateField
+                    label={t('books.field.started')}
+                    value={form.date_started}
+                    onChange={(v) => set({ date_started: v })}
+                  />
                 </div>
                 <div className="adm-field">
                   <span className="adm-caps" aria-hidden="true">
-                    讀完
+                    {t('books.field.finished')}
                   </span>
-                  <AdminDateField label="讀完" value={form.date_finished} onChange={(v) => set({ date_finished: v })} />
+                  <AdminDateField
+                    label={t('books.field.finished')}
+                    value={form.date_finished}
+                    onChange={(v) => set({ date_finished: v })}
+                  />
                 </div>
               </div>
               <label className="adm-field">
-                <span className="adm-caps">筆記</span>
+                <span className="adm-caps">{t('books.field.notes')}</span>
                 <textarea value={form.personal_notes} onChange={(e) => set({ personal_notes: e.target.value })} />
               </label>
             </div>
 
             <div className="adm-form-actions">
               <button type="button" className="adm-btn" onClick={() => setDialogOpen(false)}>
-                取消
+                {t('books.cancel')}
               </button>
               <button type="submit" className="adm-btn adm-btn-primary">
-                {editing ? '更新' : '放上書架'}
+                {editing ? t('books.update') : t('books.putOnShelf')}
               </button>
             </div>
           </form>
@@ -517,13 +519,13 @@ export default function BooksManager() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>確定要把這本書拿掉嗎？</AlertDialogTitle>
-            <AlertDialogDescription>連同評分與筆記一起刪掉，拿不回來。</AlertDialogDescription>
+            <AlertDialogTitle>{t('books.confirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('books.confirmBody')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('books.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void handleDelete()} variant="destructive">
-              刪除
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

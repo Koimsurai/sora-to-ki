@@ -1,6 +1,6 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { localeFromPathname } from '@/i18n/start-i18n';
-import { LOCALE_PREFIX, type Locale } from '@/lib/locales';
+import { prefixOf, type Locale } from '@/lib/locales';
 
 // 從 locale-link.tsx 拆出來：那支檔案同時 export 元件（LocaleLink）與這三個
 // 非元件，會讓 Vite Fast Refresh 對整支檔案退回整頁重載
@@ -14,7 +14,7 @@ export function useLocale(): Locale {
 
 /** 把「無前綴邏輯路徑」（如 '/about'）加上目前 locale 前綴 → '/en/about'；預設語言不加。 */
 export function localizedPath(to: string, locale: Locale): string {
-  const prefix = LOCALE_PREFIX[locale];
+  const prefix = prefixOf(locale);
   if (!prefix) return to; // 預設 zh-TW 無前綴
   return to === '/' ? `/${prefix}` : `/${prefix}${to}`;
 }

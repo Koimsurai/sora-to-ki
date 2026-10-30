@@ -688,8 +688,29 @@ async fn 沒有摘要時轉出來的是_null_不是空字串() {
 }
 
 #[tokio::test]
-async fn 只能從_zh_tw_原文轉_其餘一律_400() {
+async fn 英文原稿有繁中譯文時_從譯文轉簡體() {
+    let (app, _pool) = test_app().await;
+    let id = create_post(
+        &app,
+        json!({
+            "title": "English", "content": "Body", "source_language": "en",
+            "title_zh_tw": "這是繁體標題", "content_zh_tw": "鞋帶鬆了開來",
+        }),
+    )
+    .await;
+    let (st, v) = admin(&app, "POST", &format!("/api/admin/posts/{id}/generate-zh-cn"), None).await;
+    assert!(st.is_success(), "得到 {st} {v}");
+    assert_eq!(v["title_zh_cn"], "这是繁体标题");
+    let p = get_post(&app, id).await;
+    assert_eq!(p["content_zh_cn"], "鞋带松了开来");
+    assert_eq!(p["title"], "English", "原稿不該被動到");
+    assert_eq!(p["title_zh_tw"], "這是繁體標題");
+}
+
+#[tokio::test]
+async fn 沒有繁中可轉_或原稿就是簡中_一律_400() {
     // 拿日文原文去跑繁簡轉換會把日文漢字改掉——而那是不可逆的（原文已被覆寫）。
+    // 原稿不是繁中又沒有繁中譯文，就沒有東西可轉
     let (app, _pool) = test_app().await;
     for lang in ["ja", "en", "ko", "zh-CN"] {
         let id =

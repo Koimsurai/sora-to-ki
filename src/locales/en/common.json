@@ -122,13 +122,13 @@
   },
   "home": {
     "orbit": {
-      "title": "Koimsurai: notes, murmurs, work and collections",
+      "title": "{{author}}: notes, murmurs, work and collections",
       "notesCount": "{{count}} posts · latest {{date}}",
       "momentsCount": "latest {{date}}",
       "worksCount": "{{count}} projects",
       "collectionLine": "{{anime}} anime, {{films}} films, {{series}} series watched",
-      "aboutLine": "Falling from 2004 to now",
-      "aboutCount": "2004 –"
+      "aboutLine": "Falling from {{year}} to now",
+      "aboutCount": "{{year}} –"
     }
   },
   "commandPalette": {
@@ -304,48 +304,10 @@
     "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
     "heroTitle": "Setup",
     "subtitle": "Taking precision apart, giving obsession a place to rest.",
-    "cat": {
-      "main-rig": {
-        "short": "Main rig"
-      },
-      "server": {
-        "short": "Server"
-      },
-      "network": {
-        "short": "Network & mobile"
-      },
-      "smart-home": {
-        "short": "Smart home"
-      },
-      "peripherals": {
-        "short": "Peripherals"
-      },
-      "base-ii": {
-        "short": "Hometown"
-      }
-    },
-    "roles": {
-      "nanokvm": "Remote power and BIOS access — still reachable when the server hangs",
-      "headless": "Makes the monitor-less server think a display is attached so the GPU outputs properly",
-      "googleTv": "The Matter hub for the house",
-      "hub3": "Light, temperature/humidity and motion sensing over Matter; its light level drives the night-time lighting automation",
-      "rm4": "Learns the AC’s infrared codes so Home Assistant can control it",
-      "esp32": "A 433MHz transmitter built from two boards, mimicking the ceiling light’s stock remote",
-      "doorbell": "Battery doorbell, online through its hub"
-    },
     "appliances": {
-      "title": "Other connected appliances",
-      "types": {
-        "dehumidifier": "Dehumidifier",
-        "airPurifier": "Air purifier",
-        "catTower": "Pet air purifier + heated cat bed",
-        "feeder": "Auto feeder",
-        "camera": "Camera",
-        "plug": "Smart plug"
-      }
+      "title": "Other connected appliances"
     },
     "sheet": {
-      "memoryText": "The backup base when I'm back home. There are no photos of it; the specs are from memory.",
       "telemetry": "Telemetry",
       "telemetryEvery": "Sent back by this server, every 30 seconds",
       "telemetryWait": "Waiting for signal"
@@ -354,18 +316,11 @@
       "canvas": "Line drawing of a space shuttle payload bay: four payloads, and the old machine on a distant orbit",
       "hintWide": "Click a tag or a payload · ←→ to switch · Esc back to the bay",
       "hintTouch": "Tap a tag or a payload · swipe to switch",
-      "lede": {
-        "main-rig": "The one I sit in front of every day. All white.",
-        "server": "The one that's always on. Home Assistant runs here, and every smart device at home talks to it.",
-        "network": "One mesh router covers the whole home: wired gear goes through the switch, the rest is wireless.",
-        "peripherals": "What my hands touch on the desk every day."
-      },
       "count_one": "{{count}} part",
       "count_other": "{{count}} parts",
       "specCount_one": "{{count}} item",
       "specCount_other": "{{count}} items",
       "notDrawn": "not shown",
-      "devices": "Devices on this machine · Home Assistant",
       "records": "Notes about this machine",
       "prev": "Previous",
       "next": "Next",
@@ -481,23 +436,12 @@
     "kick": "About",
     "title": "Hold on.",
     "hint": "Scroll down",
+    "now": "Now",
     "landPre": "Past countless naive, uncertain yesterdays,",
     "land": "touchdown.",
     "surface": "Surface",
     "surfaceTitle": "In hand",
     "surfaceSub": "What I have carried along.",
-    "skill": {
-      "frontend": "Frontend",
-      "backend": "Backend",
-      "mobile": "Mobile",
-      "devops": "DevOps",
-      "design": "Design",
-      "data": "Data",
-      "network": "Network",
-      "productivity": "Productivity",
-      "ai": "AI Tools",
-      "teaching": "Teaching"
-    },
     "layer1": "Layer one",
     "layer1Title": "What I have done",
     "core": "Core",
@@ -659,7 +603,8 @@
     "emptyText": "The first message will show up on this line.",
     "privatePre": "For something private, write to",
     "privateMid": ". Bug reports and feature ideas fit better in",
-    "privatePost": "."
+    "privatePost": ".",
+    "privateEnd": "."
   },
   "signal": {
     "formTitle": "Send a signal",
@@ -756,7 +701,8 @@
     "title_rule3": "Grown from data",
     "text_rule3": "Every star on the works spiral grows from the numbers of one repo. Adjust the numbers to make one, then watch it grow step by step.",
     "title_license": "License",
-    "text_license": "Code is open source under AGPL-3.0; posts, photos and other content are all rights reserved.",
+    "qaHeading": "FAQ",
+    "text_license": "This site runs on sora-to-ki, open source under AGPL-3.0; posts, photos and other content are all rights reserved.",
     "swatchGround": "Black is the paper",
     "swatchPaper": "White is the ink",
     "swatchSignal": "{{signal}} is the signal",

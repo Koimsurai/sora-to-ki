@@ -1,0 +1,31 @@
+{
+  "controlRoom": "관제실 · Admin",
+  "navLabel": "관리자",
+  "toSite": "사이트로 돌아가기 ↗",
+  "owner": "운영자",
+  "admin": "관리자",
+  "logout": "로그아웃",
+  "closeMenu": "메뉴 닫기",
+  "backToPosts": "← 글",
+  "saveDraft": "임시 저장",
+  "saveAndExit": "저장하고 목록으로",
+  "schedule": "예약 발행",
+  "publish": "발행",
+  "collapse": "닫기",
+  "menu": "메뉴",
+  "language": "관리자 언어",
+  "languageShort": {
+    "zh-TW": "繁",
+    "zh-CN": "简",
+    "en": "EN",
+    "ja": "日",
+    "ko": "한"
+  },
+  "languageName": {
+    "zh-TW": "繁體中文",
+    "zh-CN": "简体中文",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어"
+  }
+}

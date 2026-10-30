@@ -5,17 +5,14 @@
 // 換頁進來時琥珀點從正上方落在發射台，火箭垂直離地、一路爬到現在，穿過大氣層之後星空才浮出來；
 // 離開時火箭沿機身方向飛走，點跟著機鼻。
 import { useEffect, useMemo, useRef } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import {
-  codingNowQueryOptions,
-  contributionsSinceQueryOptions,
-  LOG_START,
-  playingNowQueryOptions,
-} from '@/data/logData';
-import { MILESTONES, SITE_BIRTH } from '@/data/milestones';
+import { codingNowQueryOptions, contributionsSinceQueryOptions, playingNowQueryOptions } from '@/data/logData';
+import { useLogContent } from '@/data/pageContent';
+import OwnerFillHint from '@/components/common/OwnerFillHint';
 import { usePageTransition } from '@/hooks/usePageTransition';
-import { lookupOr } from '@/lib/tableLookup';
+import { pickText } from '@/lib/i18nText';
 import { after, isArriving } from '@/store/pageTransition';
 import { createLog, ROCKET_SRC } from './logSky';
 import './Log.css';
@@ -44,29 +41,33 @@ const easeIn = (t: number) => t * t;
 
 export default function Log() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const { data: days = null } = useQuery(contributionsSinceQueryOptions);
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
+  // 起點（站點誕生那一刻，帶時區）與里程碑是站長填的（後台「頁面」或 MCP）；起點沒填時後端給第一篇文章那天
+  const content = useLogContent();
+  const birthAt = content?.start ?? '';
+  const start = birthAt === '' ? todayDate() : birthAt.slice(0, 10);
+  const { data: days = null } = useQuery(contributionsSinceQueryOptions(start));
   const { data: coding = null } = useQuery(codingNowQueryOptions);
   const { data: playing = null } = useQuery(playingNowQueryOptions);
 
   const milestones = useMemo(
     () =>
-      MILESTONES.map((m, i) => ({
+      (content?.milestones ?? []).map((m, i) => ({
         ...m,
         key: `${m.date}-${i}`,
-        label: lookupOr(m.text, lang, m.text['zh-TW']),
+        label: pickText(m.text, lang),
       })),
-    [lang],
+    [lang, content],
   );
   // 沒有貢獻資料（後端拿不到）時軌跡是平的：一樣畫得出時間軸與里程碑
   const log = useMemo(() => {
-    const counts = days?.map((d) => d.count) ?? fallbackDays();
+    const counts = days?.map((d) => d.count) ?? fallbackDays(start);
     return createLog(
-      LOG_START,
+      start,
       counts,
-      MILESTONES.map((m) => m.date),
+      milestones.map((m) => m.date),
     );
-  }, [days]);
+  }, [days, start, milestones]);
   const dayDates = useMemo(() => days?.map((d) => d.date) ?? [], [days]);
 
   const pageRef = useRef<HTMLDivElement>(null);
@@ -140,7 +141,7 @@ export default function Log() {
 
   // 任務經過時間：每秒跳一次，直接寫字，不經過 React
   useEffect(() => {
-    const birth = new Date(SITE_BIRTH).getTime();
+    const birth = new Date(birthAt || `${start}T00:00:00`).getTime();
     const tick = () => {
       const d = Date.now() - birth;
       const hms = `${pad2(Math.floor(d / 3.6e6) % 24)}:${pad2(Math.floor(d / 6e4) % 60)}:${pad2(Math.floor(d / 1e3) % 60)}`;
@@ -149,7 +150,7 @@ export default function Log() {
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [t]);
+  }, [t, birthAt, start]);
 
   // 軌跡
   useEffect(() => {
@@ -394,7 +395,7 @@ export default function Log() {
           <p>{t('log.subtitle')}</p>
         </div>
         <div className="lg-met">
-          <span>{t('log.met', { date: dotDate(LOG_START) })}</span>
+          <span>{t('log.met', { date: dotDate(start) })}</span>
           <b ref={metRef} suppressHydrationWarning />
         </div>
       </header>
@@ -487,13 +488,20 @@ export default function Log() {
           </div>
         </div>
       </footer>
+      {milestones.length === 0 && <OwnerFillHint page="log" />}
     </div>
   );
 }
 
 /** 後端拿不到貢獻資料時：站點誕生到今天每天 0，軌跡是平的 */
-function fallbackDays() {
-  // 跟有資料時一樣：從 LOG_START 到今天（含）。四捨五入的話過了中午就多算一天
-  const n = Math.max(2, Math.floor((Date.now() - new Date(`${LOG_START}T00:00:00`).getTime()) / 864e5) + 1);
+function fallbackDays(start: string) {
+  // 跟有資料時一樣：從起點到今天（含）。四捨五入的話過了中午就多算一天
+  const n = Math.max(2, Math.floor((Date.now() - new Date(`${start}T00:00:00`).getTime()) / 864e5) + 1);
   return Array.from({ length: n }, () => 0);
+}
+
+/** 今天（本地日期，YYYY-MM-DD）：起點還沒拿到時的退路 */
+function todayDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }

@@ -1,0 +1,182 @@
+{
+  "periods": {
+    "today": "Today",
+    "3d": "3 days",
+    "7d": "7 days",
+    "30d": "30 days",
+    "6mo": "6 months"
+  },
+  "periodWord": {
+    "today": "Today so far",
+    "3d": "Last 3 days",
+    "7d": "Last 7 days",
+    "30d": "Last 30 days",
+    "6mo": "Last 6 months"
+  },
+  "prev": {
+    "today": "same time yesterday",
+    "other": "previous period"
+  },
+  "unit": {
+    "sec": "s",
+    "min": "m"
+  },
+  "duration": {
+    "sec": "{{s}}s",
+    "minSec": "{{m}}m {{s}}s"
+  },
+  "unknownCountry": "Unknown",
+  "direct": "Direct",
+  "device": {
+    "Desktop": "Desktop",
+    "Laptop": "Laptop",
+    "Mobile": "Mobile",
+    "Tablet": "Tablet"
+  },
+  "live": "{{count}} on the site now",
+  "source": "Source: Plausible",
+  "openPlausible": "Open in Plausible ↗",
+  "loadFailed": "Couldn't load Plausible: {{message}}",
+  "noData": "No data yet.",
+  "compare": {
+    "noPrev": "nobody came in the {{than}}",
+    "times": "{{n}}× the {{than}}",
+    "more": "{{pct}}% more than the {{than}}",
+    "less": "{{pct}}% fewer than the {{than}}",
+    "same": "about the same as the {{than}}"
+  },
+  "summary": {
+    "plain": "{{period}}: <b>{{count}}</b> visitors.",
+    "compared": "{{period}}: <b>{{count}}</b> visitors, {{cmp}}."
+  },
+  "from": {
+    "allDirect": "Almost all came directly ({{count}}).",
+    "allSource": "Almost all came from {{source}} ({{count}}).",
+    "partDirect": "{{pct}}% came directly ({{count}}).",
+    "partSource": "{{pct}}% came from {{source}} ({{count}})."
+  },
+  "delta": {
+    "noData": "No data for the {{than}}",
+    "plain": "{{arrow}} {{than}}: {{prev}}",
+    "better": "{{arrow}} {{than}}: {{prev}}, better",
+    "worse": "{{arrow}} {{than}}: {{prev}}, worse"
+  },
+  "tiles": {
+    "label": "Totals",
+    "visitors": "Visitors",
+    "visitorsSub": "Unique people. Someone visiting several times in a day counts once.",
+    "pages": "Pages per visit",
+    "pagesSub": "Average pages viewed per visit. Higher means more people keep browsing.",
+    "bounce": "Left after one page",
+    "bounceSub": "The \"bounce rate\": share of people who leave after the first page. Lower is better.",
+    "duration": "Time per visit",
+    "durationSub": "Roughly how long from arriving to leaving (average per visit)."
+  },
+  "series": {
+    "heading": {
+      "hour": "Visitors per hour",
+      "day": "Visitors per day",
+      "week": "Visitors per week"
+    },
+    "caption": {
+      "hour": "Visitors and pageviews per hour",
+      "day": "Visitors and pageviews per day",
+      "week": "Visitors and pageviews per week"
+    },
+    "tip": "{{date}} · Visitors {{visitors}} · Pageviews {{pageviews}}",
+    "tipWeek": "Week of {{date}} · Visitors {{visitors}} · Pageviews {{pageviews}}",
+    "date": "Date",
+    "visitors": "Visitors",
+    "pageviews": "Pageviews",
+    "empty": "No data for this period."
+  },
+  "more": {
+    "summary": "Top pages, countries and devices",
+    "pages": "Top pages",
+    "countries": "Countries",
+    "devices": "Devices",
+    "note": "Countries are guessed from the connection's location. Readers on a VPN or proxy count as wherever that endpoint is, so treat this as a rough guide."
+  },
+  "langName": {
+    "zh-TW": "Trad. Chinese",
+    "zh-CN": "Simp. Chinese",
+    "en": "English",
+    "ja": "Japanese",
+    "ko": "Korean"
+  },
+  "pageName": {
+    "suffix": " ({{lang}})",
+    "home": "Home{{suffix}}",
+    "blog": "Posts{{suffix}}",
+    "post": "\"{{title}}\"{{suffix}}"
+  },
+  "posts": {
+    "heading": "Per post",
+    "note": "\"Avg. time\" is the average from opening the post to leaving (time in a background tab doesn't count); \"Reading time\" is estimated from the word count. A big gap between the two means most people only read the beginning. \"Scrolled\" is the furthest point reached as a share of the post; jumping to the bottom or skipping ahead via the table of contents also counts, so it runs higher than what was actually read. All language versions of a post are combined; hearts and comments are all-time, not limited to this period.",
+    "empty": "Nobody has read a post in this period yet.",
+    "col": {
+      "post": "Post",
+      "visitors": "Visitors",
+      "scroll": "Scrolled",
+      "time": "Avg. time",
+      "read": "Reading time",
+      "hearts": "Hearts",
+      "comments": "Comments"
+    },
+    "readMinutes": "{{n}} min"
+  },
+  "sources": {
+    "heading": "Where they came from, and what they saw first",
+    "note": "\"Direct\" means no referrer: bookmarks, typing the URL, or links opened from some messaging apps (LINE and Discord sometimes drop the referrer).",
+    "people": "{{count}} visitors"
+  },
+  "search": {
+    "heading": "What people searched on Google",
+    "setup": "Search Console isn't connected: mount the service account key into the backend in <code>docker-compose.yml</code> and set <code>GSC_SERVICE_ACCOUNT_FILE</code> (see <code>backend/src/handlers/search_console.rs</code>).",
+    "error": "Couldn't load Search Console: {{error}}",
+    "note": "\"Impressions\" is how often this site appeared in search results; \"Clicks\" is how often someone clicked through. Google's data lags two or three days, so the last few days look low.",
+    "empty": "No search data for this period.",
+    "col": {
+      "query": "Query",
+      "clicks": "Clicks",
+      "impressions": "Impressions",
+      "ctr": "CTR",
+      "position": "Avg. position"
+    }
+  },
+  "reactions": {
+    "heading": "Hearts and reactions received",
+    "note": "Every heart, emoji reaction, comment like and thought like is logged, and so is every undo. No identity or IP is stored: the country comes from Cloudflare, and the source is the site the reader came from.",
+    "loadFailed": "Couldn't load the log: {{message}}",
+    "deleted": "(deleted)",
+    "post": "Reacted {{value}} on \"{{title}}\"",
+    "postUndo": "Took back {{value}} on \"{{title}}\"",
+    "site": "Left a mark on the home page",
+    "commentThought": "Liked a comment on the thought \"{{title}}\"",
+    "commentMessages": "Liked a comment on the guestbook",
+    "commentDeleted": "Liked a comment that was later deleted",
+    "commentPost": "Liked a comment on \"{{title}}\"",
+    "commentOther": "Liked a comment on /{{on}}",
+    "thoughtLike": "Liked the thought \"{{title}}\"",
+    "thoughtDislike": "Disliked the thought \"{{title}}\"",
+    "thoughtUnlike": "Took back a like on the thought \"{{title}}\"",
+    "thoughtUndislike": "Took back a dislike on the thought \"{{title}}\"",
+    "unknownCountry": "Unknown country",
+    "from": "From {{referrer}}",
+    "direct": "Direct",
+    "device": {
+      "mobile": "Mobile",
+      "desktop": "Desktop"
+    },
+    "beforeLog": "Before logging began",
+    "current": "So far",
+    "totals": "Hearts on posts: {{hearts}} · Marks on the home page: {{marks}} (totals only, no details)"
+  },
+  "setup": {
+    "intro": "Plausible isn't connected. The backend needs a Stats API key:",
+    "step1": "Open Plausible, click your avatar (top right) → <b>Account Settings</b> → <b>API Keys</b> → <b>New API Key</b>, and choose <b>Stats API</b> as the type.",
+    "step2": "Add the key to <code>.env.backend</code> on the server: <code>PLAUSIBLE_API_KEY=…</code> (if the site name in Plausible isn't <code>koimsurai.com</code>, also add <code>PLAUSIBLE_SITE_ID=…</code>)",
+    "step3": "Restart the backend: <code>docker compose up -d backend-rs</code>",
+    "keyNote": "The key stays on the backend and never reaches the frontend code."
+  }
+}

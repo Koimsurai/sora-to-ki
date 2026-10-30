@@ -1,7 +1,8 @@
 // PostData = 後端生成的單篇回應型別（原本繞道 BlogPostPage 的別名，該 fallback 元件已退役）。
 import type { PostDetailResponse as PostData } from '@koimsurai/api-types';
 
-import { DEFAULT_LOCALE, type Locale, localePathname } from '@/lib/locales';
+import { defaultLocale, type Locale, localePathname } from '@/lib/locales';
+import { siteAuthor, siteGithub, siteName, siteTitle, siteUrl } from '@/lib/siteIdentity';
 
 // 文章頁的完整 SEO meta，放在路由 head() —— 那是唯一會進 SSR HTML 的地方。
 //
@@ -13,9 +14,6 @@ import { DEFAULT_LOCALE, type Locale, localePathname } from '@/lib/locales';
 //
 // （2026-07：SEOHead 已全面退休。所有頁面的 title/description/og 都改由 head() 出、進 SSR；
 //  文章頁的 BlogPosting JSON-LD 也搬進 head().scripts。react-helmet-async 依賴已移除。）
-
-const BASE_URL = 'https://koimsurai.com';
-const SITE_NAME = '宙と木 · Koimsurai';
 
 // 對齊 SEOHead 的既有對應表
 export const LOCALE_TO_OG: Record<string, string> = {
@@ -68,8 +66,8 @@ const jsonLdScript = (data: unknown): { type: string; children: string } => ({
  * 圖上的字照語系。繁中不帶參數，網址跟著短一點
  */
 function ogImageUrl(key: string | number, locale: string): string {
-  const query = locale === DEFAULT_LOCALE ? '' : `?l=${encodeURIComponent(locale)}`;
-  return `${BASE_URL}/api/og/${key}.png${query}`;
+  const query = locale === defaultLocale() ? '' : `?l=${encodeURIComponent(locale)}`;
+  return `${siteUrl()}/api/og/${key}.png${query}`;
 }
 
 /**
@@ -83,10 +81,10 @@ export function pageMeta(
   locale: string,
   og = 'home',
 ): MetaTag[] {
-  const url = `${BASE_URL}${canonicalPath}`;
+  const url = `${siteUrl()}${canonicalPath}`;
   const image = ogImageUrl(og, locale);
   // 對齊 SEOHead 既有的標題格式
-  const fullTitle = title ? `${title} - 宙と木` : SITE_NAME;
+  const fullTitle = title ? `${title} - ${siteName()}` : siteTitle();
 
   return [
     { title: fullTitle },
@@ -99,7 +97,7 @@ export function pageMeta(
     { property: 'og:image', content: image },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
-    { property: 'og:site_name', content: SITE_NAME },
+    { property: 'og:site_name', content: siteTitle() },
     { property: 'og:locale', content: LOCALE_TO_OG[locale] ?? 'zh_TW' },
 
     { name: 'twitter:card', content: 'summary_large_image' },
@@ -113,14 +111,14 @@ export function pageMeta(
 /** 文章頁 head() 用的 meta。canonicalPath 例:/blog/39、/en/blog/39 */
 export function articleMeta(post: PostData, canonicalPath: string, locale: string): MetaTag[] {
   const description = post.excerpt;
-  const url = `${BASE_URL}${canonicalPath}`;
+  const url = `${siteUrl()}${canonicalPath}`;
   // 文章的分享圖：手記的星軌、亮的是這一篇，字照語系（後端 handlers/og.rs）
   const image = ogImageUrl(post.id, locale);
   const publishedIso = toIso(post.created_at);
   const modifiedIso = toIso(post.updated_at);
 
   return [
-    { title: `${post.title} - 宙と木` },
+    { title: `${post.title} - ${siteName()}` },
     { name: 'description', content: description },
 
     { property: 'og:type', content: 'article' },
@@ -130,7 +128,7 @@ export function articleMeta(post: PostData, canonicalPath: string, locale: strin
     { property: 'og:image', content: image },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
-    { property: 'og:site_name', content: SITE_NAME },
+    { property: 'og:site_name', content: siteTitle() },
     { property: 'og:locale', content: LOCALE_TO_OG[locale] ?? 'zh_TW' },
 
     { name: 'twitter:card', content: 'summary_large_image' },
@@ -155,10 +153,10 @@ export function articleMeta(post: PostData, canonicalPath: string, locale: strin
 export function articleJsonLd(
   post: PostData,
   canonicalPath: string,
-  locale: Locale = DEFAULT_LOCALE,
+  locale: Locale = defaultLocale(),
 ): { type: string; children: string } {
-  const url = `${BASE_URL}${canonicalPath}`;
-  const image = `${BASE_URL}/api/og/${post.id}.png`;
+  const url = `${siteUrl()}${canonicalPath}`;
+  const image = `${siteUrl()}/api/og/${post.id}.png`;
   const published = toIso(post.created_at);
   const blogPath = localePathname(locale, 'blog');
 
@@ -171,8 +169,8 @@ export function articleJsonLd(
     image,
     // 五語站台一定要標：只靠 <html lang> 與 hreflang 推斷，Google 不見得會把各版本正確歸語言。
     inLanguage: locale,
-    author: { '@type': 'Person', name: post.author ?? 'Koimsurai', url: BASE_URL },
-    publisher: { '@type': 'Person', name: 'Koimsurai', url: BASE_URL },
+    author: { '@type': 'Person', name: post.author ?? siteAuthor(), url: siteUrl() },
+    publisher: { '@type': 'Person', name: siteAuthor(), url: siteUrl() },
     ...(published ? { datePublished: published } : {}),
     dateModified: toIso(post.updated_at) ?? published,
     ...(post.tags.length > 0 ? { keywords: post.tags.join(', ') } : {}),
@@ -187,8 +185,8 @@ export function articleJsonLd(
   // 曾經試過讓它只有 name 不給 item → Rich Results 測試直接判定「item 欄位未填」重大問題。
   // 硬塞一個 canonical 指向別處的網址更糟。分類資訊留在 BlogPosting 的 articleSection 就好。
   const crumbs: Record<string, unknown>[] = [
-    { '@type': 'ListItem', position: 1, name: SITE_NAME, item: `${BASE_URL}${localePathname(locale)}` },
-    { '@type': 'ListItem', position: 2, name: 'Blog', item: `${BASE_URL}${blogPath}` },
+    { '@type': 'ListItem', position: 1, name: siteTitle(), item: `${siteUrl()}${localePathname(locale)}` },
+    { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl()}${blogPath}` },
     { '@type': 'ListItem', position: 3, name: post.title, item: url },
   ];
 
@@ -203,44 +201,44 @@ export function articleJsonLd(
  * WebSite 讓 Google 有機會給 sitelinks；Person 是知識面板／作者實體的訊號——站上本來就有完整的
  * 個人資訊與外部帳號，宣告出來才連得起來。這兩個實體全站唯一，只掛首頁。
  */
-export function siteJsonLd(locale: Locale = DEFAULT_LOCALE): { type: string; children: string } {
-  const home = `${BASE_URL}${localePathname(locale)}`;
+export function siteJsonLd(locale: Locale = defaultLocale()): { type: string; children: string } {
+  const home = `${siteUrl()}${localePathname(locale)}`;
   return jsonLdScript({
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'WebSite',
-        '@id': `${BASE_URL}/#website`,
+        '@id': `${siteUrl()}/#website`,
         url: home,
-        name: SITE_NAME,
+        name: siteTitle(),
         inLanguage: locale,
-        publisher: { '@id': `${BASE_URL}/#person` },
+        publisher: { '@id': `${siteUrl()}/#person` },
       },
       {
         '@type': 'Person',
-        '@id': `${BASE_URL}/#person`,
-        name: 'Koimsurai',
-        url: BASE_URL,
-        sameAs: ['https://github.com/Koimsurai'],
+        '@id': `${siteUrl()}/#person`,
+        name: siteAuthor(),
+        url: siteUrl(),
+        ...(siteGithub() ? { sameAs: [`https://github.com/${siteGithub()}`] } : {}),
       },
     ],
   });
 }
 
 /** 文章列表頁的 Blog（CollectionPage 的專用型別），讓爬蟲知道這頁是文章集合而不是普通頁。 */
-export function blogListJsonLd(locale: Locale = DEFAULT_LOCALE): { type: string; children: string } {
-  const url = `${BASE_URL}${localePathname(locale, 'blog')}`;
+export function blogListJsonLd(locale: Locale = defaultLocale()): { type: string; children: string } {
+  const url = `${siteUrl()}${localePathname(locale, 'blog')}`;
   return jsonLdScript({
     '@context': 'https://schema.org',
     '@type': 'Blog',
     '@id': `${url}#blog`,
     url,
-    name: SITE_NAME,
+    name: siteTitle(),
     inLanguage: locale,
     // ⚠ 這兩個 @id 指向的實體只在**首頁**出（siteJsonLd）。改動任何一邊的
     // `#website` / `#person` 字串就會讓圖斷開，而斷開之後站上完全沒有症狀——
     // 只是 Google 不再把這頁跟站台／作者實體連起來。seoMeta.test.ts 有釘住這組對應。
-    isPartOf: { '@id': `${BASE_URL}/#website` },
-    publisher: { '@id': `${BASE_URL}/#person` },
+    isPartOf: { '@id': `${siteUrl()}/#website` },
+    publisher: { '@id': `${siteUrl()}/#person` },
   });
 }

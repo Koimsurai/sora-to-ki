@@ -1,173 +1,74 @@
 // 作品頁（about/Works）的清單與數據。
 //
-// 清單的順序就是螺旋的順序（第一個是中心的起點，越後面越外圈），要跟後端的 WORK_REPOS 一致。
-// 每一件長什麼樣子全由 GitHub 的數據決定（語言組成、commit 數、星數、最後推送時間），
-// 這裡只放數據給不了的：顯示的名字、一句介紹。
-import { queryOptions } from '@tanstack/react-query';
+// 清單是站長在後台「頁面」或 MCP 填的（後端 page_content 的 works）：順序就是螺旋的順序（第一件是中心的起點，
+// 越後面越外圈）。每一件長什麼樣子全由 GitHub 的數據決定（語言組成、commit 數、星數、最後推送時間），
+// 清單裡只放數據給不了的：顯示的名字、一句介紹，以及最後量到的數字（GitHub 拿不到時的備用值）。
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import type { WorkRepo, WorksResponse } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
+import { useWorksContent } from './pageContent';
 
 export interface WorkEntry {
   repo: string;
   name: string;
   /** 一句話：這是什麼 */
   what: Record<string, string>;
-  /** 螺旋的起點 */
-  origin?: boolean;
-  /**
-   * 後端還沒拿到數據時用的值（2026-10-23 從 GitHub 量的）：私有 repo 在 token 沒權限時、
-   * 或後端還沒更新到有這支端點的版本時，作品照樣畫得出來
-   */
+  /** 螺旋的起點（清單的第一件） */
+  origin: boolean;
+  /** GitHub 拿不到數據時用的值（私有 repo 在 token 沒權限時、沒設 token、GitHub 掛了） */
   fallback: Omit<WorkRepo, 'repo'>;
 }
 
-const langs = (o: Record<string, number>) => Object.entries(o).map(([name, bytes]) => ({ name, bytes }));
+const EMPTY_STATS: Omit<WorkRepo, 'repo'> = {
+  url: null,
+  created_at: '1970-01-01T00:00:00Z',
+  pushed_at: '1970-01-01T00:00:00Z',
+  stars: 0,
+  commits: 0,
+  languages: [],
+};
 
-export const WORKS: WorkEntry[] = [
-  {
-    repo: 'Koimsurai/Volticar_API',
-    name: 'VoltiCar',
-    origin: true,
-    what: {
-      'zh-TW': '畢業專題：EV 充電整合與碳權遊戲化',
-      'zh-CN': '毕业专题：EV 充电整合与碳权游戏化',
-      en: 'Capstone: EV charging hub with carbon-credit gamification',
-      ja: '卒業制作：EV 充電の統合とカーボンクレジットのゲーム化',
-      ko: '졸업 프로젝트: EV 충전 통합과 탄소 배출권 게임화',
-    },
-    fallback: {
-      url: null,
-      created_at: '2025-03-21T00:00:00Z',
-      pushed_at: '2025-03-21T00:00:00Z',
-      stars: 0,
-      commits: 1,
-      languages: langs({ Python: 21623, Shell: 2478 }),
-    },
-  },
-  {
-    repo: 'Koimsurai/sora-to-ki',
-    name: 'sora-to-ki',
-    what: {
-      'zh-TW': '你正在看的這個站',
-      'zh-CN': '你正在看的这个站',
-      en: 'The site you are looking at',
-      ja: 'いま見ているこのサイト',
-      ko: '지금 보고 있는 이 사이트',
-    },
-    fallback: {
-      url: 'https://github.com/Koimsurai/sora-to-ki',
-      created_at: '2025-03-31T00:00:00Z',
-      pushed_at: '2026-10-23T00:00:00Z',
-      stars: 2,
-      commits: 732,
-      languages: langs({ TypeScript: 2368532, Rust: 1381627, CSS: 579299, JavaScript: 95194 }),
-    },
-  },
-  {
-    repo: 'Koimsurai/flow2code',
-    name: 'flow2code',
-    what: {
-      'zh-TW': '看穿 API 路由的 X 光',
-      'zh-CN': '看穿 API 路由的 X 光',
-      en: 'An X-ray for API routes',
-      ja: 'API ルートを透かして見る X 線',
-      ko: 'API 라우트를 꿰뚫어 보는 엑스레이',
-    },
-    fallback: {
-      url: 'https://github.com/Koimsurai/flow2code',
-      created_at: '2026-02-26T00:00:00Z',
-      pushed_at: '2026-06-12T00:00:00Z',
-      stars: 4,
-      commits: 70,
-      languages: langs({ TypeScript: 977846, JavaScript: 77185 }),
-    },
-  },
-  {
-    repo: 'Koimsurai/session-to-obsidian',
-    name: 'session-to-obsidian',
-    what: {
-      'zh-TW': '把對話整理成主題筆記',
-      'zh-CN': '把对话整理成主题笔记',
-      en: 'Turns chat sessions into topic notes',
-      ja: '会話をテーマ別のノートにまとめる',
-      ko: '대화를 주제별 노트로 정리',
-    },
-    fallback: {
-      url: 'https://github.com/Koimsurai/session-to-obsidian',
-      created_at: '2026-06-18T00:00:00Z',
-      pushed_at: '2026-10-13T00:00:00Z',
-      stars: 2,
-      commits: 13,
-      languages: langs({ Python: 69873 }),
-    },
-  },
-  {
-    repo: 'Koimsurai/anigamer-rs',
-    name: 'anigamer-rs',
-    what: {
-      'zh-TW': '巴哈姆特動畫瘋的 Rust SDK',
-      'zh-CN': '巴哈姆特动画疯的 Rust SDK',
-      en: 'A Rust SDK for Bahamut Anime Crazy',
-      ja: 'バハムート動画疯の Rust SDK',
-      ko: '바하무트 애니메이션 크레이지용 Rust SDK',
-    },
-    fallback: {
-      url: 'https://github.com/Koimsurai/anigamer-rs',
-      created_at: '2026-07-15T00:00:00Z',
-      pushed_at: '2026-08-04T00:00:00Z',
-      stars: 0,
-      commits: 3,
-      languages: langs({ Rust: 43438 }),
-    },
-  },
-  {
-    repo: 'Koimsurai/nuntius',
-    name: 'nuntius',
-    what: {
-      'zh-TW': 'Discord 與 GitHub 之間的信使',
-      'zh-CN': 'Discord 与 GitHub 之间的信使',
-      en: 'A messenger between Discord and GitHub',
-      ja: 'Discord と GitHub をつなぐ伝令',
-      ko: 'Discord와 GitHub 사이의 전령',
-    },
-    fallback: {
-      url: 'https://github.com/Koimsurai/nuntius',
-      created_at: '2026-08-13T00:00:00Z',
-      pushed_at: '2026-10-16T00:00:00Z',
-      stars: 3,
-      commits: 31,
-      languages: langs({ Python: 301901 }),
-    },
-  },
-  {
-    repo: 'Limatura/tessera',
-    name: 'tessera',
-    what: {
-      'zh-TW': '用完會自己清掉的檔案分享',
-      'zh-CN': '用完会自己清掉的文件分享',
-      en: 'File sharing that cleans up after itself',
-      ja: '使い終わると自分で消えるファイル共有',
-      ko: '다 쓰면 스스로 지워지는 파일 공유',
-    },
-    fallback: {
-      url: 'https://github.com/Limatura/tessera',
-      created_at: '2026-10-16T00:00:00Z',
-      pushed_at: '2026-10-23T00:00:00Z',
-      stars: 48,
-      commits: 88,
-      languages: langs({ Rust: 3757802, TypeScript: 1745467, JavaScript: 38282, CSS: 25658, Python: 18382 }),
-    },
-  },
-];
+/** 作品清單（站長填的），形狀跟 WorkEntry 一樣；enabled = false 時不抓（選單還沒展開） */
+export function useWorkEntries(enabled = true): WorkEntry[] {
+  const items = useWorksContent(enabled);
+  return items.map((w, i) => ({
+    repo: w.repo,
+    name: w.name === '' || w.name === undefined ? (w.repo.split('/')[1] ?? w.repo) : w.name,
+    what: w.what ?? {},
+    origin: i === 0,
+    fallback: w.snapshot ? { ...EMPTY_STATS, ...w.snapshot, url: w.snapshot.url ?? null } : EMPTY_STATS,
+  }));
+}
 
-/** `/api/github/works`：抓不到就是空的，作品頁改用 fallback */
-export const worksQueryOptions = queryOptions({
-  queryKey: ['github', 'works'],
-  queryFn: async (): Promise<WorkRepo[]> => {
-    const res = await fetch(apiUrl('/api/github/works'));
-    if (!res.ok) return [];
-    const data = (await res.json()) as WorksResponse;
-    return data.works;
-  },
-  staleTime: 60 * 60 * 1000,
-});
+/** repo 清單的指紋：放進網址當快取鍵。後端的回應快取是照「路徑加查詢字串」存的，
+ *  清單一改網址就變，不必等快取過期（6 小時）才看得到新加的作品 */
+function fingerprint(repos: string[]): string {
+  let h = 2166136261;
+  for (const c of repos.join(',')) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return (h >>> 0).toString(36);
+}
+
+/** GitHub 上的即時數據（後端照站長填的清單抓） */
+const worksQueryOptions = (entries: { repo: string }[]) => {
+  const v = fingerprint(entries.map((e) => e.repo));
+  return queryOptions({
+    queryKey: ['github', 'works', v],
+    queryFn: async (): Promise<WorkRepo[]> => {
+      const res = await fetch(apiUrl(`/api/github/works?v=${v}`));
+      if (!res.ok) return [];
+      const data = (await res.json()) as WorksResponse;
+      return data.works;
+    },
+    staleTime: 60 * 60 * 1000,
+  });
+};
+
+/** 一件作品的數據：GitHub 有就用 GitHub 的，沒有就用最後量到的 */
+export function statsOf(entry: WorkEntry, live: WorkRepo[]): WorkRepo {
+  return live.find((r) => r.repo.toLowerCase() === entry.repo.toLowerCase()) ?? { repo: entry.repo, ...entry.fallback };
+}
+
+export function useWorkStats(entries: WorkEntry[], enabled = true): WorkRepo[] {
+  const { data: live = [] } = useQuery({ ...worksQueryOptions(entries), enabled: enabled && entries.length > 0 });
+  return live;
+}

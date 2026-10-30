@@ -11,6 +11,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import { BusyDot } from '@/components/admin/AdminLoading';
+import { useAdminT } from '@/i18n/admin-i18n';
 import type { MonacoToolbarProps } from './types';
 
 /**
@@ -32,27 +33,58 @@ export function MonacoToolbar({
   disabled = false,
   uploading = false,
 }: MonacoToolbarProps) {
+  const { t } = useAdminT();
   return (
     <div className="monaco-toolbar">
-      <button type="button" className="monaco-tool" onClick={onUndo} disabled={disabled} title="復原 (Ctrl+Z)">
+      <button
+        type="button"
+        className="monaco-tool"
+        onClick={onUndo}
+        disabled={disabled}
+        title={t('monaco.toolbar.undo')}
+      >
         <CornerUpLeft className="size-3.5" />
       </button>
-      <button type="button" className="monaco-tool" onClick={onRedo} disabled={disabled} title="取消復原 (Ctrl+Y)">
+      <button
+        type="button"
+        className="monaco-tool"
+        onClick={onRedo}
+        disabled={disabled}
+        title={t('monaco.toolbar.redo')}
+      >
         <CornerUpRight className="size-3.5" />
       </button>
 
       <span className="monaco-sep" aria-hidden="true" />
 
-      <button type="button" className="monaco-tool" onClick={onBold} disabled={disabled} title="切換粗體 (Ctrl+B)">
+      <button
+        type="button"
+        className="monaco-tool"
+        onClick={onBold}
+        disabled={disabled}
+        title={t('monaco.toolbar.bold')}
+      >
         <Bold className="size-3.5" />
       </button>
-      <button type="button" className="monaco-tool" onClick={onItalic} disabled={disabled} title="切換斜體 (Ctrl+I)">
+      <button
+        type="button"
+        className="monaco-tool"
+        onClick={onItalic}
+        disabled={disabled}
+        title={t('monaco.toolbar.italic')}
+      >
         <Italic className="size-3.5" />
       </button>
 
       <span className="monaco-sep" aria-hidden="true" />
 
-      <button type="button" className="monaco-tool" onClick={onLink} disabled={disabled} title="切換連結 (Ctrl+K)">
+      <button
+        type="button"
+        className="monaco-tool"
+        onClick={onLink}
+        disabled={disabled}
+        title={t('monaco.toolbar.link')}
+      >
         <Link className="size-3.5" />
       </button>
       {onLinkPost && (
@@ -61,7 +93,7 @@ export function MonacoToolbar({
           className="monaco-tool"
           onClick={onLinkPost}
           disabled={disabled}
-          title="插入舊文章連結 (Cmd/Ctrl+Shift+K)"
+          title={t('monaco.toolbar.linkPost')}
         >
           <FileText className="size-3.5" />
         </button>
@@ -71,11 +103,11 @@ export function MonacoToolbar({
         className="monaco-tool"
         onClick={onImage}
         disabled={disabled}
-        title="插入圖片 (Ctrl+Shift+G)"
+        title={t('monaco.toolbar.image')}
       >
         <Image className="size-3.5" />
       </button>
-      <button type="button" className="monaco-tool" onClick={onNAS} disabled={disabled} title="從 NAS 插入圖片">
+      <button type="button" className="monaco-tool" onClick={onNAS} disabled={disabled} title={t('monaco.toolbar.nas')}>
         <HardDrive className="size-3.5" />
       </button>
       <button
@@ -83,7 +115,7 @@ export function MonacoToolbar({
         className="monaco-tool"
         onClick={onUpload}
         disabled={disabled || uploading}
-        title="上傳圖片檔案"
+        title={t('monaco.toolbar.upload')}
       >
         {uploading ? <BusyDot /> : <Upload className="size-3.5" />}
       </button>
@@ -97,7 +129,7 @@ export function MonacoToolbar({
             onClick={onVimToggle}
             disabled={disabled}
             aria-pressed={vimMode}
-            title={vimMode ? 'Vim 模式：開（點擊關閉）' : 'Vim 模式：關（點擊開啟）'}
+            title={vimMode ? t('monaco.toolbar.vimOn') : t('monaco.toolbar.vimOff')}
           >
             <Terminal className="size-3.5" />
           </button>

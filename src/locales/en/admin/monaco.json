@@ -1,0 +1,42 @@
+{
+  "toolbar": {
+    "undo": "Undo (Ctrl+Z)",
+    "redo": "Redo (Ctrl+Y)",
+    "bold": "Toggle bold (Ctrl+B)",
+    "italic": "Toggle italic (Ctrl+I)",
+    "link": "Toggle link (Ctrl+K)",
+    "linkPost": "Insert link to a post (Cmd/Ctrl+Shift+K)",
+    "image": "Insert image (Ctrl+Shift+G)",
+    "nas": "Insert image from NAS",
+    "upload": "Upload image file",
+    "vimOn": "Vim mode: on (click to turn off)",
+    "vimOff": "Vim mode: off (click to turn on)"
+  },
+  "placeholder": {
+    "bold": "bold text",
+    "italic": "italic text",
+    "link": "link text",
+    "image": "image description"
+  },
+  "snippet": {
+    "code": "Code block",
+    "mermaid": "Mermaid diagram",
+    "table": "Table",
+    "tableHeader": "Header",
+    "details": "Collapsible block",
+    "detailsSummary": "Click to expand",
+    "img": "Image",
+    "footnote": "Footnote",
+    "footnoteText": "Text",
+    "userDefined": "Custom"
+  },
+  "insertPostLink": "Insert link to a post",
+  "loadingEditor": "Opening the editor",
+  "canvasFailed": "Couldn't get an OffscreenCanvas 2d context",
+  "uploadFailed": "Image upload failed: {{message}}",
+  "status": {
+    "total": "Words: {{words}} · characters: {{chars}} · lines: {{lines}}",
+    "reading": " · about {{minutes}} min read",
+    "selection": "Selected: words {{words}} · characters {{chars}} · lines {{lines}}"
+  }
+}

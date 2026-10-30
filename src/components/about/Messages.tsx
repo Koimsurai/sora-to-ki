@@ -13,16 +13,17 @@ import { useTranslation } from 'react-i18next';
 import CommentForm, { type ReplyTarget } from '@/components/blog/CommentForm';
 import SignalLog from '@/components/blog/SignalLog';
 import { commentsQueryOptions } from '@/data/commentsData';
+import { useSiteConfig } from '@/data/siteConfig';
 import { useCommentLikes } from '@/hooks/useCommentLikes';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { after, isArriving, isRejoining, transitionDot } from '@/store/pageTransition';
 import { channelOf, createStrip, DISH_SRC, SEND_S } from './messagesWave';
 import './Messages.css';
 import { sameTitle } from '@/lib/pageTitle';
+import { isOriginSite, SOFTWARE_REPO } from '@/lib/siteIdentity';
 
 const BASE = 'pages';
 const POST_ID = 'messages';
-const CONTACT = 'service@koimsurai.com';
 /** 進場：點落地、起點振一下，那道光沿頻道跑進天線要幾秒 */
 const ARRIVE_S = 1.1;
 /** 起點振鈴衰減完要幾秒 */
@@ -43,6 +44,8 @@ const exitHead = (since: number) => 1 - easeIn(Math.min(1, (performance.now() - 
 
 export default function Messages() {
   const { t } = useTranslation();
+  const { email, github } = useSiteConfig();
+  const isOrigin = isOriginSite(github);
   const { data: comments = [], isPending } = useQuery(commentsQueryOptions(BASE, POST_ID));
   const { liked, like } = useCommentLikes(BASE, POST_ID);
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
@@ -261,15 +264,25 @@ export default function Messages() {
         onSend={(v) => {
           sendingRef.current = v === null ? null : { text: v, start: performance.now() };
         }}
+        // 整句是「私下的話寄信到…；bug 回報開 Issues」，沒填信箱的站整句都不出（Issues 那半句單獨不成句）。
+        // Issues 是這套程式的 repo：只有原站導過去，別人架的站讀者回報的是那個站的事，不該送到這裡
         extraNote={
-          <>
-            {t('messages.privatePre')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
-            {t('messages.privateMid')}
-            <a href="https://github.com/Koimsurai/sora-to-ki/issues" target="_blank" rel="noopener noreferrer">
-              GitHub Issues
-            </a>
-            {t('messages.privatePost')}
-          </>
+          email ? (
+            <>
+              {t('messages.privatePre')} <a href={`mailto:${email}`}>{email}</a>
+              {isOrigin ? (
+                <>
+                  {t('messages.privateMid')}
+                  <a href={`${SOFTWARE_REPO}/issues`} target="_blank" rel="noopener noreferrer">
+                    GitHub Issues
+                  </a>
+                  {t('messages.privatePost')}
+                </>
+              ) : (
+                t('messages.privateEnd')
+              )}
+            </>
+          ) : undefined
         }
       />
     </div>

@@ -8,9 +8,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { blogCategoriesDetailQueryOptions, blogTagsQueryOptions, type CategoryInfo } from '@/data/blogList';
 import { useLocale } from '@/hooks/useLocale';
+import { defaultLocale } from '@/lib/locales';
 
 /**
- * locale → 譯文欄位的後綴。預設語系（zh-TW）與未知語系回 null（用原欄位）。
+ * locale → 譯文欄位的後綴。預設語系（原名就是它）與未知語系回 null（用原欄位）。
  *
  * ⚠ 這張表是**唯一**一份。原本有兩份：`fieldFor()` 回 `'name_en'`、`suffixFor()` 回 `'en'`，
  * 各自把同一組 `startsWith` 判斷抄了一遍。加語系時漏改其中一份不會有任何錯誤——
@@ -18,16 +19,22 @@ import { useLocale } from '@/hooks/useLocale';
  * 現在欄位名一律由後綴推導，兩層不可能對不上；
  * `categoryLabel.test.tsx` 最後那條（「兩層判斷不能漂移」）守的就是別再拆回兩份。
  */
-function suffixFor(locale: string): 'en' | 'ja' | 'ko' | 'zh_cn' | null {
+function columnSuffix(locale: string): 'en' | 'ja' | 'ko' | 'zh_cn' | 'zh_tw' | null {
   if (locale.startsWith('en')) return 'en';
   if (locale.startsWith('ja')) return 'ja';
   if (locale.startsWith('ko')) return 'ko';
   if (locale.toLowerCase().startsWith('zh-cn')) return 'zh_cn';
+  if (locale.toLowerCase().startsWith('zh-tw')) return 'zh_tw';
   return null;
 }
 
+function suffixFor(locale: string): ReturnType<typeof columnSuffix> {
+  const sfx = columnSuffix(locale);
+  return sfx === columnSuffix(defaultLocale()) ? null : sfx;
+}
+
 /** locale → CategoryInfo / Tag 上的譯名欄位名（`name_<後綴>`）。 */
-function fieldFor(locale: string): 'name_en' | 'name_ja' | 'name_ko' | 'name_zh_cn' | null {
+function fieldFor(locale: string): 'name_en' | 'name_ja' | 'name_ko' | 'name_zh_cn' | 'name_zh_tw' | null {
   const sfx = suffixFor(locale);
   return sfx && (`name_${sfx}` as const);
 }

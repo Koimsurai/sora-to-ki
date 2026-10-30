@@ -1,0 +1,33 @@
+{
+  "role": {
+    "owner": "オーナー",
+    "admin": "管理者",
+    "reader": "読者"
+  },
+  "roleChanged": "{{name}} を{{role}}に変更しました",
+  "roleChangeFailed": "ロールの変更に失敗しました",
+  "meta": "オーナー {{owner}} · 管理者 {{admin}} · 読者 {{reader}}",
+  "refresh": "再読み込み",
+  "listLabel": "アカウント一覧",
+  "hint": "ログインしたことのある人がここに並びます。管理者は管理画面に入れますが、他人のロールは変更できません",
+  "searchLabel": "アカウントを検索",
+  "searchPlaceholder": "名前、メール、ログイン方法",
+  "noMatch": "一致するアカウントはありません。",
+  "empty": "まだ誰もログインしていません。",
+  "col": {
+    "name": "名前",
+    "email": "メール",
+    "provider": "ログイン方法",
+    "role": "ロール",
+    "joined": "登録日",
+    "changeRole": "ロール変更"
+  },
+  "you": "あなた",
+  "roleSelectLabel": "{{name}}のロール",
+  "someone": "この人",
+  "confirmTitle": "ロールを変更しますか？",
+  "confirmDesc": "{{name}} を{{from}}から{{to}}に変更します。",
+  "confirmDescAdmin": "{{name}} を{{from}}から{{to}}に変更します。管理者は管理画面に入れ、記事やコメントを編集できます。",
+  "cancel": "キャンセル",
+  "confirm": "変更する"
+}

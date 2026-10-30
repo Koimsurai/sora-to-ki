@@ -7,7 +7,17 @@ import { PAGES, type SiteSection } from './siteSections';
 // root 的 beforeLoad 先抓一次，SSR 時就有、跟著 dehydrate 進頁面，元件裡直接讀不用等。
 
 /** 後端連不上時的退路：所有頁面都開著。寧可多一頁點進去是空的，也不要整個選單消失 */
-const FALLBACK: SiteConfig = { url: '', name: '', author: '', description: '', disabled_pages: [] };
+const FALLBACK: SiteConfig = {
+  url: '',
+  name: '',
+  author: '',
+  description: '',
+  disabled_pages: [],
+  email: '',
+  github: '',
+  default_locale: 'zh-TW',
+  locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+};
 
 export const siteConfigQueryOptions = queryOptions({
   queryKey: ['site', 'config'],

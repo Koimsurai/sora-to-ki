@@ -219,6 +219,11 @@
   min-height: 80vh;
 }
 
+/* 站長還沒填技能：地表這一層只是天空算位置用的錨點，不佔一整屏的空白 */
+.af-layer.is-bare {
+  min-height: 0;
+}
+
 .af-lab {
   color: var(--ink-subtle);
 }

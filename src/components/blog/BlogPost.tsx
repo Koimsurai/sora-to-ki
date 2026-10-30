@@ -54,6 +54,9 @@ import { isArriving } from '@/store/pageTransition';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath, postShareUrl } from '@/lib/postPath';
 import { lookup } from '@/lib/tableLookup';
+import { isOwnHost, siteName } from '@/lib/siteIdentity';
+import { localeFromPathname } from '@/i18n/start-i18n';
+import { isLocale, localePathname } from '@/lib/locales';
 import { visitHeaders } from '@/lib/visitContext';
 
 /// `GET /api/posts/:id` 的成功回應（型別由後端 Rust struct 生成），外加 client 端自己算的
@@ -374,7 +377,7 @@ export const CustomParagraph = ({
         host.includes('bilibili.com') ||
         host.includes('b23.tv') ||
         host.includes('spotify.com') ||
-        host.includes('koimsurai.com')
+        isOwnHost(host)
       );
     } catch {
       return false;
@@ -946,7 +949,7 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
               }}
               className="subscribe-form"
               toolname="subscribe_newsletter"
-              tooldescription="訂閱 koimsurai 電子報，有新文章時以 email 通知"
+              tooldescription={`訂閱 ${siteName()} 電子報，有新文章時以 email 通知`}
             >
               <label className="subscribe-field">
                 <span>{t('newsletter.fieldName')}</span>
@@ -1007,8 +1010,6 @@ const Toast = ({ message, onDone }: { message: React.ReactNode; onDone: () => vo
   );
 };
 
-/* URL prefix mapping — 必須與後端 LOCALE_URL_PREFIX 一致 */
-const LOCALE_URL_PREFIX: Record<string, string> = { 'zh-TW': '', 'zh-CN': '/zh-cn', en: '/en', ja: '/ja', ko: '/ko' };
 const LOCALE_TO_DATE_LOCALE: Record<string, string> = {
   'zh-TW': 'zh-TW',
   'zh-CN': 'zh-CN',
@@ -1021,21 +1022,12 @@ const noSubscribe = () => () => undefined;
 const isClient = () => true;
 const notClient = () => false;
 
-function parseLocaleFromPath(pathname: string) {
-  // 不分大小寫：站上的網址是 /zh-CN/，這裡原本只認小寫的 /zh-cn/——直接打開（或從分享的連結進來）
-  // 簡中文章時抓的是繁中原文，也沒有 AI 翻譯的提示；只有在頁面上切語系時才對
-  const path = pathname.toLowerCase();
-  if (path.startsWith('/en/blog/')) return 'en';
-  if (path.startsWith('/zh-cn/blog/')) return 'zh-CN';
-  if (path.startsWith('/ja/blog/')) return 'ja';
-  if (path.startsWith('/ko/blog/')) return 'ko';
-  return 'zh-TW';
-}
+// 網址是哪個語系：前綴不分大小寫（/zh-CN/ 與 /zh-cn/ 都認）；預設語系不帶前綴（lib/locales）
+const parseLocaleFromPath = (pathname: string) => localeFromPathname(pathname);
 
-function postPathForLocale(id: string | number | undefined, locale: string, sourceLang: string) {
-  // 原文永遠走不帶 prefix 的規範路徑（與後端 postUrlForLocale 一致）
-  if (locale === sourceLang) return `/blog/${id}`;
-  return `${LOCALE_URL_PREFIX[locale] || ''}/blog/${id}`;
+/** 某個語系的文章網址：預設語系不帶前綴，其他照前綴（跟路由同一套規則，原文是哪個語系都一樣） */
+function postPathForLocale(id: string | number | undefined, locale: string) {
+  return isLocale(locale) ? localePathname(locale, `blog/${id}`) : `/blog/${id}`;
 }
 
 /**
@@ -1466,7 +1458,7 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
                     preview.onLocale(loc);
                     return;
                   }
-                  const target = postPathForLocale(id, loc, sourceLang); // 已是絕對 locale 路徑,用 href 不再加前綴
+                  const target = postPathForLocale(id, loc); // 已是絕對 locale 路徑,用 href 不再加前綴
                   // 記下讀者在哪一章，新語系那頁放回同一個地方（捲動由那邊負責，這裡不要先跳回頂端）
                   setRetune(
                     post.id,

@@ -1,0 +1,26 @@
+{
+  "loading": "Loading",
+  "save": "Save",
+  "saving": "Saving",
+  "revert": "Revert",
+  "delete": "Delete",
+  "status": {
+    "published": "Published",
+    "draft": "Draft",
+    "scheduled": "Scheduled",
+    "trashed": "Trash"
+  },
+  "localeShort": {
+    "zh-TW": "TW",
+    "en": "EN",
+    "zh-CN": "CN",
+    "ja": "JA",
+    "ko": "KO"
+  },
+  "localesHave": "Languages: {{list}}",
+  "localesNone": "Languages: none yet",
+  "listSep": ", ",
+  "openCalendar": "{{label}}: open calendar",
+  "saveFailed": "Couldn't save ({{status}})",
+  "offline": "Can't reach the server — not saved yet"
+}

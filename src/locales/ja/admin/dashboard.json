@@ -1,0 +1,61 @@
+{
+  "title": "いま",
+  "writeThought": "つぶやきを書く",
+  "writePost": "記事を書く",
+  "go": {
+    "review": "確認する →",
+    "look": "見る →",
+    "continue": "続きを書く →",
+    "list": "一覧を見る →"
+  },
+  "todo": {
+    "heading": "対応待ち",
+    "headingCount": "対応待ち · {{count}} 件",
+    "loading": "対応が必要なことを確認中",
+    "empty": "対応が必要なことはありません。",
+    "comments": "承認待ちのコメント {{count}} 件",
+    "newestCommentOnPost": "最新は {{author}} さん、「{{title}}」へのコメント",
+    "newestCommentElsewhere": "最新は {{author}} さん、つぶやきかメッセージボードへのコメント",
+    "friends": "未確認の相互リンク申請 {{count}} 件",
+    "newestFriend": "最新は「{{name}}」、{{date}} に届きました",
+    "drafts": "下書き {{count}} 件",
+    "stalestDraft": "いちばん長く手つかずなのは「{{title}}」、{{date}} から更新なし",
+    "gaps": "翻訳が足りない公開記事 {{count}} 件",
+    "gapsDetail": "不足：EN {{en}} · 日 {{ja}} · 韓 {{ko}}（簡体字は繁体字から変換するので数えません）",
+    "bahamutExpiring": "バハムートのログインはあと {{days}} 日で期限切れになります",
+    "bahamutExpired": "バハムートの cookie が無効になりました",
+    "bahamutExpiringDetail": "期限が切れると、コレクションページの「視聴中」が更新されなくなります",
+    "bahamutExpiredDetail": "コレクションページの「視聴中」は前回の同期で止まっています。もう一度ログインしてください"
+  },
+  "tiles": {
+    "label": "サイトの数字",
+    "posts": "記事",
+    "postsSub": "公開済み · 下書き {{drafts}}",
+    "postsSubScheduled": "公開済み · 下書き {{drafts}} · 次の予約 {{when}}",
+    "recent": "直近 30 日",
+    "recentSub": "件の新しい記事",
+    "comments": "コメント",
+    "commentsSub": "直近 7 日 · 承認待ち {{pending}}",
+    "views": "閲覧数",
+    "viewsSub": "全記事の合計"
+  },
+  "recent": {
+    "heading": "最近の更新",
+    "all": "すべて →",
+    "allLabel": "すべての記事",
+    "empty": "まだ記事がありません。",
+    "meta": "記事 · {{category}} · {{when}}",
+    "uncategorized": "未分類"
+  },
+  "vitals": {
+    "heading": "シグナル · 直近 {{days}} 日",
+    "footnote": "p75 · /admin を除く · ソース web_vitals",
+    "rating": {
+      "good": "良好",
+      "needsWork": "要改善",
+      "poor": "不良"
+    },
+    "ratingCount": "{{rating}} · {{count}} 件",
+    "noSamples": "サンプルなし"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "tabs": {
+    "active": "구독 중",
+    "unsubscribed": "구독 해지"
+  },
+  "unsubscribeFailed": "구독 해지에 실패했습니다",
+  "unsubscribed": "{{email}}을(를) 구독 해지로 표시했습니다",
+  "meta": "구독 중 {{active}} · 구독 해지 {{unsubscribed}}",
+  "refresh": "새로고침",
+  "exportCsv": "CSV 내보내기",
+  "listLabel": "구독자 목록",
+  "searchLabel": "구독자 검색",
+  "searchPlaceholder": "이메일 또는 이름",
+  "noMatch": "일치하는 구독자가 없습니다.",
+  "emptyActive": "아직 구독자가 없습니다.",
+  "emptyUnsubscribed": "구독 해지 기록이 없습니다.",
+  "col": {
+    "email": "이메일",
+    "name": "이름",
+    "subscribed": "구독일",
+    "unsubscribed": "해지일",
+    "actions": "작업"
+  },
+  "markLabel": "{{email}}을(를) 구독 해지로 표시",
+  "mark": "구독 해지로 표시",
+  "confirmTitle": "구독 해지로 표시할까요?",
+  "confirmDesc": "{{email}}이(가) 구독 해지로 표시되며, 이후 이 주소로 메일을 보내지 않습니다.",
+  "cancel": "취소"
+}

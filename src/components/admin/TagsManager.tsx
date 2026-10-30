@@ -16,9 +16,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import { useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { NameDots, PageHead } from './AdminPage';
-import { LOCALE_NAME_FIELDS } from './adminFormat';
+import { localeNameFields } from './adminFormat';
 
 // 標籤（2026-10 後台提案）：一張表，照用量排；每個標籤後面五顆語系點，看各語系的譯名填了沒。
 // 舊表單的「URL 別名」「顏色」兩欄後端根本不存（create_tag 只寫名稱與譯名、列表也不回傳），拿掉了。
@@ -30,11 +31,13 @@ interface TagForm {
   name_ja: string;
   name_ko: string;
   name_zh_cn: string;
+  name_zh_tw: string;
 }
 
-const EMPTY: TagForm = { name: '', name_en: '', name_ja: '', name_ko: '', name_zh_cn: '' };
+const EMPTY: TagForm = { name: '', name_en: '', name_ja: '', name_ko: '', name_zh_cn: '', name_zh_tw: '' };
 
 export default function TagsManager() {
+  const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { data: tags = [], isPending } = useQuery(adminTagsQueryOptions);
   const invalidateTags = () => queryClient.invalidateQueries({ queryKey: adminTagsQueryOptions.queryKey });
@@ -47,10 +50,14 @@ export default function TagsManager() {
   const q = search.trim().toLowerCase();
   const shown = tags
     .filter(
-      (t) => !q || [t.name, t.name_en, t.name_ja, t.name_ko, t.name_zh_cn].some((s) => s?.toLowerCase().includes(q)),
+      (tg) =>
+        !q ||
+        [tg.name, tg.name_en, tg.name_ja, tg.name_ko, tg.name_zh_cn, tg.name_zh_tw].some((s) =>
+          s?.toLowerCase().includes(q),
+        ),
     )
     .sort((a, b) => b.post_count - a.post_count);
-  const unused = tags.filter((t) => t.post_count === 0).length;
+  const unused = tags.filter((tg) => tg.post_count === 0).length;
 
   const openCreate = () => {
     setEditing(null);
@@ -66,6 +73,7 @@ export default function TagsManager() {
       name_ja: tag.name_ja ?? '',
       name_ko: tag.name_ko ?? '',
       name_zh_cn: tag.name_zh_cn ?? '',
+      name_zh_tw: tag.name_zh_tw ?? '',
     });
     setDialogOpen(true);
   };
@@ -79,15 +87,15 @@ export default function TagsManager() {
         body: JSON.stringify(form),
       });
       if (response.ok) {
-        toast.success(editing ? '標籤已更新' : '標籤已建立');
+        toast.success(editing ? t('taxonomy.tags.updated') : t('taxonomy.tags.created'));
         setDialogOpen(false);
         void invalidateTags();
       } else {
-        toast.error('操作失敗');
+        toast.error(t('taxonomy.actionFailed'));
       }
     } catch (error) {
-      console.error('保存標籤失敗:', error);
-      toast.error('保存失敗');
+      console.error('保存標籤失敗:', error); // i18n-ignore：開發者看的 console，不是介面文字
+      toast.error(t('taxonomy.saveFailed'));
     }
   };
 
@@ -96,14 +104,14 @@ export default function TagsManager() {
     try {
       const response = await fetch(`/api/admin/tags/${deleteId}`, { method: 'DELETE', headers: authHeaders() });
       if (response.ok) {
-        toast.success('標籤已刪除');
+        toast.success(t('taxonomy.tags.deleted'));
         void invalidateTags();
       } else {
-        toast.error('刪除失敗');
+        toast.error(t('taxonomy.deleteFailed'));
       }
     } catch (error) {
-      console.error('刪除標籤失敗:', error);
-      toast.error('刪除失敗');
+      console.error('刪除標籤失敗:', error); // i18n-ignore：開發者看的 console，不是介面文字
+      toast.error(t('taxonomy.deleteFailed'));
     } finally {
       setDeleteId(null);
     }
@@ -112,42 +120,47 @@ export default function TagsManager() {
   return (
     <div className="adm-page adm-page-narrow">
       <PageHead
-        title="標籤"
+        title={t('nav.tags')}
         latin="Tags"
-        meta={isPending ? '載入中' : `${tags.length} 個 · 沒用到的 ${unused}`}
+        meta={isPending ? t('common.loading') : t('taxonomy.tags.meta', { count: tags.length, unused })}
         actions={
           <button type="button" className="adm-btn adm-btn-primary" onClick={openCreate}>
-            新增標籤
+            {t('taxonomy.tags.add')}
           </button>
         }
       />
 
-      <section className="adm-stack" aria-label="標籤清單">
+      <section className="adm-stack" aria-label={t('taxonomy.tags.listLabel')}>
         <div className="adm-toolbar">
-          <span className="adm-meta">照用到的篇數排</span>
+          <span className="adm-meta">{t('taxonomy.tags.hint')}</span>
           <label className="adm-prompt">
             <span className="adm-prompt-mark" aria-hidden="true">
               &gt;
             </span>
-            <span className="sr-only">搜尋標籤</span>
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="名稱或譯名" />
+            <span className="sr-only">{t('taxonomy.tags.search')}</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('taxonomy.tags.searchPlaceholder')}
+            />
           </label>
         </div>
 
         {isPending ? (
           <AdminLoading />
         ) : shown.length === 0 ? (
-          <p className="adm-empty">{tags.length === 0 ? '還沒有標籤。' : '沒有符合的標籤。'}</p>
+          <p className="adm-empty">{tags.length === 0 ? t('taxonomy.tags.empty') : t('taxonomy.tags.noMatch')}</p>
         ) : (
           <div className="adm-table-wrap">
             <table className="adm-table">
               <thead>
                 <tr>
-                  <th scope="col">名稱</th>
-                  <th scope="col">譯名</th>
-                  <th scope="col">篇數</th>
+                  <th scope="col">{t('taxonomy.col.name')}</th>
+                  <th scope="col">{t('taxonomy.col.translations')}</th>
+                  <th scope="col">{t('taxonomy.col.posts')}</th>
                   <th scope="col">
-                    <span className="sr-only">動作</span>
+                    <span className="sr-only">{t('taxonomy.col.actions')}</span>
                   </th>
                 </tr>
               </thead>
@@ -168,18 +181,18 @@ export default function TagsManager() {
                         <button
                           type="button"
                           className="adm-icon-btn"
-                          aria-label={`編輯 ${tag.name}`}
+                          aria-label={t('taxonomy.editAria', { name: tag.name })}
                           onClick={() => openEdit(tag)}
                         >
-                          編輯
+                          {t('taxonomy.edit')}
                         </button>
                         <button
                           type="button"
                           className="adm-icon-btn adm-icon-btn-flare"
-                          aria-label={`刪除 ${tag.name}`}
+                          aria-label={t('taxonomy.deleteAria', { name: tag.name })}
                           onClick={() => setDeleteId(tag.id)}
                         >
-                          刪除
+                          {t('common.delete')}
                         </button>
                       </div>
                     </td>
@@ -194,20 +207,18 @@ export default function TagsManager() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? '編輯標籤' : '新增標籤'}</DialogTitle>
-            <DialogDescription>
-              「標籤名稱」是資料鍵：文章的標籤關聯與前台篩選都比對它。譯名只影響各語系頁面上的顯示，留空就顯示原名。
-            </DialogDescription>
+            <DialogTitle>{editing ? t('taxonomy.tags.edit') : t('taxonomy.tags.add')}</DialogTitle>
+            <DialogDescription>{t('taxonomy.tags.dialogDesc')}</DialogDescription>
           </DialogHeader>
           <form className="adm-form" onSubmit={(e) => void handleSubmit(e)}>
             <label className="adm-field">
-              <span className="adm-caps">標籤名稱</span>
+              <span className="adm-caps">{t('taxonomy.tags.name')}</span>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </label>
             <div className="adm-form-section">
-              <span className="adm-caps">各語系的譯名 · 選填</span>
+              <span className="adm-caps">{t('taxonomy.localeNames')}</span>
               <div className="adm-form-grid">
-                {LOCALE_NAME_FIELDS.map(({ key, label }) => (
+                {localeNameFields().map(({ key, label }) => (
                   <label key={key} className="adm-field">
                     <span className="adm-caps">{label}</span>
                     <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
@@ -217,10 +228,10 @@ export default function TagsManager() {
             </div>
             <div className="adm-form-actions">
               <button type="button" className="adm-btn" onClick={() => setDialogOpen(false)}>
-                取消
+                {t('taxonomy.cancel')}
               </button>
               <button type="submit" className="adm-btn adm-btn-primary">
-                {editing ? '更新' : '建立'}
+                {editing ? t('taxonomy.update') : t('taxonomy.create')}
               </button>
             </div>
           </form>
@@ -230,13 +241,13 @@ export default function TagsManager() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>確定要刪除這個標籤嗎？</AlertDialogTitle>
-            <AlertDialogDescription>刪掉就拿不回來；已經標上它的文章不受影響。</AlertDialogDescription>
+            <AlertDialogTitle>{t('taxonomy.tags.confirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('taxonomy.tags.confirmBody')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('taxonomy.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void handleDelete()} variant="destructive">
-              刪除
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

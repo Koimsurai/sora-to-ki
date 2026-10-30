@@ -223,6 +223,15 @@ async function main() {
     // 站台設定的種子：一頁都不關。不給的話空白 DB 會被當成全新安裝、預設關掉設備頁，
     // 那一頁的煙霧測試與計算後樣式基準（選單少一項）就全對不上
     SITE_DISABLED_PAGES: '',
+    // 有站長的站：沒設的話 oauth_users 裡沒有 OWNER，後端會當成還沒認領，沒登入進 /admin 會被帶去
+    // 初次設定（routes/admin_.init）而不是回首頁。精靈本身在 init-wizard.spec.ts 用攔截的 API 測
+    OWNER_EMAIL: 'owner@e2e.invalid',
+    // 站台身分照正式站的值：導覽列的字標、朋友頁的站名與聯絡信箱都會進計算後樣式基準，
+    // 換成預設的 My Site 字寬就不同了
+    SITE_NAME: '宙と木',
+    SITE_AUTHOR: 'Koimsurai',
+    SITE_EMAIL: 'service@koimsurai.com',
+    SITE_GITHUB: 'Koimsurai',
     // 相簿讀既有的測試 fixture（形狀取自線上 manifest），不必準備真的圖片
     GALLERY_MANIFEST_PATH: path.join(ROOT, 'backend/tests/fixtures/gallery_manifest.json'),
     // 第三方同步器一律關掉：E2E 不該打外部 API

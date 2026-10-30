@@ -13,7 +13,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { AuthProvider } from '../contexts/AuthContext';
 import { loadLocale, localeFromPathname } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
-import { SUPPORTED_LOCALES } from '../lib/locales';
+import { defaultLocale, enabledLocales } from '../lib/locales';
 import { LOCALE_TO_OG } from '@/seo/seoMeta';
 import AppShell from '@/components/layout/AppShell';
 import NotFound from '@/components/layout/NotFound';
@@ -21,6 +21,7 @@ import { localeWrap } from '@/i18n/localePage';
 import { PLANETS } from '@/lib/saturnSpec';
 import { hex, palette } from '@/lib/palette';
 import { siteConfigQueryOptions } from '@/data/siteConfig';
+import { siteName, siteTitle } from '@/lib/siteIdentity';
 import { BOOT_MOUNT_SCRIPT, BOOT_RING_FLAT, BOOT_SCRIPT } from '@/lib/bootRing';
 import { THEMES, THEME_SCRIPT } from '@/lib/theme';
 import { prewarmSpaceBackdrop } from '@/components/backdrop/prewarm';
@@ -31,25 +32,27 @@ prewarmSpaceBackdrop();
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // 這一頁的語系字串（不是預設語系才要載，見 i18n/start-i18n 的 loadLocale）：伺服器畫頁前、站內換到別的語系時
   // 站台設定（站名、哪幾頁關掉了）也在這裡先抓：選單在每一頁都要，SSR 時就要有
+  // （站名、作者、網址會由 router.tsx 的快取訂閱寫進 lib/siteIdentity，給 head() 與 SEO 讀）
+  // 先拿站台設定：網址是哪個語系要看預設語系是誰（預設語系不帶前綴）；再載這一頁與預設語系（缺字時退回它）的字串
   beforeLoad: async ({ location, context }) => {
-    await Promise.all([
-      loadLocale(localeFromPathname(location.pathname)),
-      context.queryClient.query(siteConfigQueryOptions),
-    ]);
+    await context.queryClient.query(siteConfigQueryOptions);
+    await Promise.all([loadLocale(localeFromPathname(location.pathname)), loadLocale(defaultLocale())]);
   },
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: '宙と木 · Koimsurai' },
+      { title: siteTitle() },
       { name: 'theme-color', content: hex(palette().ground) },
+      // 這套程式的名字（不是站名）：看不見，但改過程式的人通常會把它拿掉，是辨認的線索
+      { name: 'generator', content: 'sora-to-ki' },
     ],
     // PWA:manifest 過去從沒被掛上 → 瀏覽器根本看不到它,站台不可安裝。
     links: [
       { rel: 'manifest', href: '/site.webmanifest' },
       // feed 自動探索：瀏覽器擴充、聚合器、部分 AI 爬蟲都靠這一行才找得到。
       // 指向既有的 /rss（後端 handlers/rss.rs）——/rss.xml 只是 301 過去的別名。
-      { rel: 'alternate', type: 'application/rss+xml', title: 'Koimsurai 手記', href: '/rss' },
+      { rel: 'alternate', type: 'application/rss+xml', title: siteName(), href: '/rss' },
       // 圖示由 scripts/gen-icons.mjs 從 scripts/icons/ 的 SVG 產生。
       // 分頁列（沒有底板、跟著主題換色）與 Google 搜尋（有底板）是兩支檔案，圖案一樣，機制寫在 gen-icons.mjs 檔頭：
       // Google 那邊靠 robots.txt 只對 Googlebot-Image 擋掉前兩者；分頁列這邊 **SVG 要排最後**
@@ -258,7 +261,13 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
     // suppressHydrationWarning：head 裡那段開場腳本在 React 接手前就在 <html> 掛上 data-boot，
     // 這是刻意的（paint 之前就要藏住頁面），不是不一致。只壓 <html> 這一層的屬性，子孫照常檢查
-    <html lang={locale} suppressHydrationWarning>
+    // data-default-locale／data-locales：瀏覽器接手前（src/client.tsx）就要知道語系設定，才判斷得出這一頁是哪個語系
+    <html
+      lang={locale}
+      data-default-locale={defaultLocale()}
+      data-locales={enabledLocales().join(',')}
+      suppressHydrationWarning
+    >
       <head>
         <HeadContent />
         {/* WebMCP origin trial。沒有 token，navigator.modelContext 不存在，Lighthouse 的
@@ -283,9 +292,11 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             代價：RootDocument 拿不到單篇文章的 available_locales，所以一律列出其餘四語。
             og 這個標籤只是給社群平台的語言提示，不像 hreflang 會有重複內容的風險，
             過度宣告可以接受；hreflang 那邊仍然是逐篇照實際譯文輸出。 */}
-        {SUPPORTED_LOCALES.filter((l) => l !== locale).map((l) => (
-          <meta key={l} property="og:locale:alternate" content={LOCALE_TO_OG[l]} />
-        ))}
+        {enabledLocales()
+          .filter((l) => l !== locale)
+          .map((l) => (
+            <meta key={l} property="og:locale:alternate" content={LOCALE_TO_OG[l]} />
+          ))}
         {/* pre-paint：套用文章閱讀字體偏好 → html[data-blog-font]。偏好在 localStorage、server 讀不到，
                原本是 BlogPost 掛載後才 setState，等於「首屏用預設 serif 畫完、再整篇換字體重排」——
                回訪讀者每次進文章都吃一次。字體棧定義在 index.css 的 --blog-font-<id>。

@@ -1,0 +1,31 @@
+{
+  "controlRoom": "管制室 · Admin",
+  "navLabel": "後台",
+  "toSite": "回到前台 ↗",
+  "owner": "站長",
+  "admin": "管理員",
+  "logout": "登出",
+  "closeMenu": "收起選單",
+  "backToPosts": "← 手記",
+  "saveDraft": "儲存草稿",
+  "saveAndExit": "存並回列表",
+  "schedule": "排程發佈",
+  "publish": "發佈文章",
+  "collapse": "收起",
+  "menu": "選單",
+  "language": "後台語言",
+  "languageShort": {
+    "zh-TW": "繁",
+    "zh-CN": "简",
+    "en": "EN",
+    "ja": "日",
+    "ko": "한"
+  },
+  "languageName": {
+    "zh-TW": "繁體中文",
+    "zh-CN": "简体中文",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어"
+  }
+}

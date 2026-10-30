@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { adminPhotosQueryOptions } from '@/data/adminData';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import { frameOf } from '@/components/gallery/frames';
+import { useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading, { BusyDot } from './AdminLoading';
 import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
@@ -21,11 +22,11 @@ type Filter = 'all' | 'featured' | 'untitled' | 'hidden';
 /** 標題還是檔名的，就是還沒取過名字 */
 const untitled = (p: AdminPhoto) => p.title === p.original_title;
 
-const FILTERS: { key: Filter; label: string; test: (p: AdminPhoto) => boolean }[] = [
-  { key: 'all', label: '全部', test: () => true },
-  { key: 'featured', label: '精選', test: (p) => p.featured },
-  { key: 'untitled', label: '缺標題', test: untitled },
-  { key: 'hidden', label: '藏起來的', test: (p) => p.hidden },
+const FILTERS: { key: Filter; test: (p: AdminPhoto) => boolean }[] = [
+  { key: 'all', test: () => true },
+  { key: 'featured', test: (p) => p.featured },
+  { key: 'untitled', test: untitled },
+  { key: 'hidden', test: (p) => p.hidden },
 ];
 
 const splitTags = (s: string) =>
@@ -46,6 +47,7 @@ async function patchPhoto(id: string, body: Record<string, unknown>): Promise<Ad
 }
 
 export default function PhotosManager() {
+  const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(adminPhotosQueryOptions);
   const photos = data?.photos ?? [];
@@ -69,10 +71,10 @@ export default function PhotosManager() {
       const res = await fetch('/api/admin/gallery/sync', { method: 'POST', headers: authHeaders() });
       const out = (await res.json().catch(() => ({}))) as { error?: string; processed?: number; skipped?: number };
       if (!res.ok) throw new Error(out.error ?? `${res.status}`);
-      toast.success(`同步好了：新增 ${out.processed ?? 0}、略過 ${out.skipped ?? 0}`);
+      toast.success(t('photos.syncDone', { processed: out.processed ?? 0, skipped: out.skipped ?? 0 }));
       refresh();
     } catch (e) {
-      toast.error(`同步失敗：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('photos.syncFailed', { error: e instanceof Error ? e.message : '' }));
     } finally {
       setSyncing(false);
     }
@@ -81,28 +83,28 @@ export default function PhotosManager() {
   return (
     <div className="adm-page">
       <PageHead
-        title="照片"
+        title={t('nav.photos')}
         latin="Ground station"
         meta={
           isPending
-            ? '載入中'
-            : `${photos.length} 張${data?.generatedAt ? ` · 上次同步 ${formatWhen(data.generatedAt, 'yyyy.MM.dd HH:mm')}` : ''}`
+            ? t('common.loading')
+            : `${t('photos.count', { count: photos.length })}${data?.generatedAt ? ` · ${t('photos.lastSync', { date: formatWhen(data.generatedAt, 'yyyy.MM.dd HH:mm') })}` : ''}`
         }
         actions={
           <button type="button" className="adm-btn" disabled={syncing} onClick={() => void sync()}>
             {syncing ? (
               <>
                 <BusyDot />
-                同步中
+                {t('photos.syncing')}
               </>
             ) : (
-              '從 NAS 同步'
+              t('photos.syncFromNas')
             )}
           </button>
         }
       />
 
-      <section className="adm-stack" aria-label="照片">
+      <section className="adm-stack" aria-label={t('nav.photos')}>
         <div className="adm-toolbar">
           <div className="adm-tabs">
             {FILTERS.map((f) => (
@@ -114,7 +116,7 @@ export default function PhotosManager() {
                 onClick={() => setFilter(f.key)}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                {f.label}
+                {t(`photos.filter.${f.key}`)}
                 <span className="adm-meta">{isPending ? '' : photos.filter(f.test).length}</span>
               </button>
             ))}
@@ -123,14 +125,12 @@ export default function PhotosManager() {
 
         <TabPanel tab={filter}>
           {isPending ? (
-            <AdminLoading label="讀照片" />
+            <AdminLoading label={t('photos.loadingPhotos')} />
           ) : shown.length === 0 ? (
-            <p className="adm-empty">
-              {photos.length === 0 ? '還沒有照片。按「從 NAS 同步」把照片拉進來。' : '這裡沒有照片。'}
-            </p>
+            <p className="adm-empty">{photos.length === 0 ? t('photos.emptyAll') : t('photos.emptyFilter')}</p>
           ) : (
             <div className="adm-photos">
-              <ul className="adm-photo-wall" aria-label="照片牆">
+              <ul className="adm-photo-wall" aria-label={t('photos.wall')}>
                 {shown.map((p) => (
                   <li
                     key={p.id}
@@ -141,7 +141,7 @@ export default function PhotosManager() {
                       type="button"
                       className="adm-photo"
                       aria-pressed={selected?.id === p.id}
-                      aria-label={`${p.title}${p.featured ? '（精選）' : ''}${p.hidden ? '（藏起來的）' : ''}`}
+                      aria-label={`${p.title}${p.featured ? t('photos.featuredMark') : ''}${p.hidden ? t('photos.hiddenMark') : ''}`}
                       data-hidden={p.hidden || undefined}
                       onClick={() => setSelectedId(p.id)}
                     >
@@ -149,7 +149,7 @@ export default function PhotosManager() {
                       {p.featured && <span className="adm-photo-star" aria-hidden="true" />}
                       {untitled(p) && (
                         <span className="adm-photo-tag" aria-hidden="true">
-                          未命名
+                          {t('photos.untitledTag')}
                         </span>
                       )}
                     </button>
@@ -168,6 +168,7 @@ export default function PhotosManager() {
 
 /** 右邊那一張：換一張照片時整個重來（key），草稿不會串到下一張 */
 function PhotoEditor({ photo, onSaved }: { photo: AdminPhoto; onSaved: () => void }) {
+  const { t } = useAdminT();
   // manifest 的 description／tags 在型別上是選用的（舊資料可能沒有那個 key）
   const initial = {
     description: photo.description ?? '',
@@ -194,7 +195,7 @@ function PhotoEditor({ photo, onSaved }: { photo: AdminPhoto; onSaved: () => voi
       onSaved();
       return true;
     } catch (e) {
-      toast.error(`沒有存到：${e instanceof Error ? e.message : ''}`);
+      toast.error(t('photos.saveFailed', { error: e instanceof Error ? e.message : '' }));
       return false;
     } finally {
       setSaving(false);
@@ -208,53 +209,53 @@ function PhotoEditor({ photo, onSaved }: { photo: AdminPhoto; onSaved: () => voi
   };
 
   return (
-    <aside className="adm-photo-side" aria-label="這張照片">
+    <aside className="adm-photo-side" aria-label={t('photos.thisPhoto')}>
       <img className="adm-photo-preview" src={photo.urls.regular} alt={photo.title} />
 
       <form
         className="adm-form"
         onSubmit={(e) => {
           e.preventDefault();
-          void save({ title, description, tags: splitTags(tags), tags_en: splitTags(tagsEn) }, '存好了');
+          void save({ title, description, tags: splitTags(tags), tags_en: splitTags(tagsEn) }, t('photos.saved'));
         }}
       >
         <label className="adm-field">
-          <span className="adm-caps">標題</span>
+          <span className="adm-caps">{t('photos.field.title')}</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={photo.original_title} />
         </label>
-        <p className="adm-form-note">原本的檔名是 {photo.original_title}；清空就改回它。</p>
+        <p className="adm-form-note">{t('photos.field.originalName', { name: photo.original_title })}</p>
         <label className="adm-field">
-          <span className="adm-caps">介紹 · 選填</span>
+          <span className="adm-caps">{t('photos.field.description')}</span>
           <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
         <label className="adm-field">
-          <span className="adm-caps">標籤 · 用頓號或逗號分開</span>
+          <span className="adm-caps">{t('photos.field.tags')}</span>
           <input value={tags} onChange={(e) => setTags(e.target.value)} />
         </label>
         <label className="adm-field">
-          <span className="adm-caps">英文標籤</span>
+          <span className="adm-caps">{t('photos.field.tagsEn')}</span>
           <input value={tagsEn} onChange={(e) => setTagsEn(e.target.value)} />
         </label>
         <div className="adm-form-actions">
           <button type="submit" className="adm-btn adm-btn-primary" disabled={!dirty || saving}>
-            {saving ? '存檔中' : '儲存'}
+            {saving ? t('photos.savingFile') : t('common.save')}
           </button>
         </div>
       </form>
 
       <dl className="adm-photo-exif">
-        <dt>鏡頭</dt>
+        <dt>{t('photos.exif.lens')}</dt>
         <dd>{frame.lens ?? '—'}</dd>
-        <dt>曝光</dt>
+        <dt>{t('photos.exif.exposure')}</dt>
         <dd>{frame.exposure || '—'}</dd>
-        <dt>拍攝</dt>
+        <dt>{t('photos.exif.taken')}</dt>
         <dd>{frame.date || '—'}</dd>
-        <dt>尺寸</dt>
+        <dt>{t('photos.exif.size')}</dt>
         <dd>
           {photo.width} × {photo.height}
         </dd>
-        <dt>位置</dt>
-        <dd>{photo.gps ? '有 GPS' : '沒有'}</dd>
+        <dt>{t('photos.exif.location')}</dt>
+        <dd>{photo.gps ? t('photos.exif.hasGps') : t('photos.exif.noGps')}</dd>
       </dl>
 
       <div className="adm-photo-toggles">
@@ -264,11 +265,14 @@ function PhotoEditor({ photo, onSaved }: { photo: AdminPhoto; onSaved: () => voi
             checked={flags.featured}
             disabled={saving}
             onChange={(e) =>
-              void toggle({ ...flags, featured: e.target.checked }, e.target.checked ? '標成精選了' : '拿掉精選了')
+              void toggle(
+                { ...flags, featured: e.target.checked },
+                e.target.checked ? t('photos.featuredOn') : t('photos.featuredOff'),
+              )
             }
           />
-          <span>精選</span>
-          <span className="adm-meta">前台排在最上面</span>
+          <span>{t('photos.featured')}</span>
+          <span className="adm-meta">{t('photos.featuredNote')}</span>
         </label>
         <label className="adm-check">
           <input
@@ -276,11 +280,14 @@ function PhotoEditor({ photo, onSaved }: { photo: AdminPhoto; onSaved: () => voi
             checked={!flags.hidden}
             disabled={saving}
             onChange={(e) =>
-              void toggle({ ...flags, hidden: !e.target.checked }, e.target.checked ? '前台看得到了' : '藏起來了')
+              void toggle(
+                { ...flags, hidden: !e.target.checked },
+                e.target.checked ? t('photos.shownOn') : t('photos.hiddenOn'),
+              )
             }
           />
-          <span>前台顯示</span>
-          <span className="adm-meta">關掉就只有這裡看得到</span>
+          <span>{t('photos.showOnSite')}</span>
+          <span className="adm-meta">{t('photos.showNote')}</span>
         </label>
       </div>
     </aside>

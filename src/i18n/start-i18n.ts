@@ -1,4 +1,13 @@
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale, localePathname } from '@/lib/locales';
+import {
+  defaultLocale,
+  enabledLocales,
+  isEnabled,
+  localeOfPrefix,
+  localePathname,
+  SUPPORTED_LOCALES,
+  type Locale,
+} from '@/lib/locales';
+import { siteUrl } from '@/lib/siteIdentity';
 import { createInstance, type i18n as I18nInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import zhTW from '@/locales/zh-TW/common.json';
@@ -9,7 +18,7 @@ import zhTW from '@/locales/zh-TW/common.json';
 // 零 hydration mismatch。每次 render 建「獨立 instance」避免 ISR 並發請求共用 singleton 互踩。
 // ──────────────────────────────────────────────────────────────
 
-// 語系常數（SUPPORTED_LOCALES / DEFAULT_LOCALE / LOCALE_PREFIX / Locale / localePathname）
+// 語系常數與前綴（SUPPORTED_LOCALES / defaultLocale / prefixOf / Locale / localePathname）
 // 在 lib/locales.ts——純資料、無 React 相依，所以 Nitro 的 sitemap route 也能 import。
 // 這裡刻意「不」re-export：多一組 re-export 只會讓 react-refresh 多噴警告，消費端直接指過去更清楚。
 
@@ -23,42 +32,42 @@ export const LOCALE_LABELS: Record<string, string> = {
   ko: '한국어',
 };
 
-const PREFIX_TO_LOCALE: Record<string, Locale> = {
-  en: 'en',
-  ja: 'ja',
-  ko: 'ko',
-  'zh-cn': 'zh-CN',
-};
-
-/** URL 前綴 → locale。undefined(無前綴)= 預設;非支援前綴 = null(讓路由 notFound)。 */
+/** URL 前綴 → locale。undefined(無前綴)= 預設；認不得、預設語系自己的前綴、沒開的語系 = null(讓路由 notFound)。 */
 export function localeFromPrefix(prefix: string | undefined): Locale | null {
-  if (!prefix) return DEFAULT_LOCALE;
-  return PREFIX_TO_LOCALE[prefix.toLowerCase()] ?? null;
+  if (!prefix) return defaultLocale();
+  return localeOfPrefix(prefix);
 }
 
 /** 後端 available_locales(字串陣列)→ 我們支援的 Locale[](保序、濾掉不支援的)。給 blog 逐篇 hreflang 用。 */
 export function toLocales(arr: readonly string[] | undefined): Locale[] {
-  if (!arr || arr.length === 0) return [DEFAULT_LOCALE];
-  return SUPPORTED_LOCALES.filter((l) => arr.includes(l));
+  if (!arr || arr.length === 0) return [defaultLocale()];
+  // 只算站上有開的語系：沒開的那幾個連不到，不能寫進 hreflang
+  return enabledLocales().filter((l) => arr.includes(l));
 }
 
 /** 完整 pathname → locale(給 __root 設 <html lang>)。第一段非 locale(如 /blog)→ 預設。 */
 export function localeFromPathname(pathname: string): Locale {
   const seg = pathname.split('/').find(Boolean);
-  return localeFromPrefix(seg) ?? DEFAULT_LOCALE;
+  return localeFromPrefix(seg) ?? defaultLocale();
 }
 
 /** 去掉 pathname 的 locale 前綴 → 無前綴邏輯路徑('/en/blog/39'→'blog/39';'/en'→'';'/'→'')。 */
 export function stripLocalePrefix(pathname: string): string {
   const segs = pathname.split('/').filter(Boolean);
   const loc = segs.length ? localeFromPrefix(segs[0]) : null;
-  if (loc && loc !== DEFAULT_LOCALE) segs.shift(); // 第一段是 en/ja/ko/zh-cn 才剝掉
+  if (loc && loc !== defaultLocale()) segs.shift(); // 第一段是非預設語系的前綴才剝掉
   return segs.join('/');
 }
 
-/** Accept-Language header → 最佳支援 locale(依 q 值排序;認不出 → 預設 zh-TW)。 */
+/** Accept-Language header → 站上有開的語系裡最合的那個(依 q 值排序;認不出或沒開 → 預設語系)。 */
 export function pickLocaleFromAcceptLanguage(header: string | undefined | null): Locale {
-  if (!header) return DEFAULT_LOCALE;
+  const want = pickSupported(header);
+  return isEnabled(want) ? want : defaultLocale();
+}
+
+/** Accept-Language（或 navigator.languages 串起來）→ 最合的支援語系，不管站上有沒有開；認不出 → 預設語系 */
+export function pickSupported(header: string | undefined | null): Locale {
+  if (!header) return defaultLocale();
   const ranked = header
     .split(',')
     .map((part) => {
@@ -79,16 +88,14 @@ export function pickLocaleFromAcceptLanguage(header: string | undefined | null):
     if (tag.startsWith('ja')) return 'ja';
     if (tag.startsWith('ko')) return 'ko';
   }
-  return DEFAULT_LOCALE;
+  return defaultLocale();
 }
 
 // bot 偵測搬到 lib/bot.ts（純函式、零相依，Web Vitals 上報也要用）。消費端直接從那裡 import。
 
-const SITE_URL = 'https://koimsurai.com';
-
 /** 某 locale 下、某邏輯路徑(無前綴,如 '' 或 'blog/39')的絕對 URL。 */
 export function localeUrl(locale: Locale, basePath = ''): string {
-  return `${SITE_URL}${localePathname(locale, basePath)}`;
+  return `${siteUrl()}${localePathname(locale, basePath)}`;
 }
 
 /**
@@ -100,12 +107,12 @@ export function localeUrl(locale: Locale, basePath = ''): string {
 export function buildAlternateLinks(
   basePath: string,
   currentLocale: Locale,
-  locales: readonly Locale[] = SUPPORTED_LOCALES,
+  locales: readonly Locale[] = enabledLocales(),
 ): { rel: string; href: string; hrefLang?: string }[] {
   return [
     { rel: 'canonical', href: localeUrl(currentLocale, basePath) },
     ...locales.map((loc) => ({ rel: 'alternate', hrefLang: loc, href: localeUrl(loc, basePath) })),
-    { rel: 'alternate', hrefLang: 'x-default', href: localeUrl(DEFAULT_LOCALE, basePath) },
+    { rel: 'alternate', hrefLang: 'x-default', href: localeUrl(defaultLocale(), basePath) },
   ];
 }
 
@@ -140,7 +147,7 @@ export function createI18n(locale: Locale): I18nInstance {
   void instance.use(initReactI18next).init({
     resources,
     lng: locale,
-    fallbackLng: DEFAULT_LOCALE,
+    fallbackLng: defaultLocale(),
     supportedLngs: [...SUPPORTED_LOCALES],
     defaultNS: 'common',
     interpolation: { escapeValue: false }, // React 自己防 XSS

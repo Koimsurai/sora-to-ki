@@ -1,0 +1,33 @@
+{
+  "role": {
+    "owner": "站長",
+    "admin": "管理員",
+    "reader": "讀者"
+  },
+  "roleChanged": "已把 {{name}} 改成{{role}}",
+  "roleChangeFailed": "更改角色失敗",
+  "meta": "站長 {{owner}} · 管理員 {{admin}} · 讀者 {{reader}}",
+  "refresh": "重新整理",
+  "listLabel": "帳號清單",
+  "hint": "登入過的人都在這裡；管理員能進後台，但不能改別人的角色",
+  "searchLabel": "搜尋帳號",
+  "searchPlaceholder": "名字、Email、登入方式",
+  "noMatch": "找不到符合的帳號。",
+  "empty": "還沒有人登入過。",
+  "col": {
+    "name": "名字",
+    "email": "Email",
+    "provider": "登入方式",
+    "role": "角色",
+    "joined": "加入",
+    "changeRole": "改角色"
+  },
+  "you": "你",
+  "roleSelectLabel": "{{name}}的角色",
+  "someone": "這位",
+  "confirmTitle": "更改角色？",
+  "confirmDesc": "把 {{name}} 從{{from}}改成{{to}}。",
+  "confirmDescAdmin": "把 {{name}} 從{{from}}改成{{to}}。管理員進得了後台，能改文章與留言。",
+  "cancel": "取消",
+  "confirm": "確認更改"
+}

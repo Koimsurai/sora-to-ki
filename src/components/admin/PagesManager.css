@@ -1,0 +1,213 @@
+/* 後台「頁面」：一筆一列，欄位依寬度排；動作（上移、下移、刪除）在列尾。分隔只用點線 */
+.pg-editor {
+  gap: var(--space-4);
+}
+
+/* 語系切換是一組 fieldset：拿掉瀏覽器預設的框與內距，長得跟上面的分頁一樣 */
+.pg-langs {
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pg-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-4);
+  align-items: end;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px dotted var(--line);
+}
+
+.pg-row-chapter {
+  grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.pg-wide {
+  grid-column: 1 / -1;
+}
+
+.pg-row .adm-row-actions {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.pg-add {
+  align-self: flex-start;
+}
+
+.pg-save {
+  position: sticky;
+  bottom: 0;
+  align-items: center;
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--line);
+  background: var(--veil-3);
+}
+
+.pg-save .adm-meta {
+  margin-right: auto;
+}
+
+@media (max-width: 640px) {
+  .pg-row,
+  .pg-row-chapter {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 作品：從自己的 GitHub 挑的清單、貼網址那一列、每一件的標頭（repo 與它會長成什麼星球的數字） */
+.pg-pick {
+  display: grid;
+  gap: var(--space-1);
+  max-height: 18rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.pg-pick li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding-block: var(--space-1);
+  border-bottom: 1px dotted var(--line);
+}
+
+.pg-pick-name,
+.pg-work-repo {
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  overflow-wrap: anywhere;
+}
+
+.pg-paste {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.pg-work-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pg-origin {
+  margin-right: var(--space-2);
+  color: var(--signal);
+}
+
+.pg-work-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* 設備：勾選框、部件列（編號＋名稱＋規格＋動作）、上傳的圖上放部件 */
+.pg-check {
+  flex-direction: row;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.pg-check input {
+  width: auto;
+  min-height: 0;
+}
+
+.pg-row-part {
+  grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.pg-row-part .adm-row-actions {
+  grid-column: auto;
+}
+
+.pg-part-no {
+  padding-bottom: var(--space-2);
+  color: var(--ink-subtle);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+}
+
+.pg-error {
+  color: var(--danger);
+}
+
+.pg-placer {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.pg-placer-art {
+  position: relative;
+  width: min(100%, 40rem);
+  max-width: 100%;
+  padding: 0;
+  border: 1px dashed var(--line);
+  background: var(--ground);
+  cursor: crosshair;
+}
+
+.pg-placer-art img,
+.pg-placer-art svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pg-placer-art svg line {
+  stroke: var(--ink-subtle);
+  stroke-width: 0.3;
+}
+
+.pg-placer-at,
+.pg-placer-b {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+.pg-placer-at {
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  border-radius: var(--r-round);
+  background: var(--signal);
+}
+
+.pg-placer-b {
+  display: grid;
+  place-items: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  border: 1px solid var(--signal);
+  border-radius: var(--r-round);
+  background: var(--ground);
+  color: var(--signal);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-style: normal;
+}
+
+.pg-placer-arm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .pg-row-part {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+}

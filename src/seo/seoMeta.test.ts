@@ -6,11 +6,28 @@
 // 而且它是純函式，測起來的成本趨近於零：沒有 DOM、沒有網路、沒有時間相依。
 //
 // 下面每一組對應一種「改壞了不會有人發現」的情況，而不是為了把行數蓋滿。
-import { describe, expect, it } from 'vite-plus/test';
+import { beforeAll, describe, expect, it } from 'vite-plus/test';
+
+import { setSiteIdentity } from '@/lib/siteIdentity';
 
 import { articleJsonLd, articleMeta, blogListJsonLd, LOCALE_TO_OG, pageMeta, siteJsonLd } from './seoMeta';
 
 type Post = Parameters<typeof articleMeta>[0];
+
+// 站台身分照正式站填，下面的網址與標題才是看得懂的樣子
+beforeAll(() => {
+  setSiteIdentity({
+    url: 'https://koimsurai.com',
+    name: '宙と木',
+    author: 'Koimsurai',
+    description: '',
+    disabled_pages: [],
+    email: '',
+    github: 'Koimsurai',
+    default_locale: 'zh-TW',
+    locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+  });
+});
 
 /** 最小可用的文章。要測某個欄位的缺席時傳 `{ 欄位: undefined }` 覆蓋掉它。 */
 const post = (over: Record<string, unknown> = {}): Post =>

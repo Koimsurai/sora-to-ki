@@ -33,15 +33,20 @@ const KEY: &str = "site";
 pub const TOGGLEABLE_PAGES: [&str; 9] =
     ["moments", "works", "collection", "setup", "log", "messages", "photos", "friends", "colophon"];
 
-/// 全新安裝時預設關掉的頁面：設備頁要站長自己的手繪圖紙才有東西可看。
+/// 全新安裝時預設關掉的頁面（照 [`TOGGLEABLE_PAGES`] 的順序），初次設定的精靈也從這裡開始：
+///   · 設備頁要先選模式（內建圖紙、自己的圖紙）才有東西可看
+///   · 照片頁要接 NAS 或上傳資料夾
 /// 既有的站升級上來不會被關掉任何一頁（見 [`load_or_seed`]）。
-const OFF_ON_FRESH_INSTALL: [&str; 1] = ["setup"];
+const OFF_ON_FRESH_INSTALL: [&str; 2] = ["setup", "photos"];
 
 const NAME_MAX: usize = 60;
 const DESCRIPTION_MAX: usize = 300;
+const EMAIL_MAX: usize = 120;
+/// GitHub 帳號名的長度上限（GitHub 自己的規則）
+const GITHUB_MAX: usize = 39;
 
 /// 存在資料庫裡的那一份
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SiteSettings {
     pub name: String,
     /// 空字串＝跟站名一樣
@@ -51,6 +56,71 @@ pub struct SiteSettings {
     pub description: String,
     #[serde(default)]
     pub disabled_pages: Vec<String>,
+    /// 聯絡信箱（關於選單、朋友頁、留言頁）。
+    ///
+    /// `None`＝從來沒設過，退回環境變數 `SITE_EMAIL`；`Some("")`＝刻意清空。
+    /// 這兩個欄位是設定表建好之後才加的：既有的站不會再跑種子，靠這個退路接上環境變數，
+    /// 升級上來不會有一段聯絡方式不見的空窗。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    /// GitHub 帳號名（關於選單的連結、航行日誌的貢獻圖、首頁 JSON-LD 的 sameAs）。規則同 `email`，退路是 `SITE_GITHUB`
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub github: Option<String>,
+    /// 預設語系：不帶前綴的網址、文章的原文、沒翻譯時退回的語言。規則同 `email`，退路是 `SITE_DEFAULT_LOCALE`，再退回繁中
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_locale: Option<String>,
+    /// 有開的語系（一定包含預設語系）。規則同 `email`，退路是 `SITE_LOCALES`（逗號分隔），再退回全部
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locales: Option<Vec<String>>,
+}
+
+/// 站上支援的語系（介面有翻譯的那五個），順序就是語系選單的順序。前端在 src/lib/locales.ts
+pub const SUPPORTED_LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
+
+/// 字串 → 支援的語系（大小寫不拘）
+fn supported(l: &str) -> Option<&'static str> {
+    SUPPORTED_LOCALES.iter().copied().find(|s| s.eq_ignore_ascii_case(l.trim()))
+}
+
+/// 預設語系與有開的語系：設定 → 環境變數 → 繁中、全部。有開的照 SUPPORTED_LOCALES 排，一定含預設語系
+fn locales_of(s: &SiteSettings) -> (String, Vec<String>) {
+    let default = s
+        .default_locale
+        .clone()
+        .or_else(|| std::env::var("SITE_DEFAULT_LOCALE").ok())
+        .and_then(|l| supported(&l))
+        .unwrap_or("zh-TW");
+    let wanted: Vec<&str> = s.locales.clone().map_or_else(
+        || {
+            std::env::var("SITE_LOCALES")
+                .ok()
+                .map(|v| v.split(',').filter_map(supported).collect::<Vec<_>>())
+                .filter(|v| !v.is_empty())
+                .unwrap_or_else(|| SUPPORTED_LOCALES.to_vec())
+        },
+        |v| v.iter().filter_map(|l| supported(l)).collect(),
+    );
+    let enabled = SUPPORTED_LOCALES
+        .iter()
+        .filter(|l| **l == default || wanted.contains(l))
+        .map(|l| (*l).to_string())
+        .collect();
+    (default.to_string(), enabled)
+}
+
+/// 預設語系（RSS、分享圖、信件用）
+pub fn default_locale() -> String {
+    current().map_or_else(|| locales_of(&SiteSettings::default()).0, |s| locales_of(&s).0)
+}
+
+/// 某個語系的網址前綴：預設語系沒有前綴，其他是小寫（zh-tw、zh-cn、en、ja、ko）
+pub fn locale_prefix(locale: &str) -> String {
+    if locale.eq_ignore_ascii_case(&default_locale()) { String::new() } else { locale.to_ascii_lowercase() }
+}
+
+/// 設定裡沒有就看環境變數（見 `SiteSettings::email`）
+fn or_env(value: Option<String>, key: &str) -> String {
+    value.unwrap_or_else(|| std::env::var(key).map(|v| v.trim().to_string()).unwrap_or_default())
 }
 
 static CURRENT: LazyLock<RwLock<Option<SiteSettings>>> = LazyLock::new(|| RwLock::new(None));
@@ -72,6 +142,9 @@ fn set_current(s: SiteSettings) {
 ///   2. 沒設就看寫種子的當下 `users` 表有沒有人：有人＝既有的站升級上來，所有頁面照舊開著；
 ///      沒人＝全新安裝，關掉 [`OFF_ON_FRESH_INSTALL`]。
 ///      所以這支要排在 `auth::bootstrap_admin` 之前（它會在空的 users 表建第一個管理員）。
+///
+/// 全新安裝（同樣以 `users` 是空的判斷，不管有沒有設 `SITE_DISABLED_PAGES`）還會清掉
+/// 遷移寫進去的原作者朋友。
 pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
     if let Some(raw) = sqlx::query_scalar::<_, String>("SELECT value FROM site_settings WHERE key = ?")
         .bind(KEY)
@@ -83,19 +156,32 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         return Ok(s);
     }
 
+    let (users,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users").fetch_one(pool).await?;
+    let fresh = users == 0;
+    if fresh {
+        // 遷移 0022 把原作者的兩位朋友寫進了每一個資料庫；全新的站不該一開門就掛著別人的朋友。
+        // 只清那兩筆（還沒開機過，不會有別的）
+        sqlx::query("DELETE FROM friend_links WHERE slug IN ('doraeyi', 'sao-x')").execute(pool).await?;
+    }
     let disabled_pages = if let Ok(raw) = std::env::var("SITE_DISABLED_PAGES") {
         // 不認得的 key 直接略過：種子寫壞不該讓伺服器起不來，之後在後台改得回來
         let wanted: Vec<&str> = raw.split(',').map(str::trim).collect();
         TOGGLEABLE_PAGES.iter().filter(|p| wanted.contains(p)).map(|p| (*p).to_string()).collect()
+    } else if fresh {
+        OFF_ON_FRESH_INSTALL.iter().map(|p| (*p).to_string()).collect()
     } else {
-        let (users,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users").fetch_one(pool).await?;
-        if users == 0 { OFF_ON_FRESH_INSTALL.iter().map(|p| (*p).to_string()).collect() } else { Vec::new() }
+        Vec::new()
     };
     let seed = SiteSettings {
         name: crate::identity::env_site_name(),
         author: crate::identity::env_site_author().unwrap_or_default(),
         description: crate::identity::env_site_description().unwrap_or_default(),
         disabled_pages,
+        // 留 None：讀的時候會退回 SITE_EMAIL／SITE_GITHUB，在後台改過才寫進來
+        email: None,
+        github: None,
+        default_locale: None,
+        locales: None,
     };
     // OR IGNORE：兩個程序同時開機的話，以先寫進去的那份為準
     sqlx::query("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)")
@@ -128,17 +214,30 @@ pub struct SiteConfig {
     pub description: String,
     /// 關掉的頁面（data/siteSections 的 key）
     pub disabled_pages: Vec<String>,
+    /// 聯絡信箱；空字串＝沒有
+    pub email: String,
+    /// GitHub 帳號名；空字串＝沒有
+    pub github: String,
+    /// 預設語系（不帶前綴的網址）
+    pub default_locale: String,
+    /// 有開的語系，照語系選單的順序；一定含預設語系
+    pub locales: Vec<String>,
 }
 
 impl From<SiteSettings> for SiteConfig {
     fn from(s: SiteSettings) -> Self {
-        let author = if s.author.is_empty() { s.name.clone() } else { s.author };
+        let author = if s.author.is_empty() { s.name.clone() } else { s.author.clone() };
+        let (default_locale, locales) = locales_of(&s);
         Self {
             url: crate::identity::site_url(),
             name: s.name,
             author,
             description: s.description,
             disabled_pages: s.disabled_pages,
+            email: or_env(s.email, "SITE_EMAIL"),
+            github: or_env(s.github, "SITE_GITHUB"),
+            default_locale,
+            locales,
         }
     }
 }
@@ -152,10 +251,35 @@ pub struct SiteConfigUpdate {
     pub description: Option<String>,
     /// 整份換掉（不是增減）。只收 TOGGLEABLE_PAGES 裡的 key
     pub disabled_pages: Option<Vec<String>>,
+    /// 聯絡信箱；空字串＝清空（不再退回環境變數）
+    pub email: Option<String>,
+    /// GitHub 帳號名（不是網址）；空字串＝清空
+    pub github: Option<String>,
+    /// 預設語系（zh-TW、zh-CN、en、ja、ko）。⚠ 改了之後全站網址整批換：原本不帶前綴的會多一個前綴
+    pub default_locale: Option<String>,
+    /// 有開的語系（整份換掉）；預設語系一定會在裡面
+    pub locales: Option<Vec<String>>,
 }
 
 /// 把 body 套到現有的設定上。錯誤訊息直接給後台與 MCP 顯示，所以寫成人看得懂的句子
 fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, String> {
+    let bad_locale = |l: &str| format!("沒有「{l}」這個語系，能選的是：{}", SUPPORTED_LOCALES.join("、"));
+    if let Some(l) = &body.default_locale {
+        s.default_locale = Some(supported(l).ok_or_else(|| bad_locale(l))?.to_string());
+    }
+    if let Some(ls) = &body.locales {
+        if let Some(bad) = ls.iter().find(|l| supported(l).is_none()) {
+            return Err(bad_locale(bad));
+        }
+        // 照語系選單的順序存（預設語系不在裡面也沒關係，讀的時候一定會補上）
+        s.locales = Some(
+            SUPPORTED_LOCALES
+                .iter()
+                .filter(|l| ls.iter().any(|x| x.eq_ignore_ascii_case(l)))
+                .map(|l| (*l).to_string())
+                .collect(),
+        );
+    }
     if let Some(name) = body.name {
         let name = name.trim();
         if name.is_empty() {
@@ -190,6 +314,26 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
             .filter(|p| pages.iter().any(|q| q == *p))
             .map(|p| (*p).to_string())
             .collect();
+    }
+    if let Some(email) = body.email {
+        let email = email.trim();
+        if email.chars().count() > EMAIL_MAX {
+            return Err(format!("信箱最多 {EMAIL_MAX} 個字"));
+        }
+        if !email.is_empty() && !email.contains('@') {
+            return Err("信箱的格式不對".into());
+        }
+        s.email = Some(email.to_string());
+    }
+    if let Some(github) = body.github {
+        // 貼了整個網址或帶 @ 的也收：只留帳號名
+        let github = github.trim().trim_start_matches("https://github.com/").trim_start_matches('@');
+        let github = github.trim_end_matches('/');
+        let valid = github.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+        if !valid || github.len() > GITHUB_MAX {
+            return Err("GitHub 帳號名只能有英數字與連字號，最多 39 個字".into());
+        }
+        s.github = Some(github.to_string());
     }
     Ok(s)
 }
@@ -248,7 +392,67 @@ mod tests {
             author: String::new(),
             description: String::new(),
             disabled_pages: vec![],
+            email: None,
+            github: None,
+            default_locale: None,
+            locales: None,
         }
+    }
+
+    #[test]
+    fn 語系只收支援的_有開的照選單順序存() {
+        let s = apply(
+            base(),
+            SiteConfigUpdate {
+                default_locale: Some("EN".into()),
+                locales: Some(vec!["ja".into(), "en".into()]),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(s.default_locale.as_deref(), Some("en"), "大小寫不拘，存成標準寫法");
+        assert_eq!(s.locales, Some(vec!["en".into(), "ja".into()]));
+        let err = apply(base(), SiteConfigUpdate { default_locale: Some("fr".into()), ..Default::default() });
+        assert!(err.unwrap_err().contains("fr"));
+    }
+
+    #[test]
+    fn 有開的語系一定含預設語系() {
+        let s =
+            SiteSettings { default_locale: Some("ko".into()), locales: Some(vec!["en".into()]), ..base() };
+        let c = SiteConfig::from(s);
+        assert_eq!(c.default_locale, "ko");
+        assert_eq!(c.locales, vec!["en".to_string(), "ko".to_string()]);
+    }
+
+    #[test]
+    fn 信箱與_github_清空要存成空字串_不是退回環境變數() {
+        let s = apply(
+            base(),
+            SiteConfigUpdate {
+                email: Some(String::new()),
+                github: Some(String::new()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(s.email.as_deref(), Some(""));
+        assert_eq!(s.github.as_deref(), Some(""));
+    }
+
+    #[test]
+    fn github_貼網址或帶_at_也只留帳號名() {
+        for input in ["https://github.com/Koimsurai/", "@Koimsurai", " Koimsurai "] {
+            let s =
+                apply(base(), SiteConfigUpdate { github: Some(input.into()), ..Default::default() }).unwrap();
+            assert_eq!(s.github.as_deref(), Some("Koimsurai"), "{input}");
+        }
+        assert!(
+            apply(base(), SiteConfigUpdate { github: Some("a/b".into()), ..Default::default() }).is_err()
+        );
+        assert!(
+            apply(base(), SiteConfigUpdate { email: Some("nope".into()), ..Default::default() }).is_err()
+        );
     }
 
     #[test]

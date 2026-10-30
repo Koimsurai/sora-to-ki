@@ -1,0 +1,26 @@
+{
+  "loading": "불러오는 중",
+  "save": "저장",
+  "saving": "저장 중",
+  "revert": "되돌리기",
+  "delete": "삭제",
+  "status": {
+    "published": "발행됨",
+    "draft": "임시 글",
+    "scheduled": "예약",
+    "trashed": "휴지통"
+  },
+  "localeShort": {
+    "zh-TW": "繁",
+    "en": "EN",
+    "zh-CN": "简",
+    "ja": "日",
+    "ko": "한"
+  },
+  "localesHave": "언어: {{list}}",
+  "localesNone": "언어: 아직 없음",
+  "listSep": ", ",
+  "openCalendar": "{{label}}: 달력 열기",
+  "saveFailed": "저장하지 못했습니다 ({{status}})",
+  "offline": "서버에 연결할 수 없어 아직 저장되지 않았습니다"
+}

@@ -122,13 +122,13 @@
   },
   "home": {
     "orbit": {
-      "title": "Koimsurai 的個人網站：手記、碎念、作品與收藏",
+      "title": "{{author}} 的個人網站：手記、碎念、作品與收藏",
       "notesCount": "{{count}} 篇 · 最近 {{date}}",
       "momentsCount": "最近 {{date}}",
       "worksCount": "{{count}} 件",
       "collectionLine": "在看 {{anime}} 部動畫、{{films}} 部電影、{{series}} 部影集",
-      "aboutLine": "從 2004 往下掉到現在",
-      "aboutCount": "2004 –"
+      "aboutLine": "從 {{year}} 往下掉到現在",
+      "aboutCount": "{{year}} –"
     }
   },
   "commandPalette": {
@@ -304,48 +304,10 @@
     "description": "Koimsurai 的設備清單：主力機、跑著這個網站的家用伺服器、網路與智慧家庭，還有一張家裡怎麼連起來的拓撲圖。",
     "heroTitle": "設備",
     "subtitle": "解構精密，安放偏執。",
-    "cat": {
-      "main-rig": {
-        "short": "主力機"
-      },
-      "server": {
-        "short": "伺服器"
-      },
-      "network": {
-        "short": "網路與行動"
-      },
-      "smart-home": {
-        "short": "智慧家庭"
-      },
-      "peripherals": {
-        "short": "周邊"
-      },
-      "base-ii": {
-        "short": "老家"
-      }
-    },
-    "roles": {
-      "nanokvm": "遠端開機、進 BIOS，伺服器當機時也連得進去",
-      "headless": "讓沒接螢幕的伺服器以為有螢幕，GPU 才會正常輸出",
-      "googleTv": "家裡的 Matter 中樞",
-      "hub3": "光照、溫濕度、人體感測，透過 Matter 回報；夜間燈光的自動校正靠它的光照度",
-      "rm4": "學習冷氣的紅外線遙控碼，讓冷氣接進 Home Assistant",
-      "esp32": "兩塊板子組成的 433MHz 發射器，模擬吸頂燈的原廠遙控器",
-      "doorbell": "電池門鈴，透過網關連上網路"
-    },
     "appliances": {
-      "title": "其他連網家電",
-      "types": {
-        "dehumidifier": "除濕機",
-        "airPurifier": "空氣清淨機",
-        "catTower": "喵太座：寵物空清＋加熱貓窩",
-        "feeder": "自動餵食器",
-        "camera": "攝影機",
-        "plug": "智慧插座"
-      }
+      "title": "其他連網家電"
     },
     "sheet": {
-      "memoryText": "回老家時的備用基地。沒有照片，規格照記憶寫。",
       "telemetry": "遙測",
       "telemetryEvery": "這台伺服器傳回來的，每 30 秒更新一次",
       "telemetryWait": "等待訊號"
@@ -354,18 +316,11 @@
       "canvas": "太空梭貨艙的線稿：四件酬載，與遠處軌道上的老家那台",
       "hintWide": "點標籤或貨艙裡的酬載 · ←→ 換一件 · Esc 回到整架",
       "hintTouch": "點標籤或貨艙裡的酬載 · 左右滑換一件",
-      "lede": {
-        "main-rig": "每天坐在前面的那台，整台走白色。",
-        "server": "一直開著的那台。Home Assistant 跑在這裡，家裡的智慧裝置都接到它。",
-        "network": "一台 Mesh 路由器撐起整個家，有線的接交換器，其他走無線。",
-        "peripherals": "桌上每天摸到的東西。"
-      },
       "count_one": "{{count}} 件",
       "count_other": "{{count}} 件",
       "specCount_one": "{{count}} 項",
       "specCount_other": "{{count}} 項",
       "notDrawn": "圖上未繪出",
-      "devices": "接在這台上的裝置 · Home Assistant",
       "records": "跟這台有關的紀錄",
       "prev": "上一件",
       "next": "下一件",
@@ -481,23 +436,12 @@
     "kick": "關於",
     "title": "坐穩了。",
     "hint": "往下捲",
+    "now": "現在",
     "landPre": "掠過無數個稚嫩與迷惘的昨日，",
     "land": "就此落下。",
     "surface": "地表",
     "surfaceTitle": "握在手裡的",
     "surfaceSub": "一路帶著的東西。",
-    "skill": {
-      "frontend": "前端開發",
-      "backend": "後端開發",
-      "mobile": "行動開發",
-      "devops": "部署運維",
-      "design": "設計多媒體",
-      "data": "資料儲存",
-      "network": "網路通訊",
-      "productivity": "生產力",
-      "ai": "AI 開發",
-      "teaching": "教學工具"
-    },
     "layer1": "第一層",
     "layer1Title": "做過的事",
     "core": "地心",
@@ -659,7 +603,8 @@
     "emptyText": "第一則留言會出現在這條線上。",
     "privatePre": "不適合公開的話，寄信到",
     "privateMid": "；bug 回報或功能建議比較適合開",
-    "privatePost": "。"
+    "privatePost": "。",
+    "privateEnd": "。"
   },
   "signal": {
     "formTitle": "送出一道訊號",
@@ -756,7 +701,8 @@
     "title_rule3": "由數據長出來",
     "text_rule3": "作品頁螺旋上的每一顆星，都是照一個 repo 的數字長出來的。調整數字做一顆，再一步一步看它怎麼長成。",
     "title_license": "授權",
-    "text_license": "程式碼以 AGPL-3.0 開源；文章、照片與其他內容保留所有權利。",
+    "qaHeading": "常見問題 Q&A",
+    "text_license": "這個站用 sora-to-ki 架設，程式碼以 AGPL-3.0 開源；文章、照片與其他內容保留所有權利。",
     "swatchGround": "黑，是紙",
     "swatchPaper": "白，是墨",
     "swatchSignal": "{{signal}}，是訊號",

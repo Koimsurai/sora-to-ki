@@ -137,6 +137,9 @@ async fn run() -> anyhow::Result<()> {
         tracing::info!(username = %username, "全新部署：已用 ADMIN_USERNAME / ADMIN_PASSWORD 建立第一個管理員");
     }
 
+    // 還沒有站長：把認領用的設定碼印在 log（後台的 /admin/init 精靈要它）
+    handlers::init::announce(&pool).await.map_err(|e| anyhow::anyhow!("初次設定的設定碼：{e:?}"))?;
+
     let http = reqwest::Client::builder().timeout(Duration::from_secs(30)).build()?;
 
     // JWT_SECRET（HS256 驗章）。fail-fast：沒設就不啟動。

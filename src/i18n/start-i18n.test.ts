@@ -16,7 +16,23 @@ import {
   toLocales,
 } from './start-i18n';
 import { isBotUserAgent } from '@/lib/bot';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@/lib/locales';
+import { defaultLocale, SUPPORTED_LOCALES } from '@/lib/locales';
+import { setSiteIdentity } from '@/lib/siteIdentity';
+
+// 站台身分照正式站填，下面的網址與標題才是看得懂的樣子
+beforeAll(() => {
+  setSiteIdentity({
+    url: 'https://koimsurai.com',
+    name: '宙と木',
+    author: 'Koimsurai',
+    description: '',
+    disabled_pages: [],
+    email: '',
+    github: 'Koimsurai',
+    default_locale: 'zh-TW',
+    locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+  });
+});
 
 describe('localeFromPrefix', () => {
   it('無前綴 → 預設 zh-TW', () => {
@@ -52,8 +68,8 @@ describe('localeFromPathname / stripLocalePrefix', () => {
 
 describe('toLocales', () => {
   it('空值 → 預設語言', () => {
-    expect(toLocales(undefined)).toEqual([DEFAULT_LOCALE]);
-    expect(toLocales([])).toEqual([DEFAULT_LOCALE]);
+    expect(toLocales(undefined)).toEqual([defaultLocale()]);
+    expect(toLocales([])).toEqual([defaultLocale()]);
   });
   it('過濾不支援的、依 SUPPORTED_LOCALES 排序', () => {
     expect(toLocales(['ja', 'en', 'xx'])).toEqual(['en', 'ja']);
@@ -88,8 +104,8 @@ describe('localeUrl / buildAlternateLinks', () => {
 
 describe('pickLocaleFromAcceptLanguage', () => {
   it('缺 header → 預設', () => {
-    expect(pickLocaleFromAcceptLanguage(undefined)).toBe(DEFAULT_LOCALE);
-    expect(pickLocaleFromAcceptLanguage(null)).toBe(DEFAULT_LOCALE);
+    expect(pickLocaleFromAcceptLanguage(undefined)).toBe(defaultLocale());
+    expect(pickLocaleFromAcceptLanguage(null)).toBe(defaultLocale());
   });
   it('依 q 值挑最佳支援語言', () => {
     expect(pickLocaleFromAcceptLanguage('ja,en;q=0.8')).toBe('ja');
@@ -101,7 +117,7 @@ describe('pickLocaleFromAcceptLanguage', () => {
     expect(pickLocaleFromAcceptLanguage('zh')).toBe('zh-TW');
   });
   it('全不支援 → 預設', () => {
-    expect(pickLocaleFromAcceptLanguage('fr-FR,de;q=0.8')).toBe(DEFAULT_LOCALE);
+    expect(pickLocaleFromAcceptLanguage('fr-FR,de;q=0.8')).toBe(defaultLocale());
   });
 });
 
@@ -156,7 +172,7 @@ describe('翻譯資源與常數一致性', () => {
 
 describe('語系字串用到才載', () => {
   it('預設語系不用載；loadLocale 之後 createI18n 拿得到那個語系的字串', async () => {
-    expect(isLocaleLoaded(DEFAULT_LOCALE)).toBe(true);
+    expect(isLocaleLoaded(defaultLocale())).toBe(true);
     await loadLocale('ko');
     expect(isLocaleLoaded('ko')).toBe(true);
     expect(createI18n('ko').t('nav.home')).not.toBe('nav.home');

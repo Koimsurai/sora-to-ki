@@ -4,6 +4,7 @@
 // 用 node:sqlite（Node 22+ 內建）直接寫，不引第三方 driver：schema 已經由後端啟動時
 // 跑完的 migrations 建好，這裡只負責塞資料。
 
+import { readdirSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 
 /**
@@ -418,6 +419,28 @@ export function seed(dbPath) {
      VALUES ('reader@example.com', '訂閱的讀者', 'active', ?)`,
     UNSUB_TOKEN,
   );
+
+  // ── 朋友 ───────────────────────────────────────────────────────
+  // 遷移 0022 寫的兩位，後端開機時 users 是空的（＝全新安裝）會被清掉；
+  // 朋友頁的煙霧測試與計算後樣式基準是照「有兩位朋友」量的，原樣補回去
+  run(
+    `INSERT OR IGNORE INTO friend_links (slug, name, url, description, feed_url, status, sort_order, reviewed_at) VALUES
+      ('doraeyi', 'Liam', 'https://blog.doraeyi.com', '前端工程師的偵探手記', 'https://blog.doraeyi.com/rss.xml', 'approved', 1, CURRENT_TIMESTAMP),
+      ('sao-x', '影の書庫', 'https://blog.sao-x.com', '潛伏於陰影中的書庫，收藏著程式、技術與日常的筆記。', 'https://blog.sao-x.com/rss.xml', 'approved', 2, CURRENT_TIMESTAMP)`,
+  );
+
+  // ── 頁面內容（關於、作品…）──────────────────────────────────────
+  // 遷移只在站名是「宙と木」時寫入原站的內容，而遷移跑的時候 site_settings 還是空的（後端開機才寫種子）。
+  // 這時站名已經是了：把遷移檔裡寫原站內容的 INSERT 原樣重跑一次，計算後樣式基準才照原站量
+  const migrations = new URL('../../backend/migrations/', import.meta.url);
+  for (const file of readdirSync(migrations).filter((f) => /_page_content.*\.sql$/.test(f))) {
+    for (const stmt of readFileSync(new URL(file, migrations), 'utf8').split(';\n')) {
+      // 從「行首是 INSERT」的那一行開始，前面是註解
+      const lines = stmt.split('\n');
+      const at = lines.findIndex((l) => l.startsWith('INSERT'));
+      if (at >= 0) db.exec(lines.slice(at).join('\n'));
+    }
+  }
 
   db.close();
 }

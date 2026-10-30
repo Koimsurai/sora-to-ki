@@ -1,0 +1,31 @@
+{
+  "controlRoom": "管制室 · Admin",
+  "navLabel": "管理画面",
+  "toSite": "サイトに戻る ↗",
+  "owner": "オーナー",
+  "admin": "管理者",
+  "logout": "ログアウト",
+  "closeMenu": "メニューを閉じる",
+  "backToPosts": "← 記事",
+  "saveDraft": "下書き保存",
+  "saveAndExit": "保存して一覧へ",
+  "schedule": "予約投稿",
+  "publish": "公開する",
+  "collapse": "閉じる",
+  "menu": "メニュー",
+  "language": "管理画面の言語",
+  "languageShort": {
+    "zh-TW": "繁",
+    "zh-CN": "简",
+    "en": "EN",
+    "ja": "日",
+    "ko": "한"
+  },
+  "languageName": {
+    "zh-TW": "繁體中文",
+    "zh-CN": "简体中文",
+    "en": "English",
+    "ja": "日本語",
+    "ko": "한국어"
+  }
+}

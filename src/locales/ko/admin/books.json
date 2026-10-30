@@ -1,0 +1,71 @@
+{
+  "meta": "{{count}}권 · 읽는 중 {{reading}}",
+  "add": "책 추가",
+  "listLabel": "책 목록",
+  "tabAll": "전체",
+  "status": {
+    "to-read": "읽고 싶음",
+    "reading": "읽는 중",
+    "read": "다 읽음"
+  },
+  "searchShelf": "책장 검색",
+  "searchPlaceholder": "제목, 저자, ISBN",
+  "emptyShelf": "책장이 아직 비어 있습니다.",
+  "noMatch": "일치하는 책이 없습니다.",
+  "edit": "편집",
+  "editAria": "《{{title}}》 편집",
+  "deleteAria": "《{{title}}》 삭제",
+  "pages": "{{count}}쪽",
+  "finishedOn": "{{date}} 다 읽음",
+  "startedOn": "{{date}} 시작",
+  "dialog": {
+    "editTitle": "이 책 편집",
+    "editDesc": "다 고쳤으면 \"업데이트\"를 누르세요.",
+    "addDesc": "ISBN이나 제목으로 외부 서지 정보를 검색해 가져온 뒤 읽기 상태, 평점, 메모를 채우세요. 전부 직접 입력해도 됩니다."
+  },
+  "external": {
+    "label": "외부 서지 검색",
+    "placeholder": "ISBN 또는 제목 (Google Books, OpenLibrary, 대만 국가도서관)",
+    "search": "검색",
+    "searching": "검색 중",
+    "results": "검색 결과",
+    "ncl": "대만 국가도서관 (표지·소개 없음)"
+  },
+  "field": {
+    "title": "제목",
+    "authors": "저자",
+    "publisher": "출판사",
+    "publishedDate": "출판일",
+    "pageCount": "쪽수",
+    "language": "언어",
+    "categories": "분류",
+    "coverUrl": "표지 URL",
+    "coverPreview": "표지 미리보기",
+    "description": "소개",
+    "myReading": "나의 독서",
+    "status": "상태",
+    "rating": "평점 · 0–5",
+    "started": "읽기 시작",
+    "finished": "다 읽음",
+    "notes": "메모"
+  },
+  "cancel": "취소",
+  "update": "업데이트",
+  "putOnShelf": "책장에 추가",
+  "confirmTitle": "이 책을 삭제할까요?",
+  "confirmBody": "평점과 메모도 함께 삭제되며 되돌릴 수 없습니다.",
+  "toast": {
+    "needQuery": "ISBN 또는 제목을 입력하세요",
+    "fallbackEmpty": "예비 출처(OpenLibrary)에도 이 책이 없습니다",
+    "notFound": "책을 찾을 수 없습니다",
+    "searchFailed": "검색에 실패했습니다",
+    "searchFailedRetry": "검색에 실패했습니다. 잠시 후 다시 시도하세요",
+    "picked": "서지 정보를 가져왔습니다",
+    "updated": "업데이트했습니다",
+    "added": "책장에 추가했습니다",
+    "actionFailed": "작업에 실패했습니다",
+    "saveFailed": "저장에 실패했습니다",
+    "removed": "책장에서 삭제했습니다",
+    "deleteFailed": "삭제에 실패했습니다"
+  }
+}

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { at } from '@/i18n/admin-i18n';
 import { localeCoverage, nameCoverage, type LocaleCoverage, type LocaleNamed, type LocalePost } from './adminFormat';
 import './AdminPage.css';
 
@@ -37,10 +38,13 @@ export function PageHead({
         {meta && <span className="adm-caps">{meta}</span>}
         <h1 className="adm-h1">
           {title}
-          {/* 英文名只是裝飾（同一個名字的另一種寫法），報讀器念頁名就好 */}
-          <span className="adm-latin" aria-hidden="true">
-            {latin}
-          </span>
+          {/* 英文名只是裝飾（同一個名字的另一種寫法），報讀器念頁名就好。
+              後台是英文時頁名本身就是它，不再重複一次 */}
+          {latin !== title && (
+            <span className="adm-latin" aria-hidden="true">
+              {latin}
+            </span>
+          )}
         </h1>
       </div>
       {actions && <div className="adm-head-actions">{actions}</div>}
@@ -74,7 +78,9 @@ function CoverageDots({ coverage }: { coverage: LocaleCoverage[] }) {
   const has = coverage.filter((l) => l.has).map((l) => l.label);
   return (
     <span className="adm-locs">
-      <span className="sr-only">語系：{has.length ? has.join('、') : '還沒有任何語系'}</span>
+      <span className="sr-only">
+        {has.length ? at('common.localesHave', { list: has.join(at('common.listSep')) }) : at('common.localesNone')}
+      </span>
       {coverage.map((l) => (
         <span key={l.code} className="adm-loc" data-has={l.has || undefined} aria-hidden="true">
           <span className="adm-loc-dot" />

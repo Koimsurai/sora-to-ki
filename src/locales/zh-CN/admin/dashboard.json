@@ -1,0 +1,61 @@
+{
+  "title": "此刻",
+  "writeThought": "写一则碎念",
+  "writePost": "新写一篇手记",
+  "go": {
+    "review": "去审核 →",
+    "look": "去看看 →",
+    "continue": "继续写 →",
+    "list": "看清单 →"
+  },
+  "todo": {
+    "heading": "等你处理",
+    "headingCount": "等你处理 · {{count}} 件",
+    "loading": "看看有什么事",
+    "empty": "没有要处理的事。",
+    "comments": "{{count}} 条留言等你审核",
+    "newestCommentOnPost": "最新一条来自 {{author}}，在〈{{title}}〉",
+    "newestCommentElsewhere": "最新一条来自 {{author}}，在碎念或留言板",
+    "friends": "{{count}} 份友链申请还没看",
+    "newestFriend": "最新一份是〈{{name}}〉，{{date}} 发来的",
+    "drafts": "{{count}} 篇草稿",
+    "stalestDraft": "最久没动的是〈{{title}}〉，停在 {{date}}",
+    "gaps": "{{count}} 篇已发布的手记缺少译文",
+    "gapsDetail": "缺 EN {{en}} · 日 {{ja}} · 韩 {{ko}}（简中由繁中转换，不计在内）",
+    "bahamutExpiring": "巴哈姆特的登录再过 {{days}} 天就过期",
+    "bahamutExpired": "巴哈姆特的 cookie 失效了",
+    "bahamutExpiringDetail": "过期之后收藏页的「在看」就不会再更新",
+    "bahamutExpiredDetail": "收藏页的「在看」停在上一次同步，需要重新登录一次"
+  },
+  "tiles": {
+    "label": "站上的数字",
+    "posts": "手记",
+    "postsSub": "已发布 · 草稿 {{drafts}}",
+    "postsSubScheduled": "已发布 · 草稿 {{drafts}} · 下一篇定时 {{when}}",
+    "recent": "近 30 天",
+    "recentSub": "篇新写的",
+    "comments": "留言",
+    "commentsSub": "近 7 天 · 待审核 {{pending}}",
+    "views": "浏览",
+    "viewsSub": "所有手记加起来"
+  },
+  "recent": {
+    "heading": "最近改过",
+    "all": "全部 →",
+    "allLabel": "全部手记",
+    "empty": "还没有手记。",
+    "meta": "手记 · {{category}} · {{when}}",
+    "uncategorized": "未分类"
+  },
+  "vitals": {
+    "heading": "信号 · 近 {{days}} 天",
+    "footnote": "p75 · 不含 /admin · 来源 web_vitals",
+    "rating": {
+      "good": "好",
+      "needsWork": "待改善",
+      "poor": "差"
+    },
+    "ratingCount": "{{rating}} · {{count}} 条",
+    "noSamples": "没有样本"
+  }
+}

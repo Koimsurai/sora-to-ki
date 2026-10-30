@@ -1,0 +1,33 @@
+{
+  "role": {
+    "owner": "운영자",
+    "admin": "관리자",
+    "reader": "독자"
+  },
+  "roleChanged": "{{name}}의 역할을 {{role}}(으)로 변경했습니다",
+  "roleChangeFailed": "역할을 변경하지 못했습니다",
+  "meta": "운영자 {{owner}} · 관리자 {{admin}} · 독자 {{reader}}",
+  "refresh": "새로고침",
+  "listLabel": "계정 목록",
+  "hint": "로그인한 적 있는 사람이 모두 여기 있습니다. 관리자는 관리자 화면에 들어갈 수 있지만 다른 사람의 역할은 바꿀 수 없습니다",
+  "searchLabel": "계정 검색",
+  "searchPlaceholder": "이름, 이메일, 로그인 방식",
+  "noMatch": "일치하는 계정이 없습니다.",
+  "empty": "아직 로그인한 사람이 없습니다.",
+  "col": {
+    "name": "이름",
+    "email": "이메일",
+    "provider": "로그인 방식",
+    "role": "역할",
+    "joined": "가입일",
+    "changeRole": "역할 변경"
+  },
+  "you": "나",
+  "roleSelectLabel": "{{name}}의 역할",
+  "someone": "이 사용자",
+  "confirmTitle": "역할을 변경할까요?",
+  "confirmDesc": "{{name}}의 역할을 {{from}}에서 {{to}}(으)로 변경합니다.",
+  "confirmDescAdmin": "{{name}}의 역할을 {{from}}에서 {{to}}(으)로 변경합니다. 관리자는 관리자 화면에 들어가 글과 댓글을 수정할 수 있습니다.",
+  "cancel": "취소",
+  "confirm": "변경 확인"
+}

@@ -3,6 +3,7 @@
 // 這幾年看的動畫電影在恆星之間。想讀的書還沒發出，繞著地球。滑過一點，旁邊開一個接收畫面
 // 顯示它的封面（這時才載入那一張）、離地球多遠與寫的那句話。整頁只有一張畫布。
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -142,7 +143,7 @@ function sentAt(t: TFunction, ls: number, now: number): string {
 
 export default function Collection() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);

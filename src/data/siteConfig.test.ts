@@ -4,7 +4,17 @@ import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { enabledSections, isPageDisabled, sectionOfPath } from './siteConfig';
 import { ABOUT_SECTIONS, MORE_SECTIONS } from './siteSections';
 
-const config = (disabled: string[]) => ({ url: '', name: '', author: '', description: '', disabled_pages: disabled });
+const config = (disabled: string[]) => ({
+  url: '',
+  name: '',
+  author: '',
+  description: '',
+  disabled_pages: disabled,
+  email: '',
+  github: '',
+  default_locale: 'zh-TW',
+  locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+});
 
 describe('siteConfig', () => {
   afterEach(() => {

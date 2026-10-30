@@ -3,16 +3,20 @@
 // （about/colophonToys：首頁的土星、照片的接收、作品的星，都一步一步拆開）。往下捲是航海日誌：原本的 Q&A（about/colophonQa）。
 // 換頁進來時琥珀點落在望遠鏡的鏡筒前端，視線從那裡拉到第一顆星；離開時點從正在測的那顆星飛走。
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { defaultLocale } from '@/lib/locales';
 import { useTranslation } from 'react-i18next';
-import { LinkCard } from '@/components/common/LinkCard';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { useSignalName, useTheme } from '@/hooks/useTheme';
 import { LocaleLink } from '@/i18n/locale-link';
 import { onPalette, palette } from '@/lib/palette';
-import { lookupOr } from '@/lib/tableLookup';
+import { pickText } from '@/lib/i18nText';
+import { useSiteConfig } from '@/data/siteConfig';
 import { sameTitle } from '@/lib/pageTitle';
+import { SOFTWARE_REPO } from '@/lib/siteIdentity';
 import { after, isArriving, transitionDot } from '@/store/pageTransition';
-import { COLOPHON_QA } from './colophonQa';
+import { useQaContent } from '@/data/pageContent';
+import QaAnswer from './QaAnswer';
+import OwnerFillHint from '@/components/common/OwnerFillHint';
 import {
   cumulative,
   drawColophon,
@@ -62,10 +66,9 @@ const SKY_PAGES = [
   ['/about', 'about'],
 ] as const;
 
-const stripNumber = (q: string) => q.replace(/^(\d+\.\s*|Q:\s*)/, '');
-
 export default function Colophon() {
   const { t, i18n } = useTranslation();
+  const site = useSiteConfig();
   const theme = useTheme();
   // 文案裡的訊號色與主星跟著主題換（首頁那顆主星、它的訊號色）
   const vars = {
@@ -73,8 +76,12 @@ export default function Colophon() {
     body: t(`siteNav.skyNames.${theme}`),
     bodyInline: t(`siteNav.skyNamesInline.${theme}`),
   };
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const qa = lookupOr(COLOPHON_QA, lang, COLOPHON_QA['zh-TW']);
+  const lang = i18n.resolvedLanguage ?? defaultLocale();
+  // 問答是站長填的（後台「頁面」或 MCP）；一題都沒有時，天上那顆「問答」星就不出現
+  const { intro: qaIntro, items: qaList } = useQaContent();
+  const stars = qaList.length > 0 ? STAR_KEYS : STAR_KEYS.filter((k) => k !== 'qa');
+  const starsRef = useRef(stars);
+  starsRef.current = stars;
   /** 問答目前看的是第幾題 */
   const [qaAt, setQaAt] = useState(0);
   const [target, setTarget] = useState<StarKey>('material');
@@ -113,7 +120,7 @@ export default function Colophon() {
       const b = box();
       if (!b || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
       const front = frontOf(b.w, b.h, turnFor(targetRef.current, b.w, b.h));
-      const { path, targetAt } = planConstellation(targetRef.current, front, b.w, b.h);
+      const { path, targetAt } = planConstellation(targetRef.current, front, b.w, b.h, starsRef.current);
       const cum = cumulative(path);
       constellationRef.current = { path, cum, drawn: 0, toTarget: cum[targetAt] };
       // 星與星之間飛快一點；鏡頭在第一顆星停下
@@ -278,61 +285,10 @@ export default function Colophon() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const qaItems: { q: string; a: ReactNode }[] = [
-    { q: stripNumber(qa.q1), a: <p>{qa.a1}</p> },
-    {
-      q: stripNumber(qa.q2),
-      a: (
-        <p>
-          {qa.a2_pre}
-          <code>React 19</code>
-          {qa.a2_mid1}
-          <code>TanStack Start</code>
-          {qa.a2_mid2}
-          <code>Vite</code>
-          {qa.a2_mid3}
-          <code>Tailwind CSS</code>
-          {qa.a2_mid4}
-          <code>Three.js</code>
-          {qa.a2_mid5}
-          <code>Rust</code>
-          {qa.a2_mid6}
-          <code>SQLite</code>
-          {qa.a2_mid7}
-          <code>Docker</code>
-          {qa.a2_tail}
-        </p>
-      ),
-    },
-    {
-      q: stripNumber(qa.q3),
-      a: (
-        <>
-          <p>
-            {qa.a3} <code>thumbhash</code> {qa.a3_mid}
-          </p>
-          <LinkCard href="https://koimsurai.com/blog/21" />
-        </>
-      ),
-    },
-    { q: stripNumber(qa.q4), a: <p>{qa.a4}</p> },
-    {
-      q: stripNumber(qa.q5),
-      a: (
-        <>
-          <p>{qa.a5_p1}</p>
-          <p>
-            {qa.a5_p2_pre}
-            <LocaleLink to="/messages">{qa.a5_p2_link}</LocaleLink>
-            {qa.a5_p2_post}
-          </p>
-        </>
-      ),
-    },
-    { q: stripNumber(qa.q6), a: <p>{qa.a6}</p> },
-    { q: stripNumber(qa.q7), a: <p>{qa.a7}</p> },
-    { q: stripNumber(qa.q8), a: <p>{qa.a8}</p> },
-  ];
+  const qaItems = qaList.map((it) => ({
+    q: pickText(it.q, lang),
+    a: <QaAnswer text={pickText(it.a, lang)} />,
+  }));
 
   const panel: Record<StarKey, ReactNode> = {
     material: (
@@ -354,11 +310,11 @@ export default function Colophon() {
     type: (
       <ul className="cl-fonts">
         <li>
-          <b className="is-serif">宙と木</b>
+          <b className="is-serif">{site.name}</b>
           <span>{t('colophon.fontSerif')}</span>
         </li>
         <li>
-          <b className="is-latin">Koimsurai</b>
+          <b className="is-latin">{site.author}</b>
           <span>{t('colophon.fontLatin')}</span>
         </li>
         <li>
@@ -385,7 +341,7 @@ export default function Colophon() {
     qa: (
       <div className="cl-qa">
         {/* 左邊題目、右邊答案：點題目換答案，目鏡的高度固定，不會因為打開一題就往上頂 */}
-        <ul className="cl-qa-list" role="tablist" aria-label={qa.qaHeading}>
+        <ul className="cl-qa-list" role="tablist" aria-label={t('colophon.qaHeading')}>
           {qaItems.map((it, i) => (
             <li key={it.q}>
               <button
@@ -407,8 +363,8 @@ export default function Colophon() {
       </div>
     ),
     license: (
-      <a className="cl-repo" href="https://github.com/Koimsurai/sora-to-ki" target="_blank" rel="noopener noreferrer">
-        github.com/Koimsurai/sora-to-ki
+      <a className="cl-repo" href={SOFTWARE_REPO} target="_blank" rel="noopener noreferrer">
+        {SOFTWARE_REPO.replace(/^https:\/\//, '')}
       </a>
     ),
   };
@@ -419,7 +375,7 @@ export default function Colophon() {
         <div className="cl-sky" ref={boxRef}>
           <canvas ref={canvasRef} aria-hidden="true" />
           {size.w > 0 &&
-            STAR_KEYS.map((key) => {
+            stars.map((key) => {
               const s = starAt(key, size.w, size.h);
               return (
                 <button
@@ -458,11 +414,12 @@ export default function Colophon() {
           aria-labelledby="cl-eyepiece-title"
         >
           <span className="cl-k">{t(`colophon.star.${target}`)}</span>
-          <h2 id="cl-eyepiece-title">{target === 'qa' ? qa.qaHeading : t(`colophon.title_${target}`)}</h2>
-          <p>{target === 'qa' ? qa.intro : t(`colophon.text_${target}`, vars)}</p>
+          <h2 id="cl-eyepiece-title">{target === 'qa' ? t('colophon.qaHeading') : t(`colophon.title_${target}`)}</h2>
+          <p>{target === 'qa' ? pickText(qaIntro, lang) : t(`colophon.text_${target}`, vars)}</p>
           <div className="cl-content">{panel[target]}</div>
         </section>
       </div>
+      {qaList.length === 0 && <OwnerFillHint page="qa" />}
     </div>
   );
 }
