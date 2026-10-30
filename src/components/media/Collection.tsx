@@ -34,6 +34,7 @@ import {
 } from './collectionItems';
 import FavoritesEditor from './FavoritesEditor';
 import { createFramePacer } from '@/lib/framePacer';
+import { createGpuBackdrop, type GpuBackdrop } from './gpuBackdrop';
 import { createSignalSky, drawLaunch, LIGHT_YEAR, type Projected, type Signal, type SkyFrame } from './signalSky';
 import './Collection.css';
 import { sameTitle } from '@/lib/pageTitle';
@@ -207,6 +208,8 @@ export default function Collection() {
 
   const pageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  /** 天空的背景交給 GPU 畫的那張畫布（在 2D 那張底下，media/gpuBackdrop） */
+  const glRef = useRef<HTMLCanvasElement>(null);
   const marksRef = useRef<Map<string, HTMLElement>>(new Map());
   const namesRef = useRef<Map<string, HTMLElement>>(new Map());
   const legendRef = useRef<Map<string, HTMLElement>>(new Map());
@@ -319,6 +322,13 @@ export default function Collection() {
     const cv = canvasRef.current;
     const ctx = cv?.getContext('2d');
     if (!page || !cv || !ctx) return;
+    // 背景（光霧、銀河、遠方的星、閃爍的星）交給 GPU 畫：一幀上萬顆，2D 一顆一個 fillRect 是這一頁主執行緒最貴的一段。
+    // 建不起來（沒有 WebGL2、只有軟體渲染）、context 掉了、或網址帶 ?gpusky=0，就照舊由 2D 一起畫
+    const glCv = glRef.current;
+    const gpu: GpuBackdrop | null =
+      glCv && new URLSearchParams(window.location.search).get('gpusky') !== '0'
+        ? createGpuBackdrop(glCv, sky.gpuBackdrop)
+        : null;
     // 頁面多長照跨了幾個數量級算；跟「現在」有關，只在瀏覽器端設（伺服器那份用 CSS 的預設長度）
     page.style.height = `calc(100vh + ${Math.round(sky.decades * DECADE_VH * 100)}vh)`;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -467,7 +477,16 @@ export default function Collection() {
         bloom,
         dot: !arriving && !exit,
         launch,
+        backdrop: !gpu?.ok,
       };
+      if (gpu?.ok && glCv) {
+        if (glCv.width !== cv.width || glCv.height !== cv.height) {
+          glCv.width = cv.width;
+          glCv.height = cv.height;
+        }
+        const v = sky.viewOf(f);
+        gpu.render(v, f, dpr, sky.gpuScene(f, v));
+      }
       const { points, marks, inView } = sky.draw(ctx, f);
       const cr = cv.getBoundingClientRect();
       // 頁首與底欄先佔位：在這一幀寫任何樣式之前量（版面還是乾淨的）
@@ -613,6 +632,7 @@ export default function Collection() {
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
+      gpu?.dispose();
       document.fonts.removeEventListener('loadingdone', remeasure);
       window.removeEventListener('resize', remeasure);
       cv.removeEventListener('pointermove', onMove);
@@ -738,6 +758,8 @@ export default function Collection() {
   return (
     <div className="cx" ref={pageRef}>
       <div className="cx-sky">
+        {/* 背景那層（GPU）在前、2D 那層在後：後面的疊在上面 */}
+        <canvas ref={glRef} aria-hidden="true" />
         <canvas ref={canvasRef} aria-hidden="true" />
         {markSpans}
         {nameSpans}
