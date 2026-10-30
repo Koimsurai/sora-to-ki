@@ -181,7 +181,7 @@ void main() {
 `;
 
 /** 這一幀歐特雲與小行星帶要的（signalSky 的 gpuScene） */
-export interface GpuScene {
+interface GpuScene {
   sun: { x: number; y: number; z: number };
   belts: readonly [number, number];
 }
