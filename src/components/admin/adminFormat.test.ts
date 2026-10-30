@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { STATUS_LABEL, localInputToIso, parseDbTime, toLocalInput, trashDaysLeft } from './adminFormat';
+import { loadAdminI18n } from '@/i18n/admin-i18n';
+import { localInputToIso, parseDbTime, statusLabel, toLocalInput, trashDaysLeft } from './adminFormat';
 
 // 排程時間錯了是「靜靜地錯」：DB 存 UTC 卻被當成本地時間，台灣就差八小時，
 // 文章早八小時或晚八小時出去，而畫面上的數字看起來完全合理。
@@ -51,6 +52,8 @@ describe('trashDaysLeft', () => {
   });
 });
 
-it('四種狀態都有中文名', () => {
-  for (const s of ['published', 'draft', 'scheduled', 'trashed']) expect(STATUS_LABEL[s]).toBeTruthy();
+it('四種狀態都有名字（不是漏出 key）；認不得的照原樣', async () => {
+  await loadAdminI18n();
+  for (const s of ['published', 'draft', 'scheduled', 'trashed']) expect(statusLabel(s)).not.toMatch(/^common\./);
+  expect(statusLabel('weird')).toBe('weird');
 });

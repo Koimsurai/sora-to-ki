@@ -1,5 +1,6 @@
 import type { AdminPostFull } from '@koimsurai/api-types';
 import { format, isValid, parse } from 'date-fns';
+import { at } from '@/i18n/admin-i18n';
 import { defaultLocale, isEnabled } from '@/lib/locales';
 
 // 後台各頁共用的純函式（不是元件，所以跟 AdminPage.tsx 分開放——同一個檔混著元件與函式，
@@ -79,12 +80,10 @@ export function trashDaysLeft(trashedAt: string | null | undefined, now: Date): 
   return Math.min(TRASH_KEEP_DAYS, Math.max(0, Math.ceil(TRASH_KEEP_DAYS - elapsed)));
 }
 
-export const STATUS_LABEL: Record<string, string> = {
-  published: '已發佈',
-  draft: '草稿',
-  scheduled: '排程',
-  trashed: '回收',
-};
+const STATUSES = new Set(['published', 'draft', 'scheduled', 'trashed']);
+
+/** 文章狀態的名字；認不得的照原樣 */
+export const statusLabel = (status: string): string => (STATUSES.has(status) ? at(`common.status.${status}`) : status);
 
 export type LocalePost = Pick<
   AdminPostFull,
@@ -93,12 +92,15 @@ export type LocalePost = Pick<
 
 /** 五個語系。原稿寫在 `title`（哪一種語言看 source_language），其他語系各有自己的欄 */
 const LOCALES = [
-  { code: 'zh-TW', label: '繁', field: 'title_zh_tw' },
-  { code: 'en', label: 'EN', field: 'title_en' },
-  { code: 'zh-CN', label: '简', field: 'title_zh_cn' },
-  { code: 'ja', label: '日', field: 'title_ja' },
-  { code: 'ko', label: '韓', field: 'title_ko' },
+  { code: 'zh-TW', field: 'title_zh_tw' },
+  { code: 'en', field: 'title_en' },
+  { code: 'zh-CN', field: 'title_zh_cn' },
+  { code: 'ja', field: 'title_ja' },
+  { code: 'ko', field: 'title_ko' },
 ] as const;
+
+/** 語系點旁邊的短名（繁、EN…），跟著後台語言 */
+const shortName = (code: string) => at(`common.localeShort.${code}`);
 
 export interface LocaleCoverage {
   code: string;
@@ -111,9 +113,9 @@ const enabledLocaleRows = () => LOCALES.filter((l) => isEnabled(l.code));
 
 export function localeCoverage(post: LocalePost): LocaleCoverage[] {
   const source = post.source_language ?? defaultLocale();
-  return enabledLocaleRows().map(({ code, label, field }) => {
+  return enabledLocaleRows().map(({ code, field }) => {
     const text = code === source ? post.title : post[field];
-    return { code, label, has: Boolean(text?.trim()) };
+    return { code, label: shortName(code), has: Boolean(text?.trim()) };
   });
 }
 
@@ -136,16 +138,19 @@ export function nameCoverage(row: LocaleNamed): LocaleCoverage[] {
     ko: row.name_ko,
     [defaultLocale()]: row.name,
   };
-  return enabledLocaleRows().map(({ code, label }) => ({ code, label, has: Boolean(value[code]?.trim()) }));
+  return enabledLocaleRows().map(({ code }) => ({ code, label: shortName(code), has: Boolean(value[code]?.trim()) }));
 }
 
-/** 表單裡的譯名欄（新增語系時只要改這裡，表單自動長出欄位） */
+/**
+ * 表單裡的譯名欄（新增語系時只要改這裡，表單自動長出欄位）。
+ * 欄位名稱是那個語言自己的寫法，不跟著後台語言翻：填日文譯名的人看「日本語」最直覺
+ */
 const LOCALE_NAME_FIELDS = [
-  { code: 'zh-TW', key: 'name_zh_tw', label: '繁體中文' },
+  { code: 'zh-TW', key: 'name_zh_tw', label: '繁體中文' }, // i18n-ignore
   { code: 'en', key: 'name_en', label: 'English' },
-  { code: 'ja', key: 'name_ja', label: '日本語' },
-  { code: 'ko', key: 'name_ko', label: '한국어' },
-  { code: 'zh-CN', key: 'name_zh_cn', label: '简体中文' },
+  { code: 'ja', key: 'name_ja', label: '日本語' }, // i18n-ignore
+  { code: 'ko', key: 'name_ko', label: '한국어' }, // i18n-ignore
+  { code: 'zh-CN', key: 'name_zh_cn', label: '简体中文' }, // i18n-ignore
 ] as const;
 
 /** 要填的譯名欄：站上有開的語系，扣掉預設語系（原名就是它） */

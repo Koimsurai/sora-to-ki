@@ -65,7 +65,8 @@ export function pickLocaleFromAcceptLanguage(header: string | undefined | null):
   return isEnabled(want) ? want : defaultLocale();
 }
 
-function pickSupported(header: string | undefined | null): Locale {
+/** Accept-Language（或 navigator.languages 串起來）→ 最合的支援語系，不管站上有沒有開；認不出 → 預設語系 */
+export function pickSupported(header: string | undefined | null): Locale {
   if (!header) return defaultLocale();
   const ranked = header
     .split(',')

@@ -1,0 +1,23 @@
+{
+  "group": {
+    "now": "いま",
+    "write": "書く · Write",
+    "keep": "集める · Keep",
+    "reply": "応える · Reply",
+    "station": "サイト · Station"
+  },
+  "dashboard": "概要",
+  "analytics": "アクセス",
+  "posts": "記事",
+  "thoughts": "つぶやき",
+  "categories": "カテゴリ",
+  "tags": "タグ",
+  "collection": "コレクション",
+  "books": "本棚",
+  "photos": "写真",
+  "comments": "コメント",
+  "friends": "相互リンク",
+  "subscribers": "ニュースレター",
+  "pages": "ページ",
+  "users": "アカウント"
+}

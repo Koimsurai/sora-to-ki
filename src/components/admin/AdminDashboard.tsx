@@ -13,7 +13,7 @@ import {
 } from '@/data/adminData';
 import AdminLoading from './AdminLoading';
 import { LocaleDots, PageHead, SectionHead } from './AdminPage';
-import { STATUS_LABEL, formatWhen, missingTranslations } from './adminFormat';
+import { formatWhen, missingTranslations, statusLabel } from './adminFormat';
 
 // 總覽「此刻」（2026-10 後台提案）：最上面是「等你處理」——要你動手的事一件一行；
 // 再來是四個數字、最近動過的手記、前台的 Web Vitals。
@@ -251,7 +251,7 @@ export default function AdminDashboard() {
                     </span>
                     <LocaleDots post={post} />
                     <span className="adm-status" data-status={post.status}>
-                      {STATUS_LABEL[post.status] ?? post.status}
+                      {statusLabel(post.status)}
                     </span>
                   </Link>
                 </li>

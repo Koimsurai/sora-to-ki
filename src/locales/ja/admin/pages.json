@@ -1,0 +1,27 @@
+{
+  "title": "ページ",
+  "meta": "サイトの各ページにあなたが入れる内容",
+  "sectionLabel": "ページの内容",
+  "tab": {
+    "about": "About",
+    "works": "作品",
+    "log": "航海日誌",
+    "qa": "このサイトのQ&A",
+    "setup": "機材"
+  },
+  "localeName": {
+    "zh-TW": "繁体字中国語",
+    "en": "英語",
+    "ja": "日本語",
+    "ko": "韓国語",
+    "zh-CN": "簡体字中国語"
+  },
+  "whichLocale": "編集する言語",
+  "required": "{{lang}}は必須です",
+  "fallsBack": "空欄なら{{lang}}を表示",
+  "moveUp": "{{name}}を上へ",
+  "moveDown": "{{name}}を下へ",
+  "remove": "{{name}}を削除",
+  "unsaved": "未保存",
+  "inSync": "公開中と同じ"
+}

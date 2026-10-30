@@ -2,10 +2,11 @@ import { useState } from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { DayPicker } from 'react-day-picker';
-import { zhTW } from 'date-fns/locale';
+import { enUS, ja, ko, zhCN, zhTW } from 'date-fns/locale';
 import { format, isValid, parse } from 'date-fns';
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { adminLang, at } from '@/i18n/admin-i18n';
 import { normalizeDate, normalizeTime } from './adminFormat';
 import './AdminFields.css';
 
@@ -65,6 +66,9 @@ export function AdminSelect({
 /** parse 要一個參考日期補缺的欄位；格式是完整的年月日，所以給哪天都一樣（固定一個，render 才是純的） */
 const PARSE_REF = new Date(2000, 0, 1);
 
+/** 月曆的月份與星期名跟著後台語言 */
+const DATE_LOCALES = { 'zh-TW': zhTW, 'zh-CN': zhCN, en: enUS, ja, ko } as const;
+
 /** 字串欄位：打字時照打，離開欄位才整理成標準寫法；認不得就還原 */
 function useDraft(value: string, normalize: (text: string) => string | null, onChange: (v: string) => void) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -110,7 +114,7 @@ export function AdminDateField({
             }
           }}
         />
-        <PopoverPrimitive.Trigger className="adm-datefield-btn" aria-label={`${label}：開月曆`}>
+        <PopoverPrimitive.Trigger className="adm-datefield-btn" aria-label={at('common.openCalendar', { label })}>
           <CalendarDays aria-hidden="true" />
         </PopoverPrimitive.Trigger>
       </span>
@@ -118,7 +122,7 @@ export function AdminDateField({
         <PopoverPrimitive.Content className="adm-cal-pop" sideOffset={4} align="end">
           <DayPicker
             mode="single"
-            locale={zhTW}
+            locale={DATE_LOCALES[adminLang()]}
             selected={selected && isValid(selected) ? selected : undefined}
             defaultMonth={selected && isValid(selected) ? selected : undefined}
             onSelect={(d) => {

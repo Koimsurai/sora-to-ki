@@ -1,0 +1,23 @@
+{
+  "group": {
+    "now": "지금",
+    "write": "쓰기 · Write",
+    "keep": "모으기 · Keep",
+    "reply": "답하기 · Reply",
+    "station": "사이트 · Station"
+  },
+  "dashboard": "개요",
+  "analytics": "방문 통계",
+  "posts": "글",
+  "thoughts": "단상",
+  "categories": "카테고리",
+  "tags": "태그",
+  "collection": "컬렉션",
+  "books": "책장",
+  "photos": "사진",
+  "comments": "댓글",
+  "friends": "링크 교환",
+  "subscribers": "뉴스레터",
+  "pages": "페이지",
+  "users": "계정"
+}

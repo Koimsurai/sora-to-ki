@@ -7,7 +7,8 @@ import QaEditor from './QaEditor';
 import SetupEditor from './SetupEditor';
 import WorksEditor from './WorksEditor';
 import { PageHead, TabPanel } from './AdminPage';
-import { PAGE_TABS, type PageTab } from './pageTabs';
+import { useAdminT } from '@/i18n/admin-i18n';
+import { PAGE_TABS, pageTabLabel, type PageTab } from './pageTabs';
 import './PagesManager.css';
 
 // 頁面內容（2026-10 頁面範本）：前台那幾頁的設計寫在程式裡，這裡只填「放進去的東西」。
@@ -27,23 +28,24 @@ export default function PagesManager() {
   const navigate = useNavigate();
   const tab: string = PAGE_TABS.find((t) => t.key === search.tab)?.key ?? 'about';
   const Editor = EDITORS[PAGE_TABS.find((t) => t.key === tab)?.key ?? 'about'];
+  const { t } = useAdminT();
 
   return (
     <div className="adm-page adm-page-narrow">
-      <PageHead title="頁面" latin="Pages" meta="前台那幾頁由你填的內容" />
-      <section className="adm-stack" aria-label="頁面內容">
+      <PageHead title={t('pages.title')} latin="Pages" meta={t('pages.meta')} />
+      <section className="adm-stack" aria-label={t('pages.sectionLabel')}>
         <div className="adm-toolbar">
           <div className="adm-tabs">
-            {PAGE_TABS.map((t) => (
+            {PAGE_TABS.map((p) => (
               <button
-                key={t.key}
+                key={p.key}
                 type="button"
                 className="adm-tab"
-                aria-pressed={tab === t.key}
-                onClick={() => void navigate({ to: '/admin/pages', search: { tab: t.key } })}
+                aria-pressed={tab === p.key}
+                onClick={() => void navigate({ to: '/admin/pages', search: { tab: p.key } })}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
-                {t.label}
+                {pageTabLabel(p.key)}
               </button>
             ))}
           </div>
