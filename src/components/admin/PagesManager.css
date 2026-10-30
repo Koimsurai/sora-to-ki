@@ -3,14 +3,40 @@
   gap: var(--space-4);
 }
 
-/* 語系切換是一組 fieldset：拿掉瀏覽器預設的框與內距，長得跟上面的分頁一樣 */
+/* 語系切換是一組 fieldset：拿掉瀏覽器預設的框與內距，長得跟上面的分頁一樣。
+   黏在頂端：關於頁很長，捲到經歷那段要換語系，不必捲回最上面 */
 .pg-langs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   align-items: center;
   flex-wrap: wrap;
   min-width: 0;
   margin: 0;
-  padding: 0;
+  padding: var(--space-2) 0;
   border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--veil-3);
+}
+
+/* 段落標題（章節、技能、經歷…）：一頁好幾段，用看得見的宋體字分開，不是等寬小字 */
+.pg-editor .adm-section-head {
+  margin-top: var(--space-8);
+  font-family: var(--serif);
+  font-size: var(--fs-18);
+  letter-spacing: var(--ls-4);
+  text-transform: none;
+  color: var(--ink);
+  counter-reset: pg-row;
+}
+
+/* 欄位上面那行小字放大一階；一句話的欄位不需要四行高的框 */
+.pg-editor .adm-field > .adm-caps {
+  font-size: var(--fs-11);
+}
+
+.pg-editor .adm-field textarea {
+  min-height: 4.5em;
 }
 
 .pg-row {
@@ -30,9 +56,25 @@
   grid-column: 1 / -1;
 }
 
-.pg-row .adm-row-actions {
+/* 每一筆最上面一行：左邊是第幾筆（每一段重新數），右邊是上移、下移、刪除。
+   原本動作排在欄位底下，跟下一筆貼在一起，看不出是哪一筆的 */
+.pg-row {
+  counter-increment: pg-row;
+}
+
+.pg-row > .adm-row-actions {
+  order: -1;
   grid-column: 1 / -1;
+  align-items: center;
   justify-content: flex-end;
+}
+
+.pg-row:not(.pg-row-part) > .adm-row-actions::before {
+  content: counter(pg-row, decimal-leading-zero);
+  margin-right: auto;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--ink-subtle);
 }
 
 .pg-add {
@@ -93,12 +135,16 @@
   align-items: end;
 }
 
+/* 一件作品的標頭：repo 在左，數字與動作（設為起點、上移、下移、刪除）在右 */
 .pg-work-head {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-4);
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+}
+
+.pg-work-head > .adm-meta {
+  margin-left: auto;
 }
 
 .pg-origin {
@@ -130,7 +176,9 @@
   align-items: end;
 }
 
+/* 部件列自己有編號、動作留在列尾（不套上面「動作在最上面一行」那條） */
 .pg-row-part .adm-row-actions {
+  order: 0;
   grid-column: auto;
 }
 
