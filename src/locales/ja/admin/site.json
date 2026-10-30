@@ -30,7 +30,8 @@
     "messages": "メッセージ",
     "photos": "写真",
     "friends": "友達",
-    "colophon": "このサイト"
+    "colophon": "このサイト",
+    "filled": "{{count}} 件記入済み"
   },
   "lang": {
     "defaultLabel": "デフォルトの言語",
@@ -71,7 +72,8 @@
       "neptune": "アイスブルー",
       "blackhole": "藤色",
       "betelgeuse": "代赭色"
-    }
+    },
+    "preview": "サイトで{{name}}を見る"
   },
   "pages": {
     "groupOrbit": "トップページの軌道",

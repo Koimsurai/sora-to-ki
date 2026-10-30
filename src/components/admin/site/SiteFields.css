@@ -111,6 +111,7 @@
 
 /* 天體：每一格是小圖示、名字、訊號色的名字，由上往下 */
 .sf-themes label {
+  --body-signal: var(--signal-saturn);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -118,10 +119,40 @@
   padding: var(--space-3) var(--space-1);
 }
 
+/* 每一格用自己那顆天體的訊號色（index.css 的 --signal-*）：色名與選中的底線 */
+.sf-themes label[data-body="neptune"] {
+  --body-signal: var(--signal-neptune);
+}
+
+.sf-themes label[data-body="blackhole"] {
+  --body-signal: var(--signal-blackhole);
+}
+
+.sf-themes label[data-body="betelgeuse"] {
+  --body-signal: var(--signal-betelgeuse);
+}
+
 .sf-themes em {
-  color: var(--ink-subtle);
+  color: var(--body-signal);
   font-size: var(--fs-11);
   font-style: normal;
+}
+
+.sf-themes label:has(input:checked) {
+  box-shadow: inset 0 -1px 0 var(--body-signal);
+}
+
+.sf-theme-try {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+  font-size: var(--fs-12);
+  color: var(--ink-muted);
+  text-decoration: underline dotted var(--line-strong);
+  text-underline-offset: 3px;
+}
+
+.sf-theme-try:hover {
+  color: var(--ink);
 }
 
 .sf-checks {

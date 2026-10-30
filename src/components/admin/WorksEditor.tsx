@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { defaultLocale } from '@/lib/locales';
 import { useQuery } from '@tanstack/react-query';
 import type { GithubReposResponse, WorkItem, WorkRepo, WorksContent, WorksResponse } from '@koimsurai/api-types';
 
@@ -9,7 +8,7 @@ import { authHeaders } from '@/lib/authToken';
 import { at, useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { SectionHead } from './AdminPage';
-import { move, replaceAt, usePageDraft } from './pageDraft';
+import { move, replaceAt, usePageDraft, usePageLang } from './pageDraft';
 import { I18nInput, LangBar, RowActions, SaveBar } from './pageEditorKit';
 
 // 作品頁：不讓站長手打 owner/name。先從自己的 GitHub 勾，別人或組織的 repo 再貼網址；
@@ -53,7 +52,7 @@ function summary(s: WorkItem['snapshot'] | WorkRepo | null | undefined): string 
 
 export default function WorksEditor() {
   const { t } = useAdminT();
-  const [lang, setLang] = useState<string>(defaultLocale);
+  const [lang, setLang] = usePageLang();
   const [paste, setPaste] = useState('');
   const { github } = useSiteConfig();
   const page = usePageDraft(

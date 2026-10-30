@@ -644,6 +644,11 @@
   --signal: var(--amber);
   --signal-wash: rgba(var(--amber-rgb), 0.1); /* 選中的那一列的淡底 */
   --danger: var(--flare);
+  /* 每顆天體自己的訊號色：後台挑天體時四顆並排看，不跟著現在的主題換。值跟下面各主題的 --amber 一致 */
+  --signal-saturn: #e9c17a;
+  --signal-neptune: #7eaee6;
+  --signal-blackhole: #c487e6;
+  --signal-betelgeuse: #d26a4c;
   /* 四角框：只有四個角的短線，沒有底色、外框、圓角。文章摘要用的就是這個框，
      文章裡的互動區塊（投票、數字、圖表、分頁、站內文章卡…）跟著用：`background: var(--corner-frame)` */
   --corner-frame:

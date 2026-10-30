@@ -5,6 +5,8 @@
 /* 側欄的寬度：側欄自己的 width 與內容讓出的 margin-left 都讀它。它是版面尺寸，不是間距尺上的一格 */
 .admin-layout {
   --adm-side-w: 240px;
+  /* 頁面裡黏在頂端的東西（「頁面」的語系列）要讓出多少：桌機沒有頂列，窄螢幕讓出下面那條選單列 */
+  --adm-sticky-top: 0px;
 }
 
 /* 等寬小字的標籤：分組名、狀態、時間 */
@@ -290,6 +292,11 @@ html.adm-vt::view-transition-old(adm-main) {
 
   .adm-body {
     margin-left: 0;
+  }
+
+  /* 選單列 56px 加底下 1px 的線 */
+  .admin-layout {
+    --adm-sticky-top: 57px;
   }
 
   .adm-mobilebar {

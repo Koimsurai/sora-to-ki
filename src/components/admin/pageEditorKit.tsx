@@ -29,24 +29,26 @@ export function LangBar({
           locales.map((l) => l.key),
           defaultLocale(),
         );
+  // 語系是小格子、上面的分頁是圓點：上下兩層長得不一樣，一眼分得出哪一排管哪件事
   return (
-    <fieldset className="adm-tabs pg-langs">
+    <fieldset className="pg-langs">
       <legend className="sr-only">{at('pages.whichLocale')}</legend>
-      {locales.map((l) => (
-        <button
-          key={l.key}
-          type="button"
-          className="adm-tab"
-          aria-pressed={lang === l.key}
-          onClick={() => onChange(l.key)}
-        >
-          <span className="adm-tab-dot" aria-hidden="true" />
-          {l.label}
-          {(stale[l.key] ?? 0) > 0 && (
-            <span className="pg-stale-count">{at('pages.staleCount', { count: stale[l.key] })}</span>
-          )}
-        </button>
-      ))}
+      <div className="adm-seg">
+        {locales.map((l) => (
+          <button
+            key={l.key}
+            type="button"
+            className="adm-seg-item"
+            aria-pressed={lang === l.key}
+            onClick={() => onChange(l.key)}
+          >
+            {l.label}
+            {(stale[l.key] ?? 0) > 0 && (
+              <span className="pg-stale-count">{at('pages.staleCount', { count: stale[l.key] })}</span>
+            )}
+          </button>
+        ))}
+      </div>
       <span className="adm-meta">
         {lang === defaultLocale()
           ? at('pages.required', { lang: localeLabel(lang) })

@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { defaultLocale } from '@/lib/locales';
 import type { LogContent } from '@koimsurai/api-types';
 
 import { logContentQueryOptions, normalizeLog } from '@/data/pageContent';
@@ -7,7 +5,7 @@ import { useAdminT } from '@/i18n/admin-i18n';
 import { AdminDateField, AdminSelect } from './AdminFields';
 import AdminLoading from './AdminLoading';
 import { SectionHead } from './AdminPage';
-import { move, replaceAt, usePageDraft } from './pageDraft';
+import { move, replaceAt, usePageDraft, usePageLang } from './pageDraft';
 import { I18nInput, LangBar, RowActions, SaveBar } from './pageEditorKit';
 
 // 航行日誌：軌跡與任務計時器的起點、軌跡上的里程碑。
@@ -25,7 +23,7 @@ function localOffset(): string {
 
 export default function LogEditor() {
   const { t } = useAdminT();
-  const [lang, setLang] = useState<string>(defaultLocale);
+  const [lang, setLang] = usePageLang();
   const page = usePageDraft(
     logContentQueryOptions,
     '/api/admin/pages/log',

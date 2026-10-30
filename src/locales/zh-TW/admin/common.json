@@ -22,5 +22,11 @@
   "listSep": "、",
   "openCalendar": "{{label}}：開月曆",
   "saveFailed": "存不進去（{{status}}）",
-  "offline": "連不上伺服器，還沒存"
+  "offline": "連不上伺服器，還沒存",
+  "unsaved": {
+    "title": "還沒存",
+    "desc": "這一頁改過的東西還沒存，離開的話會不見。",
+    "stay": "留下來",
+    "leave": "不存，離開"
+  }
 }

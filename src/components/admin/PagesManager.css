@@ -3,12 +3,14 @@
   gap: var(--space-4);
 }
 
-/* 語系切換是一組 fieldset：拿掉瀏覽器預設的框與內距，長得跟上面的分頁一樣。
+/* 語系切換是一組 fieldset：拿掉瀏覽器預設的框與內距，裡面是一排小格子（AdminPage.css 的 .adm-seg）。
    黏在頂端：關於頁很長，捲到經歷那段要換語系，不必捲回最上面 */
 .pg-langs {
   position: sticky;
-  top: 0;
+  top: var(--adm-sticky-top);
   z-index: 2;
+  display: flex;
+  gap: var(--space-2) var(--space-4);
   align-items: center;
   flex-wrap: wrap;
   min-width: 0;
@@ -16,7 +18,8 @@
   padding: var(--space-2) 0;
   border: 0;
   border-bottom: 1px solid var(--line);
-  background: var(--veil-3);
+  /* 不透明：捲過去的欄位不會從底下透出來 */
+  background: var(--ground);
 }
 
 /* 段落標題（章節、技能、經歷…）：一頁好幾段，用看得見的宋體字分開，不是等寬小字 */
@@ -84,10 +87,11 @@
 .pg-save {
   position: sticky;
   bottom: 0;
+  z-index: 2;
   align-items: center;
   padding-block: var(--space-3);
   border-top: 1px solid var(--line);
-  background: var(--veil-3);
+  background: var(--ground);
 }
 
 .pg-save .adm-meta {

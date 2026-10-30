@@ -1,12 +1,10 @@
-import { useState } from 'react';
-import { defaultLocale } from '@/lib/locales';
 import type { AboutContent } from '@koimsurai/api-types';
 
 import { aboutContentQueryOptions, normalizeAbout } from '@/data/pageContent';
 import { useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { SectionHead } from './AdminPage';
-import { move, replaceAt, usePageDraft } from './pageDraft';
+import { move, replaceAt, usePageDraft, usePageLang } from './pageDraft';
 import { I18nInput, LangBar, RowActions, SaveBar } from './pageEditorKit';
 
 // 關於頁：往下掉經過的每一年、地表的技能、第一層的經歷、地心那一句。
@@ -22,7 +20,7 @@ const splitItems = (s: string) =>
 
 export default function AboutEditor() {
   const { t } = useAdminT();
-  const [lang, setLang] = useState<string>(defaultLocale);
+  const [lang, setLang] = usePageLang();
   const page = usePageDraft(
     aboutContentQueryOptions,
     '/api/admin/pages/about',
