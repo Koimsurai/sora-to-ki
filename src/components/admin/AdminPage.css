@@ -306,6 +306,61 @@
   box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
 }
 
+/* 這個分頁有改了還沒存的東西：點是空心的琥珀 */
+.adm-tab[data-dirty] .adm-tab-dot {
+  border-color: var(--signal);
+}
+
+/* 小格子的切換（語系）：跟站台設定的「預設語系」同一種長相。
+   分頁是圓點、這是格子，同一頁上下兩層才分得開 */
+.adm-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+}
+
+.adm-seg-item {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-family: var(--serif);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  transition: color var(--dur-150) ease;
+}
+
+.adm-seg-item:last-child {
+  border-right: 0;
+}
+
+.adm-seg-item:hover {
+  color: var(--ink);
+}
+
+.adm-seg-item[aria-pressed="true"] {
+  background: var(--wash);
+  box-shadow: inset 0 -1px 0 var(--signal);
+  color: var(--ink);
+}
+
+.adm-seg-item:focus-visible {
+  outline: 1px solid var(--signal);
+  outline-offset: -2px;
+}
+
+/* 格子旁的小數字（寫了幾頁、幾句可能過期） */
+.adm-seg-count {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--ink-subtle);
+}
+
 /* 一行的輸入：前面一個琥珀提示符（跟前台留言表單的 > 同一個） */
 .adm-prompt {
   min-height: 40px;

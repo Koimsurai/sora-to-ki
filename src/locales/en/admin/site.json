@@ -30,7 +30,8 @@
     "messages": "Messages",
     "photos": "Photos",
     "friends": "Friends",
-    "colophon": "This site"
+    "colophon": "This site",
+    "filled": "{{count}} written"
   },
   "lang": {
     "defaultLabel": "Default language",
@@ -71,7 +72,8 @@
       "neptune": "Ice blue",
       "blackhole": "Lilac",
       "betelgeuse": "Red ochre"
-    }
+    },
+    "preview": "See {{name}} on the site"
   },
   "pages": {
     "groupOrbit": "Orbits on the home page",

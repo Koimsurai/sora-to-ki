@@ -22,5 +22,11 @@
   "listSep": ", ",
   "openCalendar": "{{label}}: open calendar",
   "saveFailed": "Couldn't save ({{status}})",
-  "offline": "Can't reach the server — not saved yet"
+  "offline": "Can't reach the server — not saved yet",
+  "unsaved": {
+    "title": "Unsaved changes",
+    "desc": "Your changes on this page are not saved yet. They will be lost if you leave.",
+    "stay": "Stay",
+    "leave": "Leave without saving"
+  }
 }

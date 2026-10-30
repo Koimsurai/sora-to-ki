@@ -20,6 +20,7 @@ import { setLocaleConfig } from '@/lib/locales';
 import AdminLoading from '../AdminLoading';
 import { PageHead, SectionHead } from '../AdminPage';
 import { SaveBar } from '../pageEditorKit';
+import UnsavedGuard from '../UnsavedGuard';
 import DescriptionFields from './DescriptionFields';
 import OrbitPreview from './OrbitPreview';
 import { IdentityFields, LocaleFields, PageToggles, ThemeFields } from './SiteFields';
@@ -127,6 +128,7 @@ export default function SiteSettings() {
       </section>
 
       <SaveBar dirty={dirty} saving={saving} onReset={() => setEdited(null)} onSave={trySave} />
+      <UnsavedGuard dirty={dirty} />
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>

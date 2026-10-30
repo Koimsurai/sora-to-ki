@@ -30,7 +30,8 @@
     "messages": "메시지",
     "photos": "사진",
     "friends": "친구들",
-    "colophon": "이 사이트"
+    "colophon": "이 사이트",
+    "filled": "{{count}}개 작성함"
   },
   "lang": {
     "defaultLabel": "기본 언어",
@@ -71,7 +72,8 @@
       "neptune": "하늘색",
       "blackhole": "연보라색",
       "betelgeuse": "다홍색"
-    }
+    },
+    "preview": "사이트에서 {{name}} 보기"
   },
   "pages": {
     "groupOrbit": "홈의 궤도",

@@ -30,7 +30,8 @@
     "messages": "留言",
     "photos": "照片",
     "friends": "朋友",
-    "colophon": "此站點"
+    "colophon": "此站點",
+    "filled": "寫了 {{count}} 頁"
   },
   "lang": {
     "defaultLabel": "預設語系",
@@ -71,7 +72,8 @@
       "neptune": "冰藍",
       "blackhole": "淡紫",
       "betelgeuse": "赭紅"
-    }
+    },
+    "preview": "在前台看看{{name}}"
   },
   "pages": {
     "groupOrbit": "首頁的軌道",

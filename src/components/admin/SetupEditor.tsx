@@ -1,5 +1,4 @@
 import { useState, type MouseEvent } from 'react';
-import { defaultLocale } from '@/lib/locales';
 import type { SetupBay, SetupContent, SetupPart } from '@koimsurai/api-types';
 
 import { setupContentQueryOptions } from '@/data/pageContent';
@@ -9,7 +8,7 @@ import { SHEETS, sheetById } from '@/components/about/setupSheetRegistry';
 import { AdminSelect } from './AdminFields';
 import AdminLoading from './AdminLoading';
 import { SectionHead } from './AdminPage';
-import { move, replaceAt, usePageDraft } from './pageDraft';
+import { move, replaceAt, usePageDraft, usePageLang } from './pageDraft';
 import { I18nInput, LangBar, RowActions, SaveBar } from './pageEditorKit';
 
 // 設備頁：太空梭貨艙的四格與遠處的第五站。每一格選一張圖紙（內建的、custom/setup/ 的圖紙包），
@@ -447,7 +446,7 @@ function BayEditor({ bay, lang, onChange }: { bay: SetupBay; lang: string; onCha
 
 export default function SetupEditor() {
   const { t } = useAdminT();
-  const [lang, setLang] = useState<string>(defaultLocale);
+  const [lang, setLang] = usePageLang();
   const [tab, setTab] = useState(0);
   const page = usePageDraft(
     setupContentQueryOptions,

@@ -1,13 +1,34 @@
-import { useState } from 'react';
+import { createContext, use, useState } from 'react';
 import { useQuery, useQueryClient, type QueryKey, type UseQueryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { at } from '@/i18n/admin-i18n';
 import { jsonAuthHeaders } from '@/lib/authToken';
+import { defaultLocale } from '@/lib/locales';
 
 // 後台「頁面」各分頁共用的邏輯：草稿與儲存、列表的挪動。畫面零件在 pageEditorKit.tsx
 
 export type I18n = Record<string, string>;
+
+/**
+ * 「頁面」幾個分頁共用的狀態，放在 PagesManager：切分頁時編輯器整個換掉，
+ * 改到一半的草稿（以 API 路徑為鍵）與正在編的語系要留下來，切回來還在
+ */
+export interface PagesShared {
+  drafts: Readonly<Record<string, unknown>>;
+  setDraft: (url: string, draft: unknown) => void;
+  lang: string;
+  setLang: (lang: string) => void;
+}
+
+export const PagesContext = createContext<PagesShared | null>(null);
+
+/** 正在編的語系：在 PagesManager 底下跟著分頁走，單獨掛的編輯器（元件測試）自己記 */
+export function usePageLang(): [string, (lang: string) => void] {
+  const shared = use(PagesContext);
+  const [own, setOwn] = useState<string>(defaultLocale);
+  return shared ? [shared.lang, shared.setLang] : [own, setOwn];
+}
 
 /** 列表裡第 i 筆往上或往下挪一格 */
 export function move<T>(list: T[], i: number, by: -1 | 1): T[] {
@@ -37,7 +58,10 @@ export function usePageDraft<T, K extends QueryKey>(
 ) {
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(options);
-  const [edited, setEdited] = useState<T | null>(null);
+  const shared = use(PagesContext);
+  const [own, setOwn] = useState<T | null>(null);
+  const edited = shared ? ((shared.drafts[url] as T | undefined) ?? null) : own;
+  const setEdited = (next: T | null) => (shared ? shared.setDraft(url, next) : setOwn(next));
   const [saving, setSaving] = useState(false);
   const draft = edited ?? data;
   const dirty = edited !== null && JSON.stringify(edited) !== JSON.stringify(data);
@@ -68,8 +92,12 @@ export function usePageDraft<T, K extends QueryKey>(
     isPending,
     dirty,
     saving,
-    /** 改一部分：草稿從目前看到的那份開始 */
-    set: (patch: Partial<T>) => draft && setEdited({ ...draft, ...patch }),
+    /** 改一部分：草稿從目前看到的那份開始；改回跟伺服器一樣就丟掉草稿（分頁上「還沒存」的記號跟著消失） */
+    set: (patch: Partial<T>) => {
+      if (!draft) return;
+      const next = { ...draft, ...patch };
+      setEdited(JSON.stringify(next) === JSON.stringify(data) ? null : next);
+    },
     save,
     reset: () => setEdited(null),
   };

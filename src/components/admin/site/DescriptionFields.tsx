@@ -40,19 +40,40 @@ export default function DescriptionFields({ draft, patch, locales, disabled }: P
       },
     });
 
+  const pages = DESCRIBABLE.filter((k) => !disabled.includes(k));
+  const filled = (l: string) =>
+    pages.filter((k) => (draft.page_descriptions as Partial<Draft['page_descriptions']>)[k]?.[l]?.trim()).length;
+
   return (
     <>
-      <fieldset className="adm-tabs sfs-desc-langs">
+      {/* 跟「頁面」的語系同一種小格子；旁邊的數字是這個語系寫了幾格 */}
+      <fieldset className="sfs-desc-langs">
         <legend className="sr-only">{t('pages.whichLocale')}</legend>
-        {locales.map((l) => (
-          <button key={l} type="button" className="adm-tab" aria-pressed={lang === l} onClick={() => setLang(l)}>
-            <span className="adm-tab-dot" aria-hidden="true" />
-            {localeLabel(l)}
-          </button>
-        ))}
+        <div className="adm-seg">
+          {locales.map((l) => {
+            const n = filled(l);
+            return (
+              <button
+                key={l}
+                type="button"
+                className="adm-seg-item"
+                aria-pressed={lang === l}
+                onClick={() => setLang(l)}
+              >
+                {localeLabel(l)}
+                {n > 0 && (
+                  <span className="adm-seg-count">
+                    <span aria-hidden="true">{n}</span>
+                    <span className="sr-only">{t('site.descriptions.filled', { count: n })}</span>
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </fieldset>
       <div className="sfs-desc">
-        {DESCRIBABLE.filter((k) => !disabled.includes(k)).map((page) => (
+        {pages.map((page) => (
           // oxlint-disable-next-line jsx-a11y/label-has-associated-control -- 欄位就包在 label 裡
           <label key={page} className="adm-field sfs-desc-row">
             <span className="adm-caps">{t(`site.descriptions.${page}`)}</span>

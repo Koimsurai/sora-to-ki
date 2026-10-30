@@ -22,5 +22,11 @@
   "listSep": "、",
   "openCalendar": "{{label}}：打开日历",
   "saveFailed": "保存失败（{{status}}）",
-  "offline": "连不上服务器，还没保存"
+  "offline": "连不上服务器，还没保存",
+  "unsaved": {
+    "title": "还没保存",
+    "desc": "这一页改过的内容还没保存，离开的话会丢失。",
+    "stay": "留下",
+    "leave": "不保存，离开"
+  }
 }

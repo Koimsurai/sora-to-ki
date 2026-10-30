@@ -1,19 +1,17 @@
-import { useState } from 'react';
-import { defaultLocale } from '@/lib/locales';
 import type { QaContent } from '@koimsurai/api-types';
 
 import { normalizeQa, qaContentQueryOptions } from '@/data/pageContent';
 import { useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { SectionHead } from './AdminPage';
-import { move, replaceAt, usePageDraft } from './pageDraft';
+import { move, replaceAt, usePageDraft, usePageLang } from './pageDraft';
 import { I18nInput, LangBar, RowActions, SaveBar } from './pageEditorKit';
 
 // 此站點的問答：六分儀那片天空裡的「問答」星。一題都沒有時那顆星不出現。
 
 export default function QaEditor() {
   const { t } = useAdminT();
-  const [lang, setLang] = useState<string>(defaultLocale);
+  const [lang, setLang] = usePageLang();
   const page = usePageDraft(
     qaContentQueryOptions,
     '/api/admin/pages/qa',

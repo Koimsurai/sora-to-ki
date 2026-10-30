@@ -94,9 +94,10 @@ export function ThemeFields({ draft, patch }: { draft: Draft; patch: Patch }) {
   const { t } = useAdminT();
   return (
     <>
+      {/* 色名用那顆天體自己的訊號色寫，選中的底線也是：四顆並排就看得出各是什麼顏色 */}
       <fieldset className="sf-radios sf-themes" aria-label={t('site.theme.label')}>
         {THEMES.map((theme) => (
-          <label key={theme}>
+          <label key={theme} data-body={theme}>
             <input type="radio" name="sf-theme" checked={draft.theme === theme} onChange={() => patch({ theme })} />
             <ThemeGlyph theme={theme} />
             <span>{t(`site.theme.name.${theme}`)}</span>
@@ -105,6 +106,10 @@ export function ThemeFields({ draft, patch }: { draft: Draft; patch: Patch }) {
         ))}
       </fieldset>
       <p className="sf-hint">{t('site.theme.note')}</p>
+      {/* ?theme= 只換開的那一頁、不記下來（lib/theme），站長看完不會把自己的瀏覽器換掉 */}
+      <a className="sf-theme-try" href={`/?theme=${draft.theme}`} target="_blank" rel="noopener">
+        {t('site.theme.preview', { name: t(`site.theme.name.${draft.theme}`) })} ↗
+      </a>
     </>
   );
 }
