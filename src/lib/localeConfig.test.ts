@@ -9,7 +9,7 @@ import {
   pickLocaleFromAcceptLanguage,
   stripLocalePrefix,
 } from '@/i18n/start-i18n';
-import { editLocales } from '@/components/admin/pageTabs';
+import { editLocales } from '@/components/admin/pageLabels';
 import { localeCoverage, localeNameFields, missingTranslations, nameCoverage } from '@/components/admin/adminFormat';
 import { pickText } from './i18nText';
 import { setSiteIdentity } from './siteIdentity';
