@@ -28,6 +28,8 @@ A one-person site: technical notes, short moments, photos and a reading list, wi
 
 ---
 
+> 🛰️ **You can run your own site with it, too.** This code is **sora-to-ki**: `docker compose up -d`, claim the site in the first-time setup wizard, pick your languages and name it, and you have a site just like koimsurai.com, filled with your own things. See [Run your own site](#️-run-your-own-site).
+
 Started in April 2025 and still evolving. The frontend is **React 19 + TanStack Start (SSR + ISR)**, the backend is **Rust (axum + sqlx + SQLite)**, and everything runs on a server at home, deployed with Docker Compose.
 
 > **Looking for the old site?** In October 2026 the whole site was rebuilt as the current 宙と木. The last version before that lives at the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final) (`git checkout v1-final`) and is still running, read-only, at <https://archive.koimsurai.com>.
