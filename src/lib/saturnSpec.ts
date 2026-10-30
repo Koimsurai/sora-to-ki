@@ -35,7 +35,7 @@ const SATURN_BANDS: [lat: number, width: number, delta: number, mirror: boolean]
 ];
 
 /** 雲帶展開成南北兩半各一條（mirror 的那些） */
-export const SATURN_BANDS_FULL: [lat: number, width: number, delta: number][] = SATURN_BANDS.flatMap(([c, w, d, m]) =>
+const SATURN_BANDS_FULL: [lat: number, width: number, delta: number][] = SATURN_BANDS.flatMap(([c, w, d, m]) =>
   m
     ? [
         [c, w, d],
@@ -48,7 +48,7 @@ export const SATURN_BANDS_FULL: [lat: number, width: number, delta: number][] = 
  * 真實土星環的徑向結構（Cassini 的掩星量測，單位是土星赤道半徑）：[內緣, 外緣, 亮度]。
  * 由內到外 D、C、B（分四段，B 環中段最亮最密）、卡西尼縫、A、F；A 環裡的恩克縫、基勒縫另外挖掉
  */
-export const RING_SEGMENTS: [inner: number, outer: number, tone: number][] = [
+const RING_SEGMENTS: [inner: number, outer: number, tone: number][] = [
   [1.11, 1.236, 0.08],
   [1.239, 1.527, 0.26],
   [1.527, 1.64, 0.62],
@@ -60,13 +60,13 @@ export const RING_SEGMENTS: [inner: number, outer: number, tone: number][] = [
   [2.322, 2.33, 0.4],
 ];
 /** A 環裡的縫（恩克縫、基勒縫）與 C 環的麥斯威爾縫：[位置, 半寬] */
-export const RING_GAPS: [at: number, half: number][] = [
+const RING_GAPS: [at: number, half: number][] = [
   [2.214, 0.006],
   [2.265, 0.003],
   [1.45, 0.006],
 ];
-export const RING_INNER = 1.11;
-export const RING_OUTER = 2.34;
+const RING_INNER = 1.11;
+const RING_OUTER = 2.34;
 
 /** 五顆衛星的軌道半徑（星球半徑是 1），由內到外對應首頁的五個分區（data/siteSections） */
 export const ORBITS = [2.9, 3.55, 4.25, 4.95, 5.7];
@@ -75,10 +75,10 @@ export const satellitePhase = (i: number) => 0.7 + i * 1.37;
 export const satelliteSpeed = (r: number) => 0.16 / Math.sqrt(r);
 
 /** 星球每列刷痕的密度：星球半徑 1 上有幾列；環是每單位半徑幾圈 */
-export const PLANET_ROWS = 22;
+const PLANET_ROWS = 22;
 export const RING_ROWS = 34;
 /** 最濃的地方線也只佔一列的幾成：線與線之間永遠留一道黑縫 */
-export const PLANET_COVER = 0.76;
+const PLANET_COVER = 0.76;
 export const RING_COVER = 0.64;
 /** 吸積盤的螺旋條紋有多斜：角度隨 ln(半徑) 偏移幾倍（越大越像緊緊捲起來的螺旋） */
 export const DISK_SHEAR = 3.2;
