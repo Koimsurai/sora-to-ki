@@ -29,8 +29,19 @@ pub type I18n = BTreeMap<String, String>;
 /// 一個欄位最多幾個字（防止貼錯整篇文章進來，不是排版限制）
 const TEXT_MAX: usize = 600;
 
+/// 多語欄位裡的保留 key：後台記「每個譯文是對著哪一版原文翻的」（`en:指紋,ja:指紋`），
+/// 原文改了、指紋對不上，後台就標「可能過期」。前台不讀它
+const SYNC_KEY: &str = "_src";
+const SYNC_MAX: usize = 200;
+
 fn check_i18n(field: &str, v: &I18n) -> Result<(), String> {
     for (lang, text) in v {
+        if lang == SYNC_KEY {
+            if text.chars().count() > SYNC_MAX {
+                return Err(format!("{field}：{SYNC_KEY} 太長"));
+            }
+            continue;
+        }
         if !LOCALES.contains(&lang.as_str()) {
             return Err(format!("{field}：不認得的語系 {lang}"));
         }
@@ -680,6 +691,15 @@ mod tests {
 
     fn tw(s: &str) -> I18n {
         BTreeMap::from([("zh-TW".to_string(), s.to_string())])
+    }
+
+    #[test]
+    fn 譯文的原文指紋可以存_太長才擋() {
+        let mut v = tw("出生");
+        v.insert(SYNC_KEY.into(), "en:1a2b3c4d,ja:5e6f7a8b".into());
+        assert_eq!(check_i18n("章節標題", &v), Ok(()));
+        v.insert(SYNC_KEY.into(), "x".repeat(SYNC_MAX + 1));
+        assert!(check_i18n("章節標題", &v).is_err());
     }
 
     #[test]

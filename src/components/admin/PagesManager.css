@@ -259,3 +259,20 @@
     grid-template-columns: 2rem minmax(0, 1fr);
   }
 }
+
+/* 譯文可能過期：原文改過、這個語系還是對著舊的寫的（lib/i18nSync）。不用琥珀（那是「現在」），用警示色的字 */
+.pg-stale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  font-size: var(--fs-12);
+  color: var(--danger);
+}
+
+.pg-stale-count {
+  margin-left: var(--space-1-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--danger);
+}

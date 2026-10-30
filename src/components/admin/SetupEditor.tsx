@@ -464,7 +464,7 @@ export default function SetupEditor() {
 
   return (
     <div className="adm-form pg-editor">
-      <LangBar lang={lang} onChange={setLang} />
+      <LangBar lang={lang} onChange={setLang} content={page.draft} />
       <p className="adm-meta">{t('pageSetup.customHint')}</p>
       <div className="adm-tabs">
         {[0, 1, 2, 3].map((i) => (
