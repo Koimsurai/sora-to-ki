@@ -1,0 +1,169 @@
+{
+  "brand": "初次設定",
+  "pageTitle": "初次設定",
+  "stepsLabel": "設定步驟",
+  "step": {
+    "owner": "站長",
+    "lang": "語言",
+    "site": "站台",
+    "pages": "頁面",
+    "done": "完成"
+  },
+  "back": "← 上一步",
+  "next": "下一步",
+  "finish": "完成設定",
+  "saving": "存檔中…",
+  "networkError": "連不上後端，稍後再試一次。",
+  "copy": "複製",
+  "copied": "已複製",
+  "gate": {
+    "kicker": "開始之前",
+    "title": "這台主機是你的嗎",
+    "latin": "Setup code",
+    "lede": "後端第一次開起來、還沒有站長的時候，會在 log 印出一組設定碼。打開 log 裡那條網址，或把設定碼貼在這裡。",
+    "runOnHost": "在主機上執行",
+    "logLooksLike": "會看到這樣一行",
+    "codeLabel": "設定碼",
+    "start": "開始",
+    "checking": "確認中…",
+    "badCode": "設定碼不對。打錯 10 次會換一組新的，記得回去重新看 log。",
+    "envHint": "在 .env.backend 填了 OWNER_EMAIL 的話不會走這一頁：用那個信箱登入就是站長。"
+  },
+  "owner": {
+    "title": "認領站長",
+    "latin": "Owner",
+    "lede": "進後台只能用 GitHub 或 Google 登入。你用哪個帳號登入、按下認領，那個帳號就是這個站的站長。",
+    "signInWith": "用 {{provider}} 登入",
+    "signedInAs": "目前登入的是",
+    "claim": "認領，我就是站長",
+    "claiming": "認領中…",
+    "switchAccount": "換一個帳號",
+    "claimed": "認領好了。接下來設定語言、站名與要開的頁面，之後在後台都能改。",
+    "notConfigured": "還沒設定",
+    "noneConfigured": "GitHub 和 Google 的登入都還沒設定，至少要設好一組才進得了後台。照下面任一組的步驟做完、重開後端，再重新整理這一頁就好，設定碼不會換。",
+    "oneMore": "另一組也可以之後再補：讀者留言時會多一種登入方式。",
+    "siteUrl": "這個站的網址是 {{url}}（來自 .env 的 SITE_URL）。不對的話先改好它再設定登入，不然登入完會被導到錯的地方。",
+    "errors": {
+      "bad_code": "設定碼不對或已經換過了，回第一步重新輸入。",
+      "already_claimed": "這個站已經有站長了。",
+      "not_signed_in": "登入已經失效，請再登入一次。"
+    },
+    "guide": {
+      "github": {
+        "title": "設定 GitHub 登入",
+        "s1": "打開 GitHub 的「New OAuth App」頁面（Settings → Developer settings → OAuth Apps → New OAuth App）：",
+        "s2": "照下面填。Application name 隨意，用站名就好：",
+        "homepage": "Homepage URL",
+        "callback": "Authorization callback URL",
+        "s3": "按 Register application。進到 App 的頁面後複製 Client ID；再按「Generate a new client secret」，複製產生的那串（它只會顯示這一次）。",
+        "s4": "在主機上打開 .env.backend，把兩串填進去：",
+        "s5": "重開後端讓設定生效，然後重新整理這一頁："
+      },
+      "google": {
+        "title": "設定 Google 登入",
+        "s1": "打開 Google Cloud Console 的 Google Auth Platform（沒有專案的話它會先請你建一個）：",
+        "s2": "第一次用會要你填基本資料：應用程式名稱用站名、支援信箱填你的，目標對象（Audience）選「外部（External）」。",
+        "s3": "發布狀態留在「測試中（Testing）」的話，要到目標對象（Audience）把你自己的 Google 帳號加進測試使用者，不然登入會被擋下來。",
+        "s4": "到用戶端（Clients）按「建立用戶端（Create client）」，應用程式類型選「網頁應用程式（Web application）」，照下面填：",
+        "origins": "已授權的 JavaScript 來源",
+        "redirects": "已授權的重新導向 URI",
+        "s5": "建立之後複製用戶端 ID 與用戶端密鑰，在主機上打開 .env.backend 填進去：",
+        "s6": "重開後端讓設定生效，然後重新整理這一頁："
+      }
+    }
+  },
+  "lang": {
+    "title": "語言",
+    "latin": "Languages",
+    "lede": "讀者打開網址看到的是預設語系；其他語系各有自己的網址前綴。",
+    "defaultLabel": "預設語系",
+    "othersLabel": "也開放這些語系",
+    "warn": "開站之後再換預設語系，全站的網址會整批改掉，已經分享出去的連結都要跳轉一次。最好現在就決定。",
+    "single": "只開一個語系的話，前台不會出現語言選單。"
+  },
+  "site": {
+    "title": "站台",
+    "latin": "Identity",
+    "lede": "會出現在首頁、RSS 和分享出去的卡片上，之後在後台都能改。",
+    "name": "站名",
+    "author": "作者",
+    "authorHint": "空著就跟站名一樣",
+    "url": "網址",
+    "description": "一句話介紹",
+    "email": "公開信箱",
+    "github": "GitHub 帳號名",
+    "optional": "選填",
+    "shareCard": "分享出去長這樣",
+    "errors": {
+      "nameRequired": "站名不能是空的",
+      "nameTooLong": "站名最多 {{max}} 個字",
+      "authorTooLong": "作者名最多 {{max}} 個字",
+      "descriptionTooLong": "介紹最多 {{max}} 個字",
+      "email": "信箱的格式不對",
+      "github": "GitHub 帳號名只能有英數字與連字號，最多 39 個字"
+    }
+  },
+  "pages": {
+    "title": "頁面",
+    "latin": "Pages",
+    "lede": "星圖就是你的首頁。關掉的頁面連同它的軌道一起拿掉，之後在後台隨時能開回來。",
+    "groupOrbit": "首頁的軌道",
+    "groupAbout": "「關於」選單",
+    "groupMore": "「更多」選單",
+    "alwaysOn": "手記與關於一直都在。",
+    "name": {
+      "moments": "碎念",
+      "works": "作品",
+      "collection": "收藏",
+      "setup": "設備",
+      "log": "航行日誌",
+      "messages": "留言",
+      "photos": "照片",
+      "friends": "朋友",
+      "colophon": "此站點"
+    },
+    "desc": {
+      "moments": "短短的一句話",
+      "works": "做過的東西，一件一條時間線",
+      "collection": "在看、在讀、在聽",
+      "setup": "手繪圖紙，或用內建的幾張",
+      "log": "從某一年到現在的里程碑",
+      "messages": "留言板",
+      "photos": "要接 NAS 或上傳資料夾",
+      "friends": "別人的站與申請表單",
+      "colophon": "這個站怎麼做的、問答"
+    }
+  },
+  "done": {
+    "kicker": "完成",
+    "title": "開站了",
+    "latin": "Ready",
+    "lede": "內容都還是空的，讀者看到的是安靜的空頁面。到後台的「頁面」把它們填起來。",
+    "summaryName": "站名",
+    "summaryLocales": "語系",
+    "summaryOwner": "站長",
+    "summaryPages": "頁面",
+    "defaultMark": "（預設）",
+    "listSep": "、",
+    "pagesOn": "開著 {{on}} 頁",
+    "pagesOff": "，關掉{{list}}",
+    "viewSite": "看看前台",
+    "toAdmin": "進後台",
+    "previewTitle": "你的首頁"
+  },
+  "closed": {
+    "title": "這個站已經設定好了",
+    "latin": "Already set up",
+    "lede": "已經有站長了，初次設定不會再打開。站長請從前台用 GitHub 或 Google 登入後台。",
+    "home": "回首頁"
+  },
+  "sky": {
+    "preview": "預覽",
+    "standby": "等待點火",
+    "yourHome": "你的首頁",
+    "note": "每走一步，這裡就長出一點：站長、語系、站名、軌道。最後看到的就是讀者打開首頁的樣子。",
+    "menuAbout": "關於",
+    "menuMore": "更多",
+    "off": "關"
+  }
+}

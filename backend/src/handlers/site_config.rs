@@ -33,11 +33,11 @@ const KEY: &str = "site";
 pub const TOGGLEABLE_PAGES: [&str; 9] =
     ["moments", "works", "collection", "setup", "log", "messages", "photos", "friends", "colophon"];
 
-/// 全新安裝時預設關掉的頁面（照 [`TOGGLEABLE_PAGES`] 的順序）：
-///   · 設備頁要站長自己的手繪圖紙才有東西可看
-///   · 作品頁與航行日誌的內容還寫在程式裡（原作者的作品與里程碑），做成範本之前先關著
+/// 全新安裝時預設關掉的頁面（照 [`TOGGLEABLE_PAGES`] 的順序），初次設定的精靈也從這裡開始：
+///   · 設備頁要先選模式（內建圖紙、自己的圖紙）才有東西可看
+///   · 照片頁要接 NAS 或上傳資料夾
 /// 既有的站升級上來不會被關掉任何一頁（見 [`load_or_seed`]）。
-const OFF_ON_FRESH_INSTALL: [&str; 3] = ["works", "setup", "log"];
+const OFF_ON_FRESH_INSTALL: [&str; 2] = ["setup", "photos"];
 
 const NAME_MAX: usize = 60;
 const DESCRIPTION_MAX: usize = 300;

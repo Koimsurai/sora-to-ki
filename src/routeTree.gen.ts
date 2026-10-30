@@ -52,6 +52,7 @@ import { Route as AdminSubscribersRouteImport } from './routes/admin/subscribers
 import { Route as AdminTagsRouteImport } from './routes/admin/tags'
 import { Route as AdminThoughtsRouteImport } from './routes/admin/thoughts'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminInitRouteImport } from './routes/admin_.init'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
@@ -285,6 +286,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminInitRoute = AdminInitRouteImport.update({
+  id: '/admin_/init',
+  path: '/admin/init',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -413,6 +419,7 @@ export interface FileRoutesByFullPath {
   '/admin/tags': typeof AdminTagsRoute
   '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/init': typeof AdminInitRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/preview/post': typeof PreviewPostRoute
@@ -474,6 +481,7 @@ export interface FileRoutesByTo {
   '/admin/tags': typeof AdminTagsRoute
   '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/init': typeof AdminInitRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/preview/post': typeof PreviewPostRoute
@@ -537,6 +545,7 @@ export interface FileRoutesById {
   '/admin/tags': typeof AdminTagsRoute
   '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin_/init': typeof AdminInitRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/preview/post': typeof PreviewPostRoute
@@ -601,6 +610,7 @@ export interface FileRouteTypes {
     | '/admin/tags'
     | '/admin/thoughts'
     | '/admin/users'
+    | '/admin/init'
     | '/auth/callback'
     | '/blog/$id'
     | '/preview/post'
@@ -662,6 +672,7 @@ export interface FileRouteTypes {
     | '/admin/tags'
     | '/admin/thoughts'
     | '/admin/users'
+    | '/admin/init'
     | '/auth/callback'
     | '/blog/$id'
     | '/preview/post'
@@ -724,6 +735,7 @@ export interface FileRouteTypes {
     | '/admin/tags'
     | '/admin/thoughts'
     | '/admin/users'
+    | '/admin_/init'
     | '/auth/callback'
     | '/blog/$id'
     | '/preview/post'
@@ -773,6 +785,7 @@ export interface RootRouteChildren {
   LocalePortfolioRoute: typeof LocalePortfolioRoute
   LocaleSetupRoute: typeof LocaleSetupRoute
   LocaleUnsubscribeRoute: typeof LocaleUnsubscribeRoute
+  AdminInitRoute: typeof AdminInitRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   BlogIdRoute: typeof BlogIdRoute
   PreviewPostRoute: typeof PreviewPostRoute
@@ -1093,6 +1106,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin_/init': {
+      id: '/admin_/init'
+      path: '/admin/init'
+      fullPath: '/admin/init'
+      preLoaderRoute: typeof AdminInitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -1289,6 +1309,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocalePortfolioRoute: LocalePortfolioRoute,
   LocaleSetupRoute: LocaleSetupRoute,
   LocaleUnsubscribeRoute: LocaleUnsubscribeRoute,
+  AdminInitRoute: AdminInitRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   BlogIdRoute: BlogIdRoute,
   PreviewPostRoute: PreviewPostRoute,

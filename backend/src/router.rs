@@ -84,6 +84,10 @@ pub fn build_router(state: AppState) -> Router {
         // 站台設定：公開讀（前端 SSR）、管理員改（後台與 MCP）
         .route("/api/site/config", get(handlers::site_config::get_site_config))
         .route("/api/admin/site/config", put(handlers::site_config::update_site_config))
+        // 初次設定：還沒有站長時，拿 log 裡的設定碼認領（後台的 /admin/init 精靈）
+        .route("/api/init/status", get(handlers::init::status))
+        .route("/api/init/check", post(handlers::init::check))
+        .route("/api/init/claim", post(handlers::init::claim))
         // 頁面內容（關於、作品…）：公開讀、管理員整份覆蓋
         .route("/api/pages/about", get(handlers::page_content::get_about))
         .route("/api/admin/pages/about", put(handlers::page_content::put_about))

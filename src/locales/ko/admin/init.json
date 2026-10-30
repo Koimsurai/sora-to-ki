@@ -1,0 +1,169 @@
+{
+  "brand": "처음 설정",
+  "pageTitle": "처음 설정",
+  "stepsLabel": "설정 단계",
+  "step": {
+    "owner": "운영자",
+    "lang": "언어",
+    "site": "사이트",
+    "pages": "페이지",
+    "done": "완료"
+  },
+  "back": "← 이전",
+  "next": "다음",
+  "finish": "설정 마치기",
+  "saving": "저장 중…",
+  "networkError": "백엔드에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+  "copy": "복사",
+  "copied": "복사됨",
+  "gate": {
+    "kicker": "시작하기 전에",
+    "title": "이 서버가 당신의 것인가요",
+    "latin": "Setup code",
+    "lede": "백엔드가 처음 켜지고 아직 운영자가 없으면 로그에 설정 코드가 출력됩니다. 로그에 있는 주소를 열거나 여기에 코드를 붙여 넣으세요.",
+    "runOnHost": "서버에서 실행",
+    "logLooksLike": "이런 줄이 보입니다",
+    "codeLabel": "설정 코드",
+    "start": "시작",
+    "checking": "확인 중…",
+    "badCode": "설정 코드가 맞지 않습니다. 10번 틀리면 새 코드로 바뀌니 로그를 다시 확인해 주세요.",
+    "envHint": ".env.backend에 OWNER_EMAIL을 설정했다면 이 페이지는 나오지 않습니다. 그 주소로 로그인한 사람이 운영자가 됩니다."
+  },
+  "owner": {
+    "title": "운영자 등록",
+    "latin": "Owner",
+    "lede": "관리 화면에는 GitHub나 Google로만 로그인할 수 있습니다. 로그인한 계정으로 등록하면 그 계정이 이 사이트의 운영자가 됩니다.",
+    "signInWith": "{{provider}}로 로그인",
+    "signedInAs": "현재 로그인한 계정",
+    "claim": "등록하기 (제가 운영자입니다)",
+    "claiming": "등록 중…",
+    "switchAccount": "다른 계정 사용",
+    "claimed": "등록했습니다. 다음은 언어, 사이트 이름, 보여 줄 페이지입니다. 모두 나중에 관리 화면에서 바꿀 수 있습니다.",
+    "notConfigured": "설정 안 됨",
+    "noneConfigured": "GitHub와 Google 로그인이 아직 둘 다 설정되지 않았습니다. 관리 화면에 들어가려면 하나 이상 필요합니다. 아래 둘 중 하나의 단계를 마치고 백엔드를 다시 시작한 뒤 이 페이지를 새로 고치세요. 설정 코드는 바뀌지 않습니다.",
+    "oneMore": "나머지 하나는 나중에 추가해도 됩니다. 독자가 댓글을 남길 때 로그인 방법이 하나 늘어납니다.",
+    "siteUrl": "이 사이트의 주소는 {{url}}입니다 (.env의 SITE_URL). 틀렸다면 로그인을 설정하기 전에 먼저 고치세요. 그대로 두면 로그인 후 엉뚱한 곳으로 이동합니다.",
+    "errors": {
+      "bad_code": "설정 코드가 틀렸거나 새 코드로 바뀌었습니다. 첫 단계로 돌아가 다시 입력하세요.",
+      "already_claimed": "이 사이트에는 이미 운영자가 있습니다.",
+      "not_signed_in": "로그인이 만료되었습니다. 다시 로그인해 주세요."
+    },
+    "guide": {
+      "github": {
+        "title": "GitHub 로그인 설정",
+        "s1": "GitHub의 \"New OAuth App\" 페이지를 엽니다 (Settings → Developer settings → OAuth Apps → New OAuth App):",
+        "s2": "아래와 같이 입력합니다. Application name은 자유롭게, 사이트 이름이면 충분합니다:",
+        "homepage": "Homepage URL",
+        "callback": "Authorization callback URL",
+        "s3": "Register application을 누릅니다. 앱 페이지에서 Client ID를 복사하고, \"Generate a new client secret\"을 눌러 나온 문자열도 복사합니다 (이때 한 번만 보입니다).",
+        "s4": "서버에서 .env.backend를 열고 두 값을 넣습니다:",
+        "s5": "설정이 적용되도록 백엔드를 다시 시작하고 이 페이지를 새로 고칩니다:"
+      },
+      "google": {
+        "title": "Google 로그인 설정",
+        "s1": "Google Cloud Console의 Google Auth Platform을 엽니다 (프로젝트가 없으면 먼저 만들라고 안내합니다):",
+        "s2": "처음에는 기본 정보를 묻습니다. 앱 이름은 사이트 이름, 지원 이메일은 본인 주소, 대상(Audience)은 \"외부(External)\"를 고르세요.",
+        "s3": "게시 상태가 \"테스트 중(Testing)\"이라면 대상(Audience)에서 본인의 Google 계정을 테스트 사용자로 추가하세요. 그러지 않으면 로그인이 막힙니다.",
+        "s4": "클라이언트(Clients)에서 \"클라이언트 만들기(Create client)\"를 누르고 유형은 \"웹 애플리케이션(Web application)\"을 골라 아래와 같이 입력합니다:",
+        "origins": "승인된 JavaScript 원본",
+        "redirects": "승인된 리디렉션 URI",
+        "s5": "만든 뒤 클라이언트 ID와 클라이언트 보안 비밀번호를 복사해, 서버의 .env.backend에 넣습니다:",
+        "s6": "설정이 적용되도록 백엔드를 다시 시작하고 이 페이지를 새로 고칩니다:"
+      }
+    }
+  },
+  "lang": {
+    "title": "언어",
+    "latin": "Languages",
+    "lede": "주소를 그대로 연 독자에게는 기본 언어가 보입니다. 다른 언어는 각각 주소 앞에 접두사가 붙습니다.",
+    "defaultLabel": "기본 언어",
+    "othersLabel": "함께 제공할 언어",
+    "warn": "공개 후에 기본 언어를 바꾸면 사이트의 모든 주소가 한꺼번에 바뀌고, 이미 공유한 링크는 모두 한 번씩 리디렉션됩니다. 지금 정해 두는 것이 좋습니다.",
+    "single": "언어를 하나만 켜면 사이트에 언어 메뉴가 나오지 않습니다."
+  },
+  "site": {
+    "title": "사이트",
+    "latin": "Identity",
+    "lede": "홈, RSS, 공유 카드에 표시됩니다. 모두 나중에 관리 화면에서 바꿀 수 있습니다.",
+    "name": "사이트 이름",
+    "author": "작성자",
+    "authorHint": "비워 두면 사이트 이름과 같음",
+    "url": "주소",
+    "description": "한 줄 소개",
+    "email": "공개 이메일",
+    "github": "GitHub 사용자 이름",
+    "optional": "선택",
+    "shareCard": "공유하면 이렇게 보입니다",
+    "errors": {
+      "nameRequired": "사이트 이름은 비워 둘 수 없습니다",
+      "nameTooLong": "사이트 이름은 최대 {{max}}자입니다",
+      "authorTooLong": "작성자 이름은 최대 {{max}}자입니다",
+      "descriptionTooLong": "소개는 최대 {{max}}자입니다",
+      "email": "이메일 형식이 올바르지 않습니다",
+      "github": "GitHub 사용자 이름은 영문, 숫자, 하이픈만 쓸 수 있고 최대 39자입니다"
+    }
+  },
+  "pages": {
+    "title": "페이지",
+    "latin": "Pages",
+    "lede": "성도가 곧 당신의 홈입니다. 끈 페이지는 궤도와 함께 사라지고, 관리 화면에서 언제든 다시 켤 수 있습니다.",
+    "groupOrbit": "홈의 궤도",
+    "groupAbout": "\"소개\" 메뉴",
+    "groupMore": "\"더 보기\" 메뉴",
+    "alwaysOn": "노트와 소개는 항상 있습니다.",
+    "name": {
+      "moments": "혼잣말",
+      "works": "작품",
+      "collection": "컬렉션",
+      "setup": "장비",
+      "log": "항해 일지",
+      "messages": "메시지",
+      "photos": "사진",
+      "friends": "친구들",
+      "colophon": "이 사이트"
+    },
+    "desc": {
+      "moments": "한 줄씩 짧은 메모",
+      "works": "만든 것들, 하나씩 연표로",
+      "collection": "보는 것, 읽는 것, 듣는 것",
+      "setup": "손으로 그린 도면, 또는 기본 제공 도면",
+      "log": "어느 해부터 지금까지의 이정표",
+      "messages": "방명록",
+      "photos": "NAS나 업로드한 폴더가 필요",
+      "friends": "다른 사람의 사이트와 신청 양식",
+      "colophon": "이 사이트를 만든 방법과 Q&A"
+    }
+  },
+  "done": {
+    "kicker": "완료",
+    "title": "사이트를 열었습니다",
+    "latin": "Ready",
+    "lede": "아직 내용이 없어서 독자에게는 조용한 빈 페이지가 보입니다. 관리 화면의 \"페이지\"에서 채워 나가세요.",
+    "summaryName": "이름",
+    "summaryLocales": "언어",
+    "summaryOwner": "운영자",
+    "summaryPages": "페이지",
+    "defaultMark": " (기본)",
+    "listSep": ", ",
+    "pagesOn": "{{on}}개 페이지 켬",
+    "pagesOff": ", 끔: {{list}}",
+    "viewSite": "사이트 보기",
+    "toAdmin": "관리 화면으로",
+    "previewTitle": "당신의 홈"
+  },
+  "closed": {
+    "title": "이 사이트는 이미 설정되었습니다",
+    "latin": "Already set up",
+    "lede": "이미 운영자가 있어서 처음 설정은 다시 열리지 않습니다. 운영자는 사이트에서 GitHub나 Google로 관리 화면에 로그인하세요.",
+    "home": "홈으로"
+  },
+  "sky": {
+    "preview": "미리보기",
+    "standby": "점화 대기",
+    "yourHome": "당신의 홈",
+    "note": "한 단계씩 나아갈 때마다 여기에 조금씩 생겨납니다. 운영자, 언어, 이름, 궤도. 마지막에 보이는 모습이 독자가 홈을 열었을 때의 모습입니다.",
+    "menuAbout": "소개",
+    "menuMore": "더 보기",
+    "off": "끔"
+  }
+}

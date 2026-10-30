@@ -3,6 +3,7 @@ import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 
 import AdminLoading from '@/components/admin/AdminLoading';
 import { loadAdminI18n } from '@/i18n/admin-i18n';
+import type { InitStatus } from '@koimsurai/api-types';
 import { useAuth } from '../../contexts/auth';
 
 // /admin/* 的版面層。整段包在 ClientOnly 裡 → 後台一行都不 SSR、不 prerender
@@ -34,7 +35,16 @@ function RequireAdmin({ children }: { children: ReactNode }) {
   const { user, isLoggedIn, loading } = useAuth();
   const allowed = isLoggedIn && (user?.role === 'ADMIN' || user?.role === 'OWNER');
   useEffect(() => {
-    if (!loading && !allowed) window.location.replace('/');
+    if (loading || allowed) return;
+    // 還沒有站長的全新站台：帶去初次設定（routes/admin_.init）認領，其他人照樣回首頁
+    const ac = new AbortController();
+    void fetch('/api/init/status', { signal: ac.signal })
+      .then((r) => (r.ok ? (r.json() as Promise<InitStatus>) : null))
+      .catch(() => null)
+      .then((s) => {
+        if (!ac.signal.aborted) window.location.replace(s?.needed ? '/admin/init' : '/');
+      });
+    return () => ac.abort();
   }, [loading, allowed]);
   if (loading || !allowed) return <LoadingFallback />;
   return children;

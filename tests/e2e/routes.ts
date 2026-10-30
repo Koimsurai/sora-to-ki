@@ -78,7 +78,10 @@ function rawPaths(): string[] {
  *
  * 一樣不手寫清單：新增後台頁會自動被掃到。
  */
-const ADMIN_SKIP = [{ re: /^\/admin\/login$/, why: '只是舊書籤的轉址頁，沒有內容可驗' }];
+const ADMIN_SKIP = [
+  { re: /^\/admin\/login$/, why: '只是舊書籤的轉址頁，沒有內容可驗' },
+  { re: /^\/admin\/init$/, why: '初次設定不在後台的版面裡，init-wizard.spec.ts 另外走整條流程' },
+];
 
 /** 後台的參數化路由 → 種子資料裡真的存在的 id。 */
 const ADMIN_PARAM_FIXTURES: Record<string, string> = {

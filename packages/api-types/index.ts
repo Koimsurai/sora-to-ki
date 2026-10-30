@@ -798,6 +798,12 @@ export type HiddenItem = {
 	hidden_at: string,
 };
 
+/**  `GET /api/init/status` 的回應 */
+export type InitStatus = {
+	/**  還沒有站長（要走初次設定） */
+	needed: boolean,
+};
+
 /**  `GET /api/admin/keyword-filters`（requireAdmin）。`{ filters: rows }`（SELECT *；目前空表）。 */
 export type KeywordFilterRow = {
 	id: number,

@@ -133,40 +133,6 @@
   color: var(--ink);
 }
 
-/* 後台語言：五個短名排一列，跟上面那條連結同一種墨色，現在的那個是實墨。
-   全站 button 的紫底在 @layer base，這裡未分層，自然蓋得過 */
-.adm-lang {
-  display: flex;
-  gap: var(--space-1);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.adm-lang-option {
-  min-width: 24px;
-  min-height: 24px;
-  padding: 0 var(--space-1);
-  background: transparent;
-  border: 0;
-  color: var(--ink-subtle);
-  font: inherit;
-  cursor: pointer;
-}
-
-.adm-lang-option:hover,
-.adm-lang-option:focus-visible {
-  color: var(--ink);
-}
-
-.adm-lang-option[aria-pressed="true"] {
-  color: var(--ink);
-  text-decoration: underline;
-  text-decoration-color: var(--signal);
-  text-underline-offset: 3px;
-}
-
 .adm-who {
   display: flex;
   align-items: center;

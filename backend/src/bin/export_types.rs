@@ -31,6 +31,7 @@ use koimsurai_web_backend::handlers::gallery::{
 use koimsurai_web_backend::handlers::home::{
     DigestComment, DigestPost, DigestResponse, DigestThought, DigestTimeline,
 };
+use koimsurai_web_backend::handlers::init::InitStatus;
 use koimsurai_web_backend::handlers::link_preview::LinkPreviewResponse;
 use koimsurai_web_backend::handlers::newsletter::{SubscriberByToken, SubscriberRow, SubscribersResponse};
 use koimsurai_web_backend::handlers::page_content::{
@@ -135,6 +136,7 @@ fn main() {
         .register::<PollResponse>()
         .register::<CountResponse>()
         .register::<SiteConfig>()
+        .register::<InitStatus>()
         .register::<AboutContent>()
         .register::<LogContent>()
         .register::<WorksContent>()

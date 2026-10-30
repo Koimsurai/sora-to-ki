@@ -195,18 +195,23 @@ flowchart LR
 git clone https://github.com/Koimsurai/sora-to-ki.git
 cd sora-to-ki
 cp .env.example .env                  # 網址、網域、站名、聯絡方式
-cp .env.backend.example .env.backend  # JWT_SECRET、第一個管理員的帳密
+cp .env.backend.example .env.backend  # JWT_SECRET、GitHub 或 Google 登入
 docker compose up -d
+docker compose logs backend-rs | grep setup   # 初次設定的網址
 ```
 
 - 映像是發版時建好的（[GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)），不必在自己機器上編譯；要從原始碼建就加 `--build`
 - 內建 Caddy：`.env` 的 `CADDY_ADDRESS` 填網域會自動申請 HTTPS；在本機試跑就填 `:80`，打開 <http://localhost>
-- 後台在 `/admin`，用 `.env.backend` 的 `ADMIN_USERNAME`／`ADMIN_PASSWORD` 登入。站名、介紹、哪幾頁要開，之後都在後台（或 MCP）改
+- 第一次開機會在 log 印一行 `setup: open …/admin/init?code=…`。打開它：用 GitHub 或 Google 登入認領站長，
+  再選語系、填站名、決定要開哪些頁面。登入的設定方式精靈裡一步一步寫著；`.env.backend` 填了 `OWNER_EMAIL` 的話不走精靈，
+  用那個信箱登入就是站長
+- 後台在 `/admin`，只能用 GitHub 或 Google 登入（`ADMIN_USERNAME`／`ADMIN_PASSWORD` 是給 MCP 用的機器帳號，不是給人登入的）。
+  站名、介紹、哪幾頁要開，之後都在後台（或 MCP）改
 - 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.1.0`
 - 資料庫每天自動備份到 `./backups`
 
-- 關於、作品、航行日誌、此站點的問答、設備的內容都在後台「頁面」填（MCP 也能改）。新站的作品、航行日誌、
-  設備預設是關著的，填好再到站台設定打開
+- 關於、作品、航行日誌、此站點的問答、設備的內容都在後台「頁面」填（MCP 也能改）。新站的設備與照片預設是關著的
+  （一個要先選圖紙、一個要先接相片來源），準備好再到站台設定打開
 - 設備頁想用自己的手繪圖紙、讓滑過的部件整個亮起來：做一個圖紙包放進 `custom/setup/`，
   格式與交給 AI 的說法見 [`custom/setup/README.md`](custom/setup/README.md)
 
@@ -242,8 +247,8 @@ pnpm dev
 | 用途 | 變數 |
 |---|---|
 | 基本 | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
-| 後台帳號 | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
-| OAuth 登入 | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` |
+| 登入（站長與讀者） | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
+| MCP 的機器帳號 | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
 | 動態頁 | `GITHUB_TOKEN` `WAKATIME_API_KEY` `STEAM_API_KEY` `STEAM_ID` |
 | Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
 | 影劇 | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN` `BAHAMUT_UID` `BAHAMUT_PASSWORD` |

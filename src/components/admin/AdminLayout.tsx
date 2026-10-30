@@ -4,8 +4,8 @@ import { Link, Outlet, useLocation, useNavigate, useRouter, type LinkProps } fro
 import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from '../../contexts/auth';
 import { useEditorScheduledAt } from '@/store/editorScheduleStore';
-import { setAdminLang, useAdminT } from '@/i18n/admin-i18n';
-import { SUPPORTED_LOCALES } from '@/lib/locales';
+import { useAdminT } from '@/i18n/admin-i18n';
+import AdminLangSwitch from './AdminLangSwitch';
 import AdminScrollbars from './AdminScrollbars';
 import AdminTooltips from './AdminTooltips';
 import './AdminTheme.css';
@@ -88,28 +88,6 @@ function isActive(pathname: string, path: string): boolean {
  */
 const clickEditorButton = (id: 'save-draft-btn' | 'save-exit-btn' | 'publish-btn') =>
   document.getElementById(id)?.click();
-
-/** 側欄底下的語言切換：五個短名排一列，現在的那個是墨色 */
-function LangSwitch() {
-  const { t, i18n } = useAdminT();
-  return (
-    <fieldset className="adm-lang" aria-label={t('layout.language')}>
-      {SUPPORTED_LOCALES.map((l) => (
-        <button
-          key={l}
-          type="button"
-          className="adm-lang-option"
-          aria-pressed={i18n.language === l}
-          lang={l}
-          title={t(`layout.languageName.${l}`)}
-          onClick={() => void setAdminLang(l)}
-        >
-          {t(`layout.languageShort.${l}`)}
-        </button>
-      ))}
-    </fieldset>
-  );
-}
 
 const AdminLayout = () => {
   const { t } = useAdminT();
@@ -230,7 +208,7 @@ const AdminLayout = () => {
             <Link to="/" className="adm-foot-link">
               {t('layout.toSite')}
             </Link>
-            <LangSwitch />
+            <AdminLangSwitch />
             <div className="adm-who">
               <span>
                 {name} · {role}
