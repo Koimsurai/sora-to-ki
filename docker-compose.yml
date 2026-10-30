@@ -4,8 +4,9 @@
 #   .env          站台設定（網址、站名、作者、對外位址），compose 自己讀來做 ${} 替換，前後端共用
 #   .env.backend  後端的金鑰與各個整合（GitHub、Simkl、Resend…），沒設的整合就不啟用
 #
-# 對外只有 Caddy（80／443），前後端不對主機開 port。已經有自己的反向代理（nginx…）的話，
-# 在 docker-compose.override.yml 把 caddy 關掉、替前後端開 port，分流照 .config/Caddyfile。
+# 對外只有 Caddy（80／443），前後端不對主機開 port。主機上已經有 nginx 的話照 deploy/nginx/ 改用它
+# （有現成的 override 與 server block）；其他反向代理一樣在 docker-compose.override.yml 把 caddy 關掉、
+# 替前後端開 port，分流照 .config/Caddyfile。
 #
 # 要加東西（主機上的資料夾、其他網路、別的服務）就寫在 docker-compose.override.yml，
 # compose 會自動疊上去，不必改這個檔。改掉 ports 這類清單時用 `!override`，不然會變成兩組都留。

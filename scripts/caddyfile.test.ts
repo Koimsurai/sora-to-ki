@@ -27,3 +27,24 @@ describe('.config/Caddyfile', () => {
     }
   });
 });
+
+// 給已經有 nginx 的人用的範例（deploy/nginx/）：一樣是手抄的，一樣比對
+const nginxSite = readFileSync('deploy/nginx/sora-to-ki.conf', 'utf8');
+const nginxHeaders = readFileSync('deploy/nginx/security-headers.conf', 'utf8');
+
+describe('deploy/nginx', () => {
+  it('前端那段的 CSP 跟 scripts/csp.mjs 一字不差', () => {
+    expect(nginxSite).toContain(`add_header Content-Security-Policy "${CSP_POLICY}" always;`);
+  });
+
+  it('四條安全標頭都在，值也一樣', () => {
+    for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+      expect(nginxHeaders.toLowerCase(), key).toContain(`add_header ${key} "${value.toLowerCase()}" always;`);
+    }
+  });
+
+  it('不沿用讀者帶來的 X-Forwarded-For（後端拿第一個值當讀者的 IP）', () => {
+    expect(nginxSite).not.toMatch(/proxy_set_header\s+X-Forwarded-For\s+\$proxy_add_x_forwarded_for/);
+    expect(nginxSite).toMatch(/proxy_set_header X-Forwarded-For \$remote_addr;/);
+  });
+});
