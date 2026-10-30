@@ -209,7 +209,7 @@ docker compose logs backend-rs | grep setup   # 初次設定的網址
   用那個信箱登入就是站長
 - 後台在 `/admin`，只能用 GitHub 或 Google 登入（`ADMIN_USERNAME`／`ADMIN_PASSWORD` 是給 MCP 用的機器帳號，不是給人登入的）。
   站名、介紹、哪幾頁要開，之後都在後台（或 MCP）改
-- 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.1.0`
+- 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.2.0`
 - 資料庫每天自動備份到 `./backups`
 
 - 關於、作品、航行日誌、此站點的問答、設備的內容都在後台「頁面」填（MCP 也能改）。新站的設備與照片預設是關著的

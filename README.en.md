@@ -210,7 +210,7 @@ docker compose logs backend-rs | grep setup   # the first-time setup link
   with that address is the owner
 - The admin is at `/admin` and only takes GitHub or Google sign-in (`ADMIN_USERNAME` / `ADMIN_PASSWORD` is a machine
   account for MCP, not for people). The site name, description and which pages are on can all be changed there (or over MCP) afterwards
-- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.1.0` in `.env`
+- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.2.0` in `.env`
 - The database is backed up to `./backups` every day
 
 - The about, works, log, colophon Q&A and setup pages are filled in from Admin → Pages (or over MCP). On a new site
