@@ -49,13 +49,21 @@
     "github": "GitHub 帳號名",
     "optional": "選填",
     "shareCard": "分享出去長這樣",
+    "launchPad": "發射台",
+    "launchPadHint": "你在哪裡：航行日誌的火箭從這裡升空、收藏頁地球上的琥珀點。填大概的城市就好，只存到小數點後一位",
+    "lat": "緯度",
+    "lon": "經度",
+    "locate": "用目前的位置",
+    "locating": "定位中…",
+    "locateFailed": "拿不到位置（瀏覽器沒給權限，或這個網址不是 https）。手動填經緯度也一樣",
     "errors": {
       "nameRequired": "站名不能是空的",
       "nameTooLong": "站名最多 {{max}} 個字",
       "authorTooLong": "作者名最多 {{max}} 個字",
       "descriptionTooLong": "介紹最多 {{max}} 個字",
       "email": "信箱的格式不對",
-      "github": "GitHub 帳號名只能有英數字與連字號，最多 39 個字"
+      "github": "GitHub 帳號名只能有英數字與連字號，最多 39 個字",
+      "launchPad": "緯度要在 -{{max}}～{{max}} 之間，經度在 -180～180 之間"
     }
   },
   "theme": {

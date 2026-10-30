@@ -53,6 +53,58 @@
   gap: var(--space-5-5);
 }
 
+/* 發射台：緯度、經度兩格加一顆「用目前的位置」。fieldset 拿掉瀏覽器預設的框與內距 */
+.sf-pad {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sf-pad legend.sf-label {
+  padding: 0;
+}
+
+.sf-pad-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-5-5);
+  align-items: end;
+}
+
+.sf-pad-axis span {
+  display: block;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--ink-subtle);
+}
+
+.sf-pad-locate {
+  padding: var(--space-1-5) var(--space-3);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-body);
+  font: inherit;
+  font-size: var(--fs-12);
+  cursor: pointer;
+}
+
+.sf-pad-locate:hover:not(:disabled) {
+  border-color: var(--signal);
+  color: var(--ink);
+}
+
+.sf-pad-locate:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+@media (max-width: 640px) {
+  .sf-pad-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .sf-hint {
   margin: var(--space-2) 0 0;
   font-size: var(--fs-12);

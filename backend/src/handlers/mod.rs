@@ -10,6 +10,7 @@ pub mod excerpt_links;
 pub mod friend_links;
 pub mod friends;
 pub mod gallery;
+pub mod ground;
 pub mod home;
 pub mod init;
 pub mod link_preview;

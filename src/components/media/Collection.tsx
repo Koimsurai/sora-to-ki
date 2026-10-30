@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useAuth } from '@/contexts/auth';
 import { booksQueryOptions } from '@/data/bookshelfData';
+import { useSiteConfig } from '@/data/siteConfig';
 import { nowPlayingQueryOptions, recentlyPlayedQueryOptions, topTracksQueryOptions } from '@/data/musicData';
 import {
   animeLibraryQueryOptions,
@@ -188,7 +189,19 @@ export default function Collection() {
     return list;
   }, [watch.signals, books, recent, tracks, playing, live, t]);
   // 天空照「現在」建；資料換了才重建（每一幀照當下的時間畫，訊號一直在往外飛）
-  const sky = useMemo(() => createSignalSky(signals, Date.now()), [signals]);
+  // 琥珀點在站長設的發射台（站台設定；型別上可能是 null，沒有就交給 createSignalSky 的預設）
+  const { launch_pad: pad } = useSiteConfig();
+  const homeLat = pad.lat;
+  const homeLon = pad.lon;
+  const sky = useMemo(
+    () =>
+      createSignalSky(
+        signals,
+        Date.now(),
+        homeLat === null || homeLon === null ? undefined : { lat: homeLat, lon: homeLon },
+      ),
+    [signals, homeLat, homeLon],
+  );
   const byId = useMemo(() => new Map(signals.map((s) => [s.id, s])), [signals]);
   const named = useMemo(() => signals.filter((s) => s.amber && !s.home), [signals]);
 

@@ -49,13 +49,21 @@
     "github": "GitHub 사용자 이름",
     "optional": "선택",
     "shareCard": "공유하면 이렇게 보입니다",
+    "launchPad": "발사대",
+    "launchPadHint": "당신이 있는 곳: 항해 일지의 로켓이 여기서 발사되고, 컬렉션 지구의 호박색 점도 여기예요. 대략적인 도시면 충분하고 소수점 한 자리까지만 저장해요",
+    "lat": "위도",
+    "lon": "경도",
+    "locate": "현재 위치 사용",
+    "locating": "위치 확인 중…",
+    "locateFailed": "위치를 가져오지 못했어요(브라우저 권한이 없거나 https가 아님). 위도·경도를 직접 입력해도 돼요",
     "errors": {
       "nameRequired": "사이트 이름은 비워 둘 수 없습니다",
       "nameTooLong": "사이트 이름은 최대 {{max}}자입니다",
       "authorTooLong": "작성자 이름은 최대 {{max}}자입니다",
       "descriptionTooLong": "소개는 최대 {{max}}자입니다",
       "email": "이메일 형식이 올바르지 않습니다",
-      "github": "GitHub 사용자 이름은 영문, 숫자, 하이픈만 쓸 수 있고 최대 39자입니다"
+      "github": "GitHub 사용자 이름은 영문, 숫자, 하이픈만 쓸 수 있고 최대 39자입니다",
+      "launchPad": "위도는 -{{max}}~{{max}}, 경도는 -180~180 사이여야 해요"
     }
   },
   "theme": {

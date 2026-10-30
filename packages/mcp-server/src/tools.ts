@@ -793,6 +793,18 @@ export function makeTools(api: ApiClient): Tool[] {
               additionalProperties: { type: 'string' },
             },
           },
+          launch_pad: {
+            type: 'object',
+            description:
+              '發射台：站長在哪裡（航行日誌的火箭從這裡升空、地面畫這附近的海岸線；收藏頁地球上的琥珀點）。' +
+              '緯度 -70～70、經度 -180～180，存到小數點後一位。填大概的城市就好，不要填住家。沒設是台灣',
+            properties: {
+              lat: { type: 'number', minimum: -70, maximum: 70 },
+              lon: { type: 'number', minimum: -180, maximum: 180 },
+            },
+            required: ['lat', 'lon'],
+            additionalProperties: false,
+          },
         },
         additionalProperties: false,
       },
@@ -804,6 +816,7 @@ export function makeTools(api: ApiClient): Tool[] {
             'description',
             'disabled_pages',
             'page_descriptions',
+            'launch_pad',
             'email',
             'github',
             'default_locale',

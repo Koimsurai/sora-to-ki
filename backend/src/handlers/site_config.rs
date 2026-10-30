@@ -21,10 +21,14 @@ use axum::{
 };
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use sqlx::SqlitePool;
 
-use crate::{auth::AdminAuth, error::AppError, error::JsonBody, state::AppState};
+use crate::{
+    auth::AdminAuth,
+    error::{AppError, JsonBody, Problem},
+    handlers::ground::{DEFAULT_PAD, LAT_LIMIT, LaunchPad},
+    state::AppState,
+};
 
 /// `site_settings` 裡這份設定的 key
 const KEY: &str = "site";
@@ -49,8 +53,8 @@ const EMAIL_MAX: usize = 120;
 /// GitHub 帳號名的長度上限（GitHub 自己的規則）
 const GITHUB_MAX: usize = 39;
 
-/// 存在資料庫裡的那一份
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// 存在資料庫裡的那一份（發射台是浮點數，所以沒有 Eq）
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SiteSettings {
     pub name: String,
     /// 空字串＝跟站名一樣
@@ -83,6 +87,14 @@ pub struct SiteSettings {
     /// 沒寫的就用前端字串檔裡的通用句子（各頁在搜尋結果裡的描述、「關於」選單開頭那一句）
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub page_descriptions: BTreeMap<String, BTreeMap<String, String>>,
+    /// 發射台：站長在哪裡（航行日誌的火箭從這裡升空、收藏頁地球上的琥珀點）。`None`＝台灣
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launch_pad: Option<LaunchPad>,
+}
+
+/// 現在的發射台（沒設就是台灣）
+pub fn launch_pad() -> LaunchPad {
+    current().and_then(|s| s.launch_pad).unwrap_or(DEFAULT_PAD)
 }
 
 /// 可以自己寫介紹文字的地方：首頁與各頁（前端 data/siteSections 的 key），加上「關於」選單開頭那一句
@@ -238,6 +250,7 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         locales: None,
         theme: None,
         page_descriptions: BTreeMap::new(),
+        launch_pad: None,
     };
     // OR IGNORE：兩個程序同時開機的話，以先寫進去的那份為準
     sqlx::query("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)")
@@ -282,6 +295,8 @@ pub struct SiteConfig {
     pub theme: String,
     /// 站長自己寫的介紹文字：哪一頁 → 語系 → 字。沒有的就用通用句子
     pub page_descriptions: BTreeMap<String, BTreeMap<String, String>>,
+    /// 發射台（站長在哪裡）；沒設就是台灣
+    pub launch_pad: LaunchPad,
 }
 
 impl From<SiteSettings> for SiteConfig {
@@ -300,6 +315,7 @@ impl From<SiteSettings> for SiteConfig {
             locales,
             theme: theme_of(s.theme.as_deref()).unwrap_or(THEMES[0]).to_string(),
             page_descriptions: s.page_descriptions,
+            launch_pad: s.launch_pad.unwrap_or(DEFAULT_PAD),
         }
     }
 }
@@ -325,11 +341,19 @@ pub struct SiteConfigUpdate {
     pub theme: Option<String>,
     /// 介紹文字（整份換掉）：哪一頁（home、notes…、aboutLead）→ 語系 → 字；空字串＝用通用句子
     pub page_descriptions: Option<BTreeMap<String, BTreeMap<String, String>>>,
+    /// 發射台：緯度（-70～70）、經度（-180～180），存到小數點後一位（大概的城市就好，不要填自己家）
+    pub launch_pad: Option<LaunchPad>,
 }
 
-/// 把 body 套到現有的設定上。錯誤訊息直接給後台與 MCP 顯示，所以寫成人看得懂的句子
-fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, String> {
-    let bad_locale = |l: &str| format!("沒有「{l}」這個語系，能選的是：{}", SUPPORTED_LOCALES.join("、"));
+/// 把 body 套到現有的設定上。錯誤給後台與 MCP 顯示：英文說明加代號（error::Problem），後台照代號翻
+fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, Problem> {
+    let bad_locale = |l: &str| {
+        Problem::new(
+            "locale_invalid",
+            format!("Unknown language {l} (one of {})", SUPPORTED_LOCALES.join(", ")),
+        )
+        .param("lang", l)
+    };
     if let Some(l) = &body.default_locale {
         s.default_locale = Some(supported(l).ok_or_else(|| bad_locale(l))?.to_string());
     }
@@ -347,37 +371,51 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
         );
     }
     if let Some(t) = &body.theme {
-        let t = theme_of(Some(t))
-            .ok_or_else(|| format!("沒有「{t}」這個天體，能選的是：{}", THEMES.join("、")))?;
+        let t = theme_of(Some(t)).ok_or_else(|| {
+            Problem::new("theme_invalid", format!("Unknown theme {t} (one of {})", THEMES.join(", ")))
+                .param("theme", t.as_str())
+        })?;
         s.theme = Some(t.to_string());
     }
     if let Some(name) = body.name {
         let name = name.trim();
         if name.is_empty() {
-            return Err("站名不能是空的".into());
+            return Err(Problem::new("site_name_required", "The site name can't be empty"));
         }
         if name.chars().count() > NAME_MAX {
-            return Err(format!("站名最多 {NAME_MAX} 個字"));
+            return Err(Problem::new(
+                "site_name_too_long",
+                format!("The site name can be at most {NAME_MAX} characters"),
+            )
+            .param("max", NAME_MAX));
         }
         s.name = name.to_string();
     }
     if let Some(author) = body.author {
         let author = author.trim();
         if author.chars().count() > NAME_MAX {
-            return Err(format!("作者名最多 {NAME_MAX} 個字"));
+            return Err(Problem::new(
+                "author_too_long",
+                format!("The author name can be at most {NAME_MAX} characters"),
+            )
+            .param("max", NAME_MAX));
         }
         s.author = author.to_string();
     }
     if let Some(description) = body.description {
         let description = description.trim();
         if description.chars().count() > DESCRIPTION_MAX {
-            return Err(format!("介紹最多 {DESCRIPTION_MAX} 個字"));
+            return Err(description_too_long());
         }
         s.description = description.to_string();
     }
     if let Some(pages) = body.disabled_pages {
         if let Some(bad) = pages.iter().find(|p| !TOGGLEABLE_PAGES.contains(&p.as_str())) {
-            return Err(format!("沒有「{bad}」這一頁可以關，能關的是：{}", TOGGLEABLE_PAGES.join("、")));
+            return Err(Problem::new(
+                "page_not_toggleable",
+                format!("{bad} can't be turned off (one of {})", TOGGLEABLE_PAGES.join(", ")),
+            )
+            .param("page", bad.as_str()));
         }
         // 照 TOGGLEABLE_PAGES 的順序、去掉重複：同一份設定存起來永遠長一樣
         s.disabled_pages = TOGGLEABLE_PAGES
@@ -389,10 +427,14 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
     if let Some(email) = body.email {
         let email = email.trim();
         if email.chars().count() > EMAIL_MAX {
-            return Err(format!("信箱最多 {EMAIL_MAX} 個字"));
+            return Err(Problem::new(
+                "email_too_long",
+                format!("The email can be at most {EMAIL_MAX} characters"),
+            )
+            .param("max", EMAIL_MAX));
         }
         if !email.is_empty() && !email.contains('@') {
-            return Err("信箱的格式不對".into());
+            return Err(Problem::new("email_invalid", "That email doesn't look right"));
         }
         s.email = Some(email.to_string());
     }
@@ -402,7 +444,10 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
         let github = github.trim_end_matches('/');
         let valid = github.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
         if !valid || github.len() > GITHUB_MAX {
-            return Err("GitHub 帳號名只能有英數字與連字號，最多 39 個字".into());
+            return Err(Problem::new(
+                "github_invalid",
+                "A GitHub username has only letters, digits and hyphens, at most 39 characters",
+            ));
         }
         s.github = Some(github.to_string());
     }
@@ -410,17 +455,18 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
         let mut next = BTreeMap::new();
         for (page, texts) in all {
             if !DESCRIBABLE.contains(&page.as_str()) {
-                return Err(format!(
-                    "沒有「{page}」這個地方可以寫介紹，能寫的是：{}",
-                    DESCRIBABLE.join("、")
-                ));
+                return Err(Problem::new(
+                    "describe_unknown",
+                    format!("No description slot named {page} (one of {})", DESCRIBABLE.join(", ")),
+                )
+                .param("page", page.as_str()));
             }
             let mut kept = BTreeMap::new();
             for (locale, text) in texts {
                 let locale = supported(&locale).ok_or_else(|| bad_locale(&locale))?;
                 let text = text.trim();
                 if text.chars().count() > DESCRIPTION_MAX {
-                    return Err(format!("介紹最多 {DESCRIPTION_MAX} 個字"));
+                    return Err(description_too_long());
                 }
                 // 空的就是「用通用句子」：不存，讀的時候自然退回去
                 if !text.is_empty() {
@@ -433,7 +479,32 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
         }
         s.page_descriptions = next;
     }
+    if let Some(pad) = body.launch_pad {
+        let ok = pad.lat.is_finite()
+            && pad.lon.is_finite()
+            && pad.lat.abs() <= LAT_LIMIT
+            && pad.lon.abs() <= 180.0;
+        if !ok {
+            return Err(Problem::new(
+                "launch_pad_invalid",
+                format!("The launch pad must be latitude -{LAT_LIMIT}–{LAT_LIMIT}, longitude -180–180"),
+            )
+            .param("max", LAT_LIMIT));
+        }
+        // 小數點後一位（約 10 公里）：大概的城市就好；跟台灣一樣就存成「沒設」
+        let round = |v: f64| (v * 10.0).round() / 10.0;
+        let pad = LaunchPad { lat: round(pad.lat), lon: round(pad.lon) };
+        s.launch_pad = (pad != DEFAULT_PAD).then_some(pad);
+    }
     Ok(s)
+}
+
+fn description_too_long() -> Problem {
+    Problem::new(
+        "site_description_too_long",
+        format!("A description can be at most {DESCRIPTION_MAX} characters"),
+    )
+    .param("max", DESCRIPTION_MAX)
 }
 
 async fn loaded(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
@@ -464,7 +535,7 @@ pub async fn update_site_config(
 ) -> Result<Response, AppError> {
     let next = match apply(loaded(&state.pool).await?, body) {
         Ok(s) => s,
-        Err(msg) => return Ok((StatusCode::BAD_REQUEST, Json(json!({ "error": msg }))).into_response()),
+        Err(p) => return Ok(p.respond(StatusCode::BAD_REQUEST)),
     };
     sqlx::query(
         "INSERT INTO site_settings (key, value) VALUES (?, ?) \
@@ -496,7 +567,22 @@ mod tests {
             locales: None,
             theme: None,
             page_descriptions: BTreeMap::new(),
+            launch_pad: None,
         }
+    }
+
+    #[test]
+    fn 發射台存到小數點後一位_跟台灣一樣就是沒設() {
+        assert_eq!(SiteConfig::from(base()).launch_pad, DEFAULT_PAD);
+        let set = |lat: f64, lon: f64| {
+            apply(base(), SiteConfigUpdate { launch_pad: Some(LaunchPad { lat, lon }), ..Default::default() })
+        };
+        let s = set(39.7392, -104.9903).unwrap();
+        assert_eq!(s.launch_pad, Some(LaunchPad { lat: 39.7, lon: -105.0 }), "大概的城市就好");
+        assert_eq!(set(23.71, 121.02).unwrap().launch_pad, None, "四捨五入後就是台灣：存成沒設");
+        assert_eq!(set(80.0, 0.0).unwrap_err().code, "launch_pad_invalid");
+        assert_eq!(set(0.0, 181.0).unwrap_err().code, "launch_pad_invalid");
+        assert_eq!(set(f64::NAN, 0.0).unwrap_err().code, "launch_pad_invalid");
     }
 
     #[test]
@@ -507,7 +593,8 @@ mod tests {
         assert_eq!(s.theme.as_deref(), Some("neptune"), "大小寫不拘，存成標準寫法");
         assert_eq!(SiteConfig::from(s).theme, "neptune");
         let err = apply(base(), SiteConfigUpdate { theme: Some("mars".into()), ..Default::default() });
-        assert!(err.unwrap_err().contains("mars"));
+        let e = err.unwrap_err();
+        assert_eq!((e.code, e.params["theme"].as_str()), ("theme_invalid", Some("mars")));
     }
 
     #[test]
@@ -523,7 +610,7 @@ mod tests {
         assert_eq!(s.page_descriptions["notes"]["en"], "Notes on Rust", "語系大小寫不拘、前後空白去掉");
         let s = apply(s, body("notes", "en", "   ")).unwrap();
         assert!(s.page_descriptions.is_empty(), "清空就是不存（退回通用句子）");
-        assert!(apply(base(), body("posts", "en", "x")).unwrap_err().contains("posts"));
+        assert_eq!(apply(base(), body("posts", "en", "x")).unwrap_err().code, "describe_unknown");
         assert!(apply(base(), body("home", "fr", "x")).is_err());
         assert!(apply(base(), body("home", "en", &"字".repeat(DESCRIPTION_MAX + 1))).is_err());
     }
@@ -542,7 +629,8 @@ mod tests {
         assert_eq!(s.default_locale.as_deref(), Some("en"), "大小寫不拘，存成標準寫法");
         assert_eq!(s.locales, Some(vec!["en".into(), "ja".into()]));
         let err = apply(base(), SiteConfigUpdate { default_locale: Some("fr".into()), ..Default::default() });
-        assert!(err.unwrap_err().contains("fr"));
+        let e = err.unwrap_err();
+        assert_eq!((e.code, e.params["lang"].as_str()), ("locale_invalid", Some("fr")));
     }
 
     #[test]
@@ -615,7 +703,7 @@ mod tests {
             SiteConfigUpdate { disabled_pages: Some(vec!["notes".into()]), ..Default::default() },
         )
         .unwrap_err();
-        assert!(err.contains("notes"), "{err}");
+        assert_eq!((err.code, err.params["page"].as_str()), ("page_not_toggleable", Some("notes")), "{err}");
     }
 
     #[test]

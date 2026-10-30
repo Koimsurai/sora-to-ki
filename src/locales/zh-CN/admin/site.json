@@ -49,13 +49,21 @@
     "github": "GitHub 用户名",
     "optional": "选填",
     "shareCard": "分享出去长这样",
+    "launchPad": "发射台",
+    "launchPadHint": "你在哪里：航行日志的火箭从这里升空、收藏页地球上的琥珀点。填大概的城市就好，只存到小数点后一位",
+    "lat": "纬度",
+    "lon": "经度",
+    "locate": "用当前位置",
+    "locating": "定位中…",
+    "locateFailed": "拿不到位置（浏览器没给权限，或这个网址不是 https）。手动填经纬度也一样",
     "errors": {
       "nameRequired": "站名不能是空的",
       "nameTooLong": "站名最多 {{max}} 个字",
       "authorTooLong": "作者名最多 {{max}} 个字",
       "descriptionTooLong": "介绍最多 {{max}} 个字",
       "email": "邮箱的格式不对",
-      "github": "GitHub 用户名只能有英文、数字与连字符，最多 39 个字"
+      "github": "GitHub 用户名只能有英文、数字与连字符，最多 39 个字",
+      "launchPad": "纬度要在 -{{max}}～{{max}} 之间，经度在 -180～180 之间"
     }
   },
   "theme": {

@@ -36,6 +36,7 @@ use tiny_skia::Pixmap;
 use super::super::apng::{H, W};
 use super::super::canvas::{Ctx, Gradient, Rgba, amber, ground, ink, load_image, resize_image};
 use super::body::rng;
+use crate::handlers::ground::{DEFAULT_PAD, Ground};
 
 /// 一圈 12 秒、每格 100ms。火焰與脈動每一格都在變（一格約 4 KB），一圈越長檔案越大：
 /// 15 秒是 640 KB，12 秒收在 550 KB 左右
@@ -43,9 +44,7 @@ const FRAMES: usize = 120;
 const FRAME_MS: u32 = 100;
 const LOOP_S: f32 = FRAMES as f32 * FRAME_MS as f32 / 1000.0;
 
-/// 海岸線：repo 裡的靜態檔，直接編進來（日誌的起點與里程碑是站長填的，由呼叫端從資料庫帶進來）。
-/// ⚠ `src/data/` 要在 `backend/Dockerfile` 的 builder 階段 COPY 進去，不然容器裡編不過
-const LAND_JSON: &str = include_str!("../../../../../src/data/landAroundTaiwan.json");
+/// 海岸線由呼叫端帶進來（`handlers::ground`：站長設的發射台周圍），日誌的起點與里程碑也是
 const ROCKET_WEBP: &[u8] = include_bytes!("../../../../../public/illustrations/rocket-ascent.webp");
 
 /// 火箭線稿（568×878）：噴嘴出口與機鼻的位置（原圖比例）
@@ -71,10 +70,7 @@ const SMOOTH_DAYS: f64 = 14.0;
 /// 大氣層頂在多高
 const ATMOSPHERE: f64 = 40.0;
 
-/// 發射台在台灣；往右是東、往遠方是北
-const PAD_LAT: f64 = 23.7;
-const PAD_LON: f64 = 121.0;
-/// 地表一個世界單位是幾度
+/// 地表一個世界單位是幾度（往右是東、往遠方是北，發射台在站長設的位置）
 const DEG_PER_UNIT: f64 = 0.008;
 /// 地表最近畫到哪（橫向位置）：再近就到鏡頭底下了
 const NEAR_Z: f64 = 900.0;
@@ -86,6 +82,8 @@ const PULSE_LAPS: f32 = 6.0;
 const TWINKLE_FROM_X: f32 = 760.0;
 
 type V3 = [f64; 3];
+/// 地表上的一串點（θ、橫向位置）
+type SurfaceLine = Vec<(f64, f64)>;
 fn add(a: V3, b: V3) -> V3 {
     [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
 }
@@ -206,28 +204,25 @@ fn silhouette(cam: &Camera, radius: f64, w: f64, h: f64) -> Vec<ScreenPoint> {
     if run.len() > best.len() { run } else { best }
 }
 
-/// 台灣周邊的陸地（`data/landAroundTaiwan.json`：Natural Earth 50m land，公有領域）。
-/// 一塊陸地是幾個環（第一個是外圈，其餘是湖），每個環是一串 [經度×100, 緯度×100, …]，
-/// 這裡換成地表座標（θ、橫向位置）
-fn land() -> Vec<Vec<Vec<(f64, f64)>>> {
-    let raw: Vec<Vec<Vec<f64>>> =
-        serde_json::from_str(LAND_JSON).expect("landAroundTaiwan.json 是前端也在讀的靜態檔");
-    raw.iter()
-        .map(|poly| {
-            poly.iter()
-                .map(|ring| {
-                    ring.as_chunks::<2>()
-                        .0
-                        .iter()
-                        .map(|[lon, lat]| {
-                            let (lon, lat) = (lon / 100.0, lat / 100.0);
-                            (THETA0 + (lon - PAD_LON) / (R * DEG_PER_UNIT), (PAD_LAT - lat) / DEG_PER_UNIT)
-                        })
-                        .collect()
-                })
-                .collect()
+/// 發射台周圍的陸地與河流（`handlers::ground`：Natural Earth 50m，公有領域）換成地表座標（θ、橫向位置）。
+/// 一串 [經度×100, 緯度×100, …] 是一條線。經度一度在高緯度比較窄，以台灣為準修正（台灣本身不變）
+fn surface_line(g: &Ground, flat: &[i32]) -> SurfaceLine {
+    let lon_scale = g.lat.to_radians().cos() / DEFAULT_PAD.lat.to_radians().cos();
+    flat.as_chunks::<2>()
+        .0
+        .iter()
+        .map(|[lon, lat]| {
+            let (lon, lat) = (f64::from(*lon) / 100.0, f64::from(*lat) / 100.0);
+            (THETA0 + ((lon - g.lon) * lon_scale) / (R * DEG_PER_UNIT), (g.lat - lat) / DEG_PER_UNIT)
         })
         .collect()
+}
+
+/// 陸地的環（首尾相接）與河流、湖的線（不封閉），都換成地表座標
+fn land(g: &Ground) -> (Vec<SurfaceLine>, Vec<SurfaceLine>) {
+    let rings = g.land.iter().flatten().map(|r| surface_line(g, r)).collect();
+    let water = g.water.iter().map(|l| surface_line(g, l)).collect();
+    (rings, water)
 }
 
 /// 軌道：每天的量 → 高斯平滑過的累積高度（`createLog` 裡的 `alt`）
@@ -289,13 +284,14 @@ pub struct Log {
 
 impl Log {
     /// 從 `start`（站點誕生那天）畫到今天；`milestones` 是軌道上改版節點的日期
-    pub fn new(start: NaiveDate, milestones: &[NaiveDate]) -> Self {
+    /// `terrain` 是發射台周圍的地面（`handlers::ground::ground_for`）
+    pub fn new(start: NaiveDate, milestones: &[NaiveDate], terrain: &Ground) -> Self {
         let today = chrono::Local::now().date_naive();
-        Self::on(today, start, milestones)
+        Self::on(today, start, milestones, terrain)
     }
 
     /// 畫到 `today` 那天為止（日誌一天一格，往遠方是時間）
-    fn on(today: NaiveDate, start: NaiveDate, milestones: &[NaiveDate]) -> Self {
+    fn on(today: NaiveDate, start: NaiveDate, milestones: &[NaiveDate], terrain: &Ground) -> Self {
         let (w, h) = (W as f64, H as f64);
         let n = ((today - start).num_days() + 1).max(2) as usize;
         // 每天的量：示意的（見檔頭），一天比一天多一點，累積起來是一條越爬越陡的曲線
@@ -412,16 +408,17 @@ impl Log {
                     && (THETA0 - 0.18..=THETA0 + SPAN + 0.18).contains(&a)
                     && cam.facing(surface_at(a, z))
             };
-            ctx.set_stroke(ink(0.42));
             ctx.set_line_width(1.0);
             ctx.set_round_join(true);
-            ctx.begin_path();
-            for poly in land() {
-                for ring in poly {
+            // 海岸線（環：多走一個點回到起點，最後一段海岸也畫上），內陸的河流與湖淡一半（線：不回起點）
+            let (rings, water) = land(terrain);
+            for (lines, closed, alpha) in [(&rings, true, 0.42), (&water, false, 0.2)] {
+                ctx.set_stroke(ink(alpha));
+                ctx.begin_path();
+                for line in lines {
                     let mut pen = false;
-                    // 環是首尾相接的：多走一個點回到起點，最後一段海岸也畫上
-                    for k in 0..=ring.len() {
-                        let (a, z) = ring[k % ring.len()];
+                    for k in 0..line.len() + usize::from(closed) {
+                        let (a, z) = line[k % line.len()];
                         let Some(s) = (if seen(a, z) { cam.project(surface_at(a, z)) } else { None }) else {
                             pen = false;
                             continue;
@@ -434,8 +431,8 @@ impl Log {
                         pen = true;
                     }
                 }
+                ctx.stroke();
             }
-            ctx.stroke();
             ctx.set_round_join(false);
             ctx.restore();
         }
@@ -648,12 +645,12 @@ mod tests {
         NaiveDate::parse_from_str(s, "%Y-%m-%d").expect("合法日期")
     }
 
-    /// 從前端的靜態檔讀出來的海岸線要讀得到：檔案改了格式，這裡先紅，不會等到分享圖上的
-    /// 海岸線不見才發現
+    /// 海岸線要讀得到、換得成地表座標：格式改了這裡先紅，不會等到分享圖上的海岸線不見才發現
     #[test]
     fn 讀得到海岸線() {
-        let land = land();
-        assert!(land.len() > 10 && land.iter().all(|p| p.iter().all(|r| r.len() >= 3)), "海岸線讀壞了");
+        let (rings, water) = land(&crate::handlers::ground::ground_for(DEFAULT_PAD));
+        assert!(rings.len() > 10 && rings.iter().all(|r| r.len() >= 3), "海岸線讀壞了");
+        assert_eq!(water.len(), 0, "台灣在海邊，不畫河流");
     }
 
     /// 軌道從地面出發、一路往上，終點爬到頂
@@ -670,12 +667,20 @@ mod tests {
     #[test]
     fn 哪一天產圖都畫得出來() {
         let start = day("2025-04-01");
-        let first = Log::on(start, start, &[start]);
+        let tw = crate::handlers::ground::ground_for(DEFAULT_PAD);
+        let first = Log::on(start, start, &[start], &tw);
         assert_eq!(super::super::Scene::frame(&first, 0).data().len(), W * H * 4);
         // 里程碑早於起點、或還沒有任何里程碑，都不能炸
-        let odd = Log::on(day("2026-10-29"), start, &[day("2020-01-01")]);
+        let odd = Log::on(day("2026-10-29"), start, &[day("2020-01-01")], &tw);
         assert_eq!(super::super::Scene::frame(&odd, 0).data().len(), W * H * 4);
-        let bare = Log::on(day("2026-10-29"), start, &[]);
+        let bare = Log::on(day("2026-10-29"), start, &[], &tw);
         assert_eq!(super::super::Scene::frame(&bare, 0).data().len(), W * H * 4);
+        // 內陸的發射台：多了一層河流
+        let denver = crate::handlers::ground::ground_for(crate::handlers::ground::LaunchPad {
+            lat: 39.7,
+            lon: -105.0,
+        });
+        let inland = Log::on(day("2026-10-29"), start, &[], &denver);
+        assert_eq!(super::super::Scene::frame(&inland, 0).data().len(), W * H * 4);
     }
 }

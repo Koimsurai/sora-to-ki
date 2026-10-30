@@ -3,10 +3,11 @@
 // 改版是軌跡上的節點；每天的貢獻是地上沿著地面軌跡排開的燈（一天一盞、一週七排），近大遠小。
 // 窄螢幕（compact）改成一週一盞排成一列，亮度是那一週的提交數，並畫出手指滑到的那一天（scrub）。
 // 火箭的角度照重力轉向：離地時垂直，之後慢慢往下壓，平滑地變，不跟著每天的資料抖。
-// 地表照真實的地理畫：發射台在台灣，往右是東、往遠方是北；陸地用首頁土星那種刻線畫，看得出台灣、福建沿海、九州與琉球。
+// 地表照真實的地理畫：發射台在站長設的位置（預設台灣），往右是東、往遠方是北；陸地用首頁土星那種刻線畫。
+// 海岸線由後端從 Natural Earth 裁好（handlers/ground.rs，GET /api/site/ground），內陸的話再加上淡一半的河流與湖。
 // 這裡只畫點、線與插圖，字（里程碑的名字、遙測讀數、提示）是疊在上面的 DOM。
 
-import LAND_DATA from '@/data/landAroundTaiwan.json';
+import type { Ground } from '@koimsurai/api-types';
 import { onPalette, palette } from '@/lib/palette';
 import { currentFold } from '@/lib/viewportFold';
 
@@ -134,28 +135,34 @@ function silhouette(cam: Camera, radius: number, w: number, h: number) {
   return run.length > best.length ? run : best;
 }
 
-/** 發射台在台灣（跟收藏頁地球上的琥珀點同一個地方）；往右是東、往遠方是北 */
-const PAD_LAT = 23.7;
-const PAD_LON = 121;
-/** 地表一個世界單位是幾度：放大到台灣周邊，發射台底下是看得清楚的一整座島 */
+/** 地表一個世界單位是幾度：放大到發射台周邊（台灣的話是看得清楚的一整座島） */
 const DEG_PER_UNIT = 0.008;
 /** 地表最近畫到哪（橫向位置）：再近就到鏡頭底下了 */
 const NEAR_Z = 900;
+/** 經度修正的基準緯度：台灣（當初調畫面的地方），台灣本身不變 */
+const BASE_LAT = 23.7;
 
-/** 台灣周邊的陸地（data/landAroundTaiwan.json）：Natural Earth 50m land（公有領域）的多邊形，
- *  用 Sutherland–Hodgman 裁到畫面看得到的這一塊（北緯 14–43、東經 113–134），再以 0.03° 做 Douglas–Peucker 簡化。
- *  一塊陸地是幾個環（第一個是外圈，其餘是湖），每個環是一串 [經度×100, 緯度×100, …]。這裡換成地表座標（θ、橫向位置） */
-const LAND: [number, number][][][] = LAND_DATA.map((poly) =>
-  poly.map((ring) => {
-    const pts: [number, number][] = [];
-    for (let i = 0; i + 1 < ring.length; i += 2) {
-      const lon = ring[i] / 100;
-      const lat = ring[i + 1] / 100;
-      pts.push([THETA0 + (lon - PAD_LON) / (R * DEG_PER_UNIT), (PAD_LAT - lat) / DEG_PER_UNIT]);
+type SurfaceLine = [number, number][];
+
+/** 發射台周圍的地面換成地表座標（θ、橫向位置）：陸地的環首尾相接，河流與湖的線不封閉。
+ *  一串 [經度×100, 緯度×100, …] 是一條線。經度一度在高緯度比較窄，照緯度修正 */
+function surfaceOf(ground: Ground | undefined): { rings: SurfaceLine[]; water: SurfaceLine[] } {
+  if (!ground) return { rings: [], water: [] };
+  // 型別上是 number | null（後端的浮點數可能是 NaN），實際上一定有值
+  const padLat = ground.lat ?? BASE_LAT;
+  const padLon = ground.lon ?? 0;
+  const lonScale = Math.cos((padLat * Math.PI) / 180) / Math.cos((BASE_LAT * Math.PI) / 180);
+  const line = (flat: number[]): SurfaceLine => {
+    const pts: SurfaceLine = [];
+    for (let i = 0; i + 1 < flat.length; i += 2) {
+      const lon = flat[i] / 100;
+      const lat = flat[i + 1] / 100;
+      pts.push([THETA0 + ((lon - padLon) * lonScale) / (R * DEG_PER_UNIT), (padLat - lat) / DEG_PER_UNIT]);
     }
     return pts;
-  }),
-);
+  };
+  return { rings: ground.land.flat().map(line), water: ground.water.map(line) };
+}
 
 /** 地表上 θ、橫向位置的那一點（橫向也照著地球的弧度往下彎） */
 const surfaceAt = (a: number, z: number): V3 => {
@@ -173,7 +180,9 @@ const SURFACE = (() => {
   return out;
 })();
 
-export function createLog(start: string, counts: number[], milestoneDates: string[]) {
+/** `ground`：發射台周圍的地面（還沒抓到就先不畫海岸線） */
+export function createLog(start: string, counts: number[], milestoneDates: string[], ground?: Ground) {
+  const surface = surfaceOf(ground);
   const N = Math.max(2, counts.length);
   const startMs = new Date(`${start}T00:00:00`).getTime();
   const cum: number[] = [];
@@ -416,16 +425,20 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
         ctx.clip();
         const seen = (a: number, z: number) =>
           z <= NEAR_Z && a >= THETA0 - 0.18 && a <= THETA0 + SPAN + 0.18 && cam.facing(surfaceAt(a, z));
-        ctx.strokeStyle = `rgba(${INK}, ${0.42 * fade})`;
         ctx.lineWidth = 1;
         ctx.lineJoin = 'round';
-        ctx.beginPath();
-        for (const poly of LAND) {
-          for (const ring of poly) {
+        // 海岸線（環：多走一個點回到起點，最後一段海岸也畫上）；內陸的河流與湖淡一半（線：不回起點）
+        for (const [lines, closed, alpha] of [
+          [surface.rings, true, 0.42],
+          [surface.water, false, 0.2],
+        ] as const) {
+          if (lines.length === 0) continue;
+          ctx.strokeStyle = `rgba(${INK}, ${alpha * fade})`;
+          ctx.beginPath();
+          for (const line of lines) {
             let pen = false;
-            // 環是首尾相接的：多走一個點回到起點，最後一段海岸也畫上
-            for (let n = 0; n <= ring.length; n++) {
-              const [a, z] = ring[n % ring.length];
+            for (let n = 0; n < line.length + (closed ? 1 : 0); n++) {
+              const [a, z] = line[n % line.length];
               const s = seen(a, z) ? cam.project(surfaceAt(a, z)) : null;
               if (!s) {
                 pen = false;
@@ -436,8 +449,8 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
               pen = true;
             }
           }
+          ctx.stroke();
         }
-        ctx.stroke();
         ctx.lineJoin = 'miter';
         ctx.restore();
       }

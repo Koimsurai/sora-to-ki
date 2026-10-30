@@ -84,6 +84,8 @@ pub fn build_router(state: AppState) -> Router {
         // 站台設定：公開讀（前端 SSR）、管理員改（後台與 MCP）
         .route("/api/site/config", get(handlers::site_config::get_site_config))
         .route("/api/admin/site/config", put(handlers::site_config::update_site_config))
+        // 航行日誌的地面：發射台周圍的海岸線（發射台在站台設定裡）
+        .route("/api/site/ground", get(handlers::ground::get_ground))
         // 初次設定：還沒有站長時，拿 log 裡的設定碼認領（後台的 /admin/init 精靈）
         .route("/api/init/status", get(handlers::init::status))
         .route("/api/init/check", post(handlers::init::check))

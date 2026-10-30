@@ -8,7 +8,12 @@ import { useEffect, useMemo, useRef } from 'react';
 import { defaultLocale } from '@/lib/locales';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { codingNowQueryOptions, contributionsSinceQueryOptions, playingNowQueryOptions } from '@/data/logData';
+import {
+  codingNowQueryOptions,
+  contributionsSinceQueryOptions,
+  groundQueryOptions,
+  playingNowQueryOptions,
+} from '@/data/logData';
 import { useLogContent } from '@/data/pageContent';
 import OwnerFillHint from '@/components/common/OwnerFillHint';
 import { usePageTransition } from '@/hooks/usePageTransition';
@@ -49,6 +54,8 @@ export default function Log() {
   const { data: days = null } = useQuery(contributionsSinceQueryOptions(start));
   const { data: coding = null } = useQuery(codingNowQueryOptions);
   const { data: playing = null } = useQuery(playingNowQueryOptions);
+  // 發射台周圍的海岸線：頁面守門時已經抓好（data/pageContent），這裡讀快取
+  const { data: ground } = useQuery(groundQueryOptions);
 
   const milestones = useMemo(
     () =>
@@ -66,8 +73,9 @@ export default function Log() {
       start,
       counts,
       milestones.map((m) => m.date),
+      ground,
     );
-  }, [days, start, milestones]);
+  }, [days, start, milestones, ground]);
   const dayDates = useMemo(() => days?.map((d) => d.date) ?? [], [days]);
 
   const pageRef = useRef<HTMLDivElement>(null);

@@ -22,6 +22,7 @@ beforeAll(async () => {
     locales: ['zh-TW', 'en'],
     theme: 'saturn',
     page_descriptions: { notes: { en: 'Notes on Rust and the web.' } },
+    launch_pad: { lat: 23.7, lon: 121 },
   });
 });
 

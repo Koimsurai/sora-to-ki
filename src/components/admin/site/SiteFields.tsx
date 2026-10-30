@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { useAdminT } from '@/i18n/admin-i18n';
 import { ThemeGlyph } from '@/components/common/ThemeGlyph';
 import { SUPPORTED_LOCALES } from '@/lib/locales';
 import { THEMES } from '@/lib/theme';
-import { TOGGLE_GROUPS, siteProblems, type Draft } from './siteDraft';
+import { LAT_LIMIT, TOGGLE_GROUPS, siteProblems, type Draft } from './siteDraft';
 import './SiteFields.css';
 
 // 站台設定的欄位：語系、身分、天體、頁面開關。初次設定的精靈一步放一組（天體不問，開站之後再挑），
@@ -166,7 +166,82 @@ export function IdentityFields({
           <input className="sf-input" value={draft.github} onChange={(e) => patch({ github: e.target.value })} />
         </SiteField>
       </div>
+      <LaunchPadField draft={draft} patch={patch} error={problem('launch_pad')} />
     </>
+  );
+}
+
+/** 小數點後一位（約 10 公里）：後端也是存到這裡，大概的城市就好 */
+const roundPad = (v: number) => Math.round(v * 10) / 10;
+
+/**
+ * 發射台：站長在哪裡。航行日誌的火箭從這裡升空（地面畫這附近的海岸線），收藏頁地球上的琥珀點也在這裡。
+ * 填大概的城市就好；「用目前的位置」問瀏覽器要位置，一樣只留一位小數
+ */
+function LaunchPadField({ draft, patch, error }: { draft: Draft; patch: Patch; error?: string }) {
+  const { t } = useAdminT();
+  const [locating, setLocating] = useState(false);
+  const [locateFailed, setLocateFailed] = useState(false);
+  const pad = draft.launch_pad;
+  const set = (next: Partial<Draft['launch_pad']>) => patch({ launch_pad: { ...pad, ...next } });
+  const locate = () => {
+    setLocating(true);
+    setLocateFailed(false);
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setLocating(false);
+        set({ lat: roundPad(p.coords.latitude), lon: roundPad(p.coords.longitude) });
+      },
+      () => {
+        setLocating(false);
+        setLocateFailed(true);
+      },
+      { maximumAge: 600_000, timeout: 10_000 },
+    );
+  };
+  // 兩個欄位加一顆按鈕：不能整個包在 SiteField 的 label 裡（label 不能包 label，按鈕也會被當成點欄位）
+  return (
+    <fieldset className="sf-field sf-pad">
+      <legend className="sf-label">
+        {t('site.identity.launchPad')}
+        <em> · {t('site.identity.launchPadHint')}</em>
+      </legend>
+      <div className="sf-pad-row">
+        <label className="sf-pad-axis">
+          <span>{t('site.identity.lat')}</span>
+          <input
+            className="sf-input"
+            type="number"
+            step="0.1"
+            min={-LAT_LIMIT}
+            max={LAT_LIMIT}
+            value={Number.isFinite(pad.lat) ? pad.lat : ''}
+            onChange={(e) => set({ lat: e.target.valueAsNumber })}
+          />
+        </label>
+        <label className="sf-pad-axis">
+          <span>{t('site.identity.lon')}</span>
+          <input
+            className="sf-input"
+            type="number"
+            step="0.1"
+            min={-180}
+            max={180}
+            value={Number.isFinite(pad.lon) ? pad.lon : ''}
+            onChange={(e) => set({ lon: e.target.valueAsNumber })}
+          />
+        </label>
+        <button type="button" className="sf-pad-locate" onClick={locate} disabled={locating}>
+          {locating ? t('site.identity.locating') : t('site.identity.locate')}
+        </button>
+      </div>
+      {locateFailed && <span className="sf-hint">{t('site.identity.locateFailed')}</span>}
+      {error && (
+        <span className="sf-error" role="alert">
+          {error}
+        </span>
+      )}
+    </fieldset>
   );
 }
 

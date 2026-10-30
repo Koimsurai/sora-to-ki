@@ -12,6 +12,7 @@ const base: Draft = {
   disabled_pages: [],
   theme: 'saturn',
   page_descriptions: {},
+  launch_pad: { lat: 23.7, lon: 121 },
 };
 
 describe('siteProblems', () => {
@@ -27,5 +28,13 @@ describe('siteProblems', () => {
     expect(siteProblems({ ...base, github: 'https://github.com/Koimsurai/' })).toEqual([]);
     expect(siteProblems({ ...base, github: '@Koimsurai' })).toEqual([]);
     expect(siteProblems({ ...base, github: 'a/b' })).toEqual([{ field: 'github', key: 'github' }]);
+  });
+
+  it('發射台：緯度 ±70、經度 ±180，欄位清空（NaN）也擋', () => {
+    const pad = (lat: number, lon: number) => siteProblems({ ...base, launch_pad: { lat, lon } });
+    expect(pad(39.7, -105)).toEqual([]);
+    expect(pad(71, 0)[0]).toMatchObject({ field: 'launch_pad', key: 'launchPad', max: 70 });
+    expect(pad(0, 181)).toHaveLength(1);
+    expect(pad(Number.NaN, 0)).toHaveLength(1);
   });
 });
