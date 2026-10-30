@@ -60,7 +60,7 @@ let fadeTimer = 0;
 
 /**
  * 換主題：記下來、換 <html data-theme>，通知畫布、3D 與轉場。
- * pageHidden：換色這一刻這一頁收著、淡完之前不會回來（layout/ThemeSwitchDot 首頁以外的第一次出場）——
+ * pageHidden：換色這一刻這一頁收在點裡（layout/ThemeSwitchDot 首頁以外的換主題）——
  * 頁面裡的東西不跟著淡（index.css 的 html.theme-switching-offstage），底色與導覽列照常淡
  */
 export function setTheme(next: Theme, { pageHidden = false }: { pageHidden?: boolean } = {}) {

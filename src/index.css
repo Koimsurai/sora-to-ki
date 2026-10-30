@@ -715,9 +715,9 @@ html.theme-switching * {
   transition-timing-function: var(--easing-standard);
 }
 
-/* 首頁以外第一次換主題：換色那一刻這一頁收在點裡，要一秒多才回來（layout/ThemeSwitchDot）。
-   頁面裡的東西淡了也看不到，卻要每一幀重算整頁的樣式（手記列表約 380 個元素，一幀 50ms，
-   主星出場時一直掉幀）。只有頁面裡的不淡，底色與導覽列照常 */
+/* 首頁以外換主題：換色那一刻這一頁收在點裡（layout/ThemeSwitchDot），回來時是整頁淡入或從點撐開。
+   頁面裡的東西淡不淡看不出來，淡的話卻要每一幀重算整頁的樣式（手記列表約 380 個元素，一幀 50ms，
+   主星出場與頁面回來時一直掉幀）。只有頁面裡的不淡，底色與導覽列照常 */
 html.theme-switching.theme-switching-offstage .main-content-container > main,
 html.theme-switching.theme-switching-offstage .main-content-container > main * {
   transition-property: none;

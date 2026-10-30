@@ -193,7 +193,7 @@ export default function ThemeSwitchDot() {
     };
     /**
      * 收完了：照「現在的目標」換色（點換色、參宿四先閃一下），閃光退完才讓新的主星長。
-     * pageHidden：這一頁收著、主星演完才回來，頁面裡的東西不必跟著淡（lib/theme 的 setTheme）
+     * pageHidden：換色時這一頁收在點裡，頁面裡的東西不必跟著淡（lib/theme 的 setTheme）
      */
     const recolor = (c: Pt, grow: (theme: Theme) => void, pageHidden = false) => {
       const theme = target ?? currentTheme();
@@ -311,7 +311,7 @@ export default function ThemeSwitchDot() {
           if (k > 0.6) setDot((d) => d ?? { ...c, on: true, nova: false });
         },
         // 2. 收完了：點換色，新的主星從點長出來；3. 長完停一下，收回成點，光跟著淡掉。
-        // 這一次瀏覽已經看過出場了：換完色直接接回去（那時這一頁很快就回來，裡面照常淡）
+        // 這一次瀏覽已經看過出場了：換完色直接接回去
         () =>
           recolor(
             c,
@@ -334,8 +334,9 @@ export default function ThemeSwitchDot() {
                 ),
               );
             },
-            // 第一次出場：主星長完、停一下、收回之後這一頁才回來，比淡色的 0.7 秒久得多
-            !showcasedBefore(),
+            // 換色這一刻這一頁收在點裡：第一次出場要等主星演完才回來；看過出場的，回來時是整頁從透明淡回來，
+            // 字的顏色淡不淡混在那段淡入裡看不出來（並排錄影比過），淡的話反而要每一幀重算整頁、回來得頓又慢
+            true,
           ),
       );
     };
