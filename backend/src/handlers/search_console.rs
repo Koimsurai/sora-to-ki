@@ -63,16 +63,18 @@ async fn token(state: &AppState, file: &str) -> Result<String, String> {
     {
         return Ok(t.clone());
     }
-    let raw = tokio::fs::read_to_string(file).await.map_err(|e| format!("讀不到服務帳號金鑰檔：{e}"))?;
+    let raw = tokio::fs::read_to_string(file)
+        .await
+        .map_err(|e| format!("Can't read the service account key file: {e}"))?;
     let sa: ServiceAccount =
-        serde_json::from_str(&raw).map_err(|e| format!("服務帳號金鑰檔格式不對：{e}"))?;
+        serde_json::from_str(&raw).map_err(|e| format!("The service account key file is malformed: {e}"))?;
     let now = crate::util::now_secs();
     let claims =
         Claims { iss: &sa.client_email, scope: SCOPE, aud: &sa.token_uri, iat: now, exp: now + 3600 };
     let key = jsonwebtoken::EncodingKey::from_rsa_pem(sa.private_key.as_bytes())
-        .map_err(|e| format!("服務帳號的私鑰讀不懂：{e}"))?;
+        .map_err(|e| format!("Can't read the service account's private key: {e}"))?;
     let jwt = jsonwebtoken::encode(&jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256), &claims, &key)
-        .map_err(|e| format!("簽 JWT 失敗：{e}"))?;
+        .map_err(|e| format!("Couldn't sign the JWT: {e}"))?;
     let resp = state
         .http
         .post(&sa.token_uri)
@@ -80,12 +82,12 @@ async fn token(state: &AppState, file: &str) -> Result<String, String> {
         .form(&[("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"), ("assertion", jwt.as_str())])
         .send()
         .await
-        .map_err(|e| format!("連不到 Google：{e}"))?;
+        .map_err(|e| format!("Can't reach Google: {e}"))?;
     let status = resp.status();
-    let body: Value = resp.json().await.map_err(|e| format!("Google 的回應讀不懂：{e}"))?;
+    let body: Value = resp.json().await.map_err(|e| format!("Can't read Google's response: {e}"))?;
     let Some(access) = body["access_token"].as_str() else {
         return Err(format!(
-            "Google 不給權杖（{status}）：{}",
+            "Google didn't issue a token ({status}): {}",
             body["error_description"].as_str().unwrap_or("")
         ));
     };
@@ -143,9 +145,9 @@ pub async fn top_queries(state: &AppState, start: &str, end: &str, limit: u32) -
         let token = token(state, &file).await?;
         // 網域資源是 `sc-domain:…`，要當成一段路徑編碼（冒號、斜線都得逸出）
         let mut url = reqwest::Url::parse("https://www.googleapis.com/webmasters/v3/sites/")
-            .map_err(|e| format!("Search Console 的網址組不起來：{e}"))?;
+            .map_err(|e| format!("Couldn't build the Search Console URL: {e}"))?;
         url.path_segments_mut()
-            .map_err(|()| "Search Console 的網址組不起來".to_string())?
+            .map_err(|()| "Couldn't build the Search Console URL".to_string())?
             .pop_if_empty()
             .push(&site())
             .push("searchAnalytics")
@@ -158,12 +160,13 @@ pub async fn top_queries(state: &AppState, start: &str, end: &str, limit: u32) -
             .json(&json!({ "startDate": start, "endDate": end, "dimensions": ["query"], "rowLimit": limit }))
             .send()
             .await
-            .map_err(|e| format!("連不到 Search Console：{e}"))?;
+            .map_err(|e| format!("Can't reach Search Console: {e}"))?;
         let status = resp.status();
-        let body: Value = resp.json().await.map_err(|e| format!("Search Console 的回應讀不懂：{e}"))?;
+        let body: Value =
+            resp.json().await.map_err(|e| format!("Can't read Search Console's response: {e}"))?;
         if !status.is_success() {
             return Err(format!(
-                "Search Console 回了 {status}：{}",
+                "Search Console returned {status}: {}",
                 body["error"]["message"].as_str().unwrap_or("")
             ));
         }

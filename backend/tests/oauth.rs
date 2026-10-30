@@ -227,7 +227,7 @@ async fn missing_or_falsy_code_is_rejected_before_touching_the_provider() {
     }
 }
 
-/// 上游各種壞法都要收斂成 500 `{"error":"登入失敗"}`，不能把上游的錯誤原文吐給前端。
+/// 上游各種壞法都要收斂成 500 `{"error":"Sign-in failed","code":"sign_in_failed"}`，不能把上游的錯誤原文吐給前端。
 #[tokio::test]
 async fn upstream_failures_all_collapse_to_a_generic_500() {
     // (情境, token 端點的回應)
@@ -251,7 +251,7 @@ async fn upstream_failures_all_collapse_to_a_generic_500() {
         let (status, body) =
             request(&app, "POST", "/api/auth/google/callback", Some(json!({ "code": "x" })), None).await;
         assert_eq!(status, 500, "{label} 應該回 500：{body}");
-        assert_eq!(body["error"], "登入失敗", "{label} 不該把上游原文吐出來");
+        assert_eq!(body["error"], "Sign-in failed", "{label} 不該把上游原文吐出來");
     }
 }
 

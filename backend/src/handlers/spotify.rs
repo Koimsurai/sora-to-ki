@@ -577,7 +577,7 @@ pub async fn spotify_callback(
         return (
             StatusCode::BAD_REQUEST,
             [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
-            format!("授權失敗: {e}"),
+            format!("Authorization failed: {e}"),
         )
             .into_response();
     }
@@ -585,7 +585,7 @@ pub async fn spotify_callback(
         return (
             StatusCode::BAD_REQUEST,
             [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
-            "缺少授權碼".to_string(),
+            "Missing authorization code".to_string(),
         )
             .into_response();
     };
@@ -612,7 +612,7 @@ pub async fn spotify_callback(
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
-                    "token 交換失敗".to_string(),
+                    "Token exchange failed".to_string(),
                 )
                     .into_response();
             }
@@ -621,17 +621,17 @@ pub async fn spotify_callback(
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
-                "token 交換失敗".to_string(),
+                "Token exchange failed".to_string(),
             )
                 .into_response();
         }
     };
-    let refresh = data.get("refresh_token").and_then(|v| v.as_str()).unwrap_or("(無)");
+    let refresh = data.get("refresh_token").and_then(|v| v.as_str()).unwrap_or("(none)");
     let html = format!(
-        "<html><head><title>Spotify 授權成功</title></head><body style=\"font-family:sans-serif;max-width:640px;margin:40px auto\">\
-         <h2>✅ Spotify 授權成功</h2><p>把下面的 refresh token 存進 <code>server/.env</code> 的 <code>SPOTIFY_REFRESH_TOKEN</code>：</p>\
+        "<html><head><title>Spotify authorized</title></head><body style=\"font-family:sans-serif;max-width:640px;margin:40px auto\">\
+         <h2>✅ Spotify authorized</h2><p>Put this refresh token in <code>SPOTIFY_REFRESH_TOKEN</code> in <code>.env.backend</code>:</p>\
          <pre style=\"background:#f4f4f4;padding:12px;border-radius:8px;word-break:break-all;white-space:pre-wrap\">{refresh}</pre>\
-         <p>此頁僅 setup 用，token 不會被儲存。</p></body></html>"
+         <p>This page is only for setup; the token isn't stored.</p></body></html>"
     );
     ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html).into_response()
 }
@@ -979,7 +979,7 @@ mod tests {
         let (status, ct, body) = html_of(spotify_callback(AxState(st), q(&[("code", "abc")])).await).await;
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
         assert!(ct.starts_with("text/html"));
-        assert!(body.contains("token 交換失敗"));
+        assert!(body.contains("Token exchange failed"));
     }
 
     #[tokio::test]

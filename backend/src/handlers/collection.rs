@@ -186,7 +186,7 @@ pub async fn admin_set_hidden(
 ) -> Response {
     let key = b.key.trim();
     if !KINDS.contains(&b.kind.as_str()) || key.is_empty() || key.chars().count() > 200 {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "種類或 key 不對" }))).into_response();
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Invalid kind or key" }))).into_response();
     }
     let title: String = b.title.as_deref().unwrap_or_default().trim().chars().take(200).collect();
     let r = if b.hidden {

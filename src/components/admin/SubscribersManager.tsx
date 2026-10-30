@@ -14,7 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useAdminT } from '@/i18n/admin-i18n';
+import { at, useAdminT } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { lookupOr } from '../../lib/tableLookup';
 import AdminLoading from './AdminLoading';
@@ -57,8 +58,8 @@ export default function SubscribersManager() {
         body: JSON.stringify({ email: sub.email }),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? t('subscribers.unsubscribeFailed'));
+        const data: unknown = await res.json().catch(() => ({}));
+        throw new Error(apiErrorText(data, at, 'errors', t('subscribers.unsubscribeFailed')));
       }
       toast.success(t('subscribers.unsubscribed', { email: sub.email }));
       void invalidateSubs();

@@ -99,7 +99,7 @@ async fn 帶了_captcha_就要答對() {
     wrong["captchaAnswer"] = json!(3);
     let (status, resp) = post_with(&app, "/api/posts/1/comments", wrong, &[]).await;
     assert_eq!(status, 400);
-    assert_eq!(resp["error"], "驗證碼錯誤");
+    assert_eq!(resp["code"], "captcha_wrong");
 
     let mut right = base.clone();
     right["captcha"] = json!(7);
@@ -205,7 +205,7 @@ async fn 黑名單_ip_直接擋掉() {
     )
     .await;
     assert_eq!(status, 403);
-    assert_eq!(resp["error"], "您的留言權限已被限制");
+    assert_eq!(resp["code"], "comment_blocked");
 
     let n: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM comments").fetch_one(&pool).await.unwrap();
     assert_eq!(n, 0, "被封鎖的人不該還是寫得進去");
@@ -307,7 +307,7 @@ async fn 關鍵字_reject_直接退回_spam_則收下但標記() {
     let (status, resp) =
         post_with(&app, "/api/posts/1/comments", json!({ "author": "甲", "content": "來玩賭博" }), &[]).await;
     assert_eq!(status, 400);
-    assert_eq!(resp["error"], "留言內容包含不允許的詞彙");
+    assert_eq!(resp["code"], "comment_rejected");
 
     // spam 是「收下但不顯示」——直接退回的話洗版的人會知道自己被擋了、換個詞再來
     let (status, resp) =

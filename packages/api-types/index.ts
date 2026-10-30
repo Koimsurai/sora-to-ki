@@ -619,11 +619,15 @@ export type FilmsResponse = {
 
 /**  一項自動檢查的結果 */
 export type FriendCheck = {
-	/**  reachable | https | feed | recent | backlink */
+	/**  reachable | https | feed | recent | backlink（後台照它換成站長的語言，`label` 是英文的備用） */
 	key: string,
 	label: string,
 	ok: boolean,
+	/**  英文說明；`code` 有值時後台換成站長的語言（`errors.friendCheck.<code>`），`params` 填進去 */
 	detail: string,
+	/**  舊的檢查結果（存在資料庫裡的）沒有這兩欄 */
+	code?: string,
+	params?: { [key in string]: string },
 };
 
 export type FriendCounts = {

@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { friendsQueryOptions } from '@/data/friendsData';
 import { useSiteConfig } from '@/data/siteConfig';
 import { usePageTransition } from '@/hooks/usePageTransition';
+import { apiErrorText } from '@/lib/apiError';
 import { currentFold } from '@/lib/viewportFold';
 import { after, isArriving } from '@/store/pageTransition';
 import {
@@ -670,8 +671,8 @@ export default function Friends() {
           }),
         });
         if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
-          setFailed(body.error ?? String(res.status));
+          // 後端擋下來的理由（網址不對、今天送太多份…）照讀者的語言顯示
+          setFailed(apiErrorText(await res.json().catch(() => ({})), t, 'apiError', String(res.status)));
           return;
         }
         sentRef.current = true;

@@ -23,6 +23,25 @@
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago"
   },
+  "apiError": {
+    "url_empty": "The URL is empty",
+    "url_too_long": "The URL is too long (at most {{max}} characters)",
+    "url_invalid": "The URL must be a public site starting with http(s)",
+    "name_empty": "The site name is empty",
+    "name_too_long": "The site name can be at most {{max}} characters",
+    "description_too_long": "The description can be at most {{max}} characters",
+    "email_too_long": "The email can be at most {{max}} characters",
+    "email_invalid": "That email doesn't look right",
+    "message_too_long": "The message can be at most {{max}} characters",
+    "feed_url_invalid": "The RSS URL isn't right",
+    "own_site": "That's this site's own URL",
+    "network_blocked": "Applications can't be sent from this network right now",
+    "too_many_today": "You've sent several today. Try again tomorrow",
+    "already_listed": "This site is already listed, or still under review",
+    "captcha_wrong": "Wrong answer to the check question",
+    "comment_blocked": "You can't comment right now",
+    "comment_rejected": "The comment contains words that aren't allowed"
+  },
   "nav": {
     "home": "Home",
     "notes": "Notes",

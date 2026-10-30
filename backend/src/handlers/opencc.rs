@@ -19,7 +19,7 @@ use ferrous_opencc::{OpenCC, config::BuiltinConfig};
 use serde_json::json;
 use tokio::sync::OnceCell;
 
-use crate::{handlers::excerpt_links, state::AppState};
+use crate::{error::Problem, handlers::excerpt_links, state::AppState};
 
 /// 進程級單例：`Tw2s` 轉換器建構（載入內建字典 → FST）較重，一次性建好共用。
 /// 首次使用才建（admin-only、罕用，不拖慢啟動），且在 blocking 池建避免卡 async worker。
@@ -29,8 +29,8 @@ async fn tw2s() -> anyhow::Result<Arc<OpenCC>> {
     TW2S.get_or_try_init(|| async {
         tokio::task::spawn_blocking(|| OpenCC::from_config(BuiltinConfig::Tw2s).map(Arc::new))
             .await
-            .map_err(|e| anyhow::anyhow!("opencc 建構 join 失敗: {e}"))?
-            .map_err(|e| anyhow::anyhow!("opencc 載入 tw2s 失敗: {e}"))
+            .map_err(|e| anyhow::anyhow!("opencc: join failed: {e}"))?
+            .map_err(|e| anyhow::anyhow!("opencc: couldn't load tw2s: {e}"))
     })
     .await
     .cloned()
@@ -133,26 +133,31 @@ pub async fn generate_zh_cn(
     .await;
     let (source_language, title, content, excerpt, links) = match row {
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
-        Ok(None) => return err(StatusCode::NOT_FOUND, "文章不存在"),
+        Ok(None) => return Problem::new("post_missing", "Post not found").respond(StatusCode::NOT_FOUND),
         Ok(Some(r)) => r,
     };
 
     // 原稿就是簡中的話沒什麼好轉
     if source_language.as_deref() == Some("zh-CN") {
-        return err(StatusCode::BAD_REQUEST, "原稿已經是簡體中文");
+        return Problem::new("already_simplified", "The original is already Simplified Chinese")
+            .respond(StatusCode::BAD_REQUEST);
     }
     // !title || !content（含空字串）→ 400
     let title = title.filter(|s| !s.is_empty());
     let content = content.filter(|s| !s.is_empty());
     let (Some(title), Some(content)) = (title, content) else {
-        return err(StatusCode::BAD_REQUEST, "繁中缺少 title 或 content（原稿不是繁中時先補繁中譯文）");
+        return Problem::new(
+            "zh_tw_missing",
+            "Traditional Chinese title or content is missing (add the zh-TW translation first)",
+        )
+        .respond(StatusCode::BAD_REQUEST);
     };
     // excerpt ? t2s(excerpt) : null（空字串也視為無）
     let excerpt = excerpt.filter(|s| !s.is_empty());
 
     let cc = match tw2s().await {
         Ok(c) => c,
-        Err(e) => return err(StatusCode::INTERNAL_SERVER_ERROR, &format!("OpenCC 轉换失敗: {e}")),
+        Err(e) => return err(StatusCode::INTERNAL_SERVER_ERROR, &format!("OpenCC conversion failed: {e}")),
     };
     // 轉換為 CPU 工作（content 可達數十 KB）→ 丟 blocking 池，不卡 async worker
     let converted = tokio::task::spawn_blocking(move || {
@@ -172,7 +177,7 @@ pub async fn generate_zh_cn(
     .await;
     let (title_zh_cn, content_zh_cn, excerpt_zh_cn, links) = match converted {
         Ok(v) => v,
-        Err(e) => return err(StatusCode::INTERNAL_SERVER_ERROR, &format!("OpenCC 轉换失敗: {e}")),
+        Err(e) => return err(StatusCode::INTERNAL_SERVER_ERROR, &format!("OpenCC conversion failed: {e}")),
     };
 
     let upd = sqlx::query(

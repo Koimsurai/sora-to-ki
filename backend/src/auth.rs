@@ -89,21 +89,21 @@ impl axum::extract::FromRequestParts<AppState> for OwnerAuth {
 }
 
 /// 驗 Bearer JWT（HS256）→ 依 token 類型查角色。owner_only 決定角色門檻與不足時的訊息。
-/// 錯誤訊息與狀態碼逐字對齊 Express `createRequireAdmin`/`createRequireOwner`。
+/// 狀態碼對齊 Express `createRequireAdmin`/`createRequireOwner`；訊息是英文加 code（見 error::Problem）。
 async fn authorize(headers: &HeaderMap, state: &AppState, owner_only: bool) -> Result<AdminUser, AppError> {
     // 1) 取 Bearer token
     let token = headers
         .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .and_then(|h| h.strip_prefix("Bearer "))
-        .ok_or_else(|| AppError::unauthorized("未提供有效的授權令牌"))?;
+        .ok_or_else(|| AppError::unauthorized("token_missing", "No valid token provided"))?;
 
     // 2) 驗章：leeway=0、僅 HS256、強制 exp（兩個簽發點都帶 exp——login 7 天、OAuth 30 天；
     //    不帶 exp 的 token 一律拒絕，避免永不過期。刻意偏離 node jwt.verify 的「有才驗」）。
     let mut validation = Validation::new(Algorithm::HS256);
     validation.leeway = 0;
     let claims = decode::<Claims>(token, &DecodingKey::from_secret(state.jwt_secret.as_bytes()), &validation)
-        .map_err(|_| AppError::unauthorized("無效的授權令牌"))?
+        .map_err(|_| AppError::unauthorized("token_invalid", "Invalid token"))?
         .claims;
 
     // 3) OAuth token（有 userId 且非 0）→ 查 oauth_users → linked_to → 主帳號角色
@@ -114,24 +114,25 @@ async fn authorize(headers: &HeaderMap, state: &AppState, owner_only: bool) -> R
         .bind(uid)
         .fetch_optional(&state.pool)
         .await
-        .map_err(|_| AppError::unauthorized("使用者不存在"))?;
-        let (id, _role, linked_to) = user.ok_or_else(|| AppError::unauthorized("使用者不存在"))?;
+        .map_err(|_| AppError::unauthorized("user_missing", "User not found"))?;
+        let (id, _role, linked_to) =
+            user.ok_or_else(|| AppError::unauthorized("user_missing", "User not found"))?;
 
         let target = linked_to.unwrap_or(id);
         let primary = sqlx::query_as::<_, (Option<String>,)>("SELECT role FROM oauth_users WHERE id = ?")
             .bind(target)
             .fetch_optional(&state.pool)
             .await
-            .map_err(|_| AppError::unauthorized("使用者不存在"))?;
-        let (prole,) = primary.ok_or_else(|| AppError::unauthorized("使用者不存在"))?;
+            .map_err(|_| AppError::unauthorized("user_missing", "User not found"))?;
+        let (prole,) = primary.ok_or_else(|| AppError::unauthorized("user_missing", "User not found"))?;
         let role = prole.unwrap_or_default();
         let allowed = if owner_only { role == "OWNER" } else { role == "ADMIN" || role == "OWNER" };
         if !allowed {
-            return Err(AppError::forbidden(if owner_only {
-                "權限不足，需要擁有者權限"
+            return Err(if owner_only {
+                AppError::forbidden("owner_only", "Forbidden: owner only")
             } else {
-                "權限不足，需要管理員權限"
-            }));
+                AppError::forbidden("admin_only", "Forbidden: admin only")
+            });
         }
         Ok(AdminUser { role, db_user_id: Some(target) })
     }
@@ -141,6 +142,6 @@ async fn authorize(headers: &HeaderMap, state: &AppState, owner_only: bool) -> R
     }
     // 5) 兩者皆無 → 403
     else {
-        Err(AppError::forbidden("權限不足"))
+        Err(AppError::forbidden("forbidden", "Forbidden"))
     }
 }

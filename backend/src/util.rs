@@ -105,7 +105,7 @@ pub fn js_num_value(f: f64) -> Value {
 pub fn ser_js_number<S: serde::Serializer>(v: &f64, s: S) -> Result<S::Ok, S::Error> {
     use serde::Serialize;
     if !v.is_finite() {
-        return Err(serde::ser::Error::custom(format!("數值不是有限值：{v}")));
+        return Err(serde::ser::Error::custom(format!("number is not finite: {v}")));
     }
     js_num_value(*v).serialize(s)
 }

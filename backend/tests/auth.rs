@@ -52,7 +52,7 @@ async fn login_succeeds_and_the_token_actually_authenticates() {
     )
     .await;
     assert_eq!(status, 200, "正確帳密應該登入成功：{body}");
-    assert_eq!(body["message"], "登入成功");
+    assert_eq!(body["message"], "Signed in");
     assert_eq!(body["user"]["username"], "admin");
     assert_eq!(body["user"]["role"], "OWNER");
 
@@ -103,7 +103,7 @@ async fn login_rejects_wrong_password() {
     )
     .await;
     assert_eq!(status, 401);
-    assert_eq!(body["message"], "用戶名或密碼錯誤");
+    assert_eq!(body["message"], "Wrong username or password");
     assert!(body.get("token").is_none(), "被拒絕時不該回 token");
 }
 
@@ -203,7 +203,7 @@ async fn login_requires_both_fields_and_treats_empty_string_as_missing() {
     ] {
         let (status, resp) = request(&app, "POST", "/api/auth/login", Some(body.clone()), None).await;
         assert_eq!(status, 400, "{body} 應該回 400，實際 {status}：{resp}");
-        assert_eq!(resp["message"], "請提供用戶名和密碼");
+        assert_eq!(resp["message"], "Username and password are required");
     }
 }
 
@@ -499,7 +499,7 @@ async fn reset_admin_creates_the_user_when_absent() {
     )
     .await;
     assert_eq!(status, 200, "{body}");
-    assert!(body["message"].as_str().unwrap().contains("已創建"), "訊息應該說是創建而不是重置：{body}");
+    assert!(body["message"].as_str().unwrap().contains("created"), "訊息應該說是創建而不是重置：{body}");
 
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE username = 'fresh'")
         .fetch_one(&pool)

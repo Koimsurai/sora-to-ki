@@ -12,9 +12,9 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use sqlx::{FromRow, SqlitePool};
 
+use crate::error::Problem;
 use crate::handlers::gallery::{GalleryPhoto, manifest_error, read_manifest};
 use crate::state::AppState;
 
@@ -155,18 +155,25 @@ pub struct PhotoMetaBody {
 }
 
 /// 標籤：去頭尾空白、拿掉空的與重複的，數量與長度有上限
-fn clean_tags(tags: &[String]) -> Result<Vec<String>, String> {
+fn clean_tags(tags: &[String]) -> Result<Vec<String>, Problem> {
     let mut out: Vec<String> = Vec::new();
     for t in tags.iter().map(|t| t.trim()).filter(|t| !t.is_empty()) {
         if t.chars().count() > TAG_MAX {
-            return Err(format!("標籤最多 {TAG_MAX} 個字：{t}"));
+            return Err(Problem::new(
+                "photo_tag_too_long",
+                format!("A tag can be at most {TAG_MAX} characters: {t}"),
+            )
+            .param("max", TAG_MAX)
+            .param("tag", t));
         }
         if !out.iter().any(|o| o == t) {
             out.push(t.to_string());
         }
     }
     if out.len() > TAGS_MAX {
-        return Err(format!("標籤最多 {TAGS_MAX} 個"));
+        return Err(
+            Problem::new("photo_too_many_tags", format!("At most {TAGS_MAX} tags")).param("max", TAGS_MAX)
+        );
     }
     Ok(out)
 }
@@ -195,11 +202,14 @@ impl TextEdit {
     }
 }
 
-fn text_field(v: Option<&str>, max: usize, name: &str) -> Result<TextEdit, String> {
+/// `code` 是超過長度時的錯誤代號（標題、介紹各一個），`name` 是英文說明裡的欄位名
+fn text_field(v: Option<&str>, max: usize, code: &'static str, name: &str) -> Result<TextEdit, Problem> {
     match v.map(str::trim) {
         None => Ok(TextEdit::Keep),
         Some("") => Ok(TextEdit::Reset),
-        Some(s) if s.chars().count() > max => Err(format!("{name}最多 {max} 個字")),
+        Some(s) if s.chars().count() > max => {
+            Err(Problem::new(code, format!("{name} can be at most {max} characters")).param("max", max))
+        }
         Some(s) => Ok(TextEdit::Set(s.to_string())),
     }
 }
@@ -219,22 +229,23 @@ pub async fn admin_update_photo(
     axum::extract::Path(id): axum::extract::Path<String>,
     crate::error::JsonBody(b): crate::error::JsonBody<PhotoMetaBody>,
 ) -> Response {
-    let bad = |e: String| (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response();
+    let bad = |e: Problem| e.respond(StatusCode::BAD_REQUEST);
     let Some(manifest) = read_manifest().await else {
         return manifest_error();
     };
     // 只收 manifest 裡真的有的照片：不然任何 id 都能在表裡留一列
     let Some(photo) = manifest.photos.into_iter().find(|p| p.id == id) else {
-        return (StatusCode::NOT_FOUND, Json(json!({ "error": "沒有這張照片" }))).into_response();
+        return Problem::new("photo_missing", "No such photo").respond(StatusCode::NOT_FOUND);
     };
-    let title = match text_field(b.title.as_deref(), TITLE_MAX, "標題") {
+    let title = match text_field(b.title.as_deref(), TITLE_MAX, "photo_title_too_long", "Title") {
         Ok(v) => v,
         Err(e) => return bad(e),
     };
-    let description = match text_field(b.description.as_deref(), DESC_MAX, "介紹") {
-        Ok(v) => v,
-        Err(e) => return bad(e),
-    };
+    let description =
+        match text_field(b.description.as_deref(), DESC_MAX, "photo_description_too_long", "Description") {
+            Ok(v) => v,
+            Err(e) => return bad(e),
+        };
     let tags = match b.tags.as_deref().map(clean_tags).transpose() {
         Ok(v) => v.map(|t| serde_json::to_string(&t).unwrap_or_default()),
         Err(e) => return bad(e),
@@ -315,9 +326,10 @@ mod tests {
 
     #[test]
     fn 文字欄位_沒帶不動_空的改回原本的() {
-        assert_eq!(text_field(None, 10, "x"), Ok(TextEdit::Keep));
-        assert_eq!(text_field(Some("  "), 10, "x"), Ok(TextEdit::Reset));
-        assert_eq!(text_field(Some(" 海邊 "), 10, "x"), Ok(TextEdit::Set("海邊".into())));
-        assert!(text_field(Some(&"字".repeat(11)), 10, "標題").unwrap_err().contains("標題"));
+        assert_eq!(text_field(None, 10, "x", "x"), Ok(TextEdit::Keep));
+        assert_eq!(text_field(Some("  "), 10, "x", "x"), Ok(TextEdit::Reset));
+        assert_eq!(text_field(Some(" 海邊 "), 10, "x", "x"), Ok(TextEdit::Set("海邊".into())));
+        let e = text_field(Some(&"字".repeat(11)), 10, "photo_title_too_long", "Title").unwrap_err();
+        assert_eq!((e.code, e.params["max"].as_u64()), ("photo_title_too_long", Some(10)));
     }
 }

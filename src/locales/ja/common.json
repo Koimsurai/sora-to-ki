@@ -23,6 +23,25 @@
     "minutesAgo": "{{count}} 分前",
     "hoursAgo": "{{count}} 時間前"
   },
+  "apiError": {
+    "url_empty": "URL が空です",
+    "url_too_long": "URL が長すぎます（{{max}} 文字まで）",
+    "url_invalid": "URL は http(s) で始まる、つながる公開サイトにしてください",
+    "name_empty": "サイト名が空です",
+    "name_too_long": "サイト名は {{max}} 文字までです",
+    "description_too_long": "紹介は {{max}} 文字までです",
+    "email_too_long": "メールアドレスは {{max}} 文字までです",
+    "email_invalid": "メールアドレスが正しくないようです",
+    "message_too_long": "メッセージは {{max}} 文字までです",
+    "feed_url_invalid": "RSS の URL が正しくありません",
+    "own_site": "それはこのサイト自身の URL です",
+    "network_blocked": "このネットワークからは今は申請を送れません",
+    "too_many_today": "今日はもう何件も送っています。明日また試してください",
+    "already_listed": "このサイトはもう一覧にあるか、審査中です",
+    "captcha_wrong": "確認の答えが違います",
+    "comment_blocked": "コメントが制限されています",
+    "comment_rejected": "コメントに使えない言葉が含まれています"
+  },
   "nav": {
     "home": "ホーム",
     "notes": "ノート",

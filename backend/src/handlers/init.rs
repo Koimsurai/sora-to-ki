@@ -17,12 +17,11 @@ use axum::{
 };
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use sqlx::SqlitePool;
 
 use crate::{
     auth::{bearer_token, verify_jwt},
-    error::{AppError, JsonBody},
+    error::{AppError, JsonBody, Problem},
     state::AppState,
 };
 
@@ -119,17 +118,17 @@ async fn verify(pool: &SqlitePool, code: &str) -> Result<bool, AppError> {
     Ok(false)
 }
 
-/// 精靈認得的錯誤：`code` 給前端對到介面字串，`error` 是給看 API 的人的說明
-fn refuse(status: StatusCode, code: &str, error: &str) -> Response {
-    (status, Json(json!({ "code": code, "error": error }))).into_response()
+/// 精靈認得的錯誤：`code` 給前端對到介面字串，`error` 是給看 API 的人的說明（error::Problem）
+fn refuse(status: StatusCode, code: &'static str, error: &str) -> Response {
+    Problem::new(code, error).respond(status)
 }
 
 fn already() -> Response {
-    refuse(StatusCode::CONFLICT, "already_claimed", "這個站已經有站長了")
+    refuse(StatusCode::CONFLICT, "already_claimed", "This site already has an owner")
 }
 
 fn bad_code() -> Response {
-    refuse(StatusCode::FORBIDDEN, "bad_code", "設定碼不對")
+    refuse(StatusCode::FORBIDDEN, "bad_code", "Wrong setup code")
 }
 
 /// `GET /api/init/status` 的回應
@@ -190,7 +189,7 @@ pub async fn claim(
         .and_then(|c| c.get("userId").and_then(serde_json::Value::as_i64))
         .filter(|&u| u != 0);
     let Some(user_id) = user_id else {
-        return Ok(refuse(StatusCode::UNAUTHORIZED, "not_signed_in", "要先用 GitHub 或 Google 登入"));
+        return Ok(refuse(StatusCode::UNAUTHORIZED, "not_signed_in", "Sign in with GitHub or Google first"));
     };
     if !needed(&state.pool).await? {
         return Ok(already());
@@ -205,7 +204,11 @@ pub async fn claim(
             .fetch_optional(&state.pool)
             .await?;
     let Some((id, linked_to)) = primary else {
-        return Ok(refuse(StatusCode::UNAUTHORIZED, "not_signed_in", "找不到這個帳號，請重新登入"));
+        return Ok(refuse(
+            StatusCode::UNAUTHORIZED,
+            "not_signed_in",
+            "Account not found, please sign in again",
+        ));
     };
     // 「還沒有站長」寫在同一句裡：兩個人同時按下去，只有一個會改到
     let done = sqlx::query(

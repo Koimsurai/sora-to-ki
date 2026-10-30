@@ -80,5 +80,33 @@
   "removeTitle": "「{{name}}」を削除しますか？",
   "removeApproved": "相互リンクページから消えます。記録を残したい場合は却下にしてください。",
   "removePending": "この申請は完全に削除されます。記録を残したい場合は却下にしてください。",
-  "keep": "残す"
+  "keep": "残す",
+  "check": {
+    "label": {
+      "reachable": "サイトにつながる",
+      "https": "HTTPS",
+      "feed": "RSS が取れる",
+      "recent": "最近三か月に更新がある",
+      "backlink": "相手のサイトからリンクが戻っている"
+    },
+    "detail": {
+      "reachable_status": "{{status}} · {{ms}} ms",
+      "fetch_bad_url": "この URL は取得できません",
+      "fetch_timeout": "タイムアウト",
+      "fetch_unreachable": "つながりません",
+      "fetch_private": "内部ネットワークを指しています",
+      "https_no": "HTTPS ではありません",
+      "https_ok": "証明書は有効、接続も正常",
+      "https_unknown": "つながらないので分かりません",
+      "feed_missing": "トップページに RSS が見つかりません",
+      "feed_empty": "取得できないか、記事がありません",
+      "feed_count": "{{count}} 件",
+      "feed_count_latest": "{{count}} 件 · 最新 {{date}}",
+      "recent_unknown": "最新の記事の日付が分かりません",
+      "backlink_home": "トップページにあります",
+      "backlink_page": "{{path}} にあります",
+      "backlink_mx": "mx-space のリンク一覧にあります",
+      "backlink_missing": "トップページにも /friends、/links にも {{host}} が見つかりません"
+    }
+  }
 }

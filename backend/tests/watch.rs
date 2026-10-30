@@ -425,7 +425,7 @@ async fn create_favorite_沒有_tmdbid_就_400() {
     for body in [json!({}), json!({ "tmdbId": null }), json!({ "tmdbId": 0 }), json!({ "tmdbId": "" })] {
         let (st, v) = request(&app, "POST", "/api/watch/favorites", Some(body.clone()), Some(&t)).await;
         assert_eq!(st, StatusCode::BAD_REQUEST, "{body}");
-        assert_eq!(v["error"], "tmdbId 必填");
+        assert_eq!(v["error"], "tmdbId is required");
     }
 }
 
@@ -521,7 +521,7 @@ async fn update_favorite_沒有可更新欄位時_400_且不動到資料() {
     for body in [json!({}), json!({ "rating": null, "quote": null }), json!({ "title": "不在白名單" })] {
         let (st, v) = request(&app, "PUT", "/api/watch/favorites/1", Some(body.clone()), Some(&t)).await;
         assert_eq!(st, StatusCode::BAD_REQUEST, "{body}");
-        assert_eq!(v["error"], "無可更新欄位");
+        assert_eq!(v["error"], "Nothing to update");
     }
     let r = sqlx::query_scalar::<_, i64>("SELECT rating FROM watch_favorites WHERE id = 1")
         .fetch_one(&pool)

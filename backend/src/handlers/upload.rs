@@ -171,11 +171,11 @@ async fn normalize_video(path: &std::path::Path) {
     let status = match tokio::time::timeout(FFMPEG_TIMEOUT, cmd.output()).await {
         Ok(Ok(o)) if o.status.success() => Ok(()),
         Ok(Ok(o)) => {
-            Err(format!("ffmpeg 失敗：{}", String::from_utf8_lossy(&o.stderr).lines().last().unwrap_or("")))
+            Err(format!("ffmpeg failed: {}", String::from_utf8_lossy(&o.stderr).lines().last().unwrap_or("")))
         }
         // ffmpeg 不在 image 裡（例如本機跑 cargo run）→ 保留原檔就好，不是錯誤
-        Ok(Err(e)) => Err(format!("ffmpeg 無法執行：{e}")),
-        Err(_) => Err("ffmpeg 超時".to_string()),
+        Ok(Err(e)) => Err(format!("Couldn't run ffmpeg: {e}")),
+        Err(_) => Err("ffmpeg timed out".to_string()),
     };
     match status {
         Ok(()) => {

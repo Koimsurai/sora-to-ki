@@ -3,6 +3,7 @@ import { useQuery, useQueryClient, type QueryKey, type UseQueryOptions } from '@
 import { toast } from 'sonner';
 
 import { at } from '@/i18n/admin-i18n';
+import { apiErrorText } from '@/lib/apiError';
 import { jsonAuthHeaders } from '@/lib/authToken';
 
 // 後台「頁面」各分頁共用的邏輯：草稿與儲存、列表的挪動。畫面零件在 pageEditorKit.tsx
@@ -48,9 +49,9 @@ export function usePageDraft<T, K extends QueryKey>(
     try {
       const body0 = prepare ? await prepare(draft).catch(() => draft) : draft;
       const res = await fetch(url, { method: 'PUT', headers: jsonAuthHeaders(), body: JSON.stringify(body0) });
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      const body: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(body.error ?? at('common.saveFailed', { status: res.status }));
+        toast.error(apiErrorText(body, at, 'errors', at('common.saveFailed', { status: res.status })));
         return;
       }
       queryClient.setQueryData<T>(options.queryKey, normalize(body));

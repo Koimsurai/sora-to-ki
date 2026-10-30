@@ -174,7 +174,7 @@ fn photos_from_values(arr: &[Value]) -> Vec<GalleryPhoto> {
         .filter_map(|p| match serde_json::from_value::<GalleryPhoto>(p.clone()) {
             Ok(photo) => Some(photo),
             Err(e) => {
-                let id = p.get("id").and_then(|v| v.as_str()).unwrap_or("<無 id>");
+                let id = p.get("id").and_then(|v| v.as_str()).unwrap_or("<no id>");
                 tracing::warn!("[gallery] 跳過形狀不符的照片 {id}：{e}");
                 None
             }

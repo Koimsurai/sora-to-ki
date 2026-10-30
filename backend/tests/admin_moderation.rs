@@ -391,7 +391,7 @@ async fn 刪不存在的分類是_404_而且沒帶身分是_401() {
     let (app, _pool) = test_app().await;
     let (status, resp) = admin_send(&app, "DELETE", "/api/admin/categories/9999", None).await;
     assert_eq!(status, 404);
-    assert_eq!(resp["error"], "分類不存在");
+    assert_eq!(resp["code"], "category_missing");
 
     let (status, _) = request(&app, "DELETE", "/api/admin/categories/1", None, None).await;
     assert_eq!(status, 401);
@@ -457,7 +457,7 @@ async fn 只收三種角色_其餘一律_400() {
         )
         .await;
         assert_eq!(status, 400, "{role} 不該被接受");
-        assert!(resp["error"].as_str().unwrap().contains("無效的角色"));
+        assert_eq!(resp["code"], "role_invalid");
     }
     // 三種合法的都要收（少收一種的話那個角色就永遠指派不出去）
     for role in ["USER", "ADMIN", "OWNER"] {
@@ -489,7 +489,7 @@ async fn 不能改自己的角色() {
     )
     .await;
     assert_eq!(status, 400);
-    assert_eq!(resp["error"], "不能修改自己的角色");
+    assert_eq!(resp["code"], "own_role");
 
     let role: String = sqlx::query_scalar("SELECT role FROM oauth_users WHERE id=?")
         .bind(me)
@@ -523,7 +523,7 @@ async fn 改不存在的使用者是_404() {
     let (status, resp) =
         admin_send(&app, "PUT", "/api/admin/users/9999/role", Some(json!({ "role": "ADMIN" }))).await;
     assert_eq!(status, 404);
-    assert_eq!(resp["error"], "用戶不存在");
+    assert_eq!(resp["code"], "user_missing");
 }
 
 #[tokio::test]

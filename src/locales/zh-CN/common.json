@@ -23,6 +23,25 @@
     "minutesAgo": "{{count}} 分钟前",
     "hoursAgo": "{{count}} 小时前"
   },
+  "apiError": {
+    "url_empty": "网址是空的",
+    "url_too_long": "网址太长（最多 {{max}} 字）",
+    "url_invalid": "网址要是 http(s) 开头、访问得到的公开网站",
+    "name_empty": "站名是空的",
+    "name_too_long": "站名最多 {{max}} 个字",
+    "description_too_long": "介绍最多 {{max}} 个字",
+    "email_too_long": "邮箱最多 {{max}} 个字",
+    "email_invalid": "邮箱看起来不对",
+    "message_too_long": "想说的话最多 {{max}} 个字",
+    "feed_url_invalid": "RSS 的网址不对",
+    "own_site": "这是这个站自己的网址",
+    "network_blocked": "这个网络目前不能提交申请",
+    "too_many_today": "今天已经提交好几份了，明天再试",
+    "already_listed": "这个网站已经在名单上，或还在审核",
+    "captcha_wrong": "验证码错误",
+    "comment_blocked": "你的留言权限已被限制",
+    "comment_rejected": "留言内容包含不允许的词汇"
+  },
   "nav": {
     "home": "首页",
     "notes": "手记",
