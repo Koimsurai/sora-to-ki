@@ -26,6 +26,26 @@ const PAGE_CLOSE_MS = 320;
 const HOLD_MS = 500;
 const PAGE_OPEN_MS = 480;
 
+/**
+ * 首頁以外，新的主星出場一次要兩三秒：讀者通常會連換幾個比較，每次都等就煩了。
+ * 這一次瀏覽（分頁）裡只完整演第一次，之後換色完點直接沿著頁面的線接回去
+ */
+const SHOWN_KEY = 'koim-theme-showcased';
+const showcasedBefore = () => {
+  try {
+    return sessionStorage.getItem(SHOWN_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+const markShowcased = () => {
+  try {
+    sessionStorage.setItem(SHOWN_KEY, '1');
+  } catch {
+    // 存不了就每次都完整演，不影響換主題本身
+  }
+};
+
 const easeIn = (t: number) => t * t * t;
 const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
@@ -68,7 +88,8 @@ const lights = (on: boolean) => {
  * （點換色；參宿四是超新星那一閃）→ 新的主星從點裡長出來（lib/starfieldGpu），點交棒淡掉、光亮起來。
  *
  * 其他頁：這一頁收進畫面中央的一點 → 點換色 → 新的主星從點長出來（show）→ 停一下 → 收回成點（hide）→
- * 點從中央直直飛回這一頁的錨點，這一頁原地淡回來（store/pageTransition 的 arriveFrom，quiet）。
+ * 點從中央沿著這一頁的線接回去，這一頁原地淡回來（store/pageTransition 的 arriveFrom，quiet）。
+ * 主星出場在同一次瀏覽裡只演第一次（showcasedBefore），之後換完色就直接接回去。
  * 點一下、按 Esc、換頁都直接收尾。
  *
  * 同一時間只演一趟：還沒換色前又選了別的，直接把目標換掉；已經換色了才選，排在這一趟之後接著演。
@@ -284,9 +305,15 @@ export default function ThemeSwitchDot() {
           clipPage(main, c, reach * (1 - easeIn(k)));
           if (k > 0.6) setDot((d) => d ?? { ...c, on: true, nova: false });
         },
-        // 2. 收完了：點換色，新的主星從點長出來；3. 長完停一下，收回成點，光跟著淡掉
+        // 2. 收完了：點換色，新的主星從點長出來；3. 長完停一下，收回成點，光跟著淡掉。
+        // 這一次瀏覽已經看過出場了：換完色直接接回去
         () =>
           recolor(c, (theme) => {
+            if (showcasedBefore()) {
+              comeBack();
+              return;
+            }
+            markShowcased();
             const since = performance.now();
             showcase('show');
             handoffWhenGrown(c, theme, since, () =>
