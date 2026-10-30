@@ -24,7 +24,7 @@ use std::f32::consts::{PI, TAU};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{AMBER, Ctx, GROUND, Gradient, Rgba, amber, ink, load_image, resize_image};
+use super::super::canvas::{Ctx, Gradient, Rgba, amber, amber_rgb, ground, ink, load_image, resize_image};
 
 /// 一圈 15 秒：三個零件各 5 秒
 const FRAMES: usize = 150;
@@ -217,7 +217,7 @@ fn tint_of(art: &Pixmap) -> Pixmap {
     let mut out = art.clone();
     for px in out.data_mut().as_chunks_mut::<4>().0 {
         let a = u16::from(px[3]);
-        for (c, v) in px[..3].iter_mut().zip(AMBER) {
+        for (c, v) in px[..3].iter_mut().zip(amber_rgb()) {
             *c = ((u16::from(v) * a + 127) / 255) as u8;
         }
     }
@@ -242,7 +242,7 @@ impl Setup {
         let art = Art { x: ART_X, y: ART_Y, w: ART_W as f32, h: art_h };
 
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
         draw_grid(&mut ctx, W as f32, H as f32);
         // 滑過零件時底稿退暗（`.su-sheet.has-on .su-art { opacity: 0.45 }`）
         ctx.set_alpha(0.45);
@@ -360,7 +360,7 @@ impl super::Scene for Setup {
         for (i, part) in PARTS.iter().enumerate() {
             let (bx, by) = self.art.at(part.balloon);
             let hit = i == on;
-            ctx.dot(bx, by, BALLOON_R, if hit { amber(1.0) } else { Rgba(GROUND, 1.0) });
+            ctx.dot(bx, by, BALLOON_R, if hit { amber(1.0) } else { Rgba(ground(), 1.0) });
             ctx.set_stroke(if hit { amber(1.0) } else { ink(0.7) });
             ctx.begin_path();
             ctx.arc(bx, by, BALLOON_R - 0.5, 0.0, TAU, false);
@@ -390,7 +390,7 @@ impl SetupBare {
         let w = (h * src.width() as f32 / src.height() as f32).round();
         let img = resize_image(&src, w as u32, h as u32);
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
         draw_grid(&mut ctx, W as f32, H as f32);
         ctx.set_alpha(0.45);
         ctx.draw_image(&img, ART_X + (ART_W as f32 - w) / 2.0, ART_Y);

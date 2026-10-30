@@ -13,6 +13,8 @@ export interface Draft {
   email: string;
   github: string;
   disabled_pages: string[];
+  /** 預設天體（lib/theme 的 THEMES）：只有站台設定頁改，初次設定的精靈不問 */
+  theme: string;
   /** 介紹文字：哪一頁 → 語系 → 字（站台設定頁的「介紹文字」那段） */
   page_descriptions: Record<string, Record<string, string>>;
 }
@@ -52,6 +54,7 @@ export function draftOf(config: SiteConfig, defaultLocale = config.default_local
     email: config.email,
     github: config.github,
     disabled_pages: config.disabled_pages,
+    theme: config.theme,
     page_descriptions: config.page_descriptions,
   };
 }

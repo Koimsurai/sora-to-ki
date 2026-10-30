@@ -6,8 +6,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { defaultLocale } from '@/lib/locales';
 import { useTranslation } from 'react-i18next';
 import { usePageTransition } from '@/hooks/usePageTransition';
+import { useSignalName, useTheme } from '@/hooks/useTheme';
 import { LocaleLink } from '@/i18n/locale-link';
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 import { pickText } from '@/lib/i18nText';
 import { useSiteConfig } from '@/data/siteConfig';
 import { sameTitle } from '@/lib/pageTitle';
@@ -29,13 +30,17 @@ import {
   turnFor,
   type StarKey,
 } from './colophonSky';
-import { PhotoToy, SaturnToy, WorkToy } from './colophonToys';
+import { BodyToy, PhotoToy, WorkToy } from './colophonToys';
 import './Colophon.css';
 
 /** 視線從望遠鏡拉到星要多久（秒） */
 const SIGHT_S = 0.7;
 /** 星座線的墨色（--paper） */
-const INK_RGB = palette().paper;
+let INK_RGB = palette().paper;
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  INK_RGB = p.paper;
+});
 /** 點畫星座時飛的速度倍率（比一般換頁快一點） */
 const CONSTELLATION_PACE = 1.5;
 /** 落地後星座線收掉的時間 */
@@ -64,6 +69,13 @@ const SKY_PAGES = [
 export default function Colophon() {
   const { t, i18n } = useTranslation();
   const site = useSiteConfig();
+  const theme = useTheme();
+  // 文案裡的訊號色與主星跟著主題換（首頁那顆主星、它的訊號色）
+  const vars = {
+    ...useSignalName(),
+    body: t(`siteNav.skyNames.${theme}`),
+    bodyInline: t(`siteNav.skyNamesInline.${theme}`),
+  };
   const lang = i18n.resolvedLanguage ?? defaultLocale();
   // 問答是站長填的（後台「頁面」或 MCP）；一題都沒有時，天上那顆「問答」星就不出現
   const { intro: qaIntro, items: qaList } = useQaContent();
@@ -124,6 +136,17 @@ export default function Colophon() {
       if (!b) return null;
       const f = frontOf(b.w, b.h, turnFor(targetRef.current, b.w, b.h));
       return { x: b.r.left + f.x, y: b.r.top + f.y };
+    },
+    // 換主題之後接回來：星座早就收掉了，留下的是視線。點落到鏡筒前端，順著視線走到正在測的那顆星上
+    rejoin: () => {
+      const b = box();
+      if (!b) return null;
+      const f = frontOf(b.w, b.h, turnFor(targetRef.current, b.w, b.h));
+      const s = starAt(targetRef.current, b.w, b.h);
+      return [
+        { x: b.r.left + f.x, y: b.r.top + f.y },
+        { x: b.r.left + s.x, y: b.r.top + s.y },
+      ];
     },
     leave: () => {
       const b = box();
@@ -280,7 +303,7 @@ export default function Colophon() {
         </li>
         <li>
           <i className="is-amber" />
-          {t('colophon.swatchAmber')}
+          {t('colophon.swatchSignal', vars)}
         </li>
       </ul>
     ),
@@ -307,12 +330,12 @@ export default function Colophon() {
         {SKY_PAGES.map(([to, key]) => (
           <li key={key}>
             <LocaleLink to={to}>{key === 'home' ? t('colophon.homePage') : t(`siteNav.${key}`)}</LocaleLink>
-            <span>{t(`colophon.skyIs.${key}`)}</span>
+            <span>{key === 'home' ? t(`colophon.skyIsHome.${theme}`) : t(`colophon.skyIs.${key}`)}</span>
           </li>
         ))}
       </ul>
     ),
-    rule1: <SaturnToy />,
+    rule1: <BodyToy />,
     rule2: <PhotoToy />,
     rule3: <WorkToy />,
     qa: (
@@ -392,7 +415,7 @@ export default function Colophon() {
         >
           <span className="cl-k">{t(`colophon.star.${target}`)}</span>
           <h2 id="cl-eyepiece-title">{target === 'qa' ? t('colophon.qaHeading') : t(`colophon.title_${target}`)}</h2>
-          <p>{target === 'qa' ? pickText(qaIntro, lang) : t(`colophon.text_${target}`)}</p>
+          <p>{target === 'qa' ? pickText(qaIntro, lang) : t(`colophon.text_${target}`, vars)}</p>
           <div className="cl-content">{panel[target]}</div>
         </section>
       </div>

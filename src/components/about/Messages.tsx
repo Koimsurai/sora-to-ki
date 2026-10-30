@@ -16,7 +16,7 @@ import { commentsQueryOptions } from '@/data/commentsData';
 import { useSiteConfig } from '@/data/siteConfig';
 import { useCommentLikes } from '@/hooks/useCommentLikes';
 import { usePageTransition } from '@/hooks/usePageTransition';
-import { after, isArriving } from '@/store/pageTransition';
+import { after, isArriving, isRejoining, transitionDot } from '@/store/pageTransition';
 import { channelOf, createStrip, DISH_SRC, SEND_S } from './messagesWave';
 import './Messages.css';
 import { sameTitle } from '@/lib/pageTitle';
@@ -80,6 +80,16 @@ export default function Messages() {
       return s ? { x: s.r.left, y: s.r.top + s.h / 2 } : null;
     },
     arrive: () => ({ tangent: { x: 1, y: 0 } }),
+    // 換主題之後接回來：點從頻道左端沿著電波一路跑進天線
+    rejoin: () => {
+      const s = strip();
+      if (!s) return null;
+      const c = channelOf(s.w, s.h);
+      return [
+        { x: s.r.left, y: s.r.top + c.y },
+        { x: s.r.left + c.end, y: s.r.top + c.y },
+      ];
+    },
     // 離場是倒過來：天線送出那道光，倒著沿頻道跑回起點，起點振一下，點從那裡往左飛走
     leave: () => {
       const s = strip();
@@ -120,16 +130,21 @@ export default function Messages() {
     let last = 0;
     let start = -1;
     let status = '';
+    /** 換主題之後接回來時，點碰到頻道左端的那一刻（起點從這時振一下）；-1 是還沒 */
+    let touched = -1;
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      if (isArriving() || !visible) return;
+      // 換主題之後接回來：頁面沒換，照常畫，那道光跟著點沿頻道跑（下面的 rejoinHead）
+      const rejoining = isRejoining();
+      if ((isArriving() && !rejoining) || !visible) return;
       if (start < 0) start = now;
       const real = (now - start) / 1000;
+      const sinceTouch = touched < 0 ? Infinity : (now - touched) / 1000;
       // 換頁那段電波跑得快，跑的時候每幀都畫；平常只有雜訊，30fps 就夠
       const arriving = !reduce && real < ARRIVE_S;
-      const ringing = !reduce && real < PING_S;
+      const ringing = !reduce && (real < PING_S || sinceTouch < PING_S);
       const leaving = leaveRef.current !== null;
-      if (!arriving && !ringing && !leaving && now - last < FRAME_MS) return;
+      if (!arriving && !ringing && !leaving && !rejoining && now - last < FRAME_MS) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       const w = box.clientWidth;
@@ -149,7 +164,20 @@ export default function Messages() {
       let head = 1;
       let pulse: { head: number; dir: 1 | -1 } | null = null;
       let ping: number | null = null;
-      if (leaving && leaveRef.current !== null) {
+      // 接回來：點在頻道上的話，那道光的頭就在點那裡；點碰到頻道左端時起點振一下
+      let rejoinHead: number | null = null;
+      if (rejoining && !reduce) {
+        const p = transitionDot();
+        const r = box.getBoundingClientRect();
+        const c = channelOf(w, h);
+        const on = p !== null && Math.abs(p.y - (r.top + c.y)) < 2 && p.x >= r.left - 1;
+        if (on && touched < 0) touched = now;
+        rejoinHead = on ? Math.min(1, Math.max(0, (p.x - r.left) / c.end)) : touched < 0 ? 0 : 1;
+      } else if (!rejoining && touched >= 0 && sinceTouch >= PING_S) touched = -1;
+      if (rejoinHead !== null || touched >= 0) {
+        pulse = rejoinHead !== null && rejoinHead > 0 && rejoinHead < 1 ? { head: rejoinHead, dir: 1 } : null;
+        ping = touched >= 0 && sinceTouch < PING_S ? sinceTouch / PING_S : null;
+      } else if (leaving && leaveRef.current !== null) {
         head = exitHead(leaveRef.current);
         pulse = head > 0 ? { head, dir: -1 } : null;
         const ringT = (now - leaveRef.current - PULSE_BACK_MS) / (EXIT_MS - PULSE_BACK_MS);

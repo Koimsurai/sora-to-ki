@@ -18,7 +18,7 @@ use std::f32::consts::TAU;
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink};
+use super::super::canvas::{Ctx, Gradient, amber, ground, ink};
 
 /// 背景的星（每一顆都拖著一道淡淡的軌跡）
 const FIELD: usize = 640;
@@ -145,7 +145,7 @@ impl Notes {
         let spin = t * SPIN;
 
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
         ctx.set_line_width(1.0);
         let mut rnd = seeded(0.61);
         for k in 0..FIELD + INNER {

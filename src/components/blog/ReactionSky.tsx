@@ -5,10 +5,14 @@
 // 按下去送的是那一團的第一個；舊的數字照樣算進各自那一團。數量與自己按過哪些由文章頁的 useReactions 傳進來。
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 import './ReactionSky.css';
 
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+});
 const TAU = Math.PI * 2;
 
 /** 三團星座：[翻譯 key, 這一團收哪些 emoji（第一個是按下去送的那個）] */

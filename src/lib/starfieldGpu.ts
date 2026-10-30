@@ -13,6 +13,8 @@ import {
   Fn,
   abs,
   asin,
+  atan,
+  log,
   exp,
   fract,
   fwidth,
@@ -26,6 +28,8 @@ import {
   float,
   instancedBufferAttribute,
   uv,
+  screenUV,
+  vec2,
   time,
   sin,
   cos,
@@ -36,6 +40,7 @@ import {
   uniform,
   dot,
   normalize,
+  normalView,
   max,
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
@@ -43,16 +48,12 @@ import { createFramePacer } from './framePacer';
 import { channels, DEFAULT_PALETTE, type Palette } from './palette';
 import {
   ORBITS,
-  PLANET_COVER,
-  PLANET_ROWS,
+  PLANETS,
   RING_COVER,
-  RING_GAPS,
-  RING_INNER,
-  RING_OUTER,
+  DISK_COVER,
+  DISK_SHEAR,
   RING_ROWS,
-  RING_SEGMENTS,
   ROLL,
-  SATURN_BANDS_FULL,
   satellitePhase,
   satelliteSpeed,
   saturnFrame,
@@ -62,7 +63,10 @@ import {
   fitScale,
   SUN,
   TILT,
+  type PlanetSpec,
+  type StarOrbit,
 } from './saturnSpec';
+import type { Theme } from './theme';
 import type { Fold } from './viewportFold';
 import { inspectWebGL } from './webglRenderer';
 import type { SatelliteScreen, SaturnGrow } from '@/store/homeOrbit';
@@ -117,6 +121,11 @@ export interface StarfieldRunner {
   setPan(x: number, y: number): void;
   /** 開著幾個主要分區：土星留下幾條軌道（站台設定改了就呼叫，多的收起來、少的長出來） */
   setSections(count: number): void;
+  /**
+   * 頁面開著時換了主題（lib/theme 的 setTheme）：主星顯示中的話先收成一點，在點的那一刻換成新主題的主星，
+   * 再從那一點長出來；沒顯示的話直接換掉
+   */
+  setTheme(theme: Theme, palette: Palette): void;
   dispose(): void;
 }
 
@@ -161,6 +170,8 @@ export interface StarfieldInit {
   lite?: boolean;
   /** 開著幾個主要分區（站台設定）＝土星有幾條軌道。沒給就是全部 */
   sections?: number;
+  /** 主題（lib/theme）：主星照哪一份規格畫（lib/saturnSpec 的 PLANETS）。由主執行緒讀好傳進來，沒給是土星 */
+  theme?: Theme;
 }
 
 interface StarLayerCfg {
@@ -254,6 +265,10 @@ interface SaturnRig {
    * grow：正在長的話，星球與環此刻各長到幾成（長完的那一幀是 1、1），其餘時候是 null
    */
   update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean; grow: SaturnGrow | null };
+  /**
+   * 黑洞的重力透鏡在畫面上的中心與愛因斯坦半徑（CSS 像素）；不是黑洞、或還沒長出來是 null
+   */
+  lensOnScreen(camera: THREE.Camera, width: number, height: number): { x: number; y: number; r: number } | null;
   /** 視窗大小：窄的視窗要把整組縮小，最外圈的軌道才放得下；位置與可用的那一塊照 saturnFrame */
   setView(width: number, height: number, fold: Fold | null): void;
   /** 每顆衛星該有多亮（0 到 1），實際亮度會慢慢靠過去 */
@@ -301,12 +316,22 @@ const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2
 /** 帶一點回彈：衛星彈出來時稍微超過原本的大小再停穩 */
 const easeOutBack = (t: number) => 1 + 2.70158 * Math.pow(t - 1, 3) + 1.70158 * Math.pow(t - 1, 2);
 const span = (t: number, from: number, dur: number) => Math.min(1, Math.max(0, (t - from) / dur));
+/** 0–1 夾住後的 smoothstep */
+const smoothstep01 = (t: number) => {
+  const x = Math.min(1, Math.max(0, t));
+  return x * x * (3 - 2 * x);
+};
 
 /**
  * 「每幀往目標靠近 rate」換算成跟幀率無關的係數（rate 是以 60fps 為準的值）。
  * 直接每幀乘 rate 的話，同一段動畫在 180Hz 上會快 3 倍。
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
+
+/** 重力透鏡的愛因斯坦半徑是陰影半徑的幾倍（貼著光子環外面那一圈的星被拉成弧） */
+const LENS_EINSTEIN = 2.2;
+/** 透鏡的軟化半徑（愛因斯坦半徑的幾成）：放大倍率的上限，星在那一帶才不會一幀跳一大段 */
+const LENS_SOFT = 0.45;
 
 /** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
 const SATURN_FOV = 8;
@@ -340,7 +365,9 @@ function buildSaturn(
   sunWorld: THREE.Vector3,
   { INK, GROUND, AMBER }: SaturnColors,
   initialSections: number,
+  spec: PlanetSpec,
 ): SaturnRig {
+  const { ring: ringSpec } = spec;
   // 外層側傾、內層俯角：跟提案的投影同一個順序（先自轉、再俯、再側傾）。
   // 環與軌道都在內層的水平面（y = 0）上，星球繞內層的 y 軸自轉，軸自然垂直於環
   const group = new THREE.Group();
@@ -357,9 +384,12 @@ function buildSaturn(
   // 星球本身是不透明的黑球，背面的點、環與軌道的背段、轉到後面的衛星都被它的深度擋掉
   const sunInPlanet = uniform(new THREE.Vector3());
   const sunInPlane = uniform(new THREE.Vector3());
+  /** 會脹縮的主星（參宿四）此刻的亮度倍數：跟著脹縮一起變 */
+  const breathLight = uniform(1);
   /** 環轉了多久（秒）：跟著每一幀的 dt 走，閒置降幀、收起來時一起停 */
   const ringClock = uniform(0);
-  const paper = vec3(INK.r, INK.g, INK.b);
+  // 刷痕的顏色：墨色，海王星往訊號色偏一點（規格裡的 tint）
+  const paper = mix(vec3(INK.r, INK.g, INK.b), vec3(AMBER.r, AMBER.g, AMBER.b), spec.tint);
   const ground = vec3(GROUND.r, GROUND.g, GROUND.b);
   /**
    * 一列一列的刷痕：row 是列的座標（每 1 是一列），ink 是 0 到 1 的濃度，回傳這個像素有沒有墨。
@@ -374,18 +404,18 @@ function buildSaturn(
     return smoothstep(half.add(aa), half.sub(aa), f).mul(half.div(aa).clamp(0, 1));
   };
 
-  /** 環在半徑 r 的亮度（RING_SEGMENTS、RING_GAPS） */
+  /** 環在半徑 r 的亮度（規格裡的 segments、gaps） */
   const ringTone = (r: FloatNode) => {
     let tone: FloatNode = float(0);
-    for (const [inner, outer, value] of RING_SEGMENTS) {
+    for (const [inner, outer, value] of ringSpec.segments) {
       tone = tone.add(
         smoothstep(inner - 0.004, inner + 0.004, r)
           .mul(smoothstep(outer + 0.004, outer - 0.004, r))
           .mul(value),
       );
     }
-    for (const [at, half] of RING_GAPS) tone = tone.mul(smoothstep(half * 0.4, half, abs(r.sub(at))));
-    return tone;
+    for (const [at, half] of ringSpec.gaps) tone = tone.mul(smoothstep(half * 0.4, half, abs(r.sub(at))));
+    return tone.mul(ringSpec.gain);
   };
 
   const planetMat = new THREE.MeshBasicNodeMaterial();
@@ -393,20 +423,81 @@ function buildSaturn(
     const n = normalize(positionLocal);
     const sun = normalize(sunInPlanet);
     // 晨昏線切得乾脆：參考圖背光那一面幾乎全黑
-    const lit = smoothstep(-0.12, 0.4, dot(n, sun));
-    // 雲帶照真實土星的緯度排（SATURN_BANDS）
+    // 恆星（參宿四）自己發光、沒有晨昏線：亮度照邊緣變暗，中間亮、越往邊緣越暗（看的方向跟表面的夾角）
+    const lit = spec.kind === 'star' ? normalView.z.max(0).pow(0.45) : smoothstep(-0.12, 0.4, dot(n, sun));
+    // 雲帶照真實星球的緯度排（規格裡的 bands）
     const lat = asin(n.y.clamp(-1, 1)).mul(180 / Math.PI);
-    let tone: FloatNode = float(0.52);
-    for (const [c, w, d] of SATURN_BANDS_FULL) {
+    let tone: FloatNode = float(spec.base);
+    for (const [c, w, d] of spec.bands) {
       tone = tone.add(exp(lat.sub(c).div(w).pow(2).negate()).mul(d * 1.6));
     }
+    // 斑點（風暴）：經度差先折回 ±π，東西方向的寬度在高緯度要乘 cos(緯度) 才是真的角距離
+    if (spec.spots.length) {
+      const lon = atan(n.x, n.z);
+      for (const [lo, la, wLon, wLat, d] of spec.spots) {
+        const dl = fract(
+          lon
+            .sub(lo)
+            .div(Math.PI * 2)
+            .add(0.5),
+        )
+          .sub(0.5)
+          .mul(360 * Math.cos((la * Math.PI) / 180));
+        tone = tone.add(exp(dl.div(wLon).pow(2).add(lat.sub(la).div(wLat).pow(2)).negate()).mul(d));
+      }
+    }
+    // 恆星表面只有幾個巨大的對流胞：很低頻的雜訊，一塊亮一塊暗
+    if (spec.kind === 'star')
+      tone = tone
+        .mul(mix(float(0.3), float(1.35), smoothstep(-0.4, 0.4, mx_noise_float(n.mul(1.6)))))
+        .mul(mix(float(0.6), float(1.1), smoothstep(-0.5, 0.5, mx_noise_float(n.mul(7)))))
+        .mul(breathLight);
     // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
-    tone = tone.mul(smoothstep(80, 48, abs(lat)));
+    tone = tone.mul(smoothstep(spec.pole[0], spec.pole[1], abs(lat)));
+    // 北極六角形（土星）：在極區變暗之後才加，不然會被一起壓暗。六角形的「半徑」照方位角算：
+    // 頂點到邊的距離比是 cos(30°) / cos(θ mod 60° − 30°)；n 在星球本體的座標裡，六角形跟著自轉
+    if (spec.hexagon) {
+      const hex = spec.hexagon;
+      const colat = float(90).sub(lat);
+      const theta = atan(n.z, n.x)
+        .mul(180 / Math.PI)
+        .add(360);
+      const seg = fract(theta.div(60))
+        .mul(60)
+        .sub(30)
+        .mul(Math.PI / 180);
+      const edge = float(hex.colat * Math.cos(Math.PI / 6)).div(cos(seg));
+      // 六角形是一條有寬度的噴流帶，不是一條線；裡面是比外面暗、但不是全黑的一片雲（卡西尼號的照片），
+      // 正中央是極地風暴的颶風眼：一圈亮雲繞著暗的眼
+      const band = exp(colat.sub(edge).div(hex.width).pow(2).negate());
+      const inside = smoothstep(edge.add(hex.width), edge.sub(hex.width), colat);
+      const eye = exp(colat.sub(1.6).div(0.7).pow(2).negate());
+      tone = tone.add(band.mul(hex.delta)).add(inside.mul(0.2)).add(eye.mul(0.45));
+    }
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
     const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
-    const row = n.y.mul(PLANET_ROWS).add(wave.mul(0.8));
+    // 恆星（參宿四）用畫面上水平的直線刻（版畫用平行直線排出球體明暗的刻法），不跟著自轉：
+    // 行星照緯度一列列刻（沿雲帶彎），恆星這樣刻就是一顆有雲帶的行星；以圓心刻一圈圈同心圓則像一個標靶（都試過）。
+    // 對流胞在線上一塊亮一塊暗地轉
+    // 恆星的扭曲用各方向等向的雜訊：行星的雜訊是橫向拉長的（沿雲帶），用在恆星上每條線都朝同一個方向、
+    // 同樣節奏地波動，看起來像整齊的水波紋。等向的雜訊讓線繞著一團團對流胞捲曲，再疊一層細的把線打斷
+    const row =
+      spec.kind === 'star'
+        ? normalView.y
+            .mul(spec.rows)
+            .add(mx_noise_float(n.mul(1.6)).mul(spec.stroke.wave))
+            .add(mx_noise_float(n.mul(4.5)).mul(spec.stroke.wave * 0.35))
+        : spec.hexagon
+          ? // 六角形裡面整個不到一列緯度刻線（北緯 78° 以北），照緯度刻的話裡面永遠是空的：
+            // 改成以極點為中心、每 1.1° 一圈的刻線，六角形的帶、裡面的雲與颶風眼才畫得出來
+            select(
+              lat.greaterThan(90 - spec.hexagon.colat * 1.25),
+              float(90).sub(lat).div(1.1),
+              n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave)),
+            )
+          : n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave));
     const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
-      .mul(0.45)
+      .mul(spec.stroke.swell)
       .add(1);
     const brush = smoothstep(-0.45, 0.15, mx_noise_float(vec3(n.x.mul(2.4), n.y.mul(48), n.z.mul(2.4))));
     // 環落在星球上的影子：從這一點往太陽看，視線穿過環的平面時落在環上，越密的環影子越深
@@ -418,13 +509,15 @@ function buildSaturn(
       lit
         .mul(tone)
         .mul(swell)
-        .mul(mix(float(0.05), float(1), brush))
+        .mul(mix(float(spec.stroke.floor), float(1), brush))
         .mul(shade)
         .clamp(0, 1),
       0.8,
     );
-    return mix(ground, paper, strokes(row, ink, PLANET_COVER));
+    return mix(ground, paper, strokes(row, ink, spec.cover));
   })();
+  // 黑洞的主星是一片陰影：跟夜色同一個顏色，沒有任何刻線，只用來擋住後面的盤與星
+  if (spec.kind === 'blackhole') planetMat.colorNode = ground;
   const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), planetMat);
   body.add(planet);
 
@@ -451,38 +544,217 @@ function buildSaturn(
     const sun = normalize(sunInPlane);
     const along = dot(p, sun).negate();
     const closest = p.add(sun.mul(along));
-    const shade = select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.12), float(1));
-    const ink = ringTone(r)
-      .mul(ringlets)
-      .mul(mix(float(0.4), float(1), brush))
-      .mul(shade)
-      .clamp(0, 1);
-    return strokes(r.mul(RING_ROWS), pow(ink, 0.75), RING_COVER);
+    // 黑洞的吸積盤自己會發光，沒有外來的光源，就沒有星球投下的影子
+    const shade =
+      spec.kind === 'blackhole'
+        ? float(1)
+        : select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.12), float(1));
+    if (!ringSpec.brushed) {
+      // 細環（海王星）：每一道畫成至少一個像素寬的髮絲。比一個像素還細的照比例變淡，而不是照原寬去取樣——
+      // 那樣線有時落在像素上、有時沒有，整圈會斷成虛線（實際發生過）
+      const px = fwidth(r).max(0.00001);
+      const hairline = (at: number, half: number) => {
+        const reach = px.mul(0.5).max(half);
+        const cover = reach
+          .add(px.mul(0.5))
+          .sub(abs(r.sub(at)))
+          .div(px)
+          .clamp(0, 1);
+        return cover.mul(
+          float(half * 2)
+            .div(px)
+            .min(1),
+        );
+      };
+      let thin: FloatNode = float(0);
+      for (const [inner, outer, value] of ringSpec.segments)
+        thin = thin.add(hairline((inner + outer) / 2, (outer - inner) / 2).mul(value));
+      // 環上的弧（Adams 環）：跟著環轉，所以角度用轉過的 q；弧比環亮、也寬一點
+      if (ringSpec.arcs.length) {
+        const a = atan(q.z, q.x);
+        for (const [at, from, to, value] of ringSpec.arcs) {
+          const along = smoothstep(from - 0.02, from + 0.02, a).mul(smoothstep(to + 0.02, to - 0.02, a));
+          thin = thin.add(along.mul(hairline(at, 0.012)).mul(value));
+        }
+      }
+      return thin.mul(ringSpec.gain).mul(shade).clamp(0, 1);
+    }
+    // 都卜勒增亮（黑洞的吸積盤）：朝我們轉來的那一側（左邊，x 負）亮、另一側暗。用沒轉過的 p：亮的那側跟著我們看的方向，不跟著盤轉
+    const doppler = float(1).sub(p.x.div(r).mul(ringSpec.doppler));
+    // 黑洞的吸積盤：內圈轉得比外圈快很多，物質被拉成一道道螺旋條紋。雜訊用螺旋座標取（角度隨半徑的對數偏移，
+    // 再照克卜勒轉），條紋就沿著被差速旋轉拉長的方向走；用 (cos, sin) 取避免角度在 ±π 接不起來。
+    // 刻線還是一圈圈同心的，條紋只決定每條刻線哪裡粗、哪裡細
+    const texture =
+      spec.kind === 'blackhole'
+        ? (() => {
+            const ang = atan(p.z, p.x).add(log(r).mul(DISK_SHEAR)).add(spin);
+            const streak = mx_noise_float(vec3(cos(ang).mul(2.4), sin(ang).mul(2.4), r.mul(9)));
+            // 內緣最亮、往外漸暗（越內越熱）
+            const heat = smoothstep(ringSpec.outer, ringSpec.inner, r).mul(0.5).add(0.6);
+            return mix(float(0.2), float(1), smoothstep(-0.4, 0.5, streak)).mul(heat);
+          })()
+        : ringlets.mul(mix(float(0.4), float(1), brush));
+    const ink = ringTone(r).mul(texture).mul(shade).mul(doppler).clamp(0, 1);
+    return strokes(r.mul(RING_ROWS), pow(ink, 0.75), spec.kind === 'blackhole' ? DISK_COVER : RING_COVER);
   })();
   /** 環攤開時跟著淡入（0 到 1） */
   const ringFade = uniform(1);
-  ringMat.colorNode = paper;
-  ringMat.opacityNode = ringInk.mul(ringFade);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 256, 1), ringMat);
-  ring.rotation.x = -Math.PI / 2;
+  if (spec.kind === 'blackhole') {
+    // 吸積盤是又密又亮、擋得住後面的一層氣體：刻線之間塗夜色而不是留空（同主星的陰影球），
+    // 盤的範圍內不透明，後面的星與軌道線被擋掉；內外緣柔和地淡出
+    const r = vec3(positionLocal.x, positionLocal.y, 0).length();
+    const band = smoothstep(ringSpec.inner, ringSpec.inner + 0.06, r).mul(
+      smoothstep(ringSpec.outer, ringSpec.outer - 0.35, r),
+    );
+    ringMat.colorNode = mix(ground, paper, ringInk);
+    ringMat.opacityNode = band.mul(ringFade);
+  } else {
+    ringMat.colorNode = paper;
+    ringMat.opacityNode = ringInk.mul(ringFade);
+  }
+  const ring = new THREE.Group();
+  const ringPart = (from: number, length: number, order: number) => {
+    const mesh = new THREE.Mesh(new THREE.RingGeometry(ringSpec.inner, ringSpec.outer, 256, 1, from, length), ringMat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.renderOrder = order;
+    ring.add(mesh);
+  };
+  // 黑洞：盤拆成後半圈（RingGeometry 的 0–π 轉平後在遠的那側）與前半圈，中間夾 lens，前半圈橫過陰影前面
+  if (spec.kind === 'blackhole') {
+    ringPart(0, Math.PI, 1);
+    ringPart(Math.PI, Math.PI, 3);
+  } else ringPart(0, Math.PI * 2, 0);
   plane.add(ring);
+
+  // lens：一張永遠面向鏡頭的薄板。黑洞的（在 group 裡、不在俯角那層，所以不跟著傾斜），畫光子環與
+  // 被重力彎到陰影上下的盤影。疊的順序是「後半盤 → lens → 前半盤」（renderOrder 1、2、3）
+  const lensFade = uniform(0);
+  let lens: THREE.Mesh | null = null;
+  if (spec.kind === 'blackhole') {
+    const lensMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false });
+    lensMat.colorNode = paper;
+    lensMat.opacityNode = Fn(() => {
+      const x = positionLocal.x;
+      const y = positionLocal.y;
+      const d = vec3(x, y, 0).length();
+      const px = fwidth(d).max(0.00001);
+      // 光子環：陰影外緣一道至少一個像素寬的髮絲
+      const half = 0.012;
+      const photon = px
+        .mul(0.5)
+        .max(half)
+        .add(px.mul(0.5))
+        .sub(abs(d.sub(1.04)))
+        .div(px)
+        .clamp(0, 1);
+      // 盤影：陰影外面一圈圈刷痕，上方的最亮（盤背面被彎過陰影頂上），下方較淡
+      const above = smoothstep(-0.3, 0.85, y.div(d));
+      const band = smoothstep(1.08, 1.16, d).mul(smoothstep(1.75, 1.45, d));
+      const doppler = float(1).sub(x.div(d).mul(ringSpec.doppler));
+      const image = strokes(
+        d.mul(RING_ROWS),
+        band
+          .mul(mix(float(0.25), float(0.9), above))
+          .mul(doppler)
+          .clamp(0, 1),
+        RING_COVER,
+      );
+      return photon.mul(doppler).mul(0.9).add(image).clamp(0, 1).mul(lensFade);
+    })();
+    lens = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 3.6), lensMat);
+    lens.renderOrder = 2;
+    group.add(lens);
+  }
+  // 參宿四的光暈：同一張面向鏡頭的薄板，畫恆星外面那層延伸很遠的大氣——一圈圈很淡的同心刻線，越往外越淡，
+  // 南邊那團（大暗化時噴出來的物質）多一點。恆星會發光，沒有這圈的話看起來像一顆氣態行星
+  if (spec.kind === 'star') {
+    const haloMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false });
+    haloMat.colorNode = paper;
+    haloMat.opacityNode = Fn(() => {
+      const x = positionLocal.x;
+      const y = positionLocal.y;
+      const d = vec3(x, y, 0).length();
+      const glow = smoothstep(1.75, 1.0, d).mul(smoothstep(0.98, 1.02, d));
+      const plume = smoothstep(-0.2, -0.9, y.div(d)).mul(0.35).add(1);
+      const breakup = smoothstep(-0.5, 0.4, mx_noise_float(vec3(x.mul(3), y.mul(3), d.mul(6))));
+      return strokes(
+        d.mul(RING_ROWS * 0.8),
+        glow
+          .mul(plume)
+          .mul(mix(float(0.35), float(1), breakup))
+          .mul(0.55)
+          .mul(breathLight),
+        0.5,
+      ).mul(lensFade);
+    })();
+    lens = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), haloMat);
+    lens.renderOrder = 2;
+    group.add(lens);
+  }
+
+  // 伴星（參宿四的 Siwarha）：很小、很暗的一個點，在環的平面上貼著主星繞
+  let companion: THREE.Sprite | null = null;
+  if (spec.companion) {
+    const mat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
+    mat.colorNode = vec3(INK.r, INK.g, INK.b);
+    mat.opacityNode = smoothstep(0.5, 0.15, uv().sub(0.5).length()).mul(0.7);
+    companion = new THREE.Sprite(mat);
+    companion.scale.setScalar(0.0001);
+    plane.add(companion);
+  }
+
+  // 每條軌道一個容器：S 星的軌道（黑洞）各自傾斜（holder：傾角與升交點），近點的方向與進動放在 apsis。
+  // 土星、海王星的軌道沒有這些，容器是單位矩陣，跟直接放在 plane 上一樣
+  const stars = spec.stars;
+  const apses = ORBITS.map((_, i) => {
+    const holder = new THREE.Group();
+    const apsis = new THREE.Group();
+    const st = stars?.[i];
+    if (st) {
+      holder.rotation.set((st.incl * Math.PI) / 180, (st.node * Math.PI) / 180, 0, 'YXZ');
+      apsis.rotation.y = (st.peri * Math.PI) / 180;
+    }
+    holder.add(apsis);
+    plane.add(holder);
+    return apsis;
+  });
+  /** S 星軌道上真近點角 nu 的位置（焦點在原點：r = a(1 − e²) / (1 + e cos nu)） */
+  const ellipseAt = (st: StarOrbit, nu: number, out: THREE.Vector3) => {
+    const radius = (st.a * (1 - st.e * st.e)) / (1 + st.e * Math.cos(nu));
+    return out.set(Math.cos(nu) * radius, 0, Math.sin(nu) * radius);
+  };
 
   // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
   const CIRCLE_POINTS = 257;
-  const circle = (radius: number, opacity: number) => {
-    const material = new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
+  const circle = (i: number, radius: number, opacity: number) => {
+    // 參宿四：軌道畫成點線，像它周圍一層層拋出去的塵埃殼
+    const material =
+      spec.kind === 'star'
+        ? new THREE.LineDashedNodeMaterial({
+            color: INK,
+            transparent: true,
+            opacity,
+            depthWrite: false,
+            dashSize: 0.05,
+            gapSize: 0.09,
+          })
+        : new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
+    const st = stars?.[i];
     const points = Array.from({ length: CIRCLE_POINTS }, (_, k) => {
       const a = (k / (CIRCLE_POINTS - 1)) * Math.PI * 2;
-      return new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius);
+      return st
+        ? ellipseAt(st, a, new THREE.Vector3())
+        : new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius);
     });
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material);
-    plane.add(line);
+    if (spec.kind === 'star') line.computeLineDistances();
+    apses[i].add(line);
     return { material, line };
   };
 
   // 軌道與衛星。衛星是一個實心的小點，亮起來時變琥珀色、外面多一圈光暈
   const ORBIT_DIM = 0.09;
-  const orbitLines = ORBITS.map((r) => circle(r, ORBIT_DIM));
+  const orbitLines = ORBITS.map((r, i) => circle(i, r, ORBIT_DIM));
   const orbits = orbitLines.map((o) => o.material);
   const glowTarget = ORBITS.map(() => 0);
   const satellites = ORBITS.map((r, i) => {
@@ -495,14 +767,82 @@ function buildSaturn(
     mat.opacityNode = core.mul(mix(float(0.75), float(1), g)).max(halo);
     const sprite = new THREE.Sprite(mat);
     sprite.scale.setScalar(0.24);
-    plane.add(sprite);
+    apses[i].add(sprite);
     // 起始角度錯開，越外圈轉得越慢（克卜勒的味道就好，不必真的照比例）
-    return { sprite, g, r, phase: satellitePhase(i) };
+    // 反方向公轉的（海王星的崔頓）：角速度變號，它那條軌道也鏡像，長與收的時候線才會朝它走的方向畫
+    const dir = spec.retrograde.includes(i) ? -1 : 1;
+    // 圓軌道靠鏡像讓線朝反方向畫；有自己形狀的軌道（stars）是照方向重排點（alignOrbit），不用鏡像
+    orbitLines[i].line.scale.z = stars?.[i] ? 1 : dir;
+    return { sprite, g, r, phase: satellitePhase(i), dir };
   });
   /**
    * 每條軌道還在不在（0 到 1）：站台設定關掉的分區，它那條軌道與衛星收起來。乘在長／收的進度上，
    * 所以全部開著時（全是 1）畫面跟沒有這一層完全一樣。開機時直接是定值，之後改才有動畫
    */
+  // 土衛二的冰噴泉（spec.plume）：衛星身後一串越來越淡、越來越小的冰粒，沿著軌道拖在後面（E 環就是這樣來的）
+  // 冰噴泉：土衛二南極的裂縫（虎紋）把冰晶噴出去。每一粒從衛星往南極方向（環平面的下方）噴出、帶一點錐狀的散開，
+  // 越飛越淡；衛星繼續往前走，噴出來的冰粒留在原本的軌道上，拖成一條尾巴——E 環就是這樣來的。
+  // 每一粒有自己的生命週期（life 從 0 到 1 一直循環，phase 錯開），所以看起來一直在噴
+  const PLUME_N = 48;
+  const PLUME_CYCLE = 2.2;
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const plume =
+    spec.plume === undefined
+      ? []
+      : Array.from({ length: PLUME_N }, () => {
+          const fade = uniform(0);
+          const mat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
+          mat.colorNode = vec3(INK.r, INK.g, INK.b);
+          mat.opacityNode = smoothstep(0.5, 0, uv().sub(0.5).length()).mul(fade);
+          const sprite = new THREE.Sprite(mat);
+          sprite.scale.setScalar(0.0001);
+          apses[spec.plume ?? 0].add(sprite);
+          return {
+            sprite,
+            fade,
+            phase: rnd(),
+            bright: 0.45 + 0.55 * rnd(),
+            out: (rnd() - 0.5) * 2,
+            side: (rnd() - 0.5) * 2,
+            speed: 0.7 + 0.6 * rnd(),
+            size: 0.016 + 0.018 * rnd(),
+          };
+        });
+
+  /**
+   * 第 i 顆衛星此刻在軌道上的角度。圓軌道就是等速轉的角度；S 星的軌道照克卜勒定律走（近點快、遠點慢）：
+   * 平近點角 M 等速增加，解克卜勒方程 E − e sin E = M 得偏近點角，再換成真近點角
+   */
+  const anomaly = (i: number) => {
+    const s = satellites[i];
+    const st = stars?.[i];
+    const mean = s.phase + clock * satelliteSpeed(st?.a ?? s.r) * s.dir;
+    if (!st) return mean;
+    let e = mean;
+    for (let k = 0; k < 5; k++) e -= (e - st.e * Math.sin(e) - mean) / (1 - st.e * Math.cos(e));
+    return 2 * Math.atan2(Math.sqrt(1 + st.e) * Math.sin(e / 2), Math.sqrt(1 - st.e) * Math.cos(e / 2));
+  };
+  /**
+   * 讓第 i 條軌道從它那顆衛星現在的位置開始畫（長與收都從那裡起算）。圓的轉過去就好；
+   * 橢圓轉了會整條挪位，所以把點重新從衛星的角度排起
+   */
+  const alignOrbit = (i: number) => {
+    const st = stars?.[i];
+    const line = orbitLines[i].line;
+    const nu = anomaly(i);
+    if (!st) {
+      line.rotation.y = -nu;
+      return;
+    }
+    const pos = line.geometry.getAttribute('position') as THREE.BufferAttribute;
+    for (let k = 0; k < CIRCLE_POINTS; k++) {
+      ellipseAt(st, nu + (k / (CIRCLE_POINTS - 1)) * Math.PI * 2 * satellites[i].dir, v);
+      pos.setXYZ(k, v.x, v.y, v.z);
+    }
+    pos.needsUpdate = true;
+    if (spec.kind === 'star') line.computeLineDistances();
+  };
   let sectionCount = initialSections;
   const live: number[] = ORBITS.map((_, i) => (i < sectionCount ? 1 : 0));
   const syncSun = () => {
@@ -535,12 +875,17 @@ function buildSaturn(
   /** 開始收的那一刻各部分長到幾成 */
   const collapseFrom = { ring: 0, orbit: [...orbitK], sat: [...satK] };
   /** 環從星球表面攤開：一開始外緣貼著星球 */
-  const RING_FROM = 1 / RING_OUTER;
+  const RING_FROM = 1 / ringSpec.outer;
   const applyParts = () => {
     body.scale.setScalar(Math.max(0.0001, planetK));
     ring.scale.setScalar(RING_FROM + (1 - RING_FROM) * ringK);
     ring.visible = ringK > 0;
     ringFade.value = ringK;
+    if (lens) {
+      lens.scale.setScalar(Math.max(0.0001, planetK));
+      lens.visible = planetK > 0;
+      lensFade.value = ringK;
+    }
     for (const [i, o] of orbitLines.entries()) {
       const n = Math.round(CIRCLE_POINTS * (orbitK[i] ?? 0) * (live[i] ?? 0));
       o.line.geometry.setDrawRange(0, n);
@@ -596,12 +941,10 @@ function buildSaturn(
           pivotIndex = -1;
           currentScale = fullScale;
           // 每條軌道從自己那顆衛星現在的位置開始畫（圈是對稱的，畫完之後轉了多少都一樣）
-          for (const [i, s] of satellites.entries())
-            orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r));
+          for (let i = 0; i < satellites.length; i++) alignOrbit(i);
         } else {
           // 軌道收回各自衛星現在的位置：畫滿的整圈轉到從衛星那裡起算（看不出差別），收的時候尾端追回衛星
-          for (const [i, s] of satellites.entries())
-            if ((orbitK[i] ?? 0) >= 1) orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r));
+          for (let i = 0; i < satellites.length; i++) if ((orbitK[i] ?? 0) >= 1) alignOrbit(i);
           collapseFrom.ring = ringK;
           collapseFrom.orbit = [...orbitK];
           collapseFrom.sat = [...satK];
@@ -623,6 +966,20 @@ function buildSaturn(
         if (stageAt(stage.kind, stage.t)) stage = null;
         applyParts();
       } else if (reshaping) applyParts();
+      // 會脹縮的主星（參宿四）：每一幀照時鐘脹縮，光暈跟著，亮度也跟著起伏
+      if (spec.pulse) {
+        const wave = Math.sin((2 * Math.PI * clock) / spec.pulse.period);
+        const breath = 1 + spec.pulse.amp * wave;
+        body.scale.setScalar(Math.max(0.0001, planetK) * breath);
+        lens?.scale.setScalar(Math.max(0.0001, planetK) * breath);
+        breathLight.value = 1 + spec.pulse.light * wave;
+      }
+      // 伴星：貼著主星繞，轉到後面被主星擋住（深度測試）
+      if (companion && spec.companion) {
+        const a = (2 * Math.PI * clock) / spec.companion.period;
+        companion.position.set(Math.cos(a) * spec.companion.a, 0, Math.sin(a) * spec.companion.a);
+        companion.scale.setScalar(spec.companion.size * Math.max(0.0001, planetK));
+      }
       if (glide && (stage || pivot)) glide = null;
       if (glide) {
         glide.t += dt;
@@ -639,8 +996,34 @@ function buildSaturn(
       if (!pivot) clock += dt;
       let glowing = false;
       for (const [i, s] of satellites.entries()) {
-        const a = s.phase + clock * satelliteSpeed(s.r);
-        s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
+        const a = anomaly(i);
+        const st = stars?.[i];
+        if (st) {
+          ellipseAt(st, a, s.sprite.position);
+          // 軌道進動：整條橢圓繞著黑洞慢慢轉（GRAVITY 2020 年量到 S2 的軌道在進動）
+          apses[i].rotation.y = ((st.peri + clock * st.precession) * Math.PI) / 180;
+        } else s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
+        if (i === spec.plume) {
+          const shown = (satK[i] ?? 0) * (live[i] ?? 0);
+          for (const p of plume) {
+            const life = (clock / PLUME_CYCLE + p.phase) % 1;
+            // 噴出時衛星在的位置：衛星已經往前走了，冰粒留在後面
+            const born = a - life * 0.32 * s.dir;
+            const target = p.sprite.position;
+            if (st) ellipseAt(st, born, target);
+            else target.set(Math.cos(born) * s.r, 0, Math.sin(born) * s.r);
+            // 從南極往下噴（−y），帶錐狀的散開（往軌道內外、前後），越飛越慢
+            const travel = (1 - (1 - life) ** 2) * p.speed;
+            const k = 1 + (p.out * 0.12 * travel) / Math.max(0.001, target.length());
+            target.x *= k;
+            target.z *= k;
+            target.y -= 0.32 * travel;
+            target.x += p.side * 0.05 * travel * Math.sin(born);
+            target.z -= p.side * 0.05 * travel * Math.cos(born);
+            p.fade.value = 0.8 * p.bright * smoothstep01(life / 0.08) * (1 - life) ** 1.5;
+            p.sprite.scale.setScalar(Math.max(0.0001, p.size * (1 + 0.6 * life) * shown));
+          }
+        }
         const target = glowTarget[i] ?? 0;
         s.g.value += (target - s.g.value) * Math.min(1, dt * 8);
         if (Math.abs(target - s.g.value) > 0.01) glowing = true;
@@ -695,6 +1078,19 @@ function buildSaturn(
       pivot = sat ? sat.sprite.getWorldPosition(new THREE.Vector3()) : null;
       pivotIndex = sat ? index : -1;
     },
+    lensOnScreen(camera, width, height) {
+      if (spec.kind !== 'blackhole' || planetK <= 0.01 || currentScale < 0.02 * fullScale) return null;
+      group.getWorldPosition(center);
+      const c = center.clone().project(camera);
+      edge
+        .copy(center)
+        .add(new THREE.Vector3(0, currentScale * planetK, 0))
+        .project(camera);
+      const x = ((c.x + 1) / 2) * width;
+      const y = ((1 - c.y) / 2) * height;
+      const radius = Math.hypot(((edge.x + 1) / 2) * width - x, ((1 - edge.y) / 2) * height - y);
+      return { x, y, r: radius * LENS_EINSTEIN };
+    },
     project(camera, width, height) {
       const toScreen = (p: THREE.Vector3) => {
         p.project(camera);
@@ -707,6 +1103,9 @@ function buildSaturn(
       const [ex, ey] = toScreen(edge);
       const [cx, cy] = toScreen(center.clone());
       const radius = Math.hypot(ex - cx, ey - cy);
+      // 衛星繞到後面、落在主星看起來的範圍裡時字卡先藏起來（不然一張字卡浮在星球上，找不到它的點）。
+      // 黑洞看起來比陰影大得多：頂上那道彎過去的盤影、吸積盤都算
+      const hideWithin = spec.kind === 'blackhole' ? radius * 1.8 : radius;
       // 只回報開著的分區那幾顆：首頁一個分區一張字卡，數目對不上會當成 3D 還沒好、整個退成平面版
       return satellites.slice(0, sectionCount).map((s, i) => {
         s.sprite.getWorldPosition(v);
@@ -716,7 +1115,9 @@ function buildSaturn(
           x,
           y,
           hidden:
-            currentScale < 0.05 * fullScale || (satK[i] ?? 0) < 0.3 || (behind && Math.hypot(x - cx, y - cy) < radius),
+            currentScale < 0.05 * fullScale ||
+            (satK[i] ?? 0) < 0.3 ||
+            (behind && Math.hypot(x - cx, y - cy) < hideWithin),
         };
       });
     },
@@ -802,19 +1203,31 @@ export async function createStarfieldRunner(
   const saturnCam = new THREE.PerspectiveCamera(SATURN_FOV, aspect0, 1, 200);
   saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
   // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
-  const colors = init.palette ?? DEFAULT_PALETTE;
-  const saturn = buildSaturn(
-    new THREE.Vector3(...SUN).multiplyScalar(10),
-    {
-      INK: threeColor(colors.paper),
-      GROUND: threeColor(colors.ground),
-      AMBER: threeColor(colors.amber),
-    },
-    init.sections ?? ORBITS.length,
-  );
+  let sections = init.sections ?? ORBITS.length;
+  const planetFor = (theme: Theme, colors: Palette) =>
+    buildSaturn(
+      new THREE.Vector3(...SUN).multiplyScalar(10),
+      {
+        INK: threeColor(colors.paper),
+        GROUND: threeColor(colors.ground),
+        AMBER: threeColor(colors.amber),
+      },
+      sections,
+      PLANETS[theme],
+    );
+  let saturn = planetFor(init.theme ?? 'saturn', init.palette ?? DEFAULT_PALETTE);
   saturn.setView(init.width, init.height, init.fold ?? null);
   let viewW = init.width;
   let viewH = init.height;
+  let viewFold = init.fold ?? null;
+  let glowNow: number[] = [];
+  /**
+   * 換主題：舊的收成一點之後才建新的（commitTheme）。新的第一次畫到時會同步編譯 shader、停一下，
+   * 那一刻畫面上只剩一個點，看不出來。
+   * ⚠️ 不要在背景先 saturnPass.compileAsync：畫面還在畫同一個 pass 的時候編它，WebGPU 判定
+   *   「output 這張貼圖同時被寫又被讀」，接著整個 device 掉了（實際發生過，3D 被迫重建）
+   */
+  let pendingTheme: { theme: Theme; palette: Palette } | null = null;
   let saturnVisible = false;
   let saturnAnimate = true;
   let scrollY = 0;
@@ -828,18 +1241,37 @@ export async function createStarfieldRunner(
   //   像素已經夠細、看不出差別。
   const dprUsed = Math.min(init.dpr, 2);
   const msaa = dprUsed >= 1.5 ? 0 : 4;
+  /** 重力透鏡的中心（畫面 0–1）、愛因斯坦半徑（畫面高度的幾成）、寬高比；半徑 0 是關掉 */
+  const lensCenter = uniform(new THREE.Vector2(0.5, 0.5));
+  const lensRadius = uniform(0);
+  /** 陰影的半徑（畫面高度的幾成）：這一圈裡面不偏折 */
+  const lensShadow = uniform(0);
+  const lensAspect = uniform(init.width / Math.max(1, init.height));
   const scenePass = pass(scene, camera, { samples: msaa });
   scenePass.setMRT(mrt({ output, bloomIntensity: float(0) })); // 全域預設：不進 bloom
   const scenePassColor = scenePass.getTextureNode('output');
   const bloomMask = scenePass.getTextureNode('bloomIntensity');
-  const bloomPass = bloom(scenePassColor.mul(bloomMask), 0.35, 0.35, 0.5); // strength / radius / threshold
-  const combined = scenePassColor.add(bloomPass);
+  // 重力透鏡（黑洞）：星空在「被黑洞偏折過的位置」取樣。點質量透鏡：β = θ − θE²/θ（θE 是愛因斯坦半徑），
+  // 越靠近黑洞偏得越多，貼著光子環的星被拉成弧。lensRadius 是 0（別的主題、黑洞沒顯示）時取樣位置跟原本一樣；
+  // 三個主題共用這一份 shader，換主題不用重編。光暈也吃偏折過的星空，跟星星本身對得上
+  // ⚠️ 照原式 θE²/θ 的話越靠近中心放大倍率趨近無限大：星空在慢慢轉，那一帶的星一幀跳一大段，
+  //   閒置降到 30fps 時看起來一格一格地卡（實際被說過「星空進到黑洞之後變卡」）。分母加一個軟化半徑，
+  //   放大倍率有上限；陰影裡面本來就被黑球擋住，那一塊不偏折
+  const d = screenUV.sub(lensCenter).mul(vec2(lensAspect, 1));
+  const r2 = dot(d, d);
+  const soft = lensRadius.mul(LENS_SOFT);
+  const bend = float(1).sub(lensRadius.mul(lensRadius).div(r2.add(soft.mul(soft))));
+  const lensOn = lensRadius.greaterThan(0).and(r2.greaterThan(lensShadow.mul(lensShadow)));
+  const lensedUV = select(lensOn, lensCenter.add(d.mul(bend).div(vec2(lensAspect, 1))), screenUV);
+  const starsColor = scenePassColor.sample(lensedUV);
+  const bloomPass = bloom(starsColor.mul(bloomMask.sample(lensedUV)), 0.35, 0.35, 0.5); // strength / radius / threshold
+  const combined = starsColor.add(bloomPass);
   // 土星那層疊在星空上：它的顏色已經乘過自己的透明度（一般混合畫在透明底上就是這樣），
   // 所以是「星空 × (1 − 土星的 alpha) + 土星」。擋背面的那顆紙色球 alpha 是 1，球後面的星星就被蓋掉。
   // 輸出保留 alpha：canvas 透明疊在頁面的黑紙上，alpha 全變 1 的話底色會被蓋成純黑
   const saturnPass = pass(saturnScene, saturnCam, { samples: msaa });
   const sat = saturnPass.getTextureNode('output');
-  const sceneOut = vec4(combined.rgb.mul(float(1).sub(sat.a)).add(sat.rgb), max(scenePassColor.a, sat.a));
+  const sceneOut = vec4(combined.rgb.mul(float(1).sub(sat.a)).add(sat.rgb), max(starsColor.a, sat.a));
   const pipeline = new THREE.RenderPipeline(renderer, sceneOut);
 
   // ── 暖機：所有會用到的管線都在 ready 之前編譯完 ──
@@ -943,6 +1375,12 @@ export async function createStarfieldRunner(
       const s = saturn.update(delta, scrollY, saturnAnimate);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
+      // 換主題：收成一點了（不再動）才換
+      if (pendingTheme && !saturnAnimate && !s.moving) commitTheme();
+      const lensAt = saturn.lensOnScreen(saturnCam, viewW, viewH);
+      lensRadius.value = lensAt ? lensAt.r / viewH : 0;
+      lensShadow.value = lensAt ? (0.95 * lensAt.r) / LENS_EINSTEIN / viewH : 0;
+      if (lensAt) lensCenter.value.set(lensAt.x / viewW, lensAt.y / viewH);
       // 附上算出位置的時間（跟主執行緒共用的時基），首頁的字照它推算到自己那一幀（store/homeOrbit）
       init.onSatellites?.(saturn.project(saturnCam, viewW, viewH), performance.timeOrigin + performance.now());
       if (s.grow) init.onSaturnGrow?.(s.grow);
@@ -997,6 +1435,39 @@ export async function createStarfieldRunner(
   };
   void renderer.setAnimationLoop(loop);
 
+  /** 拿掉一顆主星：從場景移除、釋放幾何與材質 */
+  function disposeRig(rig: SaturnRig) {
+    saturnScene.remove(rig.group);
+    rig.group.traverse((o) => {
+      // Sprite 的 quad geometry 是 three 內部共享的，不能 dispose（同 dispose() 那段），只釋放材質
+      if (o instanceof THREE.Mesh || o instanceof THREE.Line) (o.geometry as THREE.BufferGeometry).dispose();
+      if (o instanceof THREE.Mesh || o instanceof THREE.Line || o instanceof THREE.Sprite) {
+        const mats = o.material as THREE.Material | THREE.Material[];
+        for (const m of Array.isArray(mats) ? mats : [mats]) m.dispose();
+      }
+    });
+  }
+
+  /** 拿掉舊的主星，換上 pendingTheme 的，從一點長出來。舊的這時已經收成一點，看不出換的那一下 */
+  function commitTheme() {
+    const want = pendingTheme;
+    if (!want) return;
+    pendingTheme = null;
+    const visible = saturn.group.visible;
+    disposeRig(saturn);
+    saturn = planetFor(want.theme, want.palette);
+    saturn.setView(viewW, viewH, viewFold);
+    saturn.setGlow(glowNow);
+    saturn.collapse();
+    saturn.group.visible = visible;
+    saturnScene.add(saturn.group);
+    saturnAnimate = true;
+    // 先走一次長的第 0 秒，各部分套上「從一點開始」的大小：不然這一幀畫的是建好時的原尺寸，
+    // 整圈環會先閃一下（實際發生過）
+    if (saturnVisible) saturn.update(0, scrollY, true);
+    markActive();
+  }
+
   return {
     backend,
     timing: { probe, device, compile, first },
@@ -1005,8 +1476,10 @@ export async function createStarfieldRunner(
         markActive();
         viewW = width;
         viewH = height;
+        viewFold = fold ?? null;
         saturn.setView(width, height, fold ?? null);
         camera.aspect = width / height;
+        lensAspect.value = width / Math.max(1, height);
         saturnCam.aspect = camera.aspect;
         saturnCam.updateProjectionMatrix();
         camera.updateProjectionMatrix();
@@ -1021,7 +1494,11 @@ export async function createStarfieldRunner(
         if (saturnVisible && !visible) init.onSatellites?.([], performance.timeOrigin + performance.now());
         // 每次重新出現都從一點撐開（換頁轉場的「長」）
         if (!saturnVisible && visible) saturn.collapse();
+        // 換主題收到一半就離開首頁：不等收完，直接換
+        if (pendingTheme && !visible) commitTheme();
         saturnVisible = visible;
+        // 主星不在畫面上：重力透鏡關掉（它只在 loop 裡、主星顯示時更新）
+        if (!visible) lensRadius.value = 0;
         darkDrawn = false;
         saturnAnimate = animate;
         // 最低品質下即使呼叫顯示也不開（土星最貴）
@@ -1029,6 +1506,7 @@ export async function createStarfieldRunner(
       },
       setSatelliteGlow(glow) {
         markActive();
+        glowNow = glow;
         saturn.setGlow(glow);
       },
       setStars(visible) {
@@ -1049,7 +1527,15 @@ export async function createStarfieldRunner(
       },
       setSections(count) {
         markActive();
+        sections = count;
         saturn.setSections(count);
+      },
+      setTheme(theme, palette) {
+        markActive();
+        pendingTheme = { theme, palette };
+        // 顯示中：收成一點，loop 看到收完了才換；沒顯示：直接換（下次出現時本來就從一點長）
+        if (saturnVisible) saturnAnimate = false;
+        else commitTheme();
       },
       setRunning(running) {
         if (running && !broken) {

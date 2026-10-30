@@ -18,8 +18,9 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import { isBotUserAgent } from '@/lib/bot';
-import { palette } from '@/lib/palette';
-import { RING_OUTER, saturnGrowAt, saturnRingOnScreen } from '@/lib/saturnSpec';
+import { onPalette, palette } from '@/lib/palette';
+import { PLANETS, saturnGrowAt, saturnRingOnScreen } from '@/lib/saturnSpec';
+import { currentTheme, onTheme } from '@/lib/theme';
 import { currentFold, offCrease } from '@/lib/viewportFold';
 import {
   after,
@@ -27,6 +28,8 @@ import {
   reportTransition,
   currentPage,
   markTransitionFrom,
+  setArrive,
+  setRejoining,
   setTransitionDot,
   takeTransitionFrom,
   type Departure,
@@ -82,7 +85,75 @@ const SKY_PARALLAX = 0.14;
 const RUN_LIMIT_MS = 8000;
 /** 彗尾的塵埃多久熄掉 */
 const DUST_LIFE_MS = 900;
-const { paper: INK, amber: AMBER } = palette();
+/**
+ * 海王星的尾巴：點身後一條很淡的髮絲，上面四段亮的，長短與間隔照 Adams 環上那四段弧
+ * （lib/saturnSpec，開場亮起來的也是它們）。弧的角度換成離點多遠：1° 是 TAIL_ARC_PX 像素
+ */
+const TAIL_ARC_PX = 3;
+/** 弧以外那條髮絲的濃度（Adams 環整圈很淡，只有弧亮） */
+const TAIL_FAINT = 0.22;
+const TAIL_ARCS = PLANETS.neptune.ring.arcs.map(([, from, to]) => [
+  ((from * 180) / Math.PI) * TAIL_ARC_PX,
+  ((to * 180) / Math.PI) * TAIL_ARC_PX,
+]);
+let { paper: INK, amber: AMBER, ground: GROUND } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER, ground: GROUND } = p);
+});
+/**
+ * 主題（lib/theme）：編排全站一份，畫法跟著主題換——尾巴（tail）、彈弓、預言的落點、開場交棒的環。
+ * 跟配色一樣在模組載入時讀一次（主題在 paint 之前就掛上了，比這支早），頁面開著時換了由 onTheme 更新
+ */
+let THEME = currentTheme();
+let RING_OUTER = PLANETS[THEME].ring.outer;
+onTheme((theme) => {
+  THEME = theme;
+  RING_OUTER = PLANETS[theme].ring.outer;
+});
+/** 黑洞的時間膨脹：飛行拉長幾倍（後段越飛越慢，見 dilate） */
+const BH_DILATE = 1.35;
+/** 換主題之後接回這一頁（quiet）：點飛回錨點最少要多久、最多多久、沿著頁面的線走的速度（px/ms） */
+const QUIET_MS = 650;
+const QUIET_MAX_MS = 1800;
+const QUIET_SPEED = 1.4;
+/**
+ * 黑洞的重力波（LIGO 2015 年第一次偵測到的，兩個黑洞合併）：點落地＝合併，從落點放出一道。
+ * 只放這一道、淡淡的、走不遠：合併前越來越密的啁啾與之後的餘振試過，一圈接一圈看起來很抽象
+ */
+const WAVE_STRENGTH = 0.55;
+/** 波前往外走多快（px/ms）、活多久（ms）、四極形變最大多少（半徑的幾成）、橫直來回擺一次多久（ms） */
+const WAVE_SPEED = 0.28;
+const WAVE_LIFE = 1000;
+const WAVE_SQUEEZE = 0.12;
+const WAVE_PERIOD = 420;
+/**
+ * 時間膨脹：越靠近黑洞時間走得越慢。點是從黑洞旁邊逃出去的：起步那段幾乎停住（速度照 τ³ 長），
+ * 越離越遠越快，後段照常減速落地。回傳 0–1 的路程
+ */
+const escape = (tau: number) => 1 - (1 - Math.cos(Math.PI * (1 - tau ** 2))) / 2;
+/**
+ * 黑洞的轉場是「逃出黑洞」：離開的那一頁收成的那一點變成一個小黑洞（hole），點從它旁邊逃出去，
+ * 點身後的光越舊越被拉回去、繞著它旋進去消失。HOLE_R 是陰影的半徑（px）；
+ * HOLE_SWIRL 是光被吞掉之前繞著它轉了多少（rad）；HOLE_PULL 是光多久被吞完（TAIL_MS 的幾倍）
+ */
+const HOLE_R = 11;
+/**
+ * 參宿四的換頁：點一路甩出塵埃殼（它一直在往外拋物質，2019 年的大暗化就是其中一團冷卻成的塵埃）。
+ * 每隔 SHELL_EVERY 毫秒甩一圈，越擴越慢、最遠到 SHELL_REACH px、活 SHELL_LIFE 毫秒。點本身也在呼吸（變星）
+ */
+const SHELL_EVERY = 130;
+const SHELL_REACH = 70;
+const SHELL_LIFE = 1500;
+const HOLE_SWIRL = 2.4;
+const HOLE_PULL = 1.3;
+/** 海王星的預言落點（predicted）：圈的半徑、外面那四道刻度的長度（px） */
+const PREDICT_R = 10;
+const PREDICT_TICK = 4;
+/** 海王星的彈弓（flyby）：路線被那顆星彎了多少（rad）、近拱點到出口是直飛那段的幾倍長、那顆星畫多大（px） */
+const SLING_DEFLECT = (110 * Math.PI) / 180;
+const SLING_ARM = 0.75;
+const SLING_BODY_R = 11;
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 
@@ -128,6 +199,12 @@ const unit = (p: Pt): Pt => {
   return { x: p.x / l, y: p.y / l };
 };
 
+/** 黑洞的麵條化：拉長幾成（0–1）、往哪個方向 */
+interface Stretch {
+  k: number;
+  angle: number;
+}
+
 interface Flight {
   points: Pt[];
   /** 每一點從起點量起的路長 */
@@ -171,6 +248,14 @@ interface Run {
   reach: number;
   /** 新的一頁在世界裡挪了多少；鏡頭現在的位移（畫面 = 世界 − cam） */
   offset: Pt;
+  /** 海王星的彈弓繞過的那顆星（世界座標）；沒有彈弓是 null */
+  focus: Pt | null;
+  /** 黑洞的重力波：每一道波前從哪裡、什麼時候出發、多強（世界座標） */
+  waves: { at: number; c: Pt; strength: number }[];
+  /** 黑洞：離開的那一點變成的小黑洞（世界座標）與它出現的時間；沒有是 null */
+  hole: { c: Pt; at: number } | null;
+  /** 參宿四：點飛過的路上甩出的塵埃殼（世界座標、出發的時間、每一圈自己的形狀） */
+  shells: { c: Pt; at: number; phase: number[] }[];
   cam: Pt;
   /** 點不用飛（已經在錨點上）：鏡頭不動 */
   still: boolean;
@@ -189,6 +274,16 @@ interface Run {
   frames: number;
   maxFrame: number;
   longFrames: number;
+  /** 這一頁其實沒換（換主題之後接回來，store/pageTransition 的 arriveFrom）：不走頁面那段路、不重演它的進場 */
+  quiet: boolean;
+  /** quiet 那一趟走了幾成（0 到 1）：沒有 flight，黑洞照它決定什麼時候收起來 */
+  quietU?: number;
+  /**
+   * quiet 那一趟的尾巴記的是「走到路的哪裡」（沿著路的長度），不是畫面上的點：頁面的線會動（作品頁的航線、
+   * 手記的星軌一直在轉），尾巴每一幀照現在的路重畫，才會一直貼在線上。quietPath 給現在的路
+   */
+  quietS?: { s: number; t: number }[];
+  quietPath?: () => Pick<Flight, 'points' | 'cum'>;
 }
 
 const mainOf = () => document.querySelector<HTMLElement>('.main-content-container > main');
@@ -235,6 +330,41 @@ function defaultLeave(main: HTMLElement, point: Pt, alive: () => boolean): Depar
   return { point, done };
 }
 
+/**
+ * 海王星的重力彈弓：航海家 2 號 1989 年飛掠海王星，軌道被它拉彎——那是一條雙曲線，焦點就是那顆星。
+ * 直直進來、在離星最近的地方急轉、再直直出去，偏折 SLING_DEFLECT。
+ * 照真的雙曲線算（焦點在原點、p = 1：r = 1 / (1 + e cos ν)，偏折 δ 對應 e = 1 / sin(δ/2)），
+ * 轉到出去的方向是 outDir、縮放到近拱點離出口 SLING_ARM × L，再把入口挪到 start。
+ * side 決定往哪邊繞。回傳路上的點與那顆星（焦點）的位置
+ */
+function flyby(start: Pt, outDir: Pt, L: number, side: number): { points: Pt[]; focus: Pt } {
+  const e = 1 / Math.sin(SLING_DEFLECT / 2);
+  const nuMax = Math.acos(-1 / e) * 0.86;
+  const n = 64;
+  const raw = Array.from({ length: n + 1 }, (_, i) => {
+    const nu = -nuMax + (2 * nuMax * i) / n;
+    const radius = 1 / (1 + e * Math.cos(nu));
+    return { x: radius * Math.cos(nu), y: side * radius * Math.sin(nu) };
+  });
+  const last = raw[n];
+  const before = raw[n - 1];
+  const peri = raw[n / 2];
+  const turn = Math.atan2(outDir.y, outDir.x) - Math.atan2(last.y - before.y, last.x - before.x);
+  const k = (SLING_ARM * L) / Math.hypot(last.x - peri.x, last.y - peri.y);
+  const c = Math.cos(turn) * k;
+  const sn = Math.sin(turn) * k;
+  const place = (p: Pt): Pt => ({ x: p.x * c - p.y * sn, y: p.x * sn + p.y * c });
+  const first = place(raw[0]);
+  const move = { x: start.x - first.x, y: start.y - first.y };
+  return {
+    points: raw.map((p) => {
+      const q = place(p);
+      return { x: q.x + move.x, y: q.y + move.y };
+    }),
+    focus: move,
+  };
+}
+
 /** 三次 Hermite：從 p0（切向 m0）到 p1（切向 m1） */
 function hermite(p0: Pt, m0: Pt, p1: Pt, m1: Pt, n: number): Pt[] {
   return Array.from({ length: n + 1 }, (_, i) => {
@@ -252,7 +382,7 @@ function hermite(p0: Pt, m0: Pt, p1: Pt, m1: Pt, n: number): Pt[] {
   });
 }
 
-function pointAt(f: Flight, s: number): Pt {
+function pointAt(f: Pick<Flight, 'points' | 'cum'>, s: number): Pt {
   const { points, cum } = f;
   let i = 1;
   while (i < cum.length - 1 && cum[i] < s) i++;
@@ -319,6 +449,7 @@ export default function TransitionLayer() {
       r.main.style.opacity = '';
       r.main.style.transition = '';
       delete root.dataset.pt;
+      setRejoining(false);
       // 星空停在鏡頭最後的位置，不歸位（歸位那一下會像整片背景被拉回去）
       skyBase = { x: skyBase.x - r.cam.x * SKY_PARALLAX, y: skyBase.y - r.cam.y * SKY_PARALLAX };
       setSkyPan(skyBase.x, skyBase.y);
@@ -347,37 +478,306 @@ export default function TransitionLayer() {
       }
     };
 
-    const dot = (p: Pt, radius: number, alpha = 1) => {
+    /** stretch：黑洞的麵條化——沿 angle 拉長 (1 + 3k) 倍、橫向變細，光暈跟著變暗（重力紅移） */
+    const dot = (p: Pt, radius: number, alpha = 1, stretch?: Stretch) => {
       if (alpha <= 0.01) return;
+      const k = stretch?.k ?? 0;
       const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 18);
-      g.addColorStop(0, `rgba(${AMBER}, ${0.5 * alpha})`);
+      g.addColorStop(0, `rgba(${AMBER}, ${0.5 * alpha * (1 - 0.6 * k)})`);
       g.addColorStop(1, `rgba(${AMBER}, 0)`);
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(p.x, p.y, 18, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = `rgba(${AMBER}, ${alpha})`;
+      // 參宿四：點在呼吸（它是會脹縮的變星）
+      const breathe = THEME === 'betelgeuse' ? 1 + 0.25 * Math.sin(performance.now() / 160) : 1;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      ctx.ellipse(
+        p.x,
+        p.y,
+        radius * breathe * (1 + 3 * k),
+        radius * breathe * (1 - 0.55 * k),
+        stretch?.angle ?? 0,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
     };
 
-    /** 彗尾：每一段照它畫下去多久了變淡，散完就不畫；回傳還有沒有沒散完的 */
-    const tail = (points: Run['trail'], now: number) => {
+    /**
+     * 參宿四的塵埃殼：VLT 拍到它周圍的物質是一團一團、不對稱的，不是整齊的圓。每一圈由細小的塵埃點組成，
+     * 半徑不規則起伏、點聚成一段段團塊（每一圈的形狀各自不同，phase），往外擴得越來越慢（被拋出的物質會減速）。
+     * 回傳還有沒有沒散完的
+     */
+    const dustShells = (r: Run, now: number) => {
+      if (!r.shells.length) return false;
+      r.shells = r.shells.filter((sh) => now - sh.at < SHELL_LIFE);
+      for (const sh of r.shells) {
+        const age = (now - sh.at) / SHELL_LIFE;
+        const radius = 3 + SHELL_REACH * easeOut(age);
+        const fade = 0.75 * Math.pow(1 - age, 1.2);
+        const [p1, p2, p3, p4, p5] = sh.phase;
+        const n = Math.round(clamp(radius * 0.9, 12, 90));
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          const lump = 0.16 * Math.sin(2 * a + p1) + 0.09 * Math.sin(3 * a + p2) + 0.05 * Math.sin(5 * a + p3);
+          const clump = clamp(0.45 + 0.6 * Math.sin(4 * a + p4) + 0.35 * Math.sin(7 * a + p5));
+          if (clump < 0.08) continue;
+          const rr = radius * (1 + lump);
+          ctx.fillStyle = `rgba(${INK}, ${(fade * clump).toFixed(3)})`;
+          ctx.fillRect(sh.c.x + rr * Math.cos(a) - 0.65, sh.c.y + rr * Math.sin(a) - 0.65, 1.3, 1.3);
+        }
+      }
+      return r.shells.length > 0;
+    };
+
+    /**
+     * 黑洞的轉場：離開的那一點變成的小黑洞，跟首頁的主星同一個長相——夜色的陰影、一圈光子環、
+     * 陰影頂上被彎過去的盤影、一道傾斜的吸積盤（後半圈在陰影後面、前半圈擋在前面）。出現時從一點長出來；
+     * 點逃遠了、身後的光也吞得差不多了就收起來
+     */
+    const drawHole = (r: Run, now: number) => {
+      const h = r.hole;
+      if (!h) return;
+      const grow = easeOut(clamp((now - h.at) / 320));
+      // 點逃遠了、光也吞得差不多了，黑洞就收起來（不一直留在那裡）
+      const f = r.flight;
+      const progress = r.phase === 'grow' ? 1 : f ? clamp((now - f.at - f.acquire) / f.dur) : (r.quietU ?? 0);
+      const fade = 1 - smooth(0.4, 0.75, progress);
+      if (grow * fade <= 0.01) return;
+      const radius = HOLE_R * grow * (0.4 + 0.6 * fade);
+      ctx.save();
+      ctx.translate(h.c.x, h.c.y);
+      ctx.rotate(-0.2);
+      ctx.globalAlpha = fade;
       ctx.lineWidth = 1;
-      ctx.lineCap = 'round';
-      let alive = false;
-      for (let i = 1; i < points.length; i++) {
-        const k = 1 - (now - points[i].t) / TAIL_MS;
-        if (k <= 0) continue;
-        alive = true;
-        ctx.strokeStyle = `rgba(${INK}, ${(0.75 * Math.pow(k, 1.6)).toFixed(3)})`;
+      const disk = (from: number, to: number, alpha: number) => {
+        for (const [rx, a] of [
+          [1.5, 1],
+          [1.9, 0.75],
+          [2.4, 0.45],
+        ]) {
+          ctx.strokeStyle = `rgba(${INK}, ${(alpha * a).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, radius * rx, radius * rx * 0.3, 0, from, to);
+          ctx.stroke();
+        }
+      };
+      disk(Math.PI, Math.PI * 2, 0.55);
+      ctx.fillStyle = `rgb(${GROUND})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.fill();
+      // 盤的背面被重力彎到陰影頂上的那道拱（首頁的 3D 黑洞也有）：沒有它的話小黑洞看起來像一顆帶環的星
+      for (const [k, a] of [
+        [1.22, 0.7],
+        [1.42, 0.45],
+        [1.62, 0.25],
+      ]) {
+        ctx.strokeStyle = `rgba(${INK}, ${a})`;
         ctx.beginPath();
-        ctx.moveTo(points[i - 1].x, points[i - 1].y);
-        ctx.lineTo(points[i].x, points[i].y);
+        ctx.ellipse(0, 0, radius * k, radius * k * 0.95, 0, Math.PI * 1.08, Math.PI * 1.92);
         ctx.stroke();
       }
+      ctx.strokeStyle = `rgba(${INK}, 0.85)`;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 1.08, 0, Math.PI * 2);
+      ctx.stroke();
+      disk(0, Math.PI, 0.8);
+      ctx.restore();
+    };
+
+    /**
+     * 黑洞的重力波，照教科書解釋重力波的那張圖畫：一圈「測試粒子」被波掃過時，整圈在橫的橢圓與直的橢圓之間
+     * 來回擺（四極形變，一個方向拉長、另一個方向壓扁）。每一道波前是一圈細點，從出發點往外走、越遠越淡、
+     * 一邊走一邊擺。回傳還有沒有沒散完的
+     */
+    const gravityWaves = (r: Run, now: number) => {
+      ctx.lineWidth = 1;
+      let alive = false;
+      const keep: Run['waves'] = [];
+      for (const w of r.waves) {
+        const age = now - w.at;
+        if (age < 0) {
+          keep.push(w);
+          alive = true;
+          continue;
+        }
+        const life = age / WAVE_LIFE;
+        if (life >= 1) continue;
+        keep.push(w);
+        alive = true;
+        const radius = 6 + age * WAVE_SPEED;
+        // 越遠越淡（振幅大約照 1/r 掉）、越老越淡
+        const alpha = Math.min(1, 1.1 * w.strength) * Math.pow(1 - life, 1.3) * Math.min(1, 90 / radius) ** 0.5;
+        if (alpha < 0.01) continue;
+        // 一邊走一邊擺：越強擺得越慢
+        const squeeze =
+          WAVE_SQUEEZE *
+          Math.min(1, 0.4 + w.strength) *
+          Math.sin((2 * Math.PI * age) / (WAVE_PERIOD * (0.6 + 0.4 * w.strength)));
+        ctx.fillStyle = `rgba(${INK}, ${alpha.toFixed(3)})`;
+        const n = Math.round(clamp(radius * 0.5, 36, 160));
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          const rr = radius * (1 + squeeze * Math.cos(2 * a));
+          ctx.fillRect(w.c.x + rr * Math.cos(a) - 0.75, w.c.y + rr * Math.sin(a) - 0.75, 1.5, 1.5);
+        }
+      }
+      r.waves = keep;
       return alive;
+    };
+
+    /**
+     * 彗尾：每一段照它畫下去多久了變淡，散完就不畫；回傳還有沒有沒散完的。線一律是 1px 的髮絲線（站上的線都是）。
+     * 一小段一筆、平頭：圓頭的話相鄰兩筆的半透明端點疊在一起，接頭會亮成一串珠子
+     *
+     * 海王星跟 3D 的 Adams 環同一個長相：一條很淡的髮絲，上面四段亮的（TAIL_ARCS，從點往回量）。
+     * 黑洞跟土星一樣是一條順著路的髮絲（試過捲成螺旋：跟點實際走的路無關，單看像一條畸形的線）
+     */
+    const tail = (trail: Run['trail'], now: number, hole?: Pt) => {
+      ctx.lineWidth = 1;
+      ctx.lineCap = 'butt';
+      let alive = false;
+      let back = 0;
+      // 黑洞：點身後的光越舊越被拉回後面那個小黑洞——繞著它轉、往它收，進了陰影就不見（只改畫的位置）
+      const life = hole ? TAIL_MS * HOLE_PULL : TAIL_MS;
+      const points: (Pt & { t: number; u?: number })[] = hole
+        ? trail.map((p) => {
+            const u = clamp((now - p.t) / life) ** 1.4;
+            const turn = u * HOLE_SWIRL;
+            const dx = (p.x - hole.x) * (1 - u);
+            const dy = (p.y - hole.y) * (1 - u);
+            return {
+              x: hole.x + dx * Math.cos(turn) - dy * Math.sin(turn),
+              y: hole.y + dx * Math.sin(turn) + dy * Math.cos(turn),
+              t: p.t,
+              u,
+            };
+          })
+        : trail;
+      for (let i = points.length - 1; i > 0; i--) {
+        const a = points[i - 1];
+        const b = points[i];
+        const step = Math.hypot(b.x - a.x, b.y - a.y);
+        const from = back;
+        back += step;
+        const k = 1 - (now - b.t) / life;
+        if (k <= 0 || step === 0) continue;
+        if (
+          hole &&
+          Math.hypot(a.x - hole.x, a.y - hole.y) < HOLE_R &&
+          Math.hypot(b.x - hole.x, b.y - hole.y) < HOLE_R
+        ) {
+          alive = true;
+          continue;
+        }
+        alive = true;
+        const fade = Math.pow(k, 1.6);
+        // 這一筆從 b（靠點那頭）量回 a 的哪幾段、各多亮
+        const pieces: [u0: number, u1: number, alpha: number][] = [];
+        if (THEME === 'neptune') {
+          let at = 0;
+          for (const [s0, s1] of TAIL_ARCS) {
+            const lo = clamp((s0 - from) / step);
+            const hi = clamp((s1 - from) / step);
+            if (lo > at) pieces.push([at, lo, TAIL_FAINT * fade]);
+            if (hi > lo) pieces.push([lo, hi, 0.85 * fade]);
+            at = Math.max(at, hi);
+          }
+          if (at < 1) pieces.push([at, 1, TAIL_FAINT * fade]);
+        } else pieces.push([0, 1, 0.75 * fade]);
+        // 這條線是點拖著的光：用點的顏色、帶一層淡淡的光暈（白色的髮絲看不出是光）。
+        // 黑洞的越被拉回黑洞越暗（爬出重力井的光會變暗）
+        const light = hole ? 1 - 0.8 * (b.u ?? 0) : 1;
+        for (const [u0, u1, alpha] of pieces) {
+          if (u1 <= u0) continue;
+          const x0 = b.x + (a.x - b.x) * u0;
+          const y0 = b.y + (a.y - b.y) * u0;
+          const x1 = b.x + (a.x - b.x) * u1;
+          const y1 = b.y + (a.y - b.y) * u1;
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = `rgba(${AMBER}, ${(0.12 * alpha * light).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0);
+          ctx.lineTo(x1, y1);
+          ctx.stroke();
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = `rgba(${AMBER}, ${(alpha * light).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0);
+          ctx.lineTo(x1, y1);
+          ctx.stroke();
+        }
+      }
+      return alive;
+    };
+
+    /**
+     * 彈弓繞過的那顆星：一顆小小的刻線海王星（跟首頁的主星同一支筆）。一列列橫線、左上受光，
+     * 外面一道細環，傾角跟主星一樣。只畫一個圈的話讀者不知道那是什麼，看起來像雜訊
+     */
+    const slingBody = (c: Pt, alpha: number) => {
+      const radius = SLING_BODY_R;
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(-0.2);
+      ctx.lineWidth = 1;
+      // 環的後半圈（在星球後面）
+      ctx.strokeStyle = `rgba(${INK}, ${(0.35 * alpha).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 1.9, radius * 1.9 * 0.408, 0, Math.PI, Math.PI * 2);
+      ctx.stroke();
+      // 球：先把球面範圍清空（擋掉後半圈的環與後面的尾巴），再一列列畫刻線，越往右下越暗
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.save();
+      ctx.clip();
+      ctx.clearRect(-radius, -radius, radius * 2, radius * 2);
+      for (let y = -radius + 1.5; y < radius; y += 2.5) {
+        const half = Math.sqrt(radius * radius - y * y);
+        const grad = ctx.createLinearGradient(-half, y, half, y);
+        const lit = 0.8 * alpha * (1 - (0.35 * (y + radius)) / (2 * radius));
+        grad.addColorStop(0, `rgba(${INK}, ${lit.toFixed(3)})`);
+        grad.addColorStop(1, `rgba(${INK}, 0)`);
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(-half, y);
+        ctx.lineTo(half, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+      // 環的前半圈（擋在星球前面）
+      ctx.strokeStyle = `rgba(${INK}, ${(0.55 * alpha).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 1.9, radius * 1.9 * 0.408, 0, 0, Math.PI);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    /**
+     * 海王星的預言落點：1846 年勒維耶先從天王星軌道的偏差算出海王星該在哪，加勒當晚往那裡一看，
+     * 就在預測的 1° 以內。飛到一半，目的地先浮出一個淡淡的細圈與四道刻度（算好的座標），
+     * 點落進去時圈亮一下、收進點裡
+     */
+    const predicted = (p: Pt, alpha: number, scale: number) => {
+      if (alpha <= 0.01 || scale <= 0.01) return;
+      const radius = PREDICT_R * scale;
+      ctx.strokeStyle = `rgba(${INK}, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        ctx.moveTo(p.x + dx * (radius + 3), p.y + dy * (radius + 3));
+        ctx.lineTo(p.x + dx * (radius + 3 + PREDICT_TICK * scale), p.y + dy * (radius + 3 + PREDICT_TICK * scale));
+      }
+      ctx.stroke();
     };
 
     /**
@@ -397,7 +797,7 @@ export default function TransitionLayer() {
       const h = window.innerHeight;
       const mid = { x: w / 2, y: h / 2 };
       // 頁面挑最後一段路時，點的位置是鏡頭開始煞停那一刻它在畫面上的位置：正中間
-      const arrival = fresh?.arrive?.({ pos: mid, vel: { x: 0, y: 0 } }) ?? null;
+      const arrival = r.quiet ? null : (fresh?.arrive?.({ pos: mid, vel: { x: 0, y: 0 } }) ?? null);
       const approach = arrival?.approach && arrival.approach.length > 1 ? arrival.approach : null;
       const target = approach ? approach[0] : anchor;
       const gap = { x: target.x - r.pos.x, y: target.y - r.pos.y };
@@ -464,14 +864,19 @@ export default function TransitionLayer() {
       const brake = clamp(len(toStop) * 1.1 + 160, 200, Math.min(w, h));
       // 頁面給了畫面外的那段路，鏡頭就沿著它跟拍：起頭的直線只要短短一段，把點接上那條路
       const L = join > 0 ? Math.min(w, h) * 0.2 : Math.max(Math.min(w, h) * TRAVEL, brake + 220);
-      // 世界裡：從點現在的位置沿 inDir 直直飛 L，終點就是（挪過的）那條線的起點
-      const end = { x: r.pos.x + inDir.x * L, y: r.pos.y + inDir.y * L };
+      const v0 = len(r.vel) > 0.05 ? unit(r.vel) : inDir;
+      // 世界裡：從點現在的位置沿 inDir 直直飛 L，終點就是（挪過的）那條線的起點；起步稍微帶一點點原本的方向。
+      // 海王星是重力彈弓（flyby）：沿雙曲線繞過一顆星，出去的方向接上那條線，終點由那條雙曲線決定
+      const m0 = unit({ x: inDir.x + 0.3 * v0.x, y: inDir.y + 0.3 * v0.y });
+      const sling = THEME === 'neptune' ? flyby(r.pos, inDir, L, v0.x * inDir.y - v0.y * inDir.x >= 0 ? -1 : 1) : null;
+      const end = sling ? (sling.points.at(-1) ?? r.pos) : { x: r.pos.x + inDir.x * L, y: r.pos.y + inDir.y * L };
+      r.focus = sling?.focus ?? null;
+      if (THEME === 'blackhole') r.hole = { c: { ...r.pos }, at: now };
       const O = { x: end.x - target.x, y: end.y - target.y };
       const shift = (p: Pt): Pt => ({ x: p.x + O.x, y: p.y + O.y });
-      // 起步稍微帶一點點原本的方向，其餘是直的
-      const v0 = len(r.vel) > 0.05 ? unit(r.vel) : inDir;
-      const m0 = unit({ x: inDir.x + 0.3 * v0.x, y: inDir.y + 0.3 * v0.y });
-      const lead = hermite(r.pos, { x: m0.x * L, y: m0.y * L }, end, { x: inDir.x * L, y: inDir.y * L }, 48);
+      const lead = sling
+        ? sling.points
+        : hermite(r.pos, { x: m0.x * L, y: m0.y * L }, end, { x: inDir.x * L, y: inDir.y * L }, 48);
       const points = [...lead, ...(approach ? approach.slice(1).map(shift) : [])];
       const cum = [0];
       for (let i = 1; i < points.length; i++)
@@ -485,7 +890,7 @@ export default function TransitionLayer() {
         cum,
         total,
         at: now,
-        dur: clamp(total / (SPEED * pace), FLY_MIN_MS, FLY_MAX_MS / pace),
+        dur: clamp(total / (SPEED * pace), FLY_MIN_MS, FLY_MAX_MS / pace) * (THEME === 'blackhole' ? BH_DILATE : 1),
         acquire,
         start: { ...r.pos },
         brakeFrom: Math.max(0, sJoin - Math.min(brake, sJoin * 0.8)),
@@ -565,7 +970,7 @@ export default function TransitionLayer() {
         track(r, p, now);
         // 接著上一趟的：上一趟的彗尾與塵埃照樣散完
         drawDust(r, Math.min(50, now - r.last), 1);
-        tail(r.trail, now);
+        tail(r.trail, now, r.hole?.c);
         r.last = now;
         dot(p, 1 + 2 * k, k);
         return;
@@ -587,6 +992,95 @@ export default function TransitionLayer() {
             ctx.globalAlpha = fadeOut;
             residue(ctx);
           });
+      }
+
+      // 這一頁其實沒換（換主題之後接回來）：沒有鏡頭、頁面原地淡回來，點在畫面上直直飛向錨點。
+      // 錨點每一幀重讀：會動的（作品頁的月亮、收藏頁轉著的地球上那一點）也追得上
+      // 頁面給了 rejoin（那條線，終點是它現在的那一點）的話，點先飛到線的起點、再順著線走完
+      if (r.phase === 'fly' && r.quiet) {
+        const page = currentPage();
+        const live = () => page.handle?.rejoin?.()?.at(-1) ?? page.handle?.anchor?.() ?? defaultAnchor(r.main);
+        const pathNow = () => {
+          const line = page.handle?.rejoin?.() ?? null;
+          const points = [r.from, ...(line && line.length > 1 ? line : [live()])];
+          const cum = [0];
+          for (let i = 1; i < points.length; i++)
+            cum.push(cum[i - 1] + len({ x: points[i].x - points[i - 1].x, y: points[i].y - points[i - 1].y }));
+          return { points, cum, line };
+        };
+        const { points: route, cum, line } = pathNow();
+        r.quietPath = pathNow;
+        const total = Math.max(1, cum.at(-1) ?? 1);
+        const target = route.at(-1) ?? r.from;
+        const pace = line && line.length > 1 ? page.handle?.rejoinPace : undefined;
+        // 黑洞：一樣是逃出來的（起步被拖住、越逃越快），從新主星收成的那一點逃出來
+        const ease = THEME === 'blackhole' ? escape : (x: number) => smooth(0, 1, x);
+        const prev = r.pos;
+        let u: number;
+        /** 走到路的哪裡（沿著路的長度） */
+        let at: number;
+        // 頁面淡回來的進度：兩拍的話在第一拍就淡完，滑下去時看得到那條線
+        let shown: number;
+        if (pace) {
+          // 兩拍：先飛到線的起點，再用頁面給的速度沿著線走
+          const reach = cum[1];
+          const first = clamp(reach / QUIET_SPEED, QUIET_MS * 0.6, QUIET_MAX_MS);
+          const second = clamp((total - reach) / pace, QUIET_MS * 0.6, QUIET_MAX_MS);
+          const el = now - r.launchAt;
+          u = clamp(el / (first + second));
+          shown = clamp(el / first);
+          at = el < first ? ease(el / first) * reach : reach + smooth(0, 1, (el - first) / second) * (total - reach);
+        } else {
+          // 路越長走越久（沿著線走一次要看得清楚），但有上限
+          const dur = clamp(total / QUIET_SPEED, QUIET_MS, QUIET_MAX_MS) * (THEME === 'blackhole' ? BH_DILATE : 1);
+          u = clamp((now - r.launchAt) / dur);
+          shown = u;
+          at = ease(u) * total;
+        }
+        r.pos = pointAt({ points: route, cum }, at);
+        r.quietU = u;
+        const dt = Math.min(50, now - r.last);
+        const moved = { x: r.pos.x - prev.x, y: r.pos.y - prev.y };
+        r.quietS ??= [];
+        const lastS = r.quietS.at(-1);
+        if (!lastS || Math.abs(at - lastS.s) > 1.5) r.quietS.push({ s: at, t: now });
+        r.trail = r.quietS.map((q) => ({ ...pointAt({ points: route, cum }, q.s), t: q.t }));
+        r.main.style.opacity = String(smooth(0.3, 1, shown));
+        // 各主題自己的那一筆，跟一般換頁一樣：土星的彗尾塵埃、黑洞（光被拉回身後的小黑洞、麵條化、重力波）、
+        // 參宿四一路拋出的塵埃殼、海王星的預言落點。沒有的只有海王星的彈弓：這一趟的路是頁面的線
+        if (len(moved) > 0.2 && THEME === 'saturn') emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
+        if (THEME === 'blackhole' && !r.hole) r.hole = { c: { ...r.from }, at: now };
+        if (THEME === 'betelgeuse' && len(moved) > 0.2) {
+          const lastShell = r.shells.at(-1);
+          if (!lastShell || now - lastShell.at > SHELL_EVERY)
+            r.shells.push({
+              c: { ...r.pos },
+              at: now,
+              phase: Array.from({ length: 5 }, () => Math.random() * Math.PI * 2),
+            });
+        }
+        let stretch: Stretch | undefined;
+        if (THEME === 'blackhole') {
+          const k = u > 0 ? 1 - smooth(0.08, 0.5, u) : 0;
+          if (k > 0 && len(moved) > 0.01) stretch = { k, angle: Math.atan2(moved.y, moved.x) };
+        }
+        world(() => {
+          drawDust(r, dt, 1);
+          tail(r.trail, now, r.hole?.c);
+          drawHole(r, now);
+          dustShells(r, now);
+          gravityWaves(r, now);
+          if (THEME === 'neptune') predicted(target, 0.45 * smooth(0.3, 0.6, u), 1);
+        });
+        track(r, r.pos, now);
+        dot(r.pos, 3, 1, stretch);
+        r.last = now;
+        if (u < 1) return;
+        r.to = target;
+        r.follow = live;
+        r.followUntil = now + GROW_MS;
+        r.phase = 'grow';
+        r.growAt = now;
       }
 
       if (r.phase === 'fly') {
@@ -626,7 +1120,7 @@ export default function TransitionLayer() {
           } else {
             // 跟拍：點沿著路走（起步與落地都是緩的），鏡頭讓它一直在正中間；快接上頁面的線時鏡頭煞停
             tau = clamp((el - f.acquire) / f.dur);
-            const s = ((1 - Math.cos(Math.PI * tau)) / 2) * f.total;
+            const s = (THEME === 'blackhole' ? escape(tau) : (1 - Math.cos(Math.PI * tau)) / 2) * f.total;
             r.pos = pointAt(f, s);
             const hold = f.brakeTo - f.brakeFrom < 1 ? (s >= f.brakeTo ? 1 : 0) : smooth(f.brakeFrom, f.brakeTo, s);
             r.cam = lerp({ x: r.pos.x - mid.x, y: r.pos.y - mid.y }, r.offset, hold);
@@ -644,14 +1138,48 @@ export default function TransitionLayer() {
         const moved = { x: r.pos.x - prev.x, y: r.pos.y - prev.y };
         const lastPt = r.trail.at(-1);
         if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos, t: now });
-        if (len(moved) > 0.2) emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
+        // 塵埃只有土星（彗尾）：海王星的尾巴是那四段弧，黑洞的是一道螺旋
+        if (len(moved) > 0.2 && THEME === 'saturn') emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
         world(() => {
           drawDust(r, dt, 1);
-          tail(r.trail, now);
+          tail(r.trail, now, r.hole?.c);
+          drawHole(r, now);
+          dustShells(r, now);
+          gravityWaves(r, now);
+          // 彈弓繞過的那顆星：點靠近時浮出來，繞過去之後淡掉
+          if (r.focus) {
+            const d = len({ x: r.pos.x - r.focus.x, y: r.pos.y - r.focus.y });
+            const near = 1 - smooth(SLING_BODY_R * 4, SLING_BODY_R * 22, d);
+            if (near > 0.01) slingBody(r.focus, near);
+          }
+          // 預言的落點：點這一趟最後會停的地方（路的終點，世界座標）；飛過三成之後慢慢浮出來
+          const f = r.flight;
+          const goal = f?.points.at(-1);
+          if (THEME === 'neptune' && f && goal && !r.still) {
+            const progress = clamp((now - f.at - f.acquire) / f.dur);
+            predicted(goal, 0.45 * smooth(0.3, 0.6, progress), 1);
+          }
         });
         const onScreen = { x: r.pos.x - r.cam.x, y: r.pos.y - r.cam.y };
         track(r, onScreen, now);
-        dot(onScreen, 3);
+        // 黑洞：剛逃出來的時候點被潮汐力沿著前進方向拉長（麵條化）、光暈變暗（重力紅移），離遠了才恢復
+        let stretch: Stretch | undefined;
+        if (THEME === 'blackhole' && r.flight && !r.still) {
+          const f = r.flight;
+          const progress = clamp((now - f.at - f.acquire) / f.dur);
+          const k = progress > 0 ? 1 - smooth(0.08, 0.5, progress) : 0;
+          if (k > 0 && len(moved) > 0.01) stretch = { k, angle: Math.atan2(moved.y, moved.x) };
+        }
+        if (THEME === 'betelgeuse' && r.flight && !r.still && len(moved) > 0.2) {
+          const lastShell = r.shells.at(-1);
+          if (!lastShell || now - lastShell.at > SHELL_EVERY)
+            r.shells.push({
+              c: { ...r.pos },
+              at: now,
+              phase: Array.from({ length: 5 }, () => Math.random() * Math.PI * 2),
+            });
+        }
+        dot(onScreen, 3, 1, stretch);
         if (r.phase === 'fly') return;
       }
 
@@ -670,22 +1198,36 @@ export default function TransitionLayer() {
         const fresh = page.generation !== r.oldGeneration ? page.handle : null;
         // 交給頁面的線換成新的一頁原位的座標
         const trail = r.trail.map((p) => ({ x: p.x - r.cam.x, y: p.y - r.cam.y }));
-        fresh?.onGrow?.({ from: r.from, to, trail });
+        if (!r.quiet) fresh?.onGrow?.({ from: r.from, to, trail });
       }
       const g = clamp((now - r.growAt) / GROW_MS);
       r.main.style.transform = '';
       // 沒飛的（點本來就在錨點上）這時才淡入
       r.main.style.opacity = String(Math.max(Number(r.main.style.opacity || 0), easeOut(g)));
+      // 黑洞：點落地＝合併，從落點放出那一道（世界座標：這時鏡頭停在 offset）
+      if (THEME === 'blackhole' && !r.still && r.growAt === now)
+        r.waves.push({ at: now, c: { x: to.x + r.cam.x, y: to.y + r.cam.y }, strength: WAVE_STRENGTH });
+      // quiet：線還在動，尾巴跟著它（見 Run 的 quietS）
+      if (r.quietS && r.quietPath) {
+        const path = r.quietPath();
+        r.trail = r.quietS.map((q) => ({ ...pointAt(path, q.s), t: q.t }));
+      }
       ctx.save();
       ctx.translate(-r.cam.x, -r.cam.y);
       drawDust(r, Math.min(50, now - r.last), 1);
-      const alive = tail(r.trail, now);
+      const alive = tail(r.trail, now, r.hole?.c);
+      drawHole(r, now);
+      const shedding = dustShells(r, now);
+      const rippling = gravityWaves(r, now);
       ctx.restore();
       r.last = now;
       const landed = r.follow && now < r.followUntil ? r.follow() : to;
       track(r, landed, now);
+      // 預言的落點：點落進去的那一下亮起來，再跟著點一起收掉
+      if (THEME === 'neptune' && !r.still)
+        predicted(landed, (0.45 + 0.4 * Math.sin(Math.PI * clamp(g * 2))) * (1 - g), 1 - easeOut(g));
       dot(landed, 3 * (1 - easeOut(g)), 1 - g);
-      if (g >= 1 && !r.dust.length && !alive) {
+      if (g >= 1 && !r.dust.length && !alive && !rippling && !shedding) {
         cancelAnimationFrame(raf);
         // 正常跑完才上報（出錯、被下一次換頁打斷、元件卸載都不算）
         if (r.report) {
@@ -722,6 +1264,7 @@ export default function TransitionLayer() {
         '--boot-ring-a',
         '--boot-ring-back-a',
         '--boot-planet-r',
+        '--boot-photon-a',
       ]) {
         boot?.style.removeProperty(name);
       }
@@ -742,17 +1285,85 @@ export default function TransitionLayer() {
         const { planet, ring } =
           reported && reported.at >= start ? reported : alone > 0 ? saturnGrowAt(alone) : { planet: 0, ring: 0 };
         const target = BOOT_RING_PERSPECTIVE * bootRingUnit * (1 + (RING_OUTER - 1) * ring);
-        const r = BOOT_RING_R + (target - BOOT_RING_R) * clamp(planet / BOOT_RING_CATCH);
+        // 黑洞與參宿四：開場的光子環（恆星的輪廓）一直貼著 3D 那圈的實際大小——3D 還比它小時它留在原處等，追上之後一起長
+        // （照吸積盤外緣的比例放大的話，交棒那一下畫面上會同時有兩圈光子環）
+        const r =
+          PLANETS[THEME].kind !== 'planet'
+            ? Math.max(BOOT_RING_R, BOOT_RING_PERSPECTIVE * bootRingUnit * RING_OUTER * planet)
+            : BOOT_RING_R + (target - BOOT_RING_R) * clamp(planet / BOOT_RING_CATCH);
         boot.style.setProperty('--boot-ring-size', `${(r / BOOT_RING_R) * BOOT_RING_BOX}px`);
         boot.style.setProperty('--boot-ring-a', (1 - ring).toFixed(3));
         boot.style.setProperty('--boot-ring-back-a', (0.7 * (1 - ring)).toFixed(3));
         boot.style.setProperty('--boot-planet-r', `${(bootRingUnit * planet).toFixed(1)}px`);
+        // 黑洞：兩圈光子環合起來之後開場那圈很快淡掉——它疊在最上層，3D 那圈的下半段被盤擋住，它不會
+        boot.style.setProperty('--boot-photon-a', (1 - clamp((planet - 0.35) / 0.12)).toFixed(3));
         if (ring < 1) bootRingRaf = requestAnimationFrame(step);
         else endBoot();
       };
       cancelAnimationFrame(bootRingRaf);
       bootRingRaf = requestAnimationFrame(step);
     };
+    /**
+     * 一趟「點從 center 出發、飛到這一頁的錨點、這一頁接手進場」：開場與主題出場之後（arriveFrom）都用它。
+     * 這一頁早就報到了（oldGeneration −1：當成「新的一頁已經在」），第一幀就排路線
+     */
+    const arrivalRun = (center: Pt, main: HTMLElement, now: number): Run => ({
+      phase: 'fly',
+      follow: null,
+      followUntil: 0,
+      residue: null,
+      focus: null,
+      waves: [],
+      hole: null,
+      shells: [],
+      t0: now,
+      from: center,
+      pos: center,
+      vel: { x: 0, y: 0 },
+      launchAt: now,
+      last: now,
+      flight: null,
+      trail: [{ ...center, t: now }],
+      to: null,
+      growAt: 0,
+      main,
+      oldFirst: null,
+      // 這一頁早就報到了：當成「新的一頁已經在」，第一幀就排路線
+      oldGeneration: -1,
+      resolvedAt: 0,
+      reach: 0,
+      offset: { x: 0, y: 0 },
+      cam: { x: 0, y: 0 },
+      still: false,
+      screen: { ...center },
+      screenVel: { x: 0, y: 0 },
+      trackAt: 0,
+      carried: true,
+      dust: [],
+      report: null,
+      prevFrame: 0,
+      frames: 0,
+      maxFrame: 0,
+      longFrames: 0,
+      quiet: false,
+    });
+
+    // 主題出場之後接回這一頁（store/pageTransition 的 arriveFrom）：點從那一點飛回錨點、這一頁接手進場
+    setArrive((from, opts) => {
+      const main = mainOf();
+      if (!main || run || reduce.matches) return false;
+      // 先藏起來再拿掉裁切：路線在下一幀才排（那時才設透明度），不然這一頁會整頁閃一下
+      main.style.transition = 'none';
+      main.style.opacity = '0';
+      main.style.clipPath = '';
+      run = { ...arrivalRun(from, main, performance.now()), quiet: Boolean(opts?.quiet) };
+      root.dataset.pt = 'fly';
+      setRejoining(run.quiet);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frame);
+      return true;
+    });
+
     const enter = async () => {
       if (!root.hasAttribute('data-boot')) return;
       const quick = root.dataset.boot === 'quick';
@@ -819,45 +1430,10 @@ export default function TransitionLayer() {
       const dot = document.querySelector('.boot-dot')?.getBoundingClientRect();
       const center = { x: window.innerWidth / 2, y: dot ? dot.top + dot.height / 2 : window.innerHeight / 2 };
       bootOrigin = center;
-      const now = performance.now();
-      const r: Run = {
-        phase: 'fly',
-        follow: null,
-        followUntil: 0,
-        residue: null,
-        t0: now,
-        from: center,
-        pos: center,
-        vel: { x: 0, y: 0 },
-        launchAt: now,
-        last: now,
-        flight: null,
-        trail: [{ ...center, t: now }],
-        to: null,
-        growAt: 0,
-        main,
-        oldFirst: null,
-        // 這一頁早就報到了：當成「新的一頁已經在」，第一幀就排路線
-        oldGeneration: -1,
-        resolvedAt: 0,
-        reach: 0,
-        offset: { x: 0, y: 0 },
-        cam: { x: 0, y: 0 },
-        still: false,
-        screen: { ...center },
-        screenVel: { x: 0, y: 0 },
-        trackAt: 0,
-        carried: true,
-        dust: [],
-        report: null,
-        prevFrame: 0,
-        frames: 0,
-        maxFrame: 0,
-        longFrames: 0,
-      };
+      const r = arrivalRun(center, main, performance.now());
       run = r;
       if (handoff) {
-        const ring = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
+        const ring = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold(), RING_OUTER);
         bootRingUnit = ring.r / RING_OUTER;
         // 環的位置不在這裡定：它套在點上跟著走（track），點落在土星中心（首頁的錨點）時剛好就位
         root.dataset.bootRing = 'grow';
@@ -930,6 +1506,10 @@ export default function TransitionLayer() {
           follow: departure.follow ?? null,
           followUntil: performance.now() + (departure.followMs ?? 0),
           residue: departure.residue ?? null,
+          focus: null,
+          waves: [],
+          hole: null,
+          shells: [],
           t0: performance.now(),
           from: departure.point,
           pos: departure.point,
@@ -960,6 +1540,7 @@ export default function TransitionLayer() {
           frames: 0,
           maxFrame: 0,
           longFrames: 0,
+          quiet: false,
         };
         run = r;
         root.dataset.pt = 'leave';
@@ -1001,6 +1582,7 @@ export default function TransitionLayer() {
     });
 
     return () => {
+      setArrive(null);
       bootAbort.abort();
       window.clearTimeout(bootTimer);
       cancelAnimationFrame(bootRingRaf);

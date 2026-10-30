@@ -10,6 +10,7 @@ const base: Draft = {
   email: '',
   github: '',
   disabled_pages: [],
+  theme: 'saturn',
   page_descriptions: {},
 };
 

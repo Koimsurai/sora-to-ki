@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react';
 
 import { useAdminT } from '@/i18n/admin-i18n';
+import { ThemeGlyph } from '@/components/common/ThemeGlyph';
 import { SUPPORTED_LOCALES } from '@/lib/locales';
+import { THEMES } from '@/lib/theme';
 import { TOGGLE_GROUPS, siteProblems, type Draft } from './siteDraft';
 import './SiteFields.css';
 
-// 站台設定的三組欄位：語系、身分、頁面開關。初次設定的精靈一步放一組，後台的站台設定頁三組排在一起。
+// 站台設定的欄位：語系、身分、天體、頁面開關。初次設定的精靈一步放一組（天體不問，開站之後再挑），
+// 後台的站台設定頁全部排在一起。
 // 只管欄位本身；標題、說明、存檔由用的那一邊決定。
 
 type Patch = (p: Partial<Draft>) => void;
@@ -82,6 +85,26 @@ export function LocaleFields({ draft, patch }: { draft: Draft; patch: Patch }) {
         <span>{t('site.lang.warn')}</span>
       </p>
       <p className="sf-hint">{t('site.lang.single')}</p>
+    </>
+  );
+}
+
+/** 預設天體（單選）：讀者沒在頂欄選過時看到的那顆，分享圖也畫它 */
+export function ThemeFields({ draft, patch }: { draft: Draft; patch: Patch }) {
+  const { t } = useAdminT();
+  return (
+    <>
+      <fieldset className="sf-radios sf-themes" aria-label={t('site.theme.label')}>
+        {THEMES.map((theme) => (
+          <label key={theme}>
+            <input type="radio" name="sf-theme" checked={draft.theme === theme} onChange={() => patch({ theme })} />
+            <ThemeGlyph theme={theme} />
+            <span>{t(`site.theme.name.${theme}`)}</span>
+            <em>{t(`site.theme.signal.${theme}`)}</em>
+          </label>
+        ))}
+      </fieldset>
+      <p className="sf-hint">{t('site.theme.note')}</p>
     </>
   );
 }

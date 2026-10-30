@@ -4,6 +4,7 @@
     "latin": "Site",
     "meta": "站名、语言与要开的页面",
     "identityHead": "身份",
+    "themeHead": "天体",
     "localesHead": "语言",
     "pagesHead": "页面",
     "pagesNote": "关掉的页面连同首页上它的轨道一起拿掉，读者看不到入口。内容会留着，开回来就在。",
@@ -54,6 +55,22 @@
       "descriptionTooLong": "介绍最多 {{max}} 个字",
       "email": "邮箱的格式不对",
       "github": "GitHub 用户名只能有英文、数字与连字符，最多 39 个字"
+    }
+  },
+  "theme": {
+    "label": "默认天体",
+    "note": "读者第一次来看到的就是这一颗：首页的主星、全站的配色与分享图都跟着它。读者在顶栏自己选过的，以读者选的为准。",
+    "name": {
+      "saturn": "土星",
+      "neptune": "海王星",
+      "blackhole": "黑洞",
+      "betelgeuse": "参宿四"
+    },
+    "signal": {
+      "saturn": "琥珀",
+      "neptune": "冰蓝",
+      "blackhole": "淡紫",
+      "betelgeuse": "赭红"
     }
   },
   "pages": {

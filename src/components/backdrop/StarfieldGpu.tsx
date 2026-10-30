@@ -8,7 +8,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { InitTiming, PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
-import { palette } from '@/lib/palette';
+import { palette, type Palette } from '@/lib/palette';
+import { currentTheme, onTheme, type Theme } from '@/lib/theme';
 import { currentFold, subscribeFold } from '@/lib/viewportFold';
 import { MAIN_SECTIONS } from '@/data/siteSections';
 import { useEnabledSections } from '@/data/siteConfig';
@@ -18,6 +19,7 @@ const describeInit = (t?: InitTiming) =>
   `就緒於 ${Math.round(performance.now())} ms${t ? `（偵測 ${t.probe}・GPU ${t.device}・編譯 ${t.compile}・首幀 ${t.first}）` : ''}`;
 import { takeSpaceWorker } from './prewarm';
 import { isArriving } from '@/store/pageTransition';
+import { onShowcase, setShowcaseReady, showcaseShowing, skyBorrowed } from '@/store/themeShowcase';
 import { skyPan, subscribeSkyPan } from '@/store/skyPan';
 import {
   publishSatellites,
@@ -48,7 +50,8 @@ const BARE_DEFER_MS = 3000;
  */
 function whenSkyNeeded(start: () => void): () => void {
   const root = document.documentElement;
-  if (root.dataset.sky !== 'bare') {
+  // 借來給主星出場的（手機在首頁以外，store/themeShowcase 的 borrowSky）：出場就在眼前，馬上建
+  if (root.dataset.sky !== 'bare' || skyBorrowed()) {
     start();
     return () => undefined;
   }
@@ -118,6 +121,7 @@ export default function StarfieldGpu({
     stars(visible: boolean): void;
     pan(x: number, y: number): void;
     sections(count: number): void;
+    theme(theme: Theme, palette: Palette): void;
   } | null>(null);
 
   const liteRef = useRef(lite);
@@ -128,6 +132,36 @@ export default function StarfieldGpu({
     sectionsRef.current = sections;
     controlRef.current?.sections(sections);
   }, [sections]);
+  // 頁面開著時換了主題（lib/theme）：主星收成一點、換成新的再長出來。新的配色在這一刻已經套上 :root 了
+  useEffect(() => onTheme((theme) => controlRef.current?.theme(theme, palette())), []);
+  // 首頁以外換主題時新的主星出場一下（store/themeShowcase）：長出來、收回去、或被打斷直接藏。首頁本來就在顯示，不理它
+  const homeRef = useRef(isOnHomePage);
+  homeRef.current = isOnHomePage;
+  useEffect(() => {
+    let timer = 0;
+    const off = onShowcase((cmd) => {
+      if (cmd === 'collapse') {
+        if (homeRef.current) controlRef.current?.saturn(true, false);
+        return;
+      }
+      if (homeRef.current) return;
+      window.clearTimeout(timer);
+      if (cmd === 'show') controlRef.current?.saturn(true, true);
+      else if (cmd === 'hide') {
+        controlRef.current?.saturn(true, false);
+        timer = window.setTimeout(() => controlRef.current?.saturn(false, false), SATURN_COLLAPSE_MS);
+      } else controlRef.current?.saturn(false, false);
+    });
+    return () => {
+      off();
+      window.clearTimeout(timer);
+    };
+  }, []);
+  // 能不能出場：3D 就緒、沒有放棄 3D
+  useEffect(() => {
+    setShowcaseReady(backend !== BACKEND_PENDING && !failed);
+    return () => setShowcaseReady(false);
+  }, [backend, failed]);
   // ── GPU device / WebGL context 掉了之後的重建 ────────────────────────────
   //
   // 為什麼需要：device 掉了是永久的，three 只會 console.error 一行（在 worker 裡連那行都
@@ -176,13 +210,14 @@ export default function StarfieldGpu({
     send(skyPan());
     return subscribeSkyPan(send);
   }, [backend]);
-  // 頁面自己畫背景時（hooks/useBareSky）星星淡出讓位。控制介面就緒（backend 變了）時補送一次
+  // 頁面自己畫背景時（hooks/useBareSky）、換主題的那幾秒，星星淡出讓位。控制介面就緒（backend 變了）時補送一次
   useEffect(() => {
     const root = document.documentElement;
-    const sync = () => controlRef.current?.stars(root.dataset.sky !== 'bare');
+    // 換主題的那幾秒（html[data-stage]，layout/ThemeSwitchDot）也淡出：燈暗下來，只剩那顆主星
+    const sync = () => controlRef.current?.stars(root.dataset.sky !== 'bare' && root.dataset.stage === undefined);
     sync();
     const mo = new MutationObserver(sync);
-    mo.observe(root, { attributes: true, attributeFilter: ['data-sky'] });
+    mo.observe(root, { attributes: true, attributeFilter: ['data-sky', 'data-stage'] });
     return () => mo.disconnect();
   }, [backend]);
 
@@ -219,6 +254,9 @@ export default function StarfieldGpu({
       // 但開場的 data-boot 還要再過半秒才拿掉。只看 data-pt 的話，最後那次變化就沒人接，土星永遠停在一點
       // data-boot-ring 也要看：首頁交棒那一刻（go）土星就開始長，不等夜色拿掉
       waitArrival.observe(root, { attributes: true, attributeFilter: ['data-pt', 'data-boot', 'data-boot-ring'] });
+    } else if (!isOnHomePage && showcaseShowing()) {
+      // 手機借 3D 來出場（store/themeShowcase 的 borrowSky）：出場的指令比 3D 就緒早到，就緒時補上
+      controlRef.current?.saturn(true, true);
     } else controlRef.current?.saturn(isOnHomePage, animateSaturn);
     wasHomeRef.current = isOnHomePage;
     controlRef.current?.scroll(window.scrollY);
@@ -266,6 +304,7 @@ export default function StarfieldGpu({
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
             palette: palette(),
+            theme: currentTheme(),
             sections: sectionsRef.current,
           },
           [offscreen],
@@ -286,6 +325,7 @@ export default function StarfieldGpu({
         stars: (visible) => worker.postMessage({ type: 'stars', visible }),
         pan: (x, y) => worker.postMessage({ type: 'pan', x, y }),
         sections: (count) => worker.postMessage({ type: 'sections', count }),
+        theme: (theme, colors) => worker.postMessage({ type: 'theme', theme, palette: colors }),
       };
       const onMsg = (
         e: MessageEvent<{
@@ -356,6 +396,7 @@ export default function StarfieldGpu({
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
             palette: palette(),
+            theme: currentTheme(),
             sections: sectionsRef.current,
             onPerf: setPerf,
             onDeviceLost: (message) => {
@@ -382,6 +423,7 @@ export default function StarfieldGpu({
             stars: (visible) => runner.setStars(visible),
             pan: (x, y) => runner.setPan(x, y),
             sections: (count) => runner.setSections(count),
+            theme: (theme, colors) => runner.setTheme(theme, colors),
           };
           setBackend(`${be} · main`);
           setInitInfo(describeInit(timing));

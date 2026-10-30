@@ -41,8 +41,36 @@
   letter-spacing: var(--ls-2);
   line-height: var(--lh-100);
   color: var(--ink);
+}
+
+/* 站名與它的天空（天體，換主題）：收成點時一起縮 */
+.snav-id {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
   transform-origin: left center;
   transition: transform var(--dur-300) var(--easing-out);
+}
+
+/* 天體：現在這顆的縮小版＋名字。比站名小一階、淡一階，讀起來是站名的註腳，不是另一個連結 */
+.snav-sky {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--serif);
+  font-size: var(--fs-13);
+  line-height: var(--lh-100);
+  letter-spacing: var(--ls-8);
+  color: var(--ink-subtle);
+  transition: color var(--dur-200) var(--easing-standard);
+}
+.snav-sky:hover,
+.snav-sky[aria-expanded="true"] {
+  color: var(--ink);
+}
+.snav-sky .sky-glyph {
+  width: 18px;
+  height: 18px;
 }
 
 .snav-row {
@@ -155,7 +183,7 @@
 }
 
 /* 其他頁往下捲收成點時，名字也縮小一點 */
-.snav.is-slim.is-folded .snav-name {
+.snav.is-slim.is-folded .snav-id {
   transform: scale(0.85);
 }
 
@@ -179,6 +207,19 @@
   transition:
     max-height var(--dur-500) var(--easing-out),
     padding var(--dur-500) ease;
+}
+
+/* 天體的選單開在左邊，靠著站名旁的那個按鈕；淡出的那一側跟著換到右邊 */
+.snav.is-sky .snav-more {
+  right: auto;
+  left: 0;
+  padding: 0 calc(var(--space-24) * 2) 0 var(--space-10);
+  mask-image:
+    linear-gradient(to right, #000 calc(100% - var(--space-16)), transparent),
+    linear-gradient(#000 calc(100% - var(--space-12)), transparent);
+}
+.snav.is-sky .snav-deck {
+  margin-left: 0;
 }
 
 .snav.is-more .snav-more {
@@ -275,8 +316,11 @@
   list-style: none;
 }
 
-.snav-page-list a {
+.snav-page-list a,
+.snav-page-list button {
   position: relative;
+  width: 100%;
+  text-align: left;
   display: grid;
   grid-template-columns: 4rem minmax(0, 1fr) auto;
   align-items: baseline;
@@ -285,7 +329,8 @@
 }
 
 /* 底下那條細線：選單打開時一條接一條畫出來（跟「更多」的格子同一個動作） */
-.snav-page-list a::after {
+.snav-page-list a::after,
+.snav-page-list button::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -296,17 +341,21 @@
   transition: width var(--dur-700) var(--easing-out);
 }
 
-.snav.is-more .snav-page.is-open .snav-page-list a::after {
+.snav.is-more .snav-page.is-open .snav-page-list a::after,
+.snav.is-more .snav-page.is-open .snav-page-list button::after {
   width: 100%;
 }
 
-.snav-page-list li:nth-child(2) a::after {
+.snav-page-list li:nth-child(2) a::after,
+.snav-page-list li:nth-child(2) button::after {
   transition-delay: calc(var(--dur-100) * 0.6);
 }
-.snav-page-list li:nth-child(3) a::after {
+.snav-page-list li:nth-child(3) a::after,
+.snav-page-list li:nth-child(3) button::after {
   transition-delay: calc(var(--dur-100) * 1.2);
 }
-.snav-page-list li:nth-child(4) a::after {
+.snav-page-list li:nth-child(4) a::after,
+.snav-page-list li:nth-child(4) button::after {
   transition-delay: calc(var(--dur-100) * 1.8);
 }
 
@@ -327,7 +376,8 @@
   transition: color var(--dur-200) ease;
 }
 
-.snav-page-list a:hover .snav-row-title {
+.snav-page-list a:hover .snav-row-title,
+.snav-page-list button:hover .snav-row-title {
   color: var(--ink);
 }
 
@@ -602,8 +652,10 @@
     font-size: var(--fs-20);
   }
 
+  /* 天體在手機上是整頁選單裡的一排（layout/ThemeMenu 的 SkyRow） */
   .snav-row,
-  .snav-more {
+  .snav-more,
+  .snav-sky {
     display: none;
   }
 
@@ -621,5 +673,77 @@
   .snav *::before,
   .snav *::after {
     transition-duration: 0.01ms !important;
+  }
+}
+
+.snav-page-sky .snav-row-stamp {
+  color: var(--ink-muted);
+}
+.snav-menu-sky {
+  width: 100%;
+  max-width: 560px;
+  margin-top: var(--space-8);
+}
+.snav-menu-sky fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+/* 故事：跟桌機選單右欄同一段字，字小一號、淡一階 */
+.snav-menu-sky .snav-sky-story {
+  margin-top: var(--space-4);
+}
+.snav-menu-sky .snav-sky-story p {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+  color: var(--ink-muted);
+}
+.snav-menu-sky button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-13);
+  color: var(--ink-muted);
+}
+.snav-menu-sky button.is-on {
+  color: var(--ink);
+}
+
+/* 天體那一頁：左邊四列（按鈕的正下方），右邊是滑過的那一顆的故事。換一顆就淡入一次（key 換了，元素重建）。
+   故事比其他頁的一句說明長：那一欄放寬、字小一號，高度才跟四列差不多，不會撐出選單 */
+.snav-page-sky {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+}
+/* 圖示只有 16px，不用其他頁放日期的那麼寬一欄 */
+.snav-page-sky .snav-page-list button {
+  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
+  align-items: center;
+}
+/* 選中的那一顆的點放在圖示左邊的留白裡：名字不被推開，四列的名字對齊 */
+.snav-page-sky .is-live .snav-row-title::before {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--space-4) * -1);
+  margin: 0;
+  translate: 0 -50%;
+}
+.snav-sky-story {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  animation: snav-sky-story var(--dur-400) var(--easing-out);
+}
+.snav-page-lead .snav-sky-story p {
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+}
+@keyframes snav-sky-story {
+  from {
+    opacity: 0;
+    translate: 0 var(--space-1);
   }
 }

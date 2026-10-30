@@ -44,6 +44,8 @@ const RETRACT_MS = 380;
 /** 點沿著星軌在畫面裡走多遠（弧度）；在那之前、畫面外還有多長一段是鏡頭跟著它繞的 */
 const ARC_RUN = (150 * Math.PI) / 180;
 const ARC_LEAD = (110 * Math.PI) / 180;
+/** 換主題之後接回來時點沿著星軌走多長一段（弧度）：比飛進來時短，只是接上那顆星 */
+const REJOIN_RUN = (70 * Math.PI) / 180;
 const LEAD_STEPS = 44;
 /** 點沿著哪一道星軌飛進來（或從文章頁回到哪一篇），那一道亮多久才退回一般的亮度 */
 const KEEP_GLOW_MS = 2400;
@@ -169,6 +171,27 @@ function Notes() {
       const lead: Pt[] = [];
       for (let k = LEAD_STEPS; k >= 1; k--) lead.push(arcPoint(arc, a - (k / LEAD_STEPS) * ARC_LEAD));
       return { approach: [...lead, ...best.run], join: lead.length };
+    },
+    // 換主題之後接回來：點沿著一道星軌走一段，停在那篇文章的那顆星上（跟飛進來時一樣是一顆在走的星）。
+    // 先挑落地時的那一道；夜空一直在轉，它的星轉出畫面了就換最新、看得到的那一篇
+    rejoin: () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const on = (q: Pt) => q.x > 16 && q.x < w - 16 && q.y > 72 && q.y < h - 16;
+      const keep = keepRef.current >= 0 ? keepRef.current : arrivedRef.current;
+      const order = [keep, ...skyRef.current.keys()].filter((i) => i >= 0 && i < skyRef.current.length);
+      for (const i of order) {
+        const arc = arcOf(i);
+        if (!on(arcPoint(arc, arc.a1))) continue;
+        const run: Pt[] = [];
+        for (let k = 0; k <= 30; k++) {
+          const q = arcPoint(arc, arc.a1 - (k / 30) * REJOIN_RUN);
+          if (!on(q)) break;
+          run.unshift(q);
+        }
+        if (run.length > 1) return run;
+      }
+      return null;
     },
     // 收：點進一篇文章時，那一篇的星軌被拉成文章頁右邊的軌道（lib/articleOrbit），它的那顆星變成
     // 讀者的琥珀點；去別的地方時整片縮回各自的那顆星

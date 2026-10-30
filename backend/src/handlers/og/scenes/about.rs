@@ -24,7 +24,7 @@ use std::f32::consts::TAU;
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink, load_image, resize_image};
+use super::super::canvas::{Ctx, Gradient, amber, ground, ink, load_image, resize_image};
 use super::notes::seeded;
 
 /// 一圈 15 秒、每格 100ms
@@ -160,7 +160,7 @@ impl About {
     pub fn new() -> Self {
         let (w, h) = (W as f32, H as f32);
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
         ctx.set_line_width(1.0);
 
         // 星：釘在不同深度上，往下掉時往上掠過（近的快、遠的慢），掉得快就拉成線。

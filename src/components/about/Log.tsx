@@ -106,6 +106,19 @@ export default function Log() {
       return b && p ? { x: b.r.left + p.x, y: b.r.top + p.y } : null;
     },
     arrive: () => ({ tangent: { x: 0, y: 1 } }),
+    // 換主題之後接回來：點沿著火箭飛過的軌跡（用現在的鏡頭），從發射台一路走到軌跡最前端「現在」那一點
+    // （頁面自己的琥珀點畫在那裡，不是機鼻）
+    rejoin: () => {
+      const b = box();
+      if (!b) return null;
+      const pts: { x: number; y: number }[] = [];
+      const n = log.counts.length;
+      for (let k = 0; k <= 60; k++) {
+        const p = log.pathOnScreen(b.w, b.h, lookRef.current, Math.round(((n - 1) * k) / 60));
+        if (p) pts.push({ x: b.r.left + p.x, y: b.r.top + p.y });
+      }
+      return pts.length > 1 ? pts : null;
+    },
     leave: () => {
       const b = box();
       const start = b && log.rocketNose(b.w, b.h, lookRef.current, 0);

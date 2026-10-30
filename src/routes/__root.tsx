@@ -25,11 +25,12 @@ import { LOCALE_TO_OG } from '@/seo/seoMeta';
 import AppShell from '@/components/layout/AppShell';
 import NotFound from '@/components/layout/NotFound';
 import { localeWrap } from '@/i18n/localePage';
-import { RING_OUTER, RING_SEGMENTS } from '@/lib/saturnSpec';
+import { PLANETS } from '@/lib/saturnSpec';
 import { hex, palette } from '@/lib/palette';
 import { siteConfigQueryOptions } from '@/data/siteConfig';
 import { siteName, siteTitle } from '@/lib/siteIdentity';
 import { BOOT_MOUNT_SCRIPT, BOOT_RING_FLAT, BOOT_SCRIPT } from '@/lib/bootRing';
+import { THEMES, defaultTheme, themeScript } from '@/lib/theme';
 import { prewarmSpaceBackdrop } from '@/components/backdrop/prewarm';
 
 // 3D 背景在這裡就先開始準備（worker、GPU 探測、chunk），跟頁面其他工作同時進行（backdrop/prewarm）
@@ -110,34 +111,65 @@ function useServiceWorker() {
 }
 
 /**
- * 開場那道小環是載入條，只畫兩圈：B 環最亮的那段與 A 環（lib/saturnSpec 的 RING_SEGMENTS 第 5、8 段），
- * 中間空出來的就是卡西尼縫。半徑照 3D 土星環的比例縮（3D 環外緣是 26px），亮度照那一段的亮度
- * （跟 3D 的刷痕一樣取 0.75 次方），長大交棒時兩圈正好落在 3D 環最亮的兩道上
+ * 開場那道小環是載入條，每個主題畫自己主星的兩圈（lib/saturnSpec 的 PLANETS[主題].boot）：土星是 B 環最亮的那段與
+ * A 環，中間空出來的就是卡西尼縫。半徑照 3D 環的比例縮（3D 環外緣是 26px），亮度照那一段的亮度
+ * （跟 3D 的刷痕一樣取 0.75 次方），長大交棒時兩圈正好落在 3D 環最亮的兩道上。
+ * 主題在 paint 之前才知道（lib/theme），所以每個主題的都畫出來，由 CSS 只留現在這個
  */
-const BOOT_RINGS = RING_SEGMENTS.filter((_, i) => i === 4 || i === 7).map(([inner, outer, tone]) => ({
-  r: (((inner + outer) / 2) * 26) / RING_OUTER,
-  tone: tone ** 0.75,
+const BOOT_RINGS = THEMES.map((theme) => ({
+  theme,
+  rings: PLANETS[theme].boot.map(([r, tone]) => ({ r: (r * 26) / PLANETS[theme].ring.outer, tone })),
 }));
+/**
+ * 海王星的進度：Adams 環上的四段弧照載入的四個階段一段段亮起來（index.css 的 .boot-ring-arc，照 --boot-p）。
+ * 真實的四段弧只佔環上 40° 左右，原樣畫的話擠在一角、看不出進度走到哪。長短與間隔照原比例一起放大到繞滿一圈
+ * （最後一段之後留一段跟平均間隔差不多的空），從左端起順時針。角度是橢圓的參數角
+ */
+const BOOT_ARC_STAGES = [0.12, 0.45, 0.65, 0.85];
+const BOOT_ARC_SPAN = (() => {
+  const arcs = PLANETS.neptune.ring.arcs;
+  const end = arcs.at(-1)?.[2] ?? 1;
+  const gaps = arcs.slice(1).map(([, from], i) => from - arcs[i][2]);
+  return end + gaps.reduce((x, y) => x + y, 0) / Math.max(1, gaps.length);
+})();
+const BOOT_ARCS = PLANETS.neptune.ring.arcs.map(([at, from, to], i) => {
+  const r = (at * 26) / PLANETS.neptune.ring.outer;
+  const scale = (Math.PI * 2) / BOOT_ARC_SPAN;
+  const n = 48;
+  const d = Array.from({ length: n + 1 }, (_, k) => {
+    const a = Math.PI + (from + ((to - from) * k) / n) * scale;
+    return `${k ? 'L' : 'M'}${(r * Math.cos(a)).toFixed(2)} ${(r * BOOT_RING_FLAT * Math.sin(a)).toFixed(2)}`;
+  }).join('');
+  return { d, at: BOOT_ARC_STAGES[i] ?? 1 };
+});
 /** 這一半的兩圈橢圓（傾角：往右下斜 11.5°，從上方 24° 往下看，ry = r · sin 24°，跟 lib/saturnSpec 的 TILT／ROLL 一樣） */
-function BootRingLines({ half, kind }: { half: 'back' | 'front'; kind: 'base' | 'prog' }) {
+function BootRingLines({ half, kind }: { half: 'back' | 'front'; kind: 'base' | 'prog' | 'arc' }) {
   const id = `boot-${half}-${kind}`;
   return (
-    <svg viewBox="-40 -40 80 80">
+    <svg viewBox="-40 -40 80 80" className={`boot-lines-${kind}`}>
       <defs>
         <clipPath id={id}>
           <rect x="-40" y={half === 'back' ? -40 : 0} width="80" height="40" />
         </clipPath>
       </defs>
       <g transform="rotate(11.5)" clipPath={`url(#${id})`}>
-        {BOOT_RINGS.map(({ r, tone }) => (
-          <ellipse
-            key={r}
-            className={`boot-ring-${kind}`}
-            rx={r}
-            ry={r * BOOT_RING_FLAT}
-            style={{ '--tone': tone } as CSSProperties}
-          />
-        ))}
+        {kind === 'arc'
+          ? BOOT_ARCS.map(({ d, at }) => (
+              <path key={at} className="boot-ring-arc" d={d} style={{ '--at': at } as CSSProperties} />
+            ))
+          : BOOT_RINGS.map(({ theme, rings }) => (
+              <g key={theme} className={`boot-rings-${theme}`}>
+                {rings.map(({ r, tone }) => (
+                  <ellipse
+                    key={r}
+                    className={`boot-ring-${kind}`}
+                    rx={r}
+                    ry={r * BOOT_RING_FLAT}
+                    style={{ '--tone': tone } as CSSProperties}
+                  />
+                ))}
+              </g>
+            ))}
       </g>
     </svg>
   );
@@ -162,7 +194,74 @@ function BootRing({ half }: { half: 'back' | 'front' }) {
         <i className="boot-arc-seam" />
       </div>
       <BootRingLines half={half} kind="base" />
+      <BootRingLines half={half} kind="arc" />
+      {half === 'front' && <BootSwirl />}
+      {half === 'front' && <BootShells />}
     </div>
+  );
+}
+
+/**
+ * 黑洞的開場：物質沿著螺旋臂旋進中間那顆點，臂的條數照載入的階段一條條出現（index.css 的 .boot-swirl-arm，照 --boot-p），
+ * 載完時光子環亮起來。臂畫在盤的平面上（跟環一樣傾斜、壓扁），整組交給合成器轉：主執行緒卡住時照樣在轉。
+ * 光子環不壓扁：它是光繞著陰影走的那一圈，從哪個角度看都是圓的。半徑照 3D 的光子環比例縮（環外緣是 26px）
+ */
+const SWIRL_STAGES = [0.12, 0.3, 0.45, 0.55, 0.65, 0.85];
+const SWIRL_ARMS = SWIRL_STAGES.map((at, i) => {
+  const n = 40;
+  const turns = 1.5 * Math.PI;
+  const d = Array.from({ length: n + 1 }, (_, k) => {
+    const t = k / n;
+    const r = 30 * Math.exp(-1.5 * t);
+    const a = (i * Math.PI * 2) / SWIRL_STAGES.length + t * turns;
+    return `${k ? 'L' : 'M'}${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a)).toFixed(2)}`;
+  }).join('');
+  return { d, at };
+});
+const PHOTON_R = (1.04 * 26) / PLANETS.blackhole.ring.outer;
+
+/**
+ * 參宿四的開場：伴星 Siwarha 照載入的進度繞它一圈。參宿四的亮度除了約 400 天的呼吸，還有一個約 2100 天的
+ * 長週期起伏，天文學家從這個週期推測有一顆伴星在繞它，2025 年才真的看到。
+ * 軌道是斜的橢圓（跟土星環同一個傾角與壓扁），伴星是 HTML 的點、照 --boot-p 轉（index.css 的 .boot-sat，
+ * 交給合成器轉，主執行緒卡住時照樣在走）。中間的恆星輪廓在呼吸。
+ * 半徑照 3D 的比例縮（環外緣是 26px）：恆星 1、伴星的軌道 1.6，交棒時貼著 3D 的長（layout/TransitionLayer）
+ */
+const STAR_R = 26 / PLANETS.betelgeuse.ring.outer;
+const SAT_R = (PLANETS.betelgeuse.companion?.a ?? 1.6) * STAR_R;
+function BootShells() {
+  return (
+    <>
+      <svg viewBox="-40 -40 80 80" className="boot-shells">
+        <g transform="rotate(11.5)">
+          <ellipse className="boot-sat-orbit" rx={SAT_R} ry={SAT_R * BOOT_RING_FLAT} />
+        </g>
+        <circle className="boot-star" r={STAR_R} />
+      </svg>
+      <div className="boot-sat">
+        <div className="boot-sat-arm">
+          <i />
+        </div>
+      </div>
+    </>
+  );
+}
+function BootSwirl() {
+  return (
+    <>
+      <div className="boot-swirl">
+        <div className="boot-swirl-spin">
+          <svg viewBox="-40 -40 80 80">
+            {SWIRL_ARMS.map(({ d, at }) => (
+              <path key={at} className="boot-swirl-arm" d={d} style={{ '--at': at } as CSSProperties} />
+            ))}
+          </svg>
+        </div>
+      </div>
+      <svg viewBox="-40 -40 80 80" className="boot-photon">
+        <circle r={PHOTON_R} />
+      </svg>
+    </>
   );
 }
 
@@ -231,6 +330,13 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             __html:
               "(function(){try{var f=localStorage.getItem('blogFont');if(f&&/^[a-z-]{1,20}$/.test(f)){document.documentElement.setAttribute('data-blog-font',f);}}catch(e){}})()",
           }}
+        />
+        {/* 主題（lib/theme）：在 paint 之前掛上 html[data-theme]，配色、開場的環都照它。要排在開場那段之前。
+            讀者沒選過就是站長的預設（站台設定）；改設定時整站快取會清，這段跟著換 */}
+        <script
+          // 字串常量加上站長的預設（defaultTheme 只會是白名單裡的字），網址參數只拿來比對白名單，不落地
+          // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
+          dangerouslySetInnerHTML={{ __html: themeScript(defaultTheme()) }}
         />
         {/* 開場（index.css 的 #boot、layout/TransitionLayer 的 enter）：在 paint 之前掛上 html[data-boot]，
             頁面就先藏在夜色後面、不會先閃出來；外圈那道線照載入的階段推（window.__bootP，lib/bootRing）。

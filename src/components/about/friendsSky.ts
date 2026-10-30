@@ -4,11 +4,15 @@
 // 點一顆星，鏡頭拉近、星換成對接線稿的那艘船，這個站的船從左邊滑進來接上（面板由頁面疊在旁邊）。
 // 表單打名字時，一顆預覽星從畫面外飛到外圈等著；送出時點火，沿轉移軌道切進那條空軌道。
 // 這裡只畫點、線與插圖，字全是疊在上面的 DOM（要能點、要被裁字器看到）。
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 import { currentFold } from '@/lib/viewportFold';
 import { focusY } from '@/lib/viewportShape';
 
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+});
 const TAU = Math.PI * 2;
 /** 軌道平面往左上傾斜的角度（弧度） */
 const TILT = -0.18;

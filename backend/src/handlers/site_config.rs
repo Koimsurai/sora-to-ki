@@ -8,7 +8,10 @@
 //! [`current`] 不碰資料庫。
 
 use std::collections::BTreeMap;
-use std::sync::LazyLock;
+use std::sync::{
+    LazyLock,
+    atomic::{AtomicUsize, Ordering},
+};
 
 use axum::{
     Json,
@@ -73,6 +76,9 @@ pub struct SiteSettings {
     /// 有開的語系（一定包含預設語系）。規則同 `email`，退路是 `SITE_LOCALES`（逗號分隔），再退回全部
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locales: Option<Vec<String>>,
+    /// 預設天體（主題）：讀者沒在頂欄選過時看到的那顆，分享圖也畫這顆。`None`＝土星
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme: Option<String>,
     /// 站長自己寫的介紹文字：哪一頁（[`DESCRIBABLE`]）→ 語系 → 字。
     /// 沒寫的就用前端字串檔裡的通用句子（各頁在搜尋結果裡的描述、「關於」選單開頭那一句）
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -98,6 +104,30 @@ pub const DESCRIBABLE: [&str; 13] = [
 
 /// 站上支援的語系（介面有翻譯的那五個），順序就是語系選單的順序。前端在 src/lib/locales.ts
 pub const SUPPORTED_LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
+
+/// 能選的天體（主題），順序就是頂欄天體選單的順序。前端在 src/lib/theme.ts
+pub const THEMES: [&str; 4] = ["saturn", "neptune", "blackhole", "betelgeuse"];
+
+/// 預設天體在 [`THEMES`] 裡的位置。分享圖每畫一個點都要問顏色，不能每次都複製整份設定，
+/// 所以另外存一份，跟 [`CURRENT`] 一起更新
+static THEME: AtomicUsize = AtomicUsize::new(0);
+
+/// 預設天體（分享圖用）
+pub fn theme() -> &'static str {
+    THEMES[THEME.load(Ordering::Relaxed)]
+}
+
+/// 只換分享圖讀的那份預設天體（測試與樣張用）
+#[cfg(test)]
+pub fn set_theme_for_test(theme: &str) {
+    THEME.store(THEMES.iter().position(|t| *t == theme).unwrap_or(0), Ordering::Relaxed);
+}
+
+/// 字串 → 能選的天體（大小寫不拘）
+fn theme_of(t: Option<&str>) -> Option<&'static str> {
+    let t = t?.trim();
+    THEMES.iter().copied().find(|s| s.eq_ignore_ascii_case(t))
+}
 
 /// 字串 → 支援的語系（大小寫不拘）
 fn supported(l: &str) -> Option<&'static str> {
@@ -153,6 +183,8 @@ pub fn current() -> Option<SiteSettings> {
 }
 
 fn set_current(s: SiteSettings) {
+    let theme = theme_of(s.theme.as_deref()).and_then(|t| THEMES.iter().position(|x| *x == t)).unwrap_or(0);
+    THEME.store(theme, Ordering::Relaxed);
     *CURRENT.write() = Some(s);
 }
 
@@ -204,6 +236,7 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         github: None,
         default_locale: None,
         locales: None,
+        theme: None,
         page_descriptions: BTreeMap::new(),
     };
     // OR IGNORE：兩個程序同時開機的話，以先寫進去的那份為準
@@ -245,6 +278,8 @@ pub struct SiteConfig {
     pub default_locale: String,
     /// 有開的語系，照語系選單的順序；一定含預設語系
     pub locales: Vec<String>,
+    /// 預設天體（saturn、neptune、blackhole、betelgeuse）：讀者沒選過時看到的那顆
+    pub theme: String,
     /// 站長自己寫的介紹文字：哪一頁 → 語系 → 字。沒有的就用通用句子
     pub page_descriptions: BTreeMap<String, BTreeMap<String, String>>,
 }
@@ -263,6 +298,7 @@ impl From<SiteSettings> for SiteConfig {
             github: or_env(s.github, "SITE_GITHUB"),
             default_locale,
             locales,
+            theme: theme_of(s.theme.as_deref()).unwrap_or(THEMES[0]).to_string(),
             page_descriptions: s.page_descriptions,
         }
     }
@@ -285,6 +321,8 @@ pub struct SiteConfigUpdate {
     pub default_locale: Option<String>,
     /// 有開的語系（整份換掉）；預設語系一定會在裡面
     pub locales: Option<Vec<String>>,
+    /// 預設天體（saturn、neptune、blackhole、betelgeuse）
+    pub theme: Option<String>,
     /// 介紹文字（整份換掉）：哪一頁（home、notes…、aboutLead）→ 語系 → 字；空字串＝用通用句子
     pub page_descriptions: Option<BTreeMap<String, BTreeMap<String, String>>>,
 }
@@ -307,6 +345,11 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, St
                 .map(|l| (*l).to_string())
                 .collect(),
         );
+    }
+    if let Some(t) = &body.theme {
+        let t = theme_of(Some(t))
+            .ok_or_else(|| format!("沒有「{t}」這個天體，能選的是：{}", THEMES.join("、")))?;
+        s.theme = Some(t.to_string());
     }
     if let Some(name) = body.name {
         let name = name.trim();
@@ -451,8 +494,20 @@ mod tests {
             github: None,
             default_locale: None,
             locales: None,
+            theme: None,
             page_descriptions: BTreeMap::new(),
         }
+    }
+
+    #[test]
+    fn 天體只收認得的_沒設過是土星() {
+        assert_eq!(SiteConfig::from(base()).theme, "saturn");
+        let s =
+            apply(base(), SiteConfigUpdate { theme: Some("Neptune".into()), ..Default::default() }).unwrap();
+        assert_eq!(s.theme.as_deref(), Some("neptune"), "大小寫不拘，存成標準寫法");
+        assert_eq!(SiteConfig::from(s).theme, "neptune");
+        let err = apply(base(), SiteConfigUpdate { theme: Some("mars".into()), ..Default::default() });
+        assert!(err.unwrap_err().contains("mars"));
     }
 
     #[test]

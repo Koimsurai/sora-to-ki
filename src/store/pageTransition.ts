@@ -84,6 +84,17 @@ export interface PageTransitionHandle {
   leave?: (ctx: LeaveContext) => Departure | null;
   /** 點落地、頁面露出來的那一刻（頁面的進場本來就等 isArriving() 變 false，多數頁面用不到它） */
   onGrow?: (ctx: GrowContext) => void;
+  /**
+   * 這一頁沒換、只是換了主題之後接回來（arriveFrom 的 quiet）：點要沿著走的那條線（視窗座標），
+   * 終點是這一頁「現在」的那一點（火箭的機鼻、天線、最新的那顆月亮）。換頁進來時線還沒畫，點落在起點（anchor）；
+   * 接回來時線早就畫好了，點順著它走到現在的位置才對。每一幀都會重讀，線在動也跟得上。不給就直直飛到 anchor
+   */
+  rejoin?: () => Pt[] | null;
+  /**
+   * 給了的話，點走那條線另外用這個速度（px/ms），而且先停在線的起點再走：飛過去、沿著線走是兩拍。
+   * 關於頁的線（高度計）很短、又是重點（讀數一路往下數），跟飛過去混成一段會一下就滑完
+   */
+  rejoinPace?: number;
 }
 
 let current: PageTransitionHandle | null = null;
@@ -200,3 +211,29 @@ export const isArriving = () => {
   const booting = root.hasAttribute('data-boot') && root.dataset.bootRing !== 'go';
   return pt === 'out' || pt === 'fly' || booting;
 };
+
+/**
+ * 「從這一點飛回這一頁」：點從 from（畫面座標）出發、落在這一頁的錨點，這一頁接手自己的進場——
+ * 跟開場一樣的動作（layout/TransitionLayer 註冊）。首頁以外換主題、新主星出場完之後用它接回這一頁
+ * （layout/ThemeSwitchDot）。轉場沒載到、或已經有一趟在跑，回傳 false，呼叫端自己收尾
+ */
+type Arrive = (from: Pt, opts?: { quiet?: boolean }) => boolean;
+let arrive: Arrive | null = null;
+export function setArrive(fn: Arrive | null) {
+  arrive = fn;
+}
+/**
+ * quiet：這一頁其實沒換（換主題之後接回來），不重演它自己的進場與那段路——點直直飛回錨點、
+ * 這一頁原樣淡回來。重演的話有些頁（關於的整段下墜）要好幾秒
+ */
+export const arriveFrom: Arrive = (from, opts) => arrive?.(from, opts) ?? false;
+
+/**
+ * 正在 quiet 地接回這一頁（上面的 arriveFrom）：isArriving() 這時也是 true，但頁面沒換、捲動位置也是真的，
+ * 只是點還在飛（例如關於頁照常用捲動位置畫，只把高度計交給那顆點）。由 layout/TransitionLayer 設
+ */
+let rejoining = false;
+export const setRejoining = (value: boolean) => {
+  rejoining = value;
+};
+export const isRejoining = () => rejoining;

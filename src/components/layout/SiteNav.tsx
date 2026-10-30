@@ -18,6 +18,10 @@ import { openCommandPalette } from '@/store/commandPaletteStore';
 import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS, type SiteSection } from '@/data/siteSections';
 import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import NavMenus, { type MenuKey } from './NavMenus';
+import { ThemeGlyph } from '@/components/common/ThemeGlyph';
+import { SkyRow } from './ThemeMenu';
+import { useTheme } from '@/hooks/useTheme';
+import { onThemeRequest } from '@/lib/theme';
 import './SiteNav.css';
 
 const MORE = MORE_SECTIONS;
@@ -29,6 +33,11 @@ const SLIM_AFTER = 80;
 const OPEN_AFTER_MS = 280;
 /** 滑鼠離開導覽列多久才收起選單（斜著往下移到選單時會短暫出界） */
 const CLOSE_AFTER_MS = 320;
+/**
+ * 面板展開的動畫要多久（SiteNav.css 的 .snav-more，--dur-500）。滑過去停一下就展開，很多人滑到那裡、
+ * 稍微停一下才點，那一下剛好碰到它正在展開：這段時間點了不收（原本會反過來把它收掉），完全展開之後再點才收
+ */
+const OPENING_MS = 500;
 export default function SiteNav() {
   const { t, i18n } = useTranslation();
   const { author } = useSiteConfig();
@@ -40,9 +49,10 @@ export default function SiteNav() {
   // 導覽列與選單裡列的只有站台設定沒關掉的頁面
   const MAIN = useEnabledSections(MAIN_SECTIONS);
   const moreOn = useEnabledSections(MORE);
+  const theme = useTheme();
   const aboutOn = useEnabledSections(ABOUT_SECTIONS);
   /** 導覽列上的順序：開著的主要分區，最後是「更多」 */
-  const MENU_KEYS: MenuKey[] = [...(MAIN.map((it) => it.key) as MenuKey[]), 'more'];
+  const MENU_KEYS: MenuKey[] = [...(MAIN.map((it) => it.key) as MenuKey[]), 'more', 'sky'];
 
   const [slim, setSlim] = useState(false);
   /** 收成點之後被點開了（首頁平常就是收著的） */
@@ -56,6 +66,19 @@ export default function SiteNav() {
   /** 開過一次選單之後才開始抓選單要的資料 */
   const [armed, setArmed] = useState(false);
   const moreOpen = open !== null;
+  // 面板開在哪一側跟著最後開的那一個：天體在左邊（站名旁），其他在右邊。收起來的那段也要留在同一側，不然會一邊收一邊跳回去
+  const sideRef = useRef<MenuKey | null>(null);
+  if (open) sideRef.current = open;
+  const skySide = sideRef.current === 'sky';
+  // 按了一個天體（換主題）就把選單收起來：接著要演舊的收、新主星出場（layout/ThemeSwitchDot），選單不要蓋在上面
+  useEffect(
+    () =>
+      onThemeRequest(() => {
+        setOpen(null);
+        setMenuOpen(false);
+      }),
+    [],
+  );
   const setMoreOpen = (v: boolean) => setOpen(v ? 'more' : null);
   const [menuOpen, setMenuOpen] = useState(false);
   const linksRef = useRef<HTMLDivElement>(null);
@@ -67,10 +90,15 @@ export default function SiteNav() {
   const activeMain = MAIN.findIndex((it) => it.match(bare));
   const inMore = MORE.some((it) => it.match(bare));
   // 琥珀點停在所在的分區；在「更多」裡的頁面、或「更多」展開時，停在「更多」上；首頁沒有點
-  const restIndex = open ? MENU_KEYS.indexOf(open) : activeMain < 0 && inMore ? MAIN.length : activeMain;
+  // 天體不在那一排裡（在站名旁邊）：它的選單開著時，琥珀點照樣停在所在的分區
+  const restIndex =
+    open && open !== 'sky' ? MENU_KEYS.indexOf(open) : activeMain < 0 && inMore ? MAIN.length : activeMain;
 
+  /** 選單是什麼時候打開（或換到另一頁）的：剛打開、還在展開的時候，點同一個不收（見 OPENING_MS） */
+  const openedAtRef = useRef(0);
   const openMenu = (key: MenuKey) => {
     setOpen((prev) => {
+      if (prev !== key) openedAtRef.current = performance.now();
       if (prev && prev !== key) {
         setDir(Math.sign(MENU_KEYS.indexOf(key) - MENU_KEYS.indexOf(prev)) || 1);
         setWas(prev);
@@ -284,14 +312,34 @@ export default function SiteNav() {
   return (
     <header
       ref={headerRef}
-      className={`snav${isHome ? ' is-home' : ''}${slim ? ' is-slim' : ''}${folded ? ' is-folded' : ''}${moreOpen ? ' is-more' : ''}${menuOpen ? ' is-menu' : ''}`}
+      className={`snav${isHome ? ' is-home' : ''}${slim ? ' is-slim' : ''}${folded ? ' is-folded' : ''}${moreOpen ? ' is-more' : ''}${skySide ? ' is-sky' : ''}${menuOpen ? ' is-menu' : ''}`}
       onPointerEnter={onNavEnter}
       onPointerLeave={onNavLeave}
     >
       <div className="snav-bar">
-        <LocaleLink to="/" className="snav-name" aria-label={t('siteNav.home')}>
-          {author}
-        </LocaleLink>
+        {/* 站名與它的天空：天體（換主題）不是一個頁面，不排進右邊那一排，跟站名放在一起。
+            畫的是現在這顆的縮小版（layout/ThemeMenu），旁邊是它的名字 */}
+        <div className="snav-id">
+          <LocaleLink to="/" className="snav-name" aria-label={t('siteNav.home')}>
+            {author}
+          </LocaleLink>
+          <button
+            type="button"
+            className="snav-sky"
+            aria-label={`${t('siteNav.sky')} ${t(`siteNav.skyNames.${theme}`)}`}
+            aria-expanded={open === 'sky'}
+            aria-controls="snav-more"
+            onMouseEnter={() => hoverMenu('sky')}
+            onClick={() => {
+              cancelIntent();
+              if (open === 'sky' && performance.now() - openedAtRef.current > OPENING_MS) setOpen(null);
+              else openMenu('sky');
+            }}
+          >
+            <ThemeGlyph theme={theme} />
+            <span className="snav-sky-name">{t(`siteNav.skyNames.${theme}`)}</span>
+          </button>
+        </div>
 
         <nav className="snav-links" aria-label={t('nav.menu')}>
           {/* onMouseLeave 只是讓琥珀點回到所在分區，純視覺；連結本身都在焦點序列裡 */}
@@ -335,7 +383,7 @@ export default function SiteNav() {
               onClick={() => {
                 // 點了就以點的為準：滑進來時排的「停一下就展開」不要在之後又把它打開
                 cancelIntent();
-                if (open === 'more') setOpen(null);
+                if (open === 'more' && performance.now() - openedAtRef.current > OPENING_MS) setOpen(null);
                 else openMenu('more');
               }}
             >
@@ -418,6 +466,7 @@ export default function SiteNav() {
             </LocaleLink>
           ))}
         </div>
+        <SkyRow />
         {utilities}
       </div>
     </header>

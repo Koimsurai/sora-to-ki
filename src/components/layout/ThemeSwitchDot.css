@@ -1,0 +1,62 @@
+/* 換主題時主星收成的那一點（ThemeSwitchDot）：跟開場那顆一樣（index.css 的 .boot-dot），在呼吸 */
+.theme-switch-dot {
+  position: fixed;
+  z-index: var(--z-chrome);
+  width: 6px;
+  height: 6px;
+  translate: -50% -50%;
+  border-radius: var(--r-full);
+  background: var(--signal);
+  box-shadow: 0 0 12px var(--signal);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-300) var(--easing-standard);
+}
+.theme-switch-dot[data-on] {
+  opacity: 1;
+  animation: boot-breathe 1.6s ease-in-out infinite;
+}
+/* 切到參宿四：先像超新星一樣猛然亮一下、光暈炸開再收回，之後照常呼吸 */
+.theme-switch-dot[data-on][data-nova] {
+  animation:
+    theme-switch-nova 0.7s var(--easing-out),
+    boot-breathe 1.6s ease-in-out 0.7s infinite;
+}
+@keyframes theme-switch-nova {
+  0% {
+    box-shadow: 0 0 12px var(--signal);
+    scale: 1;
+  }
+  25% {
+    box-shadow:
+      0 0 40px 18px var(--signal),
+      0 0 120px 40px var(--signal);
+    scale: 2.4;
+  }
+  100% {
+    box-shadow: 0 0 12px var(--signal);
+    scale: 1;
+  }
+}
+
+/* 新的主星背後那圈光（ThemeSwitchDot）：換主題的那幾秒裡唯一的顏色，是那一點的光。
+   在 3D 畫布（第 1 層）底下、頁面的黑紙上面，不會把星球本身染色；大小照主星的環（--glow-r） */
+.theme-switch-glow {
+  position: fixed;
+  z-index: 0;
+  width: calc(var(--glow-r) * 2);
+  height: calc(var(--glow-r) * 2);
+  translate: -50% -50%;
+  border-radius: var(--r-round);
+  background: radial-gradient(circle, var(--signal) 0, transparent 70%);
+  opacity: 0;
+  scale: 0.4;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-700) var(--easing-standard),
+    scale var(--dur-1000) var(--easing-out);
+}
+.theme-switch-glow[data-on] {
+  opacity: 0.2;
+  scale: 1;
+}

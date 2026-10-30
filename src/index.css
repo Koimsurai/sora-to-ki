@@ -688,6 +688,52 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── 主題預設（lib/theme）：只換原始層，語意層在同一個元素（:root）上照著重算 ──
+   底色一律是黑夜，換的是訊號色與墨的溫度。--amber 在這裡是「這個主題的訊號色」，名字沿用原始層的。
+   對比度（疊在各自的底色上）：最淡的字 55% ≥ 4.5、訊號色 ≥ 3；訊號色跟墨的色差 ΔE2000 ≥ 20（認得出來） */
+/* 海王星：甲烷藍，墨偏冷，夜色帶一點藍。55% 的字 5.3:1，訊號色 8.6:1，訊號色與墨 ΔE 22.1 */
+:root[data-theme="neptune"] {
+  --ground: #07090d;
+  --ground-rgb: 7, 9, 13;
+  --paper: #e4e9ef;
+  --paper-rgb: 228, 233, 239;
+  --amber: #7eaee6;
+  --amber-rgb: 126, 174, 230;
+}
+
+/* 頁面開著時換主題（lib/theme 的 setTheme）：字、線、底在這段時間淡到新的顏色。只在換的那一下掛上，
+   平常不影響任何元素自己的過渡 */
+html.theme-switching,
+html.theme-switching * {
+  transition-property: color, background-color, border-color, fill, stroke;
+  transition-duration: var(--dur-700);
+  transition-timing-function: var(--easing-standard);
+}
+
+/* 黑洞：紫，墨偏冷灰，夜色最深。真實的吸積盤是暖白偏橘，會跟土星、火星撞色，所以取光譜的另一端。
+   55% 的字 5.2:1，訊號色 7.7:1，訊號色與墨 ΔE 27.9；跟海王星的藍 ΔE 24.5（四組裡最近的一對） */
+:root[data-theme="blackhole"] {
+  --ground: #060608;
+  --ground-rgb: 6, 6, 8;
+  --paper: #e6e4ee;
+  --paper-rgb: 230, 228, 238;
+  --amber: #c487e6;
+  --amber-rgb: 196, 135, 230;
+}
+
+/* 參宿四：赭紅，墨偏暖，夜色帶一點暖。危險色改玫瑰：原本的珊瑚紅跟赭紅只差 ΔE 8，刪除鈕會像「你在這裡」。
+   55% 的字 5.2:1，訊號色 5.6:1；訊號色與墨 ΔE 33.7、與土星的琥珀 ΔE 29.2 */
+:root[data-theme="betelgeuse"] {
+  --ground: #0c0a0a;
+  --ground-rgb: 12, 10, 10;
+  --paper: #efe5dc;
+  --paper-rgb: 239, 229, 220;
+  --amber: #d26a4c;
+  --amber-rgb: 210, 106, 76;
+  --flare: #e2708f;
+  --flare-rgb: 226, 112, 143;
+}
+
 /* ── 文章閱讀字體（右下角 FontSwitcher）──
  *
  * 為什麼字體棧放在 CSS 而不是 TSX：偏好存在 localStorage，server 讀不到，原本是在 BlogPost
@@ -1278,6 +1324,193 @@ html[data-boot="out"] .boot-pen {
   opacity: 0;
 }
 
+/* 主題（lib/theme）：每個主題的那兩圈都畫在裡面（__root.tsx 的 BOOT_RINGS），只留現在這個 */
+.boot-rings-neptune,
+.boot-lines-arc {
+  display: none;
+}
+/* 海王星不用筆畫：兩道細環一直都在，Adams 環上的四段弧照載入的四個階段一段段亮起來
+   （--boot-p 由 lib/bootRing 寫；--at 是那一段亮起來的進度）。遮片與筆尖整個不用 */
+:root[data-theme="neptune"] {
+  .boot-rings-saturn,
+  .boot-lines-prog,
+  .boot-arc,
+  .boot-pen {
+    display: none;
+  }
+  .boot-rings-neptune {
+    display: inline;
+  }
+  .boot-lines-arc {
+    display: block;
+  }
+  .boot-ring-base {
+    stroke-opacity: calc(var(--tone, 1) * 0.35);
+  }
+}
+.boot-ring-arc {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: clamp(0, calc((var(--boot-p, 0) - var(--at)) * 20 + 1), 1);
+  transition: opacity var(--dur-250) var(--easing-out);
+  /* 載得快的時候幾個階段會同一刻到：照順序錯開一點，還是看得出一段接一段亮。
+     錯開的總長要短：最後一步是轉場推到 1，260ms 後就交棒（TransitionLayer 的 BOOT_CLOSE_MS），
+     拖太久的話後兩段來不及亮（實際發生過：只亮兩格） */
+  transition-delay: calc((var(--at) - 0.12) * var(--dur-100));
+}
+/* 黑洞：不畫環，物質沿著螺旋臂旋進點裡（__root.tsx 的 BootSwirl），臂照載入的階段一條條出現，
+   載完時光子環亮起來。螺旋臂在盤的平面上（同環的傾角與壓扁），整組由合成器轉 */
+.boot-swirl,
+.boot-photon {
+  display: none;
+}
+:root[data-theme="blackhole"] {
+  .boot-rings-saturn,
+  .boot-lines-prog,
+  .boot-arc,
+  .boot-pen {
+    display: none;
+  }
+  .boot-swirl,
+  .boot-photon {
+    display: block;
+  }
+}
+.boot-swirl {
+  position: absolute;
+  inset: 0;
+  transform: rotate(11.5deg) scaleY(0.408);
+}
+.boot-swirl-spin {
+  position: absolute;
+  inset: 0;
+  animation: boot-swirl 2.4s linear infinite;
+}
+.boot-swirl svg,
+.boot-photon {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.boot-swirl-arm,
+.boot-photon circle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.boot-swirl-arm {
+  stroke-opacity: 0.55;
+  opacity: clamp(0, calc((var(--boot-p, 0) - var(--at)) * 20 + 1), 1);
+  transition: opacity var(--dur-250) var(--easing-out);
+  transition-delay: calc((var(--at) - 0.12) * var(--dur-100));
+}
+.boot-photon circle {
+  stroke-width: 1.2;
+  opacity: clamp(0, calc((var(--boot-p, 0) - 0.95) * 20 + 1), 1);
+  transition: opacity var(--dur-250) var(--easing-out);
+}
+@keyframes boot-swirl {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+/* 交棒：旋臂往內收、淡掉（物質掉進去了），光子環貼著 3D 的那圈長、合起來之後淡掉（--boot-photon-a，layout/TransitionLayer） */
+html[data-boot-ring="go"] .boot-photon {
+  opacity: var(--boot-photon-a, 1);
+}
+html[data-boot-ring="go"] .boot-swirl {
+  opacity: 0;
+  scale: 0.3;
+  transition:
+    opacity var(--dur-300) var(--easing-standard),
+    scale var(--dur-300) var(--easing-standard);
+}
+/* 參宿四：不畫環，伴星沿著斜的軌道照載入的進度繞一圈，中間的恆星輪廓在呼吸（__root.tsx 的 BootShells） */
+.boot-shells,
+.boot-sat {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+:root[data-theme="betelgeuse"] {
+  .boot-rings-saturn,
+  .boot-lines-prog,
+  .boot-arc,
+  .boot-pen {
+    display: none;
+  }
+  .boot-shells,
+  .boot-sat {
+    display: block;
+  }
+}
+.boot-sat-orbit {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-opacity: 0.4;
+  stroke-dasharray: 1 2;
+  vector-effect: non-scaling-stroke;
+}
+/* 伴星：在跟環同一個傾角、壓扁的平面上轉。轉的是手臂（rotate，交給合成器），點在手臂末端；
+   起點在左端，照 --boot-p 轉一圈。點被壓扁成橢圓不明顯（3px） */
+.boot-sat {
+  transform: rotate(11.5deg) scaleY(0.408);
+}
+.boot-sat-arm {
+  position: absolute;
+  inset: 0;
+  rotate: calc(180deg + var(--boot-p, 0) * 360deg);
+  transition: rotate var(--dur-400) var(--easing-out);
+}
+.boot-sat-arm i {
+  position: absolute;
+  top: 50%;
+  left: 82.5%; /* 中心 50% ＋ 軌道半徑 26px（框 80px 的 32.5%）：框長大時跟著長 */
+  width: 3px;
+  height: 3px;
+  translate: -50% -50%;
+  border-radius: var(--r-full);
+  background: var(--ink);
+  box-shadow: 0 0 6px var(--ink);
+}
+.boot-star {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+  stroke-opacity: 0.85;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: boot-star-breathe 2.4s ease-in-out infinite;
+}
+@keyframes boot-star-breathe {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+/* 交棒：輪廓貼著 3D 的恆星長、合起來之後淡掉（--boot-photon-a，layout/TransitionLayer） */
+html[data-boot-ring="go"] .boot-sat,
+html[data-boot-ring="go"] .boot-sat-orbit {
+  opacity: var(--boot-photon-a, 1);
+}
+html[data-boot-ring="go"] .boot-star {
+  opacity: var(--boot-photon-a, 1);
+  animation: none;
+}
 /* 不交棒的時候（別頁、沒有 3D、3D 等太久）：環收回中間那顆點裡，點再飛出去（layout/TransitionLayer 的
    BOOT_COLLAPSE_MS）。縮的是框的寬高，SVG 照新尺寸重畫，線一直是 1px；筆尖先退掉 */
 html[data-boot-collapse] .boot-ring,

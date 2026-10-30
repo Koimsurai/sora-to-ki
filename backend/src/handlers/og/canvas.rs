@@ -27,20 +27,50 @@ use tiny_skia::{
     Transform,
 };
 
-/// 站上的三個顏色（`index.css`：`--ground`、`--paper`、`--amber`）
-pub const GROUND: [u8; 3] = [10, 10, 12];
-pub const INK: [u8; 3] = [241, 236, 227];
-pub const AMBER: [u8; 3] = [233, 193, 122];
+/// 站上的三個顏色（`index.css`：`--ground`、`--paper`、`--amber`），跟著站長的預設天體換
+/// （`:root[data-theme]`，見 `site_config::theme`）。`--amber` 在土星以外不是琥珀色，是那一顆的訊號色
+#[derive(Clone, Copy, Debug)]
+pub struct Palette {
+    pub ground: [u8; 3],
+    pub ink: [u8; 3],
+    pub signal: [u8; 3],
+}
+
+pub fn palette() -> Palette {
+    palette_of(crate::handlers::site_config::theme())
+}
+
+pub const fn palette_of(theme: &str) -> Palette {
+    match theme.as_bytes() {
+        b"neptune" => Palette { ground: [7, 9, 13], ink: [228, 233, 239], signal: [126, 174, 230] },
+        b"blackhole" => Palette { ground: [6, 6, 8], ink: [230, 228, 238], signal: [196, 135, 230] },
+        b"betelgeuse" => Palette { ground: [12, 10, 10], ink: [239, 229, 220], signal: [210, 106, 76] },
+        _ => Palette { ground: [10, 10, 12], ink: [241, 236, 227], signal: [233, 193, 122] },
+    }
+}
+
+/// 底色（`--ground`）
+pub fn ground() -> [u8; 3] {
+    palette().ground
+}
+/// 墨（`--paper`）
+pub fn ink_rgb() -> [u8; 3] {
+    palette().ink
+}
+/// 訊號色（`--amber`）
+pub fn amber_rgb() -> [u8; 3] {
+    palette().signal
+}
 
 /// 一個顏色加透明度，對應 canvas 的 `rgba(r, g, b, a)`
 #[derive(Clone, Copy, Debug)]
 pub struct Rgba(pub [u8; 3], pub f32);
 
-pub const fn ink(a: f32) -> Rgba {
-    Rgba(INK, a)
+pub fn ink(a: f32) -> Rgba {
+    Rgba(ink_rgb(), a)
 }
-pub const fn amber(a: f32) -> Rgba {
-    Rgba(AMBER, a)
+pub fn amber(a: f32) -> Rgba {
+    Rgba(amber_rgb(), a)
 }
 
 impl Rgba {

@@ -20,6 +20,7 @@ beforeAll(async () => {
     github: '',
     default_locale: 'zh-TW',
     locales: ['zh-TW', 'en'],
+    theme: 'saturn',
     page_descriptions: { notes: { en: 'Notes on Rust and the web.' } },
   });
 });

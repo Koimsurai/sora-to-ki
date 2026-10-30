@@ -3,6 +3,7 @@ import { ClientOnly, useRouterState } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import SiteNav from './SiteNav';
 import ScrollToTop from './ScrollToTop';
+import ThemeSwitchDot from './ThemeSwitchDot';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
 import { loadSpaceBackdropShell } from '@/components/backdrop/prewarm';
 import type * as TransitionLayerModule from './TransitionLayer';
@@ -157,6 +158,12 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
           <Suspense fallback={null}>
             <ContextMenu />
           </Suspense>
+        </ClientOnly>
+      )}
+      {/* 換主題時主星收成的那一點（lib/theme）：只在首頁的 3D 主星在畫面上時出現 */}
+      {!isAdminPage && (
+        <ClientOnly fallback={null}>
+          <ThemeSwitchDot />
         </ClientOnly>
       )}
       {/* 思源宋體的按頁裁字：前後台都要（2026-10 後台翻新之後，後台的標題、內容與表單也是宋體） */}

@@ -6,11 +6,34 @@
 // 座標分兩種：版面座標以頁面容器左上角為原點（捲動不變），畫面座標是視窗座標。
 // 畫布固定在視窗上，每一幀把版面座標加上容器目前的位置（origin）。
 
-import { palette } from '@/lib/palette';
+import { channels, onPalette, palette } from '@/lib/palette';
 import { currentFold, type Fold } from '@/lib/viewportFold';
 import type { Pt } from '@/store/pageTransition';
 
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+/**
+ * 彗髮與彗尾的顏色：靠近彗核的地方帶著訊號色（跟換頁的點拖著的那道光同一種），沿著彗尾往後退成墨色。
+ * 整條彗尾一個顏色的話，那道帶色的光接進來會接不上。每一粒每一幀都要查，所以先算成 16 階的表
+ */
+const TINT_REACH = 0.12;
+const TINT_STEPS = 16;
+let tints: string[] = [];
+const buildTints = () => {
+  const a = channels(AMBER);
+  const b = channels(INK);
+  tints = Array.from({ length: TINT_STEPS + 1 }, (_, i) =>
+    // 彗核那頭也只帶一半的訊號色：彗尾是塵埃，不是光；光只在彗核
+    a.map((v, c) => Math.round(v + ((b[c] ?? v) - v) * (0.5 + 0.5 * Math.sqrt(i / TINT_STEPS)))).join(', '),
+  );
+};
+buildTints();
+/** k 是離彗核多遠（0 到 1） */
+const tinted = (k: number) => tints[Math.round(Math.min(1, Math.max(0, k / TINT_REACH)) * TINT_STEPS)] ?? INK;
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+  buildTints();
+});
 
 /** 弧線一個來回的高度：大約一個半螢幕，捲著看會左右擺 */
 const PERIOD = 1300;
@@ -316,7 +339,7 @@ export function createComet(tailLength: number, narrow: boolean, zoom = 1) {
         a *= 1 - (f.focusAmount ?? 1) * (1 - DIM) * (1 - inside);
       }
       if (a < 0.03) continue;
-      ctx.fillStyle = `rgba(${INK}, ${Math.min(1, a)})`;
+      ctx.fillStyle = `rgba(${tinted(d.u)}, ${Math.min(1, a)})`;
       ctx.fillRect(Math.round(x / grid) * grid + ox, Math.round(y / grid) * grid + oy, grain, grain);
     }
 
@@ -342,7 +365,7 @@ export function createComet(tailLength: number, narrow: boolean, zoom = 1) {
         const spread = (7 + 12 * Math.sqrt(c.u)) * k;
         const a = Math.pow(1 - c.u, 1.4) * (0.4 + 0.45 * Math.sin(t * 1.6 + c.j * 9) ** 2);
         if (a < 0.04) continue;
-        ctx.fillStyle = `rgba(${INK}, ${a.toFixed(3)})`;
+        ctx.fillStyle = `rgba(${tinted(c.u * 0.5)}, ${a.toFixed(3)})`;
         ctx.fillRect(
           hx - fwd.x * back + side.x * c.s * spread - 0.75 * zoom,
           hy - fwd.y * back + side.y * c.s * spread - 0.75 * zoom,

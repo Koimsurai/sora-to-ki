@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { palette } from '@/lib/palette';
+import { onPalette, palette } from '@/lib/palette';
 
 interface Datum {
   label: string;
@@ -28,7 +28,11 @@ interface BarChartBlockProps {
 }
 
 /** 沒指定顏色時的長條：暖白（--paper，站上的墨色），文章裡不再用紫 */
-const ACCENT = `rgba(${palette().paper}, 0.8)`;
+let ACCENT = `rgba(${palette().paper}, 0.8)`;
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ACCENT = `rgba(${p.paper}, 0.8)`;
+});
 
 interface TipProps {
   active?: boolean;

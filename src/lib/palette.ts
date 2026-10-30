@@ -50,3 +50,21 @@ export function hex(rgb: string): string {
     .map((n) => Math.round(n).toString(16).padStart(2, '0'))
     .join('')}`;
 }
+
+type PaletteListener = (p: Palette) => void;
+const listeners = new Set<PaletteListener>();
+
+/**
+ * 主題在頁面開著時換了（lib/theme 的 setTheme）就呼叫 fn，帶著新的配色。
+ * 在模組頂層讀過顏色的畫布用這個跟著換：下一幀就是新的顏色，畫法不用改
+ */
+export function onPalette(fn: PaletteListener): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+/** 配色換了：重讀 :root、通知所有 onPalette。只有 lib/theme 呼叫 */
+export function paletteChanged() {
+  const p = palette();
+  for (const fn of listeners) fn(p);
+}

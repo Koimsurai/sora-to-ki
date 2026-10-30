@@ -11,8 +11,8 @@ import OwnerFillHint from '@/components/common/OwnerFillHint';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { currentFold } from '@/lib/viewportFold';
 import { useBareSky } from '@/hooks/useBareSky';
-import { after, isArriving, type Pt } from '@/store/pageTransition';
-import { createFallSky, meterMark, phases, smooth } from './fallSky';
+import { after, isArriving, isRejoining, transitionDot, type Pt } from '@/store/pageTransition';
+import { createFallSky, METER_BOTTOM, METER_TOP, meterMark, meterProgress, phases, smooth } from './fallSky';
 import './AboutFall.css';
 import { sameTitle } from '@/lib/pageTitle';
 
@@ -41,6 +41,14 @@ const FALL_IN_PX = 1500;
 const FALL_SHOWN_PX = 260;
 /** 這一頁的轉場慢一點：自由落體要有掉了一陣子的感覺，太快會像平移過去 */
 const FALL_PACE = 0.5;
+/** 換主題之後接回來、還在開頭的時候：點從句號正上方多高的地方直直掉進去 */
+const REJOIN_DROP_PX = 260;
+/** 捲到這裡以前（視窗高的幾成）點還算在標題的句號上，接回來時直接掉進句號，不走高度計 */
+const REJOIN_RULER_FROM = 0.2;
+/** 沿著高度計往下滑的速度（px/ms）：慢到看得見讀數一路往下數 */
+const REJOIN_PACE = 0.45;
+/** 滑下去時星星拉成條紋的強度（換算成捲動距離的幾成）：全速會整片變成雨 */
+const REJOIN_STREAK = 0.3;
 /** 頁面在文件裡的位置（offsetTop 一路加上去）：換頁時整頁被轉場平移，量 getBoundingClientRect 會把平移算進去 */
 const docTop = (el: HTMLElement) => {
   let y = 0;
@@ -80,22 +88,54 @@ export default function AboutFall() {
   const landStopRef = useRef<HTMLSpanElement>(null);
   /** 琥珀點現在在哪（轉場的「收」從這裡出發） */
   const dotRef = useRef<Pt | null>(null);
+  /** 上一幀量到的版面（接回來時排點的路線要用） */
+  const stateRef = useRef<Parameters<typeof meterMark>[0] | null>(null);
+  /**
+   * 這一趟是開場（重新整理、直接打開）：捲動位置是瀏覽器還原的真的位置，不是上一頁留下來還沒重設的。
+   * 開場的標記（html[data-boot]）在點還在飛的時候就拿掉了，所以自己記到點落地為止
+   */
+  const restoredRef = useRef(false);
   const [title, titleStop] = splitStop(t('aboutFall.title'));
   const [land, landStop] = splitStop(t('aboutFall.land'));
 
   // 背景的星星讓位：這一頁的星都畫成下墜的參照
   useBareSky();
+  /**
+   * 點落在哪：平常是「坐穩了。」的句號。捲在下面重新整理（捲動位置被還原）的話句號在畫面外，
+   * 落在讀者現在的位置（高度計上，或著地後「就此落下。」的句號）
+   */
+  const deep = () => {
+    const s = stateRef.current;
+    return Boolean(restoredRef.current && s && s.top >= s.h * REJOIN_RULER_FROM);
+  };
+  const landing = () => (deep() ? dotRef.current : stopPoint(titleStopRef.current));
   usePageTransition({
     // 點飛進來，停成「坐穩了。」的句號
-    anchor: () => stopPoint(titleStopRef.current),
+    anchor: landing,
     // 這一頁是往下掉：點最後是從正上方直直掉進句號的，鏡頭跟著它往下，頁面從下面升上來
     arrive: () => {
-      const p = stopPoint(titleStopRef.current);
+      const p = landing();
       if (!p) return null;
+      // 捲在下面重新整理：頁面就在還原的位置，鏡頭不跟著掉那一大段（跟拍會把整頁拖過來），只看最後那段掉進來
+      const from = deep() ? FALL_SHOWN_PX : FALL_IN_PX;
       const drop: Pt[] = [];
-      for (let d = FALL_IN_PX; d >= 0; d -= 6) drop.push({ x: p.x, y: p.y - d });
-      return { approach: drop, join: Math.round((FALL_IN_PX - FALL_SHOWN_PX) / 6), pace: FALL_PACE };
+      for (let d = from; d >= 0; d -= 6) drop.push({ x: p.x, y: p.y - d });
+      return { approach: drop, join: Math.round((from - FALL_SHOWN_PX) / 6), pace: FALL_PACE };
     },
+    // 換主題之後接回來：重新掉一次，落回剛剛的高度。點先到高度計最上面（36,000 km；往下挖時是地表），
+    // 順著尺滑到現在的高度（讀數跟著往下數，見下面的 slide），著地之後再落進「就此落下。」的句號。
+    // 還在開頭的話照一般進場，從正上方直直掉進「坐穩了。」的句號
+    rejoin: () => {
+      const s = stateRef.current;
+      const dot = dotRef.current;
+      if (!s || !dot) return null;
+      if (s.top < s.h * REJOIN_RULER_FROM) return [{ x: dot.x, y: dot.y - REJOIN_DROP_PX }, dot];
+      const route = [meterMark(s, 0), meterMark(s)];
+      const end = route[1];
+      if (Math.hypot(dot.x - end.x, dot.y - end.y) > 1) route.push(dot);
+      return route;
+    },
+    rejoinPace: REJOIN_PACE,
     // 收：字退掉，琥珀點帶著往下掉的速度離開
     leave: () => {
       const point = dotRef.current;
@@ -122,6 +162,8 @@ export default function AboutFall() {
     let lastY = window.scrollY;
     let travelled = 0;
     let speed = 0;
+    /** 接回來時點在尺上滑到哪（0 到 1）；null 是平常，記號照捲動位置 */
+    let slide: number | null = null;
     const onScroll = () => {
       // 換頁時捲動位置被重設（從上一頁的捲動位置跳回頂端）不算往下掉：不然一進來星星全被拉成條紋。
       // 帶正負號：往上捲時星星往下走，拖尾要畫在另一邊
@@ -153,8 +195,13 @@ export default function AboutFall() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (w < cw) ctx.clearRect(0, 0, cw, h);
-      // 換頁的點還在飛：上一頁的捲動位置可能還沒重設，這時一律當作在最上面（不然雲層、高度計會先冒出來一下）
-      const top = isArriving() ? 0 : window.scrollY - docTop(page);
+      // 換頁的點還在飛：上一頁的捲動位置可能還沒重設，這時一律當作在最上面（不然雲層、高度計會先冒出來一下）。
+      // 換主題之後接回來、重新整理（開場）不一樣：頁面沒換或捲動位置被還原了，捲動位置是真的
+      const rejoining = isRejoining();
+      if (root.hasAttribute('data-boot')) restoredRef.current = true;
+      else if (!isArriving()) restoredRef.current = false;
+      const real = rejoining || restoredRef.current;
+      const top = isArriving() && !real ? 0 : window.scrollY - docTop(page);
       const state = {
         w,
         h,
@@ -163,6 +210,19 @@ export default function AboutFall() {
         layerTop: layer.offsetTop,
         maxScroll: page.offsetHeight - h,
       };
+      stateRef.current = state;
+      // 接回來時點沿著尺往下滑：記號與讀數跟著它，從尺頂數下來；點離開尺（著地後落進句號）就停在現在的高度。
+      // 滑過的距離換算成捲了多少，星星照樣拉成條紋：看起來就是又掉了一次
+      if (rejoining && top >= h * REJOIN_RULER_FROM) {
+        const target = meterProgress(state);
+        const p = transitionDot();
+        const onRuler = p && Math.abs(p.x - meterMark(state, 0).x) < 2;
+        const was = slide ?? 0;
+        // 不在尺上：還沒飛到尺頂（停在 0），或已經滑完、往句號去了（一幀可能跨過尺底，直接補到現在的高度）
+        const next = onRuler ? (p.y - METER_TOP) / Math.max(1, h - METER_TOP - METER_BOTTOM) : was > 0 ? target : 0;
+        slide = Math.min(target, Math.max(was, next));
+        if (!reduce && target > 0) travelled += ((slide - was) / target) * top * REJOIN_STREAK;
+      } else slide = null;
       // 琥珀點：開頭是「坐穩了。」的句號；往下捲它就跟著你往下掉，落到右邊的高度計上；
       // 著地時停成「就此落下。」的句號；往下挖時又回到高度計上
       const meter = meterMark(state);
@@ -189,6 +249,7 @@ export default function AboutFall() {
         mono,
         // 轉場還藏著這一頁時，點由轉場畫
         dot: isArriving() ? null : dot,
+        slide,
       });
     };
     raf = requestAnimationFrame(frame);

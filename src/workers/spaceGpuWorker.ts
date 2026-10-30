@@ -8,6 +8,7 @@
 // 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse / stars，錯誤一律回報主執行緒處理。
 // 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）、土星長到幾成（saturnGrow）。
 import type { Palette } from '../lib/palette';
+import type { Theme } from '../lib/theme';
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
 import type { Fold } from '../lib/viewportFold';
 
@@ -23,6 +24,8 @@ interface InitMsg {
   palette?: Palette;
   /** 開著幾個主要分區＝土星幾條軌道（站台設定） */
   sections?: number;
+  /** 主題（lib/theme）：主星照哪一份規格畫 */
+  theme?: Theme;
 }
 interface ResizeMsg {
   type: 'resize';
@@ -70,7 +73,14 @@ interface SectionsMsg {
   type: 'sections';
   count: number;
 }
+/** 頁面開著時換了主題：主星收成一點、換成新的再長出來（補放：init 前就到的話 ready 後照著換） */
+interface ThemeMsg {
+  type: 'theme';
+  theme: Theme;
+  palette: Palette;
+}
 type InMsg =
+  | ThemeMsg
   | InitMsg
   | ResizeMsg
   | RunningMsg
@@ -98,6 +108,7 @@ let lastGlow: number[] | null = null;
 let lastStars: boolean | null = null;
 let lastPan: { x: number; y: number } | null = null;
 let lastSections: number | null = null;
+let lastTheme: { theme: Theme; palette: Palette } | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
@@ -117,6 +128,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           lite: msg.lite,
           palette: msg.palette,
           sections: msg.sections,
+          theme: msg.theme,
           onPerf: (report) => self.postMessage({ type: 'perf', report }),
           // device lost：worker 裡的 console.error 不會出現在頁面 console，而且這個 renderer
           // 之後一幀都不會再畫。轉給主執行緒，由它換一張新 canvas 重建（見 StarfieldGpu）。
@@ -132,6 +144,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         if (lastStars !== null) runner.setStars(lastStars);
         if (lastPan) runner.setPan(lastPan.x, lastPan.y);
         if (lastSections !== null) runner.setSections(lastSections);
+        if (lastTheme) runner.setTheme(lastTheme.theme, lastTheme.palette);
         self.postMessage({ type: 'ready', backend, timing });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
@@ -160,6 +173,9 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'sections') {
     lastSections = msg.count;
     runner?.setSections(msg.count);
+  } else if (msg.type === 'theme') {
+    lastTheme = { theme: msg.theme, palette: msg.palette };
+    runner?.setTheme(msg.theme, msg.palette);
   } else {
     // 到這裡 union 只剩 SaturnMsg，再比對一次 msg.type 是恆真。
     // 日後新增訊息型別時，下面存取 msg.visible/msg.animate 會編譯失敗——不會被靜默吞掉。

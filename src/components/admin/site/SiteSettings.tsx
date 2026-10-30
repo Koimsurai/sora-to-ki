@@ -22,12 +22,12 @@ import { PageHead, SectionHead } from '../AdminPage';
 import { SaveBar } from '../pageEditorKit';
 import DescriptionFields from './DescriptionFields';
 import OrbitPreview from './OrbitPreview';
-import { IdentityFields, LocaleFields, PageToggles } from './SiteFields';
+import { IdentityFields, LocaleFields, PageToggles, ThemeFields } from './SiteFields';
 import { draftOf, siteProblems, type Draft } from './siteDraft';
 import './SiteSettings.css';
 
-// 站台設定（/admin/site）：身分、語系、頁面開關三段，欄位跟初次設定的精靈是同一組（SiteFields）。
-// 三段一起存（PUT /api/admin/site/config 收整份）。換預設語系會讓全站網址整批改掉，存之前再問一次。
+// 站台設定（/admin/site）：身分、天體、語系、頁面開關四段，欄位跟初次設定的精靈是同一組（SiteFields）。
+// 四段一起存（PUT /api/admin/site/config 收整份）。換預設語系會讓全站網址整批改掉，存之前再問一次。
 
 export default function SiteSettings() {
   const { t } = useAdminT();
@@ -91,6 +91,11 @@ export default function SiteSettings() {
       <section className="adm-stack" aria-labelledby="sfs-identity">
         <SectionHead id="sfs-identity">{t('site.settings.identityHead')}</SectionHead>
         <IdentityFields draft={draft} patch={patch} url={config.url} touched={touched} />
+      </section>
+
+      <section className="adm-stack" aria-labelledby="sfs-theme">
+        <SectionHead id="sfs-theme">{t('site.settings.themeHead')}</SectionHead>
+        <ThemeFields draft={draft} patch={patch} />
       </section>
 
       <section className="adm-stack" aria-labelledby="sfs-locales">

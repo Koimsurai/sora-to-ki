@@ -15,6 +15,10 @@ export function usePageTransition(handle: PageTransitionHandle) {
         arrive: (dot) => ref.current.arrive?.(dot) ?? null,
         leave: (ctx) => ref.current.leave?.(ctx) ?? null,
         onGrow: (ctx) => ref.current.onGrow?.(ctx),
+        rejoin: () => ref.current.rejoin?.() ?? null,
+        get rejoinPace() {
+          return ref.current.rejoinPace;
+        },
       }),
     [],
   );

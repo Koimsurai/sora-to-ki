@@ -32,6 +32,7 @@ beforeAll(() => {
     github: 'Koimsurai',
     default_locale: 'zh-TW',
     locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+    theme: 'saturn',
     page_descriptions: {},
   });
 });

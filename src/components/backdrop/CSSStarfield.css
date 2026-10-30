@@ -76,3 +76,11 @@
 html[data-sky="bare"] .css-starfield {
   opacity: 0;
 }
+
+/* 換主題的那幾秒（html[data-stage]，layout/ThemeSwitchDot）：燈暗下來，跟 3D 的星空一起淡出 */
+.css-stars {
+  transition: opacity var(--dur-500) ease;
+}
+html[data-stage] .css-stars {
+  opacity: 0;
+}

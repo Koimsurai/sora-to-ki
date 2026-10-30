@@ -27,7 +27,7 @@ use std::f32::consts::{PI, TAU};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, Rgba, amber, ink, load_image, resize_image};
+use super::super::canvas::{Ctx, Gradient, Rgba, amber, ground, ink, load_image, resize_image};
 
 /// 一圈 12 秒
 const FRAMES: usize = 120;
@@ -173,7 +173,7 @@ impl Messages {
         let dish = resize_image(&src, d.dw as u32, d.dh.round() as u32);
 
         let mut ctx = Ctx::new(W as u32, H as u32);
-        ctx.clear(GROUND);
+        ctx.clear(ground());
 
         // 頻道：天線（平常 0.45）、底下那條雜訊
         let line_end = d.x + d.dw * 0.2;
@@ -335,7 +335,7 @@ impl super::Scene for Messages {
             ctx.clip();
             if flash > 0.0 {
                 // 天線那一塊重畫：底色蓋掉平常亮度的那張、畫亮的，再把壓在天線底下那一小段雜訊補回來
-                ctx.set_fill(Rgba(GROUND, 1.0));
+                ctx.set_fill(Rgba(ground(), 1.0));
                 ctx.fill_rect(d.x, d.y, d.dw, d.dh);
                 draw_dish(&mut ctx, &self.dish, &d, flash);
                 ctx.save();

@@ -1,6 +1,6 @@
 // 此站點目鏡裡的三個玩具：直接拿站上真的東西來玩，而且一步一步拆開，看它當初是怎麼想出來的。
-// 規則 01 一個畫面只有一個訊號：首頁的土星（about/colophonSaturn），從一顆球畫到刷痕、雲帶、環、
-//         五顆衛星（一次只亮一顆）、背景的星軌。
+// 規則 01 一個畫面只有一個訊號：首頁現在的那顆主星（about/colophonBody），從一顆球一步步畫到
+//         五條軌道（一次只亮一顆）、背景的星軌。
 // 規則 02 只用點與線：照片頁的接收（gallery/downlink 的 RX_PHASES），0 與 1、一行一行收成黑白、
 //         一道掃過去上色；最後看只用點會怎樣。
 // 規則 03 由數據長出來：作品頁的星體（about/worksSky），調數字長一顆，再放上作品頁的螺旋。
@@ -9,12 +9,27 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { RX_PHASES } from '@/components/gallery/downlink';
 import { statsOf, useWorkEntries, useWorkStats } from '@/data/works';
+import { useSignalName } from '@/hooks/useTheme';
 import { loadPhotosManifest } from '@/lib/manifestLoader';
-import { palette } from '@/lib/palette';
-import { createTrails, drawOrbits, renderSaturn, satelliteAt, SATURN_STEPS } from './colophonSaturn';
+import { onPalette, palette } from '@/lib/palette';
+import { useTheme } from '@/hooks/useTheme';
+import {
+  BODY_STEPS,
+  breathAt,
+  createTrails,
+  drawCompanion,
+  drawOrbits,
+  ORBIT_STEP,
+  renderBody,
+  TRAIL_STEP,
+} from './colophonBody';
 import { bodiesOf, createSpiral, drawBody, drawGlyph, workStatsOf, type WorkStats } from './worksSky';
 
-const { paper: INK, amber: AMBER } = palette();
+let { paper: INK, amber: AMBER } = palette();
+// 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）
+onPalette((p) => {
+  ({ paper: INK, amber: AMBER } = p);
+});
 const TAU = Math.PI * 2;
 
 /** 畫布跟著容器的大小、清掉、設好像素比；回傳 CSS 像素的寬高 */
@@ -66,6 +81,7 @@ function Steps({
   onStep: (i: number) => void;
 }) {
   const { t } = useTranslation();
+  const signal = useSignalName();
   const key = keys[step];
   return (
     <div className="cl-steps">
@@ -82,7 +98,7 @@ function Steps({
       </fieldset>
       <div className="cl-step" key={key} aria-live="polite">
         <b>{t(`${ns}.${key}.t`)}</b>
-        <p>{t(`${ns}.${key}.d`)}</p>
+        <p>{t(`${ns}.${key}.d`, signal)}</p>
       </div>
     </div>
   );
@@ -133,41 +149,61 @@ function Range({
   );
 }
 
-/** 規則 01：首頁的土星，一步一步畫出來；畫到衛星那一步可以自己點一顆 */
-export function SaturnToy() {
+/** 規則 01：首頁現在的那顆主星，一步一步畫出來；畫到軌道那一步可以自己點一顆。換主題就換成新的那顆 */
+export function BodyToy() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { step, run, go } = useSteps();
   const [on, setOn] = useState(0);
   const onRef = useRef(on);
   onRef.current = on;
   const cvRef = useRef<HTMLCanvasElement>(null);
   const satsRef = useRef<{ x: number; y: number }[]>([]);
-  const withMoons = step >= SATURN_STEPS.indexOf('satellites');
-  const withTrails = step >= SATURN_STEPS.indexOf('trails');
+  const withMoons = step >= ORBIT_STEP;
+  const withTrails = step >= TRAIL_STEP;
 
   useEffect(() => {
     const cv = cvRef.current;
     const ctx = cv?.getContext('2d');
     if (!cv || !ctx) return;
     const reduce = reduced();
-    let planet: { key: string; img: HTMLCanvasElement } | null = null;
+    /** 這一步的圖；會脹縮的（參宿四）另外多一張亮的，兩張之間交叉淡入 */
+    let body: { key: string; dim: HTMLCanvasElement; bright: HTMLCanvasElement | null } | null = null;
     const trails = createTrails(90);
     return loop((time) => {
       const { w, h, dpr } = fit(cv, ctx);
       const t = reduce ? 0 : time;
-      // 衛星那一步起要把整組縮小，才放得下最外圈的軌道
+      const cx = w / 2;
+      const cy = h / 2;
+      // 軌道那一步起要把整組縮小，才放得下最外圈的軌道
       const R = (withMoons ? 0.078 : 0.19) * w;
       const size = Math.round(w * dpr);
-      const key = `${step}:${size}`;
-      if (planet?.key !== key) planet = { key, img: renderSaturn(step, size, R * dpr) };
+      const breath = breathAt(theme, step, t);
+      const key = `${theme}:${step}:${size}`;
+      if (body?.key !== key) {
+        const light = breathAt(theme, step, 0)?.light ?? 0;
+        body = {
+          key,
+          dim: renderBody(theme, step, size, R * dpr, 1 - light),
+          bright: light ? renderBody(theme, step, size, R * dpr, 1 + light) : null,
+        };
+      }
       if (withTrails) trails(ctx, w, h, reduce ? 3 : time, t);
       if (withMoons) {
-        drawOrbits(ctx, w / 2, h / 2, R, t, onRef.current);
-        satsRef.current = [0, 1, 2, 3, 4].map((i) => satelliteAt(i, w / 2, h / 2, R, t));
+        satsRef.current = drawOrbits(ctx, theme, cx, cy, R, t, onRef.current);
+        drawCompanion(ctx, theme, cx, cy, R, t, false);
       }
-      ctx.drawImage(planet.img, 0, 0, w, h);
+      const k = breath?.scale ?? 1;
+      const at = (img: HTMLCanvasElement) => ctx.drawImage(img, cx - (w / 2) * k, cy - (h / 2) * k, w * k, h * k);
+      at(body.dim);
+      if (body.bright && breath) {
+        ctx.globalAlpha = breath.mixK;
+        at(body.bright);
+        ctx.globalAlpha = 1;
+      }
+      if (withMoons) drawCompanion(ctx, theme, cx, cy, R, t, true);
     });
-  }, [step, run, withMoons, withTrails]);
+  }, [theme, step, run, withMoons, withTrails]);
 
   return (
     <>
@@ -176,7 +212,10 @@ export function SaturnToy() {
           key={`${step}-${run}`}
           ref={cvRef}
           className={withMoons ? 'cl-toy-canvas is-clickable' : 'cl-toy-canvas'}
-          aria-label={t('colophon.saturnToy')}
+          aria-label={t('colophon.bodyToy', {
+            body: t(`siteNav.skyNames.${theme}`),
+            bodyInline: t(`siteNav.skyNamesInline.${theme}`),
+          })}
           onPointerDown={(e) => {
             if (!withMoons) return;
             const r = e.currentTarget.getBoundingClientRect();
@@ -195,7 +234,7 @@ export function SaturnToy() {
           }}
         />
       </Scope>
-      <Steps ns="colophon.steps.saturn" keys={SATURN_STEPS} step={step} onStep={go} />
+      <Steps ns={`colophon.steps.${theme}`} keys={BODY_STEPS[theme]} step={step} onStep={go} />
     </>
   );
 }

@@ -40,7 +40,7 @@ use crate::state::AppState;
 use crate::util::escape_html;
 
 use scenes::{
-    About, Collection, Colophon, Friends, Log, Messages, Moments, Notes, Photos, Saturn, Scene, Setup,
+    About, Body, Collection, Colophon, Friends, Log, Messages, Moments, Notes, Photos, Scene, Setup,
     SetupBare, SkyPost, Works,
 };
 
@@ -141,8 +141,14 @@ const PAGES: [Page; 12] = [
     Page { key: "colophon", name: "siteNav.colophon", caps: "COLOPHON", sub: "colophon.subtitle" },
 ];
 
-/// 不需要資料的背景，整個進程算一次
-static SATURN: LazyLock<Saturn> = LazyLock::new(Saturn::new);
+/// 首頁那張的背景（主星）不需要資料：每一顆整個進程各算一次，站長換了預設天體才會算到別顆。
+/// 順序照 `site_config::THEMES`
+static BODIES: [LazyLock<Body>; 4] = [
+    LazyLock::new(|| Body::new("saturn")),
+    LazyLock::new(|| Body::new("neptune")),
+    LazyLock::new(|| Body::new("blackhole")),
+    LazyLock::new(|| Body::new("betelgeuse")),
+];
 
 // ── 字那一層 ───────────────────────────────────────────────────
 
@@ -175,9 +181,14 @@ struct Card<'a> {
 fn build_html(card: &Card) -> String {
     let serif = format!("'Noto Serif CJK {}'", card.cjk);
     let sans = format!("'Noto Sans CJK {}'", card.cjk);
+    // 字的顏色跟著站長的預設天體（canvas::palette）
+    let canvas::Palette { ink: [r, g, b], signal: [sr, sg, sb], .. } = canvas::palette();
+    let ink = format!("rgb({r},{g},{b})");
+    let ink_at = |a: f32| format!("rgba({r},{g},{b},{a})");
+    let signal = format!("rgb({sr},{sg},{sb})");
     let brand = if card.brand {
         format!(
-            r#"<span style="font-family:{serif}; font-size:30px; font-weight:700; color:#f1ece3;">{}</span>"#,
+            r#"<span style="font-family:{serif}; font-size:30px; font-weight:700; color:{ink};">{}</span>"#,
             escape_html(&crate::identity::site_name())
         )
     } else {
@@ -185,7 +196,8 @@ fn build_html(card: &Card) -> String {
     };
     let sub = card.sub.map_or_else(String::new, |s| {
         format!(
-            r#"<div style="font-size:26px; line-height:1.45; color:rgba(241,236,227,0.7); line-clamp:2; text-overflow:ellipsis;">{}</div>"#,
+            r#"<div style="font-size:26px; line-height:1.45; color:{}; line-clamp:2; text-overflow:ellipsis;">{}</div>"#,
+            ink_at(0.7),
             escape_html(s)
         )
     });
@@ -195,11 +207,11 @@ fn build_html(card: &Card) -> String {
     display:flex; flex-direction:column; justify-content:space-between;">
     <div style="display:flex; flex-direction:row; align-items:baseline; gap:14px;">
       {brand}
-      <span style="font-family:'Fira Code'; font-size:15px; letter-spacing:0.16em; color:rgba(241,236,227,0.45);">{host}</span>
+      <span style="font-family:'Fira Code'; font-size:15px; letter-spacing:0.16em; color:{muted};">{host}</span>
     </div>
     <div style="display:flex; flex-direction:column; gap:20px;">
-      <div style="font-family:'Fira Code',{sans}; font-size:18px; letter-spacing:0.12em; color:#e9c17a;">{kicker}</div>
-      <div style="font-size:54px; font-weight:700; line-height:1.25; color:#f1ece3; line-clamp:3; text-overflow:ellipsis; text-wrap:balance;">{title}</div>
+      <div style="font-family:'Fira Code',{sans}; font-size:18px; letter-spacing:0.12em; color:{signal};">{kicker}</div>
+      <div style="font-size:54px; font-weight:700; line-height:1.25; color:{ink}; line-clamp:3; text-overflow:ellipsis; text-wrap:balance;">{title}</div>
       {sub}
     </div>
   </div>
@@ -207,6 +219,7 @@ fn build_html(card: &Card) -> String {
         kicker = escape_html(card.kicker),
         title = escape_html(card.title.trim()),
         host = escape_html(&crate::identity::site_host()),
+        muted = ink_at(0.45),
     )
 }
 
@@ -331,21 +344,26 @@ fn page_scene(key: &str, sky: &[SkyPost], inputs: &PageInputs) -> Box<dyn Scene>
         "collection" => Box::new(Collection::new()),
         "photos" => Box::new(Photos::new()),
         // 首頁（PAGES 以外的名字進不到這裡）
-        _ => Box::new(SaturnRef),
+        _ => {
+            let theme = crate::handlers::site_config::theme();
+            Box::new(BodyRef(
+                crate::handlers::site_config::THEMES.iter().position(|t| *t == theme).unwrap_or(0),
+            ))
+        }
     }
 }
 
-/// 把共用的那顆土星包成 `Box<dyn Scene>`（它本身是 static，不能搬進 Box）
-struct SaturnRef;
-impl Scene for SaturnRef {
+/// 把共用的那顆主星（`BODIES` 的第幾個）包成 `Box<dyn Scene>`（它本身是 static，不能搬進 Box）
+struct BodyRef(usize);
+impl Scene for BodyRef {
     fn frames(&self) -> usize {
-        SATURN.frames()
+        BODIES[self.0].frames()
     }
     fn frame_ms(&self) -> u32 {
-        SATURN.frame_ms()
+        BODIES[self.0].frame_ms()
     }
     fn frame(&self, index: usize) -> tiny_skia::Pixmap {
-        SATURN.frame(index)
+        BODIES[self.0].frame(index)
     }
 }
 
@@ -436,6 +454,8 @@ pub async fn og_png(
     let Some((slot, key, html, scene)) = prepared else {
         return text_resp(StatusCode::NOT_FOUND, "not found");
     };
+    // 顏色與首頁那顆星跟著站長的預設天體：換了天體，舊的那張就不算數
+    let key = format!("{key}::{}", crate::handlers::site_config::theme());
 
     if let Some(c) = CACHE.lock().get(&slot).filter(|c| c.key == key) {
         if inm.as_deref() == Some(c.etag.as_str()) {
@@ -669,8 +689,11 @@ mod tests {
     #[test]
     fn 背景會動而且首尾接得起來() {
         let sky: Vec<SkyPost> = (0..12).map(|i| SkyPost::of(&format!("p{i}"), 500 * (i + 1), 6000)).collect();
-        let scenes: [Box<dyn Scene>; 12] = [
-            Box::new(Saturn::new()),
+        let scenes: [Box<dyn Scene>; 15] = [
+            Box::new(Body::new("saturn")),
+            Box::new(Body::new("neptune")),
+            Box::new(Body::new("blackhole")),
+            Box::new(Body::new("betelgeuse")),
             Box::new(Notes::new(&sky, 0)),
             Box::new(About::new()),
             Box::new(Log::new(chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期"), &[])),
@@ -704,7 +727,8 @@ mod tests {
     ///
     ///   cargo nextest run --release --run-ignored only -E 'test(產生樣張)' --no-capture
     ///
-    /// `OG_PREVIEW=notes,home` 只產這幾張（`post` 是文章）；`OG_LOCALES=en,ja` 換語系（預設繁中）。
+    /// `OG_PREVIEW=notes,home` 只產這幾張（`post` 是文章）；`OG_LOCALES=en,ja` 換語系（預設繁中）；
+    /// `OG_THEME=neptune` 換預設天體（顏色與首頁那顆，預設土星）。
     #[test]
     #[ignore = "產生樣張供人工檢視，不做斷言"]
     fn 產生樣張() {
@@ -713,6 +737,8 @@ mod tests {
         let only = std::env::var("OG_PREVIEW").ok();
         let wanted = |k: &str| only.as_deref().is_none_or(|o| o.split(',').any(|x| x == k));
         let locales = std::env::var("OG_LOCALES").unwrap_or_else(|_| "zh-TW".into());
+        let theme = std::env::var("OG_THEME").unwrap_or_else(|_| "saturn".into());
+        crate::handlers::site_config::set_theme_for_test(&theme);
         let sky: Vec<SkyPost> =
             (0..48).map(|i| SkyPost::of(&format!("篇 {i}"), 800 + (i * 977) % 9000, 9800)).collect();
         let start = chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期");
@@ -722,7 +748,7 @@ mod tests {
                 let png =
                     render(&page_card_html(page, loc), loc, page_scene(page.key, &sky, &sample).as_ref())
                         .unwrap();
-                let path = dir.join(format!("{}-{loc}.png", page.key));
+                let path = dir.join(format!("{}-{loc}-{theme}.png", page.key));
                 std::fs::write(&path, &png).unwrap();
                 println!("{} → {} bytes", path.display(), png.len());
             }
@@ -735,7 +761,7 @@ mod tests {
                     &Notes::new(&sky, 5),
                 )
                 .unwrap();
-                let path = dir.join(format!("post-{loc}.png"));
+                let path = dir.join(format!("post-{loc}-{theme}.png"));
                 std::fs::write(&path, &png).unwrap();
                 println!("{} → {} bytes", path.display(), png.len());
             }
