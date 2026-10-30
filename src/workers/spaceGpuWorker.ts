@@ -6,7 +6,10 @@
 //   ‧ handleProps 無 try/catch（init 失敗後任何 props 訊息都在 worker 內 uncaught throw）
 //   ‧ worker 內 shim self.document={} 干擾環境判定
 // 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse / stars，錯誤一律回報主執行緒處理。
-// 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）、土星長到幾成（saturnGrow）。
+// 首頁的字卡與標註畫進 3D 時（store/canvasLabels）另外有 labels / labelShow。
+// 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）、土星長到幾成（saturnGrow）、
+// 畫進 3D 的字卡與標註的框（labelGeometry）與「快照沒傳上去，再拍一次」（labelsRetry）。
+import type { LabelImage, LabelShow } from '../store/canvasLabels';
 import type { Palette } from '../lib/palette';
 import type { Theme } from '../lib/theme';
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
@@ -79,7 +82,19 @@ interface ThemeMsg {
   theme: Theme;
   palette: Palette;
 }
+/** 首頁字卡與標註的 DOM 快照（HTML-in-Canvas，見 store/canvasLabels）。不補放：init 前主執行緒還沒接上，不會送 */
+interface LabelsMsg {
+  type: 'labels';
+  labels: LabelImage[];
+}
+/** 每顆衛星的字該多亮 */
+interface LabelShowMsg {
+  type: 'labelShow';
+  show: LabelShow;
+}
 type InMsg =
+  | LabelsMsg
+  | LabelShowMsg
   | ThemeMsg
   | InitMsg
   | ResizeMsg
@@ -119,6 +134,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           runner: r,
           backend,
           timing,
+          drawables,
         } = await createStarfieldRunner({
           canvas: msg.canvas,
           width: msg.width,
@@ -135,6 +151,8 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           onDeviceLost: (message) => self.postMessage({ type: 'lost', message }),
           onSatellites: (positions, at) => self.postMessage({ type: 'satellites', positions, at }),
           onSaturnGrow: (grow) => self.postMessage({ type: 'saturnGrow', grow }),
+          onLabelGeometry: (geometry) => self.postMessage({ type: 'labelGeometry', geometry }),
+          onLabelsRetry: () => self.postMessage({ type: 'labelsRetry' }),
         });
         runner = r;
         runner.setScroll(lastScroll);
@@ -145,11 +163,16 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         if (lastPan) runner.setPan(lastPan.x, lastPan.y);
         if (lastSections !== null) runner.setSections(lastSections);
         if (lastTheme) runner.setTheme(lastTheme.theme, lastTheme.palette);
-        self.postMessage({ type: 'ready', backend, timing });
+        self.postMessage({ type: 'ready', backend, timing, drawables });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
       }
     })();
+  } else if (msg.type === 'labels') {
+    if (runner) runner.setLabelImages(msg.labels);
+    else for (const t of msg.labels) t.image.close();
+  } else if (msg.type === 'labelShow') {
+    runner?.setLabelShow(msg.show);
   } else if (msg.type === 'resize') {
     runner?.setSize(msg.width, msg.height, msg.fold);
   } else if (msg.type === 'running') {

@@ -109,6 +109,46 @@
   pointer-events: auto;
 }
 
+/* 字卡與標註畫進 3D 那張 canvas 時（store/canvasLabels）：canvas 在這一片底下，讓滑鼠穿過去才點得到 */
+.horbit.is-drawn {
+  pointer-events: none;
+}
+
+/* 上面還有外框兩層（layout/AppShell 的內容容器 z-index 10 與 main）也要讓開。容器裡的導覽列等其他東西
+   照常點得到：還原那條包在 :where() 裡（特異性 0），本來就寫了 pointer-events 的元素照它自己的 */
+.main-content-container:has(> main .horbit.is-drawn),
+.main-content-container:has(> main .horbit.is-drawn) > main {
+  pointer-events: none;
+}
+
+:where(.main-content-container:has(> main .horbit.is-drawn)) > :where(:not(main)) {
+  pointer-events: auto;
+}
+
+/* canvas 裡的字卡與標註：畫的是元素本身，位置與淡入淡出由 3D 那邊做（lib/labelOverlay），這裡一直是不透明的。
+   標註顏色的轉場留著：滑過去變色時瀏覽器重畫，3D 那邊收到新的快照 */
+.horbit-tag.is-drawn {
+  opacity: 1;
+  transition: color var(--dur-200) ease;
+}
+
+.horbit-label.is-drawn {
+  opacity: 1;
+  transition: none;
+}
+
+/* 鍵盤停在看不見的那份連結（.horbit-proxy）時，外框畫在這張字卡上。快照只拍得到元素本身的框，
+   所以外圍多留 8px，外框（上面 :focus-visible 那條：外推 6px、粗 1px）往內縮 2px，
+   落在跟 DOM 版同一個位置；margin 抵掉 padding，內容的位置與換行不變。
+   只在這時候加：平常加的話，滑鼠點得到的範圍會比 DOM 版大一圈 */
+.horbit-label.is-drawn.is-focus {
+  max-width: calc(240px + 2 * var(--space-2));
+  padding: var(--space-2);
+  margin: calc(-1 * var(--space-2));
+  outline: 1px solid var(--ink-muted);
+  outline-offset: -2px;
+}
+
 .horbit-tag:hover {
   color: var(--signal);
 }
