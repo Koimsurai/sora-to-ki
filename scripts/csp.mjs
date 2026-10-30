@@ -65,6 +65,8 @@ const MEDIA = ['https://shared.akamai.steamstatic.com'];
  *   夜鹿那篇）。e2e 的種子文章沒有 Spotify 連結，所以 CSP 那支 spec 踩不到。
  */
 const FRAME = [
+  // 初次設定（/admin/init）的最後一步把真的首頁嵌在右半邊
+  "'self'",
   'https://www.youtube-nocookie.com',
   'https://www.youtube.com',
   'https://player.bilibili.com',

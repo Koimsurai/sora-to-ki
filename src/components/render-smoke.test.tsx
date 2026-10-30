@@ -28,6 +28,23 @@ import { renderWithProviders } from '@/test-utils/renderWithProviders';
  */
 const PROPS: Record<string, Record<string, unknown>> = {
   'blog/OrbitToc.tsx': { postId: 1, headings: [], contentRef: { current: null } },
+  'admin/init/OrbitPreview.tsx': {
+    step: 'pages',
+    draft: {
+      default_locale: 'zh-TW',
+      locales: ['zh-TW', 'en'],
+      name: '站',
+      author: '',
+      description: '',
+      email: '',
+      github: '',
+      disabled_pages: ['works'],
+    },
+    hot: 'moments',
+    owner: { name: '站長' },
+    url: 'https://example.com',
+  },
+  'admin/init/OAuthGuide.tsx': { provider: 'github', url: 'https://example.com' },
   'layout/NavMenus.tsx': {
     open: 'about',
     was: null,

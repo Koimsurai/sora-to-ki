@@ -1,0 +1,169 @@
+{
+  "brand": "First-time setup",
+  "pageTitle": "First-time setup",
+  "stepsLabel": "Setup steps",
+  "step": {
+    "owner": "Owner",
+    "lang": "Languages",
+    "site": "Site",
+    "pages": "Pages",
+    "done": "Done"
+  },
+  "back": "← Back",
+  "next": "Next",
+  "finish": "Finish setup",
+  "saving": "Saving…",
+  "networkError": "Can't reach the backend. Try again in a moment.",
+  "copy": "Copy",
+  "copied": "Copied",
+  "gate": {
+    "kicker": "Before we start",
+    "title": "Is this server yours?",
+    "latin": "Setup code",
+    "lede": "When the backend starts for the first time and the site has no owner yet, it prints a setup code to its log. Open the link from the log, or paste the code here.",
+    "runOnHost": "Run on the server",
+    "logLooksLike": "You'll see a line like this",
+    "codeLabel": "Setup code",
+    "start": "Start",
+    "checking": "Checking…",
+    "badCode": "That code isn't right. After 10 wrong tries a new one is issued, so check the log again.",
+    "envHint": "If OWNER_EMAIL is set in .env.backend you won't see this page: whoever signs in with that address is the owner."
+  },
+  "owner": {
+    "title": "Claim the site",
+    "latin": "Owner",
+    "lede": "The admin only takes GitHub or Google sign-in. Whichever account you sign in with and claim the site from becomes its owner.",
+    "signInWith": "Sign in with {{provider}}",
+    "signedInAs": "Signed in as",
+    "claim": "Claim it, I'm the owner",
+    "claiming": "Claiming…",
+    "switchAccount": "Use another account",
+    "claimed": "Claimed. Next: languages, the site name and which pages to show. All of it can be changed in the admin later.",
+    "notConfigured": "not set up",
+    "noneConfigured": "Neither GitHub nor Google sign-in is set up yet, and at least one is needed to get into the admin. Follow the steps for either one below, restart the backend, then reload this page. The setup code stays the same.",
+    "oneMore": "You can add the other one later; readers get one more way to sign in when they comment.",
+    "siteUrl": "This site's address is {{url}} (SITE_URL in .env). If that's wrong, fix it before setting up sign-in, or you'll be sent to the wrong place after signing in.",
+    "errors": {
+      "bad_code": "The setup code is wrong or has been replaced. Go back to the first step and enter it again.",
+      "already_claimed": "This site already has an owner.",
+      "not_signed_in": "Your sign-in has expired. Please sign in again."
+    },
+    "guide": {
+      "github": {
+        "title": "Set up GitHub sign-in",
+        "s1": "Open GitHub's \"New OAuth App\" page (Settings → Developer settings → OAuth Apps → New OAuth App):",
+        "s2": "Fill it in as below. The application name can be anything; the site name works:",
+        "homepage": "Homepage URL",
+        "callback": "Authorization callback URL",
+        "s3": "Click Register application. On the app's page, copy the Client ID, then click \"Generate a new client secret\" and copy that too (it's only shown once).",
+        "s4": "On the server, open .env.backend and fill in both values:",
+        "s5": "Restart the backend so it picks them up, then reload this page:"
+      },
+      "google": {
+        "title": "Set up Google sign-in",
+        "s1": "Open Google Auth Platform in the Google Cloud Console (it asks you to create a project first if you don't have one):",
+        "s2": "The first time, it asks for some basics: use the site name as the app name, your own address as the support email, and choose \"External\" for the audience.",
+        "s3": "If the publishing status stays at \"Testing\", add your own Google account as a test user under Audience, or the sign-in will be blocked.",
+        "s4": "Under Clients, click \"Create client\", choose \"Web application\" and fill it in as below:",
+        "origins": "Authorized JavaScript origins",
+        "redirects": "Authorized redirect URIs",
+        "s5": "Once it's created, copy the client ID and client secret, then open .env.backend on the server and fill them in:",
+        "s6": "Restart the backend so it picks them up, then reload this page:"
+      }
+    }
+  },
+  "lang": {
+    "title": "Languages",
+    "latin": "Languages",
+    "lede": "Readers see the default language at the plain address; every other language gets its own prefix.",
+    "defaultLabel": "Default language",
+    "othersLabel": "Also offer",
+    "warn": "Changing the default language after launch changes every address on the site, and every link already shared has to redirect once. Best to decide now.",
+    "single": "With only one language on, the site shows no language menu."
+  },
+  "site": {
+    "title": "Site",
+    "latin": "Identity",
+    "lede": "Shown on the home page, in the RSS feed and on share cards. All of it can be changed in the admin later.",
+    "name": "Site name",
+    "author": "Author",
+    "authorHint": "leave empty to use the site name",
+    "url": "Address",
+    "description": "One-line description",
+    "email": "Public email",
+    "github": "GitHub username",
+    "optional": "optional",
+    "shareCard": "What a shared link looks like",
+    "errors": {
+      "nameRequired": "The site name can't be empty",
+      "nameTooLong": "The site name can be at most {{max}} characters",
+      "authorTooLong": "The author name can be at most {{max}} characters",
+      "descriptionTooLong": "The description can be at most {{max}} characters",
+      "email": "That email address doesn't look right",
+      "github": "A GitHub username only has letters, digits and hyphens, up to 39 characters"
+    }
+  },
+  "pages": {
+    "title": "Pages",
+    "latin": "Pages",
+    "lede": "The chart is your home page. A page you turn off takes its orbit with it, and you can turn it back on in the admin any time.",
+    "groupOrbit": "Orbits on the home page",
+    "groupAbout": "\"About\" menu",
+    "groupMore": "\"More\" menu",
+    "alwaysOn": "Notes and About are always there.",
+    "name": {
+      "moments": "Murmurs",
+      "works": "Work",
+      "collection": "Collection",
+      "setup": "Setup",
+      "log": "Log",
+      "messages": "Messages",
+      "photos": "Photos",
+      "friends": "Friends",
+      "colophon": "This site"
+    },
+    "desc": {
+      "moments": "Short notes, a line at a time",
+      "works": "Things you've made, each on a timeline",
+      "collection": "Watching, reading, listening",
+      "setup": "Hand-drawn sheets, or the built-in ones",
+      "log": "Milestones from one year to now",
+      "messages": "A guestbook",
+      "photos": "Needs a NAS or an uploaded folder",
+      "friends": "Other people's sites and a request form",
+      "colophon": "How this site is made, with a Q&A"
+    }
+  },
+  "done": {
+    "kicker": "Done",
+    "title": "You're live",
+    "latin": "Ready",
+    "lede": "There's no content yet, so readers see quiet empty pages. Fill them in under Pages in the admin.",
+    "summaryName": "Name",
+    "summaryLocales": "Languages",
+    "summaryOwner": "Owner",
+    "summaryPages": "Pages",
+    "defaultMark": " (default)",
+    "listSep": ", ",
+    "pagesOn": "{{on}} pages on",
+    "pagesOff": "; off: {{list}}",
+    "viewSite": "View the site",
+    "toAdmin": "Go to the admin",
+    "previewTitle": "Your home page"
+  },
+  "closed": {
+    "title": "This site is already set up",
+    "latin": "Already set up",
+    "lede": "It already has an owner, so first-time setup won't open again. The owner signs in to the admin from the site with GitHub or Google.",
+    "home": "Back to the home page"
+  },
+  "sky": {
+    "preview": "Preview",
+    "standby": "Standing by",
+    "yourHome": "Your home page",
+    "note": "Each step adds something here: the owner, the languages, the name, the orbits. What you end up with is what readers see when they open the home page.",
+    "menuAbout": "About",
+    "menuMore": "More",
+    "off": "OFF"
+  }
+}

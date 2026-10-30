@@ -1,0 +1,169 @@
+{
+  "brand": "初次设置",
+  "pageTitle": "初次设置",
+  "stepsLabel": "设置步骤",
+  "step": {
+    "owner": "站长",
+    "lang": "语言",
+    "site": "站点",
+    "pages": "页面",
+    "done": "完成"
+  },
+  "back": "← 上一步",
+  "next": "下一步",
+  "finish": "完成设置",
+  "saving": "保存中…",
+  "networkError": "连不上后端，稍后再试一次。",
+  "copy": "复制",
+  "copied": "已复制",
+  "gate": {
+    "kicker": "开始之前",
+    "title": "这台主机是你的吗",
+    "latin": "Setup code",
+    "lede": "后端第一次启动、还没有站长的时候，会在 log 里打印一组设置码。打开 log 里那条网址，或把设置码贴在这里。",
+    "runOnHost": "在主机上执行",
+    "logLooksLike": "会看到这样一行",
+    "codeLabel": "设置码",
+    "start": "开始",
+    "checking": "确认中…",
+    "badCode": "设置码不对。输错 10 次会换一组新的，记得回去重新看 log。",
+    "envHint": "在 .env.backend 填了 OWNER_EMAIL 的话不会走这一页：用那个邮箱登录就是站长。"
+  },
+  "owner": {
+    "title": "认领站长",
+    "latin": "Owner",
+    "lede": "进后台只能用 GitHub 或 Google 登录。你用哪个账号登录、按下认领，那个账号就是这个站的站长。",
+    "signInWith": "用 {{provider}} 登录",
+    "signedInAs": "当前登录的是",
+    "claim": "认领，我就是站长",
+    "claiming": "认领中…",
+    "switchAccount": "换一个账号",
+    "claimed": "认领好了。接下来设置语言、站名与要开的页面，之后在后台都能改。",
+    "notConfigured": "还没设置",
+    "noneConfigured": "GitHub 和 Google 的登录都还没设置，至少要设好一组才进得了后台。照下面任一组的步骤做完、重启后端，再刷新这一页就好，设置码不会换。",
+    "oneMore": "另一组也可以之后再补：读者留言时会多一种登录方式。",
+    "siteUrl": "这个站的网址是 {{url}}（来自 .env 的 SITE_URL）。不对的话先改好它再设置登录，不然登录完会被带到错的地方。",
+    "errors": {
+      "bad_code": "设置码不对或已经换过了，回第一步重新输入。",
+      "already_claimed": "这个站已经有站长了。",
+      "not_signed_in": "登录已经失效，请再登录一次。"
+    },
+    "guide": {
+      "github": {
+        "title": "设置 GitHub 登录",
+        "s1": "打开 GitHub 的「New OAuth App」页面（Settings → Developer settings → OAuth Apps → New OAuth App）：",
+        "s2": "照下面填。Application name 随意，用站名就好：",
+        "homepage": "Homepage URL",
+        "callback": "Authorization callback URL",
+        "s3": "按 Register application。进到 App 的页面后复制 Client ID；再按「Generate a new client secret」，复制生成的那串（它只会显示这一次）。",
+        "s4": "在主机上打开 .env.backend，把两串填进去：",
+        "s5": "重启后端让设置生效，然后刷新这一页："
+      },
+      "google": {
+        "title": "设置 Google 登录",
+        "s1": "打开 Google Cloud Console 的 Google Auth Platform（没有项目的话它会先请你建一个）：",
+        "s2": "第一次用会要你填基本资料：应用名称用站名、支持邮箱填你的，目标对象（Audience）选「外部（External）」。",
+        "s3": "发布状态留在「测试中（Testing）」的话，要到目标对象（Audience）把你自己的 Google 账号加进测试用户，不然登录会被挡下来。",
+        "s4": "到客户端（Clients）按「创建客户端（Create client）」，应用类型选「Web 应用（Web application）」，照下面填：",
+        "origins": "已获授权的 JavaScript 来源",
+        "redirects": "已获授权的重定向 URI",
+        "s5": "创建之后复制客户端 ID 与客户端密钥，在主机上打开 .env.backend 填进去：",
+        "s6": "重启后端让设置生效，然后刷新这一页："
+      }
+    }
+  },
+  "lang": {
+    "title": "语言",
+    "latin": "Languages",
+    "lede": "读者打开网址看到的是默认语言；其他语言各有自己的网址前缀。",
+    "defaultLabel": "默认语言",
+    "othersLabel": "也开放这些语言",
+    "warn": "开站之后再换默认语言，全站的网址会整批改掉，已经分享出去的链接都要跳转一次。最好现在就决定。",
+    "single": "只开一个语言的话，前台不会出现语言菜单。"
+  },
+  "site": {
+    "title": "站点",
+    "latin": "Identity",
+    "lede": "会出现在首页、RSS 和分享出去的卡片上，之后在后台都能改。",
+    "name": "站名",
+    "author": "作者",
+    "authorHint": "空着就跟站名一样",
+    "url": "网址",
+    "description": "一句话介绍",
+    "email": "公开邮箱",
+    "github": "GitHub 用户名",
+    "optional": "选填",
+    "shareCard": "分享出去长这样",
+    "errors": {
+      "nameRequired": "站名不能是空的",
+      "nameTooLong": "站名最多 {{max}} 个字",
+      "authorTooLong": "作者名最多 {{max}} 个字",
+      "descriptionTooLong": "介绍最多 {{max}} 个字",
+      "email": "邮箱的格式不对",
+      "github": "GitHub 用户名只能有英文、数字与连字符，最多 39 个字"
+    }
+  },
+  "pages": {
+    "title": "页面",
+    "latin": "Pages",
+    "lede": "星图就是你的首页。关掉的页面连同它的轨道一起拿掉，之后在后台随时能开回来。",
+    "groupOrbit": "首页的轨道",
+    "groupAbout": "「关于」菜单",
+    "groupMore": "「更多」菜单",
+    "alwaysOn": "手记与关于一直都在。",
+    "name": {
+      "moments": "碎念",
+      "works": "作品",
+      "collection": "收藏",
+      "setup": "设备",
+      "log": "航行日志",
+      "messages": "留言",
+      "photos": "照片",
+      "friends": "朋友",
+      "colophon": "此站点"
+    },
+    "desc": {
+      "moments": "短短的一句话",
+      "works": "做过的东西，一件一条时间线",
+      "collection": "在看、在读、在听",
+      "setup": "手绘图纸，或用内置的几张",
+      "log": "从某一年到现在的里程碑",
+      "messages": "留言板",
+      "photos": "要接 NAS 或上传文件夹",
+      "friends": "别人的站与申请表单",
+      "colophon": "这个站怎么做的、问答"
+    }
+  },
+  "done": {
+    "kicker": "完成",
+    "title": "开站了",
+    "latin": "Ready",
+    "lede": "内容都还是空的，读者看到的是安静的空页面。到后台的「页面」把它们填起来。",
+    "summaryName": "站名",
+    "summaryLocales": "语言",
+    "summaryOwner": "站长",
+    "summaryPages": "页面",
+    "defaultMark": "（默认）",
+    "listSep": "、",
+    "pagesOn": "开着 {{on}} 页",
+    "pagesOff": "，关掉{{list}}",
+    "viewSite": "看看前台",
+    "toAdmin": "进后台",
+    "previewTitle": "你的首页"
+  },
+  "closed": {
+    "title": "这个站已经设置好了",
+    "latin": "Already set up",
+    "lede": "已经有站长了，初次设置不会再打开。站长请从前台用 GitHub 或 Google 登录后台。",
+    "home": "回首页"
+  },
+  "sky": {
+    "preview": "预览",
+    "standby": "等待点火",
+    "yourHome": "你的首页",
+    "note": "每走一步，这里就长出一点：站长、语言、站名、轨道。最后看到的就是读者打开首页的样子。",
+    "menuAbout": "关于",
+    "menuMore": "更多",
+    "off": "关"
+  }
+}
