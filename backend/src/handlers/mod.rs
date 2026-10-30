@@ -11,6 +11,7 @@ pub mod friend_links;
 pub mod friends;
 pub mod gallery;
 pub mod home;
+pub mod init;
 pub mod link_preview;
 pub mod mailer;
 pub mod newsletter;

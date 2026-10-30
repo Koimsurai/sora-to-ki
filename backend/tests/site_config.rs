@@ -1,7 +1,7 @@
 //! 站台設定（`/api/site/config`、`/api/admin/site/config`）。
 //!
 //! 驗的是「錯了會默默壞掉」的幾條：
-//!   · 種子：既有的站（users 有人）升級上來不能被關掉任何一頁；全新安裝才預設關掉設備頁
+//!   · 種子：既有的站（users 有人）升級上來不能被關掉任何一頁；全新安裝才預設關掉設備與照片
 //!   · 改了要真的生效：PUT 之後 GET 讀到新的，而且 RSS 這類讀 identity 的地方跟著換
 //!   · 沒登入不能改、不認得的頁面要擋下來
 //!
@@ -15,14 +15,14 @@ use koimsurai_web_backend::handlers::site_config::load_or_seed;
 use serde_json::json;
 
 #[tokio::test]
-async fn 全新安裝的種子關掉還沒做成範本的頁面_也不帶原作者的朋友() {
+async fn 全新安裝的種子關掉要先準備東西的頁面_也不帶原作者的朋友() {
     let (app, pool) = test_app().await;
     sqlx::query("DELETE FROM users").execute(&pool).await.unwrap();
     load_or_seed(&pool).await.unwrap();
 
     let (status, v) = get(&app, "/api/site/config").await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(v["disabled_pages"], json!(["works", "setup", "log"]));
+    assert_eq!(v["disabled_pages"], json!(["setup", "photos"]));
     let (friends,): (i64,) =
         sqlx::query_as("SELECT COUNT(*) FROM friend_links").fetch_one(&pool).await.unwrap();
     assert_eq!(friends, 0);
