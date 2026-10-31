@@ -34,7 +34,7 @@ import {
 } from './collectionItems';
 import FavoritesEditor from './FavoritesEditor';
 import { createFramePacer } from '@/lib/framePacer';
-import { createGpuBackdrop, type GpuBackdrop } from './gpuBackdrop';
+import { adoptGpuBackdrop, releaseGpuBackdrop } from './gpuBackdrop';
 import { createSignalSky, drawLaunch, LIGHT_YEAR, type Projected, type Signal, type SkyFrame } from './signalSky';
 import './Collection.css';
 import { sameTitle } from '@/lib/pageTitle';
@@ -323,12 +323,12 @@ export default function Collection() {
     const ctx = cv?.getContext('2d');
     if (!page || !cv || !ctx) return;
     // 背景（光霧、銀河、遠方的星、閃爍的星）交給 GPU 畫：一幀上萬顆，2D 一顆一個 fillRect 是這一頁主執行緒最貴的一段。
-    // 建不起來（沒有 WebGL2、只有軟體渲染）、context 掉了、或網址帶 ?gpusky=0，就照舊由 2D 一起畫
-    const glCv = glRef.current;
-    const gpu: GpuBackdrop | null =
-      glCv && new URLSearchParams(window.location.search).get('gpusky') !== '0'
-        ? createGpuBackdrop(glCv, sky.gpuBackdrop)
-        : null;
+    // 建不起來（沒有 WebGL2、只有軟體渲染）、context 掉了、或網址帶 ?gpusky=0，就照舊由 2D 一起畫。
+    // 畫布與 context 多半在預載時就建好了，這裡換上去（media/gpuBackdrop 的 adoptGpuBackdrop）
+    const placeholder = glRef.current;
+    const adopted = placeholder ? adoptGpuBackdrop(placeholder, () => sky.gpuBackdrop) : null;
+    const gpu = adopted?.backdrop ?? null;
+    const glCv = adopted?.canvas ?? null;
     // 頁面多長照跨了幾個數量級算；跟「現在」有關，只在瀏覽器端設（伺服器那份用 CSS 的預設長度）
     page.style.height = `calc(100vh + ${Math.round(sky.decades * DECADE_VH * 100)}vh)`;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -632,7 +632,7 @@ export default function Collection() {
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
-      gpu?.dispose();
+      if (placeholder) releaseGpuBackdrop(placeholder);
       document.fonts.removeEventListener('loadingdone', remeasure);
       window.removeEventListener('resize', remeasure);
       cv.removeEventListener('pointermove', onMove);

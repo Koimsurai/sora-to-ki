@@ -120,6 +120,14 @@ describe('背景交給 GPU 畫（media/gpuBackdrop）', () => {
     expect(all.count('fillRect') - fg.count('fillRect')).toBeGreaterThan(500);
   });
 
+  it('跟資料無關的那一半只算一次：資料換了重建天空，背景資料還是同一份', () => {
+    const again = createSignalSky(
+      [{ id: 'x', kind: 'book', title: 'x', meta: '', cover: null, href: null, at: NOW - 1000, size: 0.5 }],
+      NOW,
+    );
+    expect(again.gpuBackdrop).toBe(sky.gpuBackdrop);
+  });
+
   it('鏡頭參數都是有限的數', () => {
     const v = sky.viewOf(frame());
     for (const x of Object.values(v)) expect(Number.isFinite(x)).toBe(true);
