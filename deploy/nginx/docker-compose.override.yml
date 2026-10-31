@@ -1,9 +1,10 @@
-# 主機上已經有 nginx 時用的 override：複製到 repo 根目錄（跟 docker-compose.yml 放一起），
-# compose 會自動疊上去。說明見同資料夾的 README.md。
+# Override for a host that already runs nginx: copy it to the repo root (next to docker-compose.yml)
+# and compose layers it on top automatically. See README.md in this folder.
 #
-# - 內建的 Caddy 不啟動（profiles 沒有被啟用的服務不會起來）
-# - 前後端只對本機開 port，由 nginx 轉進來
-# - 後台上傳的檔案與照片頁的縮圖從 docker volume 換成主機上的資料夾，nginx 才讀得到、直接給檔案
+# - The bundled Caddy doesn't start (a service whose profile isn't enabled stays down)
+# - Frontend and backend publish ports on localhost only; nginx proxies to them
+# - Admin uploads and photo thumbnails move from docker volumes to host folders, so nginx can read and
+#   serve the files directly
 
 services:
   caddy:
@@ -17,6 +18,7 @@ services:
     ports:
       - "127.0.0.1:3002:3002"
     volumes:
-      # 跟 docker-compose.yml 裡同一個容器路徑：compose 照容器路徑合併，這兩行取代原本的 volume
+      # Same container paths as in docker-compose.yml: compose merges by container path, so these two
+      # lines replace the original volumes
       - ./storage/uploads:/usr/src/app/storage/uploads
       - ./storage/gallery:/usr/src/app/storage/gallery

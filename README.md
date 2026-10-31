@@ -51,8 +51,8 @@ first step walks you through creating the OAuth app it needs for sign-in.
 
 - The images are built at release time ([GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)), so nothing compiles on your machine; add `--build` to build from source instead
 - Caddy is built in: put your domain in `CADDY_ADDRESS` in `.env` and HTTPS is set up automatically. To try it locally, use `:80` and open <http://localhost>.
-  If the machine already runs nginx, switch to it with [`deploy/nginx/`](deploy/nginx/README.md) (an override and a server block are included);
-  for any other reverse proxy, write a `docker-compose.override.yml` as described at the top of `docker-compose.yml`
+  To run without the bundled Caddy, see [`deploy/nginx/`](deploy/nginx/README.md): a ready-made override and nginx server block,
+  plus notes for Traefik and other reverse proxies
 - If `OWNER_EMAIL` is set in `.env.backend` there's no wizard: whoever signs in with that address is the owner
 - The admin is at `/admin` and only takes GitHub or Google sign-in (`ADMIN_USERNAME` / `ADMIN_PASSWORD` is a machine account for MCP, not for people)
 - Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.2.0` in `.env`
@@ -66,7 +66,7 @@ An AI that can run commands on the server (Claude Code, Codex…) can do this to
 Set up https://github.com/Koimsurai/sora-to-ki on this server, following "Run your own site" in the README.
 The domain is <blog.example.com>, the site name is <name>, the default language is <en>.
 - .env: put the domain in SITE_URL and CADDY_ADDRESS; generate JWT_SECRET in .env.backend with `openssl rand -hex 32`
-- If ports 80/443 are already taken by something else, don't stop it: write a docker-compose.override.yml as described at the top of docker-compose.yml
+- If ports 80/443 are already taken by something else, don't stop it: follow deploy/nginx/README.md to use the existing reverse proxy
 - When it's up, give me the URL from `docker compose logs backend-rs | grep setup`; I'll sign in and claim the site myself
 - Don't commit .env or .env.backend, and don't paste them anywhere
 ```
@@ -196,7 +196,7 @@ flowchart LR
   proxy -->|/api| be[backend-rs<br/>axum · sqlx]
   fe -->|SSR data| be
   be --> db[(SQLite)]
-  be -->|cached, stale on error| ext[Third-party APIs (optional)<br/>GitHub · Spotify · Steam<br/>WakaTime · TMDb · Simkl]
+  be -->|cached, stale on error| ext["Third-party APIs (optional)<br/>GitHub · Spotify · Steam<br/>WakaTime · TMDb · Simkl"]
   be -.purges ISR cache when posts or settings change.-> fe
   backup[db-backup<br/>daily SQLite backup] --- db
 ```
