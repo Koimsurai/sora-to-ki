@@ -55,7 +55,7 @@ first step walks you through creating the OAuth app it needs for sign-in.
   plus notes for Traefik and other reverse proxies
 - If `OWNER_EMAIL` is set in `.env.backend` there's no wizard: whoever signs in with that address is the owner
 - The admin is at `/admin` and only takes GitHub or Google sign-in (`ADMIN_USERNAME` / `ADMIN_PASSWORD` is a machine account for MCP, not for people)
-- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.2.0` in `.env`
+- Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.2.1` in `.env`
 - The database is backed up to `./backups` every day
 
 ### Let an AI set it up
