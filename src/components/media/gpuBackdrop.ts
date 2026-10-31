@@ -187,13 +187,15 @@ interface GpuScene {
 }
 
 export interface GpuBackdrop {
-  /** 還能畫（context 沒掉） */
+  /** 還能畫：context 沒掉、程式也編好了 */
   readonly ok: boolean;
+  /** context 還在（程式可能還在編） */
+  readonly alive: boolean;
   render(v: SkyView, frame: { w: number; h: number; t: number }, dpr: number, scene: GpuScene): void;
   dispose(): void;
 }
 
-export function createGpuBackdrop(canvas: HTMLCanvasElement, data: GpuBackdropData): GpuBackdrop | null {
+function createGpuBackdrop(canvas: HTMLCanvasElement, data: GpuBackdropData): GpuBackdrop | null {
   const gl = canvas.getContext('webgl2', {
     alpha: true,
     premultipliedAlpha: true,
@@ -210,8 +212,14 @@ export function createGpuBackdrop(canvas: HTMLCanvasElement, data: GpuBackdropDa
   };
   canvas.addEventListener('webglcontextlost', onLost);
 
-  const compile = (vs: string, fs: string) => {
+  // 編譯交給驅動在背景做（KHR_parallel_shader_compile）：送出去就好，不問結果。一問（COMPILE_STATUS、
+  // LINK_STATUS、getUniformLocation）主執行緒就得停下來等它編完，CPU 降速 4 倍時是 44ms，
+  // 正好卡在換頁轉場的點還在飛的時候（docs/transitions/01-baseline）。編好之前 ok 是 false，背景照舊由 2D 畫。
+  // 沒有這個擴充的瀏覽器第一次問 ok 時當場編完，跟原本一樣
+  const parallel = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
+  const start = (vs: string, fs: string) => {
     const prog = gl.createProgram();
+    const shaders: WebGLShader[] = [];
     for (const [type, src] of [
       [gl.VERTEX_SHADER, vs],
       [gl.FRAGMENT_SHADER, fs],
@@ -220,23 +228,20 @@ export function createGpuBackdrop(canvas: HTMLCanvasElement, data: GpuBackdropDa
       if (!sh) return null;
       gl.shaderSource(sh, src);
       gl.compileShader(sh);
-      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-        console.warn('[gpuBackdrop]', gl.getShaderInfoLog(sh));
-        return null;
-      }
       gl.attachShader(prog, sh);
+      shaders.push(sh);
     }
     gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      console.warn('[gpuBackdrop]', gl.getProgramInfoLog(prog));
-      return null;
-    }
-    return prog;
+    return { prog, shaders };
   };
-  const rectProg = compile(RECT_VS, RECT_FS);
-  const hazeProg = compile(HAZE_VS, HAZE_FS);
-  const pointProg = compile(POINT_VS, RECT_FS);
-  if (!rectProg || !hazeProg || !pointProg) return null;
+  const rectStart = start(RECT_VS, RECT_FS);
+  const hazeStart = start(HAZE_VS, HAZE_FS);
+  const pointStart = start(POINT_VS, RECT_FS);
+  if (!rectStart || !hazeStart || !pointStart) return null;
+  const all = [rectStart, hazeStart, pointStart];
+  const rectProg = rectStart.prog;
+  const hazeProg = hazeStart.prog;
+  const pointProg = pointStart.prog;
 
   // 四個角（triangle strip），兩支程式共用
   const corners = gl.createBuffer();
@@ -293,22 +298,45 @@ export function createGpuBackdrop(canvas: HTMLCanvasElement, data: GpuBackdropDa
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  const uniforms = (prog: WebGLProgram, names: string[]) =>
-    Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(prog, n)]));
-  const common = ['u_e', 'u_F', 'u_rot', 'u_wh', 'u_dpr', 'u_res'];
-  const ru = uniforms(rectProg, [...common, 'u_t', 'u_ink']);
-  const hu = uniforms(hazeProg, [...common, 'u_blob', 'u_sprite']);
-  const pu = uniforms(pointProg, [...common, 'u_ink', 'u_k', 'u_sun', 'u_belts', 'u_diag']);
-
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
+  type Uniforms = Record<string, WebGLUniformLocation | null>;
+  /** 編好、連結好之後才拿得到 uniform 的位置。null 是還在編，false 是編壞了（從此交給 2D） */
+  let linked: { ru: Uniforms; hu: Uniforms; pu: Uniforms } | false | null = null;
+  const ready = () => {
+    if (linked !== null) return linked !== false;
+    if (parallel && !all.every((p) => gl.getProgramParameter(p.prog, parallel.COMPLETION_STATUS_KHR) === true))
+      return false;
+    for (const { prog, shaders } of all) {
+      if (gl.getProgramParameter(prog, gl.LINK_STATUS)) continue;
+      for (const sh of shaders)
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.warn('[gpuBackdrop]', gl.getShaderInfoLog(sh));
+      console.warn('[gpuBackdrop]', gl.getProgramInfoLog(prog));
+      linked = false;
+      return false;
+    }
+    const uniforms = (prog: WebGLProgram, names: string[]) =>
+      Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(prog, n)]));
+    const common = ['u_e', 'u_F', 'u_rot', 'u_wh', 'u_dpr', 'u_res'];
+    linked = {
+      ru: uniforms(rectProg, [...common, 'u_t', 'u_ink']),
+      hu: uniforms(hazeProg, [...common, 'u_blob', 'u_sprite']),
+      pu: uniforms(pointProg, [...common, 'u_ink', 'u_k', 'u_sun', 'u_belts', 'u_diag']),
+    };
+    return true;
+  };
+
   return {
     get ok() {
+      return !lost && !gl.isContextLost() && ready();
+    },
+    get alive() {
       return !lost && !gl.isContextLost();
     },
     render(v, { w, h, t }, dpr, scene) {
-      if (lost) return;
+      if (lost || !linked) return;
+      const { ru, hu, pu } = linked;
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -362,4 +390,52 @@ export function createGpuBackdrop(canvas: HTMLCanvasElement, data: GpuBackdropDa
       gl.deleteProgram(pointProg);
     },
   };
+}
+
+/*
+ * 這張畫布與它的 WebGL context 先建好、一直留著：
+ *   - 建 context（同步等 GPU 那邊）與送出編譯，CPU 降速 4 倍時合計 50–100ms。收藏頁掛上去那一刻做的話，
+ *     正好卡在換頁轉場的點還在飛的時候（docs/transitions/01-baseline）。改在預載的空檔做（signalSky 的
+ *     prewarmSignalSky：滑過連結、換頁開始收的時候），等收藏頁掛上去，編譯早在 GPU 那邊做完了
+ *   - 離開收藏頁時不丟掉，下次進來直接接手。只有 context 掉了才重建
+ * 收藏頁照舊渲染自己的那張 <canvas>，掛上去時換成這一張（同一個位置、同樣的屬性，版面不變）
+ */
+let kept: { canvas: HTMLCanvasElement; backdrop: GpuBackdrop } | 'none' | null = null;
+
+/** 網址帶 ?gpusky=0 就不用 GPU（A/B 比較用） */
+export const gpuSkyWanted = () => new URLSearchParams(window.location.search).get('gpusky') !== '0';
+
+/** 先把畫布、context 與程式建好。建不起來（沒有 WebGL2、只有軟體渲染）就記住，之後不再試 */
+export function prepareGpuBackdrop(data: () => GpuBackdropData) {
+  if (kept === 'none' || kept?.backdrop.alive) return;
+  kept?.backdrop.dispose();
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-hidden', 'true');
+  const backdrop = createGpuBackdrop(canvas, data());
+  kept = backdrop ? { canvas, backdrop } : 'none';
+}
+
+/** 收藏頁掛上去時：用先建好的那張換掉自己那張（還沒建就當場建）。null 是不用 GPU，背景由 2D 畫 */
+export function adoptGpuBackdrop(
+  placeholder: HTMLCanvasElement,
+  data: () => GpuBackdropData,
+): { canvas: HTMLCanvasElement; backdrop: GpuBackdrop } | null {
+  if (!gpuSkyWanted()) return null;
+  prepareGpuBackdrop(data);
+  if (!kept || kept === 'none') return null;
+  placeholder.replaceWith(kept.canvas);
+  return kept;
+}
+
+/**
+ * 收藏頁卸下（或天空換了要重掛）時：原本那張換回去、這張拿下來留著下次用；context 掉了就丟掉。
+ * 換回去是為了重掛：effect 再跑一次時還要從原本那張的位置換上來
+ */
+export function releaseGpuBackdrop(placeholder: HTMLCanvasElement) {
+  if (!kept || kept === 'none') return;
+  if (kept.canvas.parentNode) kept.canvas.replaceWith(placeholder);
+  if (!kept.backdrop.alive) {
+    kept.backdrop.dispose();
+    kept = null;
+  }
 }
