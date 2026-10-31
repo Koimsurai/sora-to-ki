@@ -54,7 +54,7 @@ docker compose logs backend-rs | grep setup   # 初次設定的網址
   分流照 [`deploy/nginx/sora-to-ki.conf`](deploy/nginx/sora-to-ki.conf)
 - `.env.backend` 填了 `OWNER_EMAIL` 的話不走精靈：用那個信箱登入就是站長
 - 後台在 `/admin`，只能用 GitHub 或 Google 登入（`ADMIN_USERNAME`／`ADMIN_PASSWORD` 是給 MCP 用的機器帳號，不是給人登入的）
-- 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.2.0`
+- 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.2.1`
 - 資料庫每天自動備份到 `./backups`
 
 <details>
