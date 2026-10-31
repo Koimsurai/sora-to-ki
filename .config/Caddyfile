@@ -1,22 +1,23 @@
-# 自架用的反向代理（docker-compose.yml 的 caddy 服務）。koimsurai.com 自己用 nginx，不走這份。
+# Reverse proxy for self-hosting (the caddy service in docker-compose.yml).
+# Running nginx instead? See deploy/nginx/.
 #
-# CADDY_ADDRESS 是對外的位址：
-#   :80              沒有網域，純 HTTP（本機試跑、或前面還有別的代理）。預設值
-#   example.com      有網域就填網域：Caddy 自己申請、續期 HTTPS 憑證（80 與 443 要能從外面連到）
+# CADDY_ADDRESS is the public address:
+#   :80              no domain, plain HTTP (local trial, or another proxy in front). The default
+#   example.com      a domain: Caddy obtains and renews the HTTPS certificate itself (80 and 443 must be reachable)
 #
-# 分流照正式站的 nginx（/etc/nginx/sites-available/koimsurai）：
-#   /api/*、/rss     → 後端
-#   /uploads/*       → 後台上傳的檔案（直接讀檔，不經過後端）
-#   /nas-images/*    → 照片頁的縮圖
-#   其他             → 前端
+# Routing:
+#   /api/*, /rss     → backend
+#   /uploads/*       → files uploaded in the admin (served from disk, not through the backend)
+#   /nas-images/*    → photo page thumbnails
+#   everything else  → frontend
 #
-# ⚠ CSP 是從 scripts/csp.mjs 手抄的（Caddy 讀不到 JS）：改政策先改 csp.mjs，
-#   再 `node scripts/csp.mjs` 印出來貼到下面。scripts/caddyfile.test.ts 會比對，抄錯就紅。
+# ⚠ The CSP is copied by hand from scripts/csp.mjs (Caddy can't read JS): change the policy in csp.mjs
+#   first, then paste what `node scripts/csp.mjs` prints below. scripts/caddyfile.test.ts compares them.
 
 {$CADDY_ADDRESS::80} {
 	encode zstd gzip
 
-	# 每個回應都帶的四條（scripts/csp.mjs 的 SECURITY_HEADERS）
+	# Sent on every response (SECURITY_HEADERS in scripts/csp.mjs)
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
@@ -29,8 +30,9 @@
 		reverse_proxy backend-rs:3002
 	}
 
-	# 使用者上傳、原樣落地的檔案：上傳不檢查副檔名，evil.svg 存得進來，被直接開啟時會執行 script。
-	# default-src 'none' 讓直接開啟的 SVG/HTML 什麼都做不了；用 <img> 嵌入不受影響
+	# Uploaded files are stored as-is and uploads don't check extensions, so an evil.svg opened directly
+	# would run its script. default-src 'none' leaves a directly opened SVG/HTML unable to do anything;
+	# embedding with <img> is unaffected
 	handle_path /uploads/* {
 		root * /srv/uploads
 		header Cache-Control "public, immutable"

@@ -50,12 +50,35 @@ docker compose logs backend-rs | grep setup   # 初始化的网址
 
 - 镜像是发版时建好的（[GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)），不必在自己机器上编译；要从源代码建就加 `--build`
 - 内置 Caddy：`.env` 的 `CADDY_ADDRESS` 填域名会自动申请 HTTPS；在本地试跑就填 `:80`，打开 <http://localhost>。
-  主机上已经有 nginx 的话，照 [`deploy/nginx/`](deploy/nginx/README.md) 改用它（override 与 server block 示例都在里面）；
-  其他反向代理照 `docker-compose.yml` 开头的说明写一份 `docker-compose.override.yml`
+  主机上已经有 nginx 的话改用它（见下面「用主机上的 nginx」）；Traefik 这类其他反向代理用同一份 override 关掉 Caddy，
+  分流照 [`deploy/nginx/sora-to-ki.conf`](deploy/nginx/sora-to-ki.conf)
 - `.env.backend` 填了 `OWNER_EMAIL` 的话不走向导：用那个邮箱登录就是站长
 - 后台在 `/admin`，只能用 GitHub 或 Google 登录（`ADMIN_USERNAME`／`ADMIN_PASSWORD` 是给 MCP 用的机器账号，不是给人登录的）
 - 升级：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 设 `SORA_TO_KI_VERSION=0.2.0`
 - 数据库每天自动备份到 `./backups`
+
+<details>
+<summary><b>用主机上的 nginx（不用内置的 Caddy）</b></summary>
+
+前后端只对本机开端口（前端 `127.0.0.1:13579`、后端 `127.0.0.1:3002`），由 nginx 转发进来；
+后台上传的文件与照片缩略图放在 repo 底下的 `storage/`，nginx 直接读。
+
+```bash
+cp deploy/nginx/docker-compose.override.yml .   # 已经有 override 的话把内容合并进去
+mkdir -p storage/uploads storage/gallery
+docker compose up -d                            # .env 的 SITE_URL 照填，CADDY_ADDRESS 用不到
+
+sudo cp deploy/nginx/security-headers.conf /etc/nginx/snippets/sora-to-ki-security.conf
+sudo cp deploy/nginx/sora-to-ki.conf /etc/nginx/sites-available/sora-to-ki
+# 把 sora-to-ki 里的 example.com 与 /srv/sora-to-ki（这个 repo 的实际路径）改掉
+sudo ln -s /etc/nginx/sites-available/sora-to-ki /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d example.com             # HTTPS
+```
+
+`storage/` 读不到（403）的话，检查从 `/` 到 `storage/uploads` 的每一层目录，nginx 的用户（多半是 `www-data`）都要有 `x` 权限。
+
+</details>
 
 ### 交给 AI 部署
 
@@ -65,7 +88,7 @@ docker compose logs backend-rs | grep setup   # 初始化的网址
 在这台主机上部署 https://github.com/Koimsurai/sora-to-ki ，照 README.zh-CN.md 的「部署自己的站」做。
 域名是 <blog.example.com>，站名 <站名>，默认语言 <zh-TW>。
 - .env：SITE_URL、CADDY_ADDRESS 填域名；.env.backend 的 JWT_SECRET 用 `openssl rand -hex 32` 生成
-- 80／443 已经被别的服务用了的话，不要停掉它：照 docker-compose.yml 开头的说明写 docker-compose.override.yml
+- 80／443 已经被别的服务用了的话，不要停掉它：照 deploy/nginx/README.md 改用主机上的反向代理
 - 起来之后把 `docker compose logs backend-rs | grep setup` 那行网址给我，登录与认领我自己来
 - .env、.env.backend 不要提交、不要贴到别的地方
 ```
