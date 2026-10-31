@@ -196,7 +196,7 @@ flowchart LR
   proxy -->|/api| be[backend-rs<br/>axum · sqlx]
   fe -->|SSR data| be
   be --> db[(SQLite)]
-  be -->|cached, stale on error| ext[Third-party APIs (optional)<br/>GitHub · Spotify · Steam<br/>WakaTime · TMDb · Simkl]
+  be -->|cached, stale on error| ext["Third-party APIs (optional)<br/>GitHub · Spotify · Steam<br/>WakaTime · TMDb · Simkl"]
   be -.purges ISR cache when posts or settings change.-> fe
   backup[db-backup<br/>daily SQLite backup] --- db
 ```
