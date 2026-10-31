@@ -7,7 +7,7 @@ import type { Pt } from '@/store/pageTransition';
 import { clamp, easeOut, smooth, type Flight } from './geometry';
 
 /** 彗尾：一個點畫下去之後多久散掉（ms） */
-export const TAIL_MS = 760;
+const TAIL_MS = 760;
 /** 彗尾的塵埃多久熄掉 */
 const DUST_LIFE_MS = 900;
 /**

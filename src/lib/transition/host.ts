@@ -147,7 +147,7 @@ export type Effect =
   | { kind: 'grow'; from: Pt; to: Pt; trail: Pt[]; quiet: boolean };
 
 /** 套用 worker 回報的效果 */
-export function applyEffect(fx: SceneEffects, e: Effect) {
+function applyEffect(fx: SceneEffects, e: Effect) {
   if (e.kind === 'screen') fx.screen(e.p);
   else if (e.kind === 'page') fx.page(e.transform, e.opacity);
   else if (e.kind === 'camera') fx.camera(e.cam);
