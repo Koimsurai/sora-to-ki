@@ -50,12 +50,35 @@ docker compose logs backend-rs | grep setup   # 初次設定的網址
 
 - 映像是發版時建好的（[GHCR](https://github.com/Koimsurai?tab=packages&repo_name=sora-to-ki)），不必在自己機器上編譯；要從原始碼建就加 `--build`
 - 內建 Caddy：`.env` 的 `CADDY_ADDRESS` 填網域會自動申請 HTTPS；在本機試跑就填 `:80`，打開 <http://localhost>。
-  主機上已經有 nginx 的話，照 [`deploy/nginx/`](deploy/nginx/README.md) 改用它（override 與 server block 範例都在裡面）；
-  其他反向代理照 `docker-compose.yml` 開頭的說明寫一份 `docker-compose.override.yml`
+  主機上已經有 nginx 的話改用它（見下面「用主機上的 nginx」）；Traefik 這類其他反向代理用同一份 override 關掉 Caddy，
+  分流照 [`deploy/nginx/sora-to-ki.conf`](deploy/nginx/sora-to-ki.conf)
 - `.env.backend` 填了 `OWNER_EMAIL` 的話不走精靈：用那個信箱登入就是站長
 - 後台在 `/admin`，只能用 GitHub 或 Google 登入（`ADMIN_USERNAME`／`ADMIN_PASSWORD` 是給 MCP 用的機器帳號，不是給人登入的）
 - 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.2.0`
 - 資料庫每天自動備份到 `./backups`
+
+<details>
+<summary><b>用主機上的 nginx（不用內建的 Caddy）</b></summary>
+
+前後端只對本機開 port（前端 `127.0.0.1:13579`、後端 `127.0.0.1:3002`），由 nginx 轉進來；
+後台上傳的檔案與照片縮圖放在 repo 底下的 `storage/`，nginx 直接讀。
+
+```bash
+cp deploy/nginx/docker-compose.override.yml .   # 已經有 override 的話把內容併進去
+mkdir -p storage/uploads storage/gallery
+docker compose up -d                            # .env 的 SITE_URL 照填，CADDY_ADDRESS 用不到
+
+sudo cp deploy/nginx/security-headers.conf /etc/nginx/snippets/sora-to-ki-security.conf
+sudo cp deploy/nginx/sora-to-ki.conf /etc/nginx/sites-available/sora-to-ki
+# 把 sora-to-ki 裡的 example.com 與 /srv/sora-to-ki（這個 repo 的實際路徑）改掉
+sudo ln -s /etc/nginx/sites-available/sora-to-ki /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d example.com             # HTTPS
+```
+
+`storage/` 讀不到（403）的話，檢查從 `/` 到 `storage/uploads` 的每一層資料夾，nginx 的使用者（多半是 `www-data`）都要有 `x` 權限。
+
+</details>
 
 ### 交給 AI 架
 
@@ -65,7 +88,7 @@ docker compose logs backend-rs | grep setup   # 初次設定的網址
 在這台主機上架 https://github.com/Koimsurai/sora-to-ki ，照 README.zh-TW.md 的「架自己的站」做。
 網域是 <blog.example.com>，站名 <站名>，預設語系 <zh-TW>。
 - .env：SITE_URL、CADDY_ADDRESS 填網域；.env.backend 的 JWT_SECRET 用 `openssl rand -hex 32` 產生
-- 80／443 已經被別的服務用了的話，不要停掉它：照 docker-compose.yml 開頭的說明寫 docker-compose.override.yml
+- 80／443 已經被別的服務用了的話，不要停掉它：照 deploy/nginx/README.md 改用主機上的反向代理
 - 起來之後把 `docker compose logs backend-rs | grep setup` 那行網址給我，登入與認領我自己來
 - .env、.env.backend 不要提交、不要貼到別的地方
 ```
