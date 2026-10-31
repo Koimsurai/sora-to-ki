@@ -36,9 +36,10 @@ import {
   type Pt,
 } from '@/store/pageTransition';
 import { latestSaturnGrow, subscribeSatellites } from '@/store/homeOrbit';
-import { clamp, cumulative, easeIn, len } from '@/lib/transition/geometry';
+import { clamp, cumulative, easeIn } from '@/lib/transition/geometry';
 import type { PaintStyle } from '@/lib/transition/paint';
-import { createScene, GROW_MS, LEAVE_MS, type Phase, type PlanInput, type SceneStart } from '@/lib/transition/scene';
+import { createLocalHost, createWorkerHost, type SceneHost } from '@/lib/transition/host';
+import { GROW_MS, LEAVE_MS, type Phase, type PlanInput, type SceneEffects } from '@/lib/transition/scene';
 import { setSkyPan } from '@/store/skyPan';
 import './TransitionLayer.css';
 
@@ -191,9 +192,37 @@ function defaultLeave(main: HTMLElement, point: Pt, alive: () => boolean): Depar
   return { point, done };
 }
 
+/**
+ * 交給 worker 的那張 canvas 只能交一次（transferControlToOffscreen），React 開發模式卻會把 effect 跑兩次：
+ * 宿主照 canvas 記住、一直沿用，效果回呼每次 effect 重新綁到這一次的
+ */
+const workerHosts = new WeakMap<HTMLCanvasElement, { host: SceneHost; bind: (fx: SceneEffects) => void }>();
+function workerHost(canvas: HTMLCanvasElement) {
+  let entry = workerHosts.get(canvas);
+  if (!entry) {
+    let current: SceneEffects | null = null;
+    const fx: SceneEffects = {
+      screen: (p) => current?.screen(p),
+      page: (transform, opacity) => current?.page(transform, opacity),
+      camera: (cam) => current?.camera(cam),
+      planned: (translate) => current?.planned(translate),
+      grow: (g) => current?.grow(g),
+    };
+    entry = {
+      host: createWorkerHost(canvas, PAINT, fx),
+      bind: (next) => {
+        current = next;
+      },
+    };
+    workerHosts.set(canvas, entry);
+  }
+  return entry;
+}
+
 export default function TransitionLayer() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const topRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const cv = canvasRef.current;
@@ -244,7 +273,7 @@ export default function TransitionLayer() {
     let bootOrigin: Pt = { x: 0, y: 0 };
 
     // 點與鏡頭的運動、畫法在場景裡（lib/transition/scene）；碰 DOM 的事由場景回報、在這裡做
-    const scene = createScene(ctx, PAINT, {
+    const fx: SceneEffects = {
       screen(p) {
         setTransitionDot(p);
         // 開場交棒時那道小環套在點上跟著走（index.css 的 --boot-ring-dx／dy），點落在土星中心時環才長大
@@ -283,9 +312,20 @@ export default function TransitionLayer() {
         const fresh = page.generation !== run.oldGeneration ? page.handle : null;
         if (!quiet) fresh?.onGrow?.({ from, to, trail });
       },
-    });
+    };
+    // 場景跑在哪：轉場的 worker（點與彗尾照自己的時鐘畫，主執行緒卡住也照樣走），
+    // 不支援 OffscreenCanvas 就在主執行緒（lib/transition/host）。先用 ?txw=1 開（試作）
+    const top = topRef.current;
+    const wantWorker = (new URLSearchParams(window.location.search).get('txw') ?? localStorage.getItem('txw')) === '1';
+    const shared = wantWorker && top && typeof top.transferControlToOffscreen === 'function' ? workerHost(top) : null;
+    shared?.bind(fx);
+    const host: SceneHost = shared?.host ?? createLocalHost(ctx, PAINT, fx);
+    // 換配色、主題：worker 那邊讀不到這裡的 PAINT，照樣通知
+    const offPalette = onPalette(() => host.restyle(PAINT));
+    const offTheme = onTheme(() => host.restyle(PAINT));
 
-    const finish = (r: Run) => {
+    /** keep：馬上要接著跑新的一趟（轉場中又換頁），場景先別收，宿主要從它接 */
+    const finish = (r: Run, keep = false) => {
       r.main.style.clipPath = '';
       r.main.style.transform = '';
       r.main.style.opacity = '';
@@ -293,13 +333,13 @@ export default function TransitionLayer() {
       delete root.dataset.pt;
       setRejoining(false);
       // 星空停在鏡頭最後的位置，不歸位（歸位那一下會像整片背景被拉回去）
-      const cam = scene.run?.cam ?? { x: 0, y: 0 };
+      const cam = host.state?.cam ?? { x: 0, y: 0 };
       skyBase = { x: skyBase.x - cam.x * SKY_PARALLAX, y: skyBase.y - cam.y * SKY_PARALLAX };
       setSkyPan(skyBase.x, skyBase.y);
       ctx.clearRect(0, 0, cv.width, cv.height);
       if (run === r) {
         run = null;
-        scene.end();
+        if (!keep) host.end();
         setTransitionDot(null);
       }
     };
@@ -334,7 +374,7 @@ export default function TransitionLayer() {
 
     const frame = (now: number) => {
       const r = run;
-      const sr = scene.run;
+      const sr = host.state;
       if (!r || !sr) return;
       raf = requestAnimationFrame(frame);
       // 幀與幀之間隔多久：主執行緒卡住（新的一頁掛上去）的那一下會在這裡變成一個長幀
@@ -368,34 +408,29 @@ export default function TransitionLayer() {
           }
         }
         // 新的一頁報到了（或等太久）：讀它的錨點與路，交給場景排這一趟
-        if (sr.phase === 'fly' && !r.quiet && !sr.flight) {
+        if (sr.phase === 'fly' && !r.quiet && !sr.planned) {
           const page = currentPage();
           const rendered =
             page.generation !== r.oldGeneration ||
             r.main.firstElementChild !== r.oldFirst ||
             (r.resolvedAt > 0 && now - r.resolvedAt > 32);
-          if (rendered || now - sr.launchAt > WAIT_LIMIT_MS) scene.plan(planInput(r), now);
+          if (rendered || now - sr.launchAt > WAIT_LIMIT_MS) host.plan(planInput(r), now);
         }
         // 頁面給的那一點：收的時候一直跟著它，之後只在場景的 followUntil 之前讀
         const follow = r.follow && (sr.phase === 'leave' || now < sr.followUntil) ? r.follow() : null;
-        const done = scene.frame(now, {
+        host.frame(now, {
           w: window.innerWidth,
           h: window.innerHeight,
           follow,
           quiet: r.quiet ? quietRoute(r, sr.from) : null,
         });
-        if (done) {
+        if (host.done) {
           cancelAnimationFrame(raf);
           // 正常跑完才上報（出錯、被下一次換頁打斷、元件卸載都不算）
           if (r.report) {
-            reportTransition({
-              ...r.report,
-              ms: now - r.t0,
-              frames: r.frames,
-              maxFrame: r.maxFrame,
-              long: r.longFrames,
-              phases: { ...r.phaseMax },
-            });
+            // 點在 worker 裡畫的話，照 worker 的幀算（看得到的是它）
+            const own = { frames: r.frames, maxFrame: r.maxFrame, long: r.longFrames, phases: { ...r.phaseMax } };
+            reportTransition({ ...r.report, ms: now - r.t0, ...(host.stats ?? own) });
           }
           finish(r);
         }
@@ -492,17 +527,20 @@ export default function TransitionLayer() {
       };
       // quiet：落地之後點跟著頁面那條線的終點（會動的也追得上）
       if (quiet) r.follow = () => quietLive(r);
-      scene.begin({
-        phase: 'fly',
-        t0: now,
-        from: center,
-        vel: { x: 0, y: 0 },
-        followUntil: 0,
-        trail: [{ ...center, t: now }],
-        dust: [],
-        carried: true,
-        quiet,
-      });
+      host.begin(
+        {
+          phase: 'fly',
+          t0: now,
+          from: center,
+          vel: { x: 0, y: 0 },
+          followUntil: 0,
+          trail: [{ ...center, t: now }],
+          dust: [],
+          carried: true,
+          quiet,
+        },
+        false,
+      );
       return r;
     };
 
@@ -633,20 +671,12 @@ export default function TransitionLayer() {
         }
         // 轉場還沒跑完又換頁：不丟掉那個點，從它現在的位置、帶著它現在的速度接一趟新的；
         // 這一頁（不管收到哪裡、長到哪裡）用遮罩收進那一點，上一趟的彗尾與塵埃帶過來照樣散完
-        let carry: { point: Pt; vel: Pt; trail: SceneStart['trail']; dust: SceneStart['dust'] } | null = null;
-        const old = scene.run;
-        if (run && old) {
-          const speed = len(old.screenVel);
-          const cam = old.cam;
-          carry = {
-            point: { ...old.screen },
-            vel:
-              speed > 1.2 ? { x: (old.screenVel.x / speed) * 1.2, y: (old.screenVel.y / speed) * 1.2 } : old.screenVel,
-            trail: old.trail.map((q) => ({ x: q.x - cam.x, y: q.y - cam.y, t: q.t })),
-            dust: old.dust.map((d) => ({ ...d, x: d.x - cam.x, y: d.y - cam.y })),
-          };
+        // （彗尾、塵埃與速度由宿主自己接，見 lib/transition/host 的 carried）
+        const prev = host.state;
+        const carry = run && prev ? { point: { ...prev.screen } } : null;
+        if (run && carry) {
           cancelAnimationFrame(raf);
-          finish(run);
+          finish(run, true);
         }
         const page = currentPage();
         const mark = takeTransitionFrom();
@@ -678,19 +708,22 @@ export default function TransitionLayer() {
           phaseMax: { leave: 0, fly: 0, grow: 0 },
           marked: null,
         };
-        scene.begin({
-          phase: 'leave',
-          t0,
-          from: departure.point,
-          // 頁面沒給方向（收進中心、預設的遮罩）：往左上慢慢滑出去——大部分頁面的錨點在左上的標題，
-          // 新的一頁還沒好的時候點也不會停在原地等
-          vel: carry?.vel ?? departure.velocity ?? { x: -0.24, y: -0.32 },
-          followUntil: t0 + (departure.followMs ?? 0),
-          trail: [...(carry?.trail ?? []), { ...departure.point, t: t0 }],
-          dust: carry?.dust ?? [],
-          carried: carry !== null,
-          quiet: false,
-        });
+        host.begin(
+          {
+            phase: 'leave',
+            t0,
+            from: departure.point,
+            // 頁面沒給方向（收進中心、預設的遮罩）：往左上慢慢滑出去——大部分頁面的錨點在左上的標題，
+            // 新的一頁還沒好的時候點也不會停在原地等
+            vel: departure.velocity ?? { x: -0.24, y: -0.32 },
+            followUntil: t0 + (departure.followMs ?? 0),
+            trail: [{ ...departure.point, t: t0 }],
+            dust: [],
+            carried: carry !== null,
+            quiet: false,
+          },
+          carry !== null,
+        );
         run = r;
         root.dataset.pt = 'leave';
         cancelAnimationFrame(raf);
@@ -704,7 +737,7 @@ export default function TransitionLayer() {
         // 先把舊的藏起來再拿掉遮罩，舊頁不會閃回來一幀
         root.dataset.pt = 'out';
         main.style.clipPath = '';
-        scene.release(performance.now());
+        host.release(performance.now());
         r.oldGeneration = currentPage().generation;
         r.oldFirst = main.firstElementChild;
         return false;
@@ -714,7 +747,7 @@ export default function TransitionLayer() {
     // 同一個元件換資料（例如文章換一篇）時 generation 與 main 的第一個子元素都不會變，
     // 用路由「這次換頁處理完了」當作新的一頁已經畫好的訊號
     const unsubscribe = router.subscribe('onResolved', () => {
-      if (run && scene.run?.phase === 'fly') run.resolvedAt = performance.now();
+      if (run && host.state?.phase === 'fly') run.resolvedAt = performance.now();
       // 沒有轉場在跑：確定畫面上沒有任何轉場留下的東西（平移、遮罩、半透明、畫布上的點）
       if (!run) {
         const main = mainOf();
@@ -739,8 +772,19 @@ export default function TransitionLayer() {
       document.removeEventListener('click', onClick, true);
       cancelAnimationFrame(raf);
       if (run) finish(run);
+      offPalette();
+      offTheme();
+      // worker 那個沿用（canvas 交不了第二次），只收掉這一趟
+      if (shared) host.end();
+      else host.dispose();
     };
   }, [router]);
 
-  return <canvas ref={canvasRef} className="pt-canvas" aria-hidden="true" />;
+  // 下面那張畫頁面留下的線（residue，頁面自己的畫法，留在主執行緒）；上面那張是點與彗尾（場景，可能交給 worker）
+  return (
+    <>
+      <canvas ref={canvasRef} className="pt-canvas" aria-hidden="true" />
+      <canvas ref={topRef} className="pt-canvas" aria-hidden="true" />
+    </>
+  );
 }
