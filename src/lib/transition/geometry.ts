@@ -13,7 +13,7 @@ export const smooth = (a: number, b: number, x: number) => {
   const k = clamp((x - a) / (b - a));
   return k * k * (3 - 2 * k);
 };
-export const lerp = (p: Pt, q: Pt, k: number): Pt => ({ x: p.x + (q.x - p.x) * k, y: p.y + (q.y - p.y) * k });
+const lerp = (p: Pt, q: Pt, k: number): Pt => ({ x: p.x + (q.x - p.x) * k, y: p.y + (q.y - p.y) * k });
 export const len = (p: Pt) => Math.hypot(p.x, p.y);
 export const unit = (p: Pt): Pt => {
   const l = len(p) || 1;

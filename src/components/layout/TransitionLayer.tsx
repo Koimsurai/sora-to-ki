@@ -351,9 +351,16 @@ export default function TransitionLayer() {
       },
     };
     // 場景跑在哪：轉場的 worker（點與彗尾照自己的時鐘畫，主執行緒卡住也照樣走），
-    // 不支援 OffscreenCanvas 就在主執行緒（lib/transition/host）。先用 ?txw=1 開（試作）
+    // 不支援 OffscreenCanvas 就在主執行緒（lib/transition/host）。網址帶 ?txw=0（或 localStorage 的 txw 是 0）
+    // 一律在主執行緒（A/B 比較用）
     const top = topRef.current;
-    const wantWorker = (new URLSearchParams(window.location.search).get('txw') ?? localStorage.getItem('txw')) === '1';
+    let optOut: string | null = new URLSearchParams(window.location.search).get('txw');
+    try {
+      optOut ??= localStorage.getItem('txw');
+    } catch {
+      // 讀不到 localStorage（隱私模式）就照預設
+    }
+    const wantWorker = optOut !== '0';
     const shared = wantWorker && top && typeof top.transferControlToOffscreen === 'function' ? workerHost(top) : null;
     shared?.bind(fx);
     const host: SceneHost = shared?.host ?? createLocalHost(ctx, PAINT, fx);
