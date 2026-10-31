@@ -361,6 +361,10 @@ export default function TransitionLayer() {
       // 讀不到 localStorage（隱私模式）就照預設
     }
     const wantWorker = optOut !== '0';
+    // 只在開發時：?txstall=300 讓每次放行換頁之後主執行緒卡 300ms（模擬慢手機上新的一頁掛上去），
+    // 快的電腦上也看得出點畫在哪裡的差別。開頁時讀一次，之後換頁都照它
+    const stallMs = import.meta.env.DEV ? Number(new URLSearchParams(window.location.search).get('txstall')) || 0 : 0;
+    let stallTimer = 0;
     const shared = wantWorker && top && typeof top.transferControlToOffscreen === 'function' ? workerHost(top) : null;
     shared?.bind(fx);
     const host: SceneHost = shared?.host ?? createLocalHost(ctx, PAINT, fx);
@@ -787,6 +791,13 @@ export default function TransitionLayer() {
         root.dataset.pt = 'out';
         main.style.clipPath = '';
         host.release(performance.now());
+        if (stallMs)
+          stallTimer = window.setTimeout(() => {
+            const t = performance.now();
+            while (performance.now() - t < stallMs) {
+              // 故意卡住主執行緒（只在開發時，見 stallMs）
+            }
+          }, 0);
         r.oldGeneration = currentPage().generation;
         r.oldFirst = main.firstElementChild;
         return false;
@@ -821,6 +832,7 @@ export default function TransitionLayer() {
       document.removeEventListener('click', onClick, true);
       cancelAnimationFrame(raf);
       if (run) finish(run);
+      window.clearTimeout(stallTimer);
       offPalette();
       offTheme();
       // worker 那個沿用（canvas 交不了第二次），只收掉這一趟
