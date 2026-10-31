@@ -9,6 +9,7 @@
 // 首頁的字卡與標註畫進 3D 時（store/canvasLabels）另外有 labels / labelShow。
 // 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）、土星長到幾成（saturnGrow）、
 // 畫進 3D 的字卡與標註的框（labelGeometry）與「快照沒傳上去，再拍一次」（labelsRetry）。
+import type { SkyFlight } from '../store/skyPan';
 import type { LabelImage, LabelShow } from '../store/canvasLabels';
 import type { Palette } from '../lib/palette';
 import type { Theme } from '../lib/theme';
@@ -71,6 +72,12 @@ interface PanMsg {
   x: number;
   y: number;
 }
+/** 換頁的鏡頭整段路（store/skyPan 的 SkyFlight）：這裡自己照它算星空挪多少。origin 是主執行緒的 timeOrigin */
+interface PanFlightMsg {
+  type: 'panFlight';
+  flight: SkyFlight | null;
+  origin: number;
+}
 /** 站台設定改了主要分區的數目：土星的軌道跟著增減（補放同上） */
 interface SectionsMsg {
   type: 'sections';
@@ -93,6 +100,7 @@ interface LabelShowMsg {
   show: LabelShow;
 }
 type InMsg =
+  | PanFlightMsg
   | LabelsMsg
   | LabelShowMsg
   | ThemeMsg
@@ -187,6 +195,10 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'stars') {
     lastStars = msg.visible;
     runner?.setStars(msg.visible);
+  } else if (msg.type === 'panFlight') {
+    // 時間換成這裡的時鐘（兩邊 performance.now() 的起點不同）
+    const shift = msg.origin - performance.timeOrigin;
+    runner?.setPanFlight(msg.flight && { ...msg.flight, path: { ...msg.flight.path, at: msg.flight.path.at + shift } });
   } else if (msg.type === 'pan') {
     lastPan = { x: msg.x, y: msg.y };
     runner?.setPan(msg.x, msg.y);
