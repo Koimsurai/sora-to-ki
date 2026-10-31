@@ -73,6 +73,8 @@ import type { LabelGeometry, LabelImage, LabelShow } from '@/store/canvasLabels'
 import type { SatelliteScreen, SaturnGrow } from '@/store/homeOrbit';
 import { createLabelOverlay, type LabelOverlay } from './labelOverlay';
 import { orbitFrame } from './orbitLabels';
+import { flightAt } from './transition/geometry';
+import type { SkyFlight } from '@/store/skyPan';
 
 /** 環在半徑 1（土星赤道半徑）處的角速度（rad/s）；實際照半徑的 -1.5 次方遞減 */
 const RING_SPIN = 0.3;
@@ -126,6 +128,11 @@ export interface StarfieldRunner {
   setStars(visible: boolean): void;
   /** 換頁的鏡頭移動：星空要在畫面上挪多少（累積的像素），換成星空鏡頭轉的角度 */
   setPan(x: number, y: number): void;
+  /**
+   * 換頁的鏡頭整段路（store/skyPan 的 SkyFlight，時間是這裡的時鐘）：照它自己算每一幀星空挪多少，
+   * 主執行緒卡住時照樣挪；跑完停在最後的位置。這段期間主執行緒送來的 setPan 不理（它晚到、會倒退）
+   */
+  setPanFlight(flight: SkyFlight | null): void;
   /** 開著幾個主要分區：土星留下幾條軌道（站台設定改了就呼叫，多的收起來、少的長出來） */
   setSections(count: number): void;
   /**
@@ -1329,6 +1336,14 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{
   };
   markActive();
   let lastRender = -1;
+  /** 換頁的鏡頭整段路（setPanFlight）；沒有在換頁是 null */
+  let panFlight: SkyFlight | null = null;
+  /** 星空挪多少（畫面像素）→ 鏡頭轉幾度：一個像素是多少弧度，鏡頭的垂直視角攤在畫面高度上。星在球面上，怎麼轉都不會露出邊 */
+  const pan = (x: number, y: number) => {
+    const k = (camera.fov * Math.PI) / 180 / Math.max(1, viewH);
+    camera.rotation.set(y * k, x * k, 0);
+    markActive();
+  };
   let frames = 0;
   let acc = 0;
   let saturnZooming = false;
@@ -1373,6 +1388,15 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{
     if (!pacer.shouldRender(now, fullRate ? 0 : active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS)) return;
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
     const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
+    // 換頁的鏡頭：照整段路算這一幀挪到哪（lib/transition/geometry 的 flightAt，跟轉場同一個式子）
+    if (panFlight) {
+      const f = panFlight;
+      const end = f.path.acquire + f.path.dur;
+      const el = Math.min(end, performance.now() - f.path.at);
+      const { cam } = flightAt(f.path, f.offset, { x: f.w / 2, y: f.h / 2 }, f.blackhole, el);
+      pan(f.base.x - cam.x * f.parallax, f.base.y - cam.y * f.parallax);
+      if (el >= end) panFlight = null;
+    }
     lastRender = now;
     for (const l of layers) {
       l.points.rotation.x += delta * l.cfg.rotX;
@@ -1559,9 +1583,11 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{
         darkDrawn = false;
       },
       setPan(x, y) {
-        // 一個像素是多少弧度：鏡頭的垂直視角攤在畫面高度上。星在球面上，怎麼轉都不會露出邊
-        const k = (camera.fov * Math.PI) / 180 / Math.max(1, viewH);
-        camera.rotation.set(y * k, x * k, 0);
+        if (panFlight) return;
+        pan(x, y);
+      },
+      setPanFlight(flight) {
+        panFlight = flight;
         markActive();
       },
       collapseSaturnTo(index) {

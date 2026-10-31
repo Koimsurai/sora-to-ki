@@ -28,7 +28,7 @@ import {
 } from '@/store/canvasLabels';
 import { isArriving } from '@/store/pageTransition';
 import { onShowcase, setShowcaseReady, showcaseShowing, skyBorrowed } from '@/store/themeShowcase';
-import { skyPan, subscribeSkyPan } from '@/store/skyPan';
+import { skyPan, subscribeSkyFlight, subscribeSkyPan, type SkyFlight } from '@/store/skyPan';
 import {
   publishSatellites,
   publishSaturnGrow,
@@ -130,6 +130,8 @@ export default function StarfieldGpu({
     collapse(index: number): void;
     stars(visible: boolean): void;
     pan(x: number, y: number): void;
+    /** 換頁的鏡頭整段路：worker 那邊自己照它算（主執行緒那條路沒有，照逐幀的 pan） */
+    flight?(f: SkyFlight | null): void;
     sections(count: number): void;
     theme(theme: Theme, palette: Palette): void;
   } | null>(null);
@@ -220,6 +222,7 @@ export default function StarfieldGpu({
     send(skyPan());
     return subscribeSkyPan(send);
   }, [backend]);
+  useEffect(() => subscribeSkyFlight((f) => controlRef.current?.flight?.(f)), [backend]);
   // 頁面自己畫背景時（hooks/useBareSky）、換主題的那幾秒，星星淡出讓位。控制介面就緒（backend 變了）時補送一次
   useEffect(() => {
     const root = document.documentElement;
@@ -335,6 +338,7 @@ export default function StarfieldGpu({
         collapse: (index) => worker.postMessage({ type: 'collapse', index }),
         stars: (visible) => worker.postMessage({ type: 'stars', visible }),
         pan: (x, y) => worker.postMessage({ type: 'pan', x, y }),
+        flight: (f) => worker.postMessage({ type: 'panFlight', flight: f, origin: performance.timeOrigin }),
         sections: (count) => worker.postMessage({ type: 'sections', count }),
         theme: (theme, colors) => worker.postMessage({ type: 'theme', theme, palette: colors }),
       };

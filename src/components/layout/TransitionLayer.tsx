@@ -36,11 +36,11 @@ import {
   type Pt,
 } from '@/store/pageTransition';
 import { latestSaturnGrow, subscribeSatellites } from '@/store/homeOrbit';
-import { clamp, cumulative, easeIn } from '@/lib/transition/geometry';
+import { clamp, cumulative, easeIn, flightAt, smooth, type Flight } from '@/lib/transition/geometry';
 import type { PaintStyle } from '@/lib/transition/paint';
 import { createLocalHost, createWorkerHost, type SceneHost } from '@/lib/transition/host';
 import { GROW_MS, LEAVE_MS, type Phase, type PlanInput, type SceneEffects } from '@/lib/transition/scene';
-import { setSkyPan } from '@/store/skyPan';
+import { setSkyFlight, setSkyPan } from '@/store/skyPan';
 import './TransitionLayer.css';
 
 /** 單篇文章的路徑（語系前綴已剝掉）：`blog/<slug 或 id>` */
@@ -146,6 +146,30 @@ interface Run {
   phaseMax: Record<Phase, number>;
   /** 上一次在效能時間軸上標記的是哪一段（performance.mark，錄 trace 時看得到三段的起點） */
   marked: Phase | null;
+  /** 頁面跟著鏡頭滑進來的那段（合成器上的 WAAPI）；沒有在跑是 null */
+  anim: Animation | null;
+}
+
+/**
+ * 頁面跟著鏡頭滑進來：跟拍那段的位移與透明度照 flightAt 每 16ms 取一格，交給合成器播。
+ * 時間照 document.timeline（跟 performance.now() 同一個時鐘）對齊路線的起點
+ */
+function cameraAnimation(
+  main: HTMLElement,
+  { path: f, offset, w, h, blackhole }: { path: Flight; offset: Pt; w: number; h: number; blackhole: boolean },
+) {
+  const mid = { x: w / 2, y: h / 2 };
+  const n = Math.max(2, Math.ceil(f.dur / 16));
+  const frames = Array.from({ length: n + 1 }, (_, i) => {
+    const { cam, tau } = flightAt(f, offset, mid, blackhole, f.acquire + (f.dur * i) / n);
+    return {
+      transform: `translate(${(offset.x - cam.x).toFixed(1)}px, ${(offset.y - cam.y).toFixed(1)}px)`,
+      opacity: String(smooth(0.15, 0.55, tau)),
+    };
+  });
+  const anim = main.animate(frames, { duration: f.dur, fill: 'forwards' });
+  anim.startTime = f.at + f.acquire;
+  return anim;
 }
 
 const mainOf = () => document.querySelector<HTMLElement>('.main-content-container > main');
@@ -205,7 +229,7 @@ function workerHost(canvas: HTMLCanvasElement) {
       screen: (p) => current?.screen(p),
       page: (transform, opacity) => current?.page(transform, opacity),
       camera: (cam) => current?.camera(cam),
-      planned: (translate) => current?.planned(translate),
+      planned: (plan) => current?.planned(plan),
       grow: (g) => current?.grow(g),
     };
     entry = {
@@ -285,18 +309,31 @@ export default function TransitionLayer() {
       },
       page(transform, opacity) {
         if (!run) return;
+        // 跟拍的那段由合成器照關鍵影格走（planned），這裡不再一幀一幀寫；開始長（transform 是 ''）才收回來
+        if (run.anim) {
+          if (transform !== '') return;
+          run.anim.cancel();
+          run.anim = null;
+        }
         if (transform !== null) run.main.style.transform = transform;
         run.main.style.opacity = String(opacity);
       },
       camera(cam) {
         setSkyPan(skyBase.x - cam.x * SKY_PARALLAX, skyBase.y - cam.y * SKY_PARALLAX);
       },
-      planned(translate) {
+      planned({ translate, flight }) {
         if (!run) return;
         root.dataset.pt = 'fly';
         run.main.style.transition = 'none';
         run.main.style.opacity = '0';
         if (translate) run.main.style.transform = `translate(${translate.x}px, ${translate.y}px)`;
+        run.anim?.cancel();
+        run.anim = null;
+        if (!flight) return;
+        // 鏡頭的路一開始就排好了：頁面跟著鏡頭滑進來的那段交給合成器（WAAPI），星空的視差交給星空的 worker，
+        // 主執行緒卡住（新的一頁正在掛上去、資料到了重繪）時兩者照樣走
+        run.anim = cameraAnimation(run.main, flight);
+        setSkyFlight({ ...flight, base: skyBase, parallax: SKY_PARALLAX });
       },
       grow({ from, to, trail, quiet }) {
         if (!run) return;
@@ -326,6 +363,9 @@ export default function TransitionLayer() {
 
     /** keep：馬上要接著跑新的一趟（轉場中又換頁），場景先別收，宿主要從它接 */
     const finish = (r: Run, keep = false) => {
+      r.anim?.cancel();
+      r.anim = null;
+      setSkyFlight(null);
       r.main.style.clipPath = '';
       r.main.style.transform = '';
       r.main.style.opacity = '';
@@ -524,6 +564,7 @@ export default function TransitionLayer() {
         longFrames: 0,
         phaseMax: { leave: 0, fly: 0, grow: 0 },
         marked: null,
+        anim: null,
       };
       // quiet：落地之後點跟著頁面那條線的終點（會動的也追得上）
       if (quiet) r.follow = () => quietLive(r);
@@ -707,6 +748,7 @@ export default function TransitionLayer() {
           longFrames: 0,
           phaseMax: { leave: 0, fly: 0, grow: 0 },
           marked: null,
+          anim: null,
         };
         host.begin(
           {

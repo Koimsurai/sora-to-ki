@@ -110,6 +110,24 @@ export function pointAt(f: Path, s: number): Pt {
   };
 }
 
+/**
+ * 飛行開始 el 毫秒時：點在世界裡的位置、鏡頭的位移、跟拍走到幾成（tau）。
+ *   對焦  點停在起點，鏡頭移過去把它放到畫面正中間（following 是 false）
+ *   跟拍  點沿著路走（起步與落地都是緩的；黑洞照時間膨脹），鏡頭讓它一直在正中間；快接上頁面的線時鏡頭煞停
+ * 純函式：轉場的場景、頁面的 WAAPI 關鍵影格、星空 worker 的視差都照它算，三邊算出來一樣
+ */
+export function flightAt(f: Flight, offset: Pt, mid: Pt, blackhole: boolean, el: number) {
+  if (el < f.acquire) {
+    const k = smooth(0, 1, el / f.acquire);
+    return { pos: f.start, cam: { x: (f.start.x - mid.x) * k, y: (f.start.y - mid.y) * k }, tau: 0, following: false };
+  }
+  const tau = clamp((el - f.acquire) / f.dur);
+  const s = (blackhole ? escape(tau) : (1 - Math.cos(Math.PI * tau)) / 2) * f.total;
+  const pos = pointAt(f, s);
+  const hold = f.brakeTo - f.brakeFrom < 1 ? (s >= f.brakeTo ? 1 : 0) : smooth(f.brakeFrom, f.brakeTo, s);
+  return { pos, cam: lerp({ x: pos.x - mid.x, y: pos.y - mid.y }, offset, hold), tau, following: true };
+}
+
 /** 點列的累積路長 */
 export function cumulative(points: Pt[]): number[] {
   const cum = [0];

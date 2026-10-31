@@ -12,13 +12,14 @@ import {
   cumulative,
   easeOut,
   escape,
+  flightAt,
   flyby,
   hermite,
-  lerp,
   len,
   pointAt,
   smooth,
   unit,
+  type Flight,
   type Path,
 } from './geometry';
 import { createPainter, SLING_BODY_R, type PaintState, type PaintStyle, type Stretch, type Trail } from './paint';
@@ -142,8 +143,15 @@ export interface SceneEffects {
   page(transform: string | null, opacity: number): void;
   /** 鏡頭的位移（背景星空跟著挪） */
   camera(cam: Pt): void;
-  /** 路線排好了：頁面先藏起來，translate 是新的一頁在世界裡挪了多少（null 是不挪） */
-  planned(translate: Pt | null): void;
+  /**
+   * 路線排好了：頁面先藏起來，translate 是新的一頁在世界裡挪了多少（null 是不挪）。
+   * flight 有的話，鏡頭照它走（geometry 的 flightAt）：呼叫端可以拿它把頁面的位移交給合成器（WAAPI）、
+   * 星空的視差交給星空的 worker，主執行緒卡住時它們照樣走
+   */
+  planned(p: {
+    translate: Pt | null;
+    flight: { path: Flight; offset: Pt; w: number; h: number; blackhole: boolean } | null;
+  }): void;
   /** 開始長：交棒給新的一頁。trail 是點飛過的路，換成新的一頁原位的座標 */
   grow(g: { from: Pt; to: Pt; trail: Pt[]; quiet: boolean }): void;
 }
@@ -273,7 +281,7 @@ export function createScene(
         };
         r.offset = { x: 0, y: 0 };
         r.cam = { x: 0, y: 0 };
-        fx.planned(null);
+        fx.planned({ translate: null, flight: null });
         return;
       }
       // 開場交棒給首頁的 3D 土星：點平常就在土星中心（index.css 的 --boot-cy），上面就原地長了。
@@ -296,7 +304,7 @@ export function createScene(
         };
         r.offset = { x: 0, y: 0 };
         r.cam = { x: 0, y: 0 };
-        fx.planned(null);
+        fx.planned({ translate: null, flight: null });
         return;
       }
       // 頁面那條線起點的方向：頁面指定的路的方向；沒指定就由畫面中心直直進去
@@ -348,7 +356,10 @@ export function createScene(
       r.offset = O;
       r.cam = { x: 0, y: 0 };
       // 新的一頁在飛的時候就看得到（跟著鏡頭進來），不再藏著
-      fx.planned(O);
+      fx.planned({
+        translate: O,
+        flight: { path: r.flight, offset: O, w, h, blackhole: style.theme === 'blackhole' },
+      });
     },
 
     /** 畫這一幀。回傳 true 是這一趟跑完了（點暗下去、彗尾與塵埃都散完） */
@@ -474,18 +485,14 @@ export function createScene(
             if (following && now < r.followUntil) r.pos = follow;
             else r.pos = r.to ?? r.pos;
             if (!following || now >= r.followUntil - STILL_OVERLAP_MS) tau = 1;
-          } else if (el < f.acquire) {
-            // 對焦：點停在原地，鏡頭移過去把它放到正中間
-            const k = smooth(0, 1, el / f.acquire);
-            r.pos = f.start;
-            r.cam = { x: (f.start.x - mid.x) * k, y: (f.start.y - mid.y) * k };
           } else {
-            // 跟拍：點沿著路走（起步與落地都是緩的），鏡頭讓它一直在正中間；快接上頁面的線時鏡頭煞停
-            tau = clamp((el - f.acquire) / f.dur);
-            const s = (style.theme === 'blackhole' ? escape(tau) : (1 - Math.cos(Math.PI * tau)) / 2) * f.total;
-            r.pos = pointAt(f, s);
-            const hold = f.brakeTo - f.brakeFrom < 1 ? (s >= f.brakeTo ? 1 : 0) : smooth(f.brakeFrom, f.brakeTo, s);
-            r.cam = lerp({ x: r.pos.x - mid.x, y: r.pos.y - mid.y }, r.offset, hold);
+            // 對焦（點停在原地、鏡頭移過去）與跟拍（點沿著路走、鏡頭讓它一直在正中間），見 geometry 的 flightAt
+            const at = flightAt(f, r.offset, mid, style.theme === 'blackhole', el);
+            r.pos = at.pos;
+            r.cam = at.cam;
+            tau = at.tau;
+          }
+          if (!r.still && el >= f.acquire) {
             // 新的一頁 = 世界裡挪過的位置 − 鏡頭，鏡頭停下時剛好回到原位
             r.opacity = smooth(0.15, 0.55, tau);
             fx.page(

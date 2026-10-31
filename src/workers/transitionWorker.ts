@@ -107,7 +107,12 @@ self.onmessage = (e: MessageEvent<ToWorker>) => {
       screen: (p) => effects.push({ kind: 'screen', p }),
       page: (transform, opacity) => effects.push({ kind: 'page', transform, opacity }),
       camera: (cam) => effects.push({ kind: 'camera', cam }),
-      planned: (translate) => effects.push({ kind: 'planned', translate }),
+      // 路線的時間點換成主執行緒的時鐘（那邊照它把頁面的位移交給合成器）
+      planned: ({ translate, flight }) =>
+        effects.push({
+          kind: 'planned',
+          plan: { translate, flight: flight && { ...flight, path: { ...flight.path, at: remote(flight.path.at) } } },
+        }),
       grow: (g) => effects.push({ kind: 'grow', ...g }),
     });
   } else if (m.type === 'size') {
