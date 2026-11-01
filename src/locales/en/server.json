@@ -1,0 +1,44 @@
+{
+  "mail": {
+    "newPost": {
+      "subject": "{{title}} — new on {{site}}",
+      "preheader": "{{excerpt}} · New on {{site}}",
+      "kicker": "Notes · New post"
+    },
+    "readMore": "Read the full post",
+    "readMoreText": "Read the full post: {{url}}",
+    "greeting": "Hi,",
+    "greetingNamed": "Hi {{name}},",
+    "thanks": "Thanks for subscribing to {{site}}. If this email is a bother, use the unsubscribe link below and you won't get another one.",
+    "unsubscribe": "Unsubscribe",
+    "unsubscribeText": "Unsubscribe: {{url}}",
+    "allPosts": "All posts",
+    "friend": {
+      "subject": "About your link request for “{{name}}”",
+      "kicker": "Link request · {{name}}",
+      "page": "Friends page",
+      "footer": "This is a reply to the link request you sent on {{site}}."
+    }
+  },
+  "feed": {
+    "momentsDescription": "Whatever comes to mind"
+  },
+  "llms": {
+    "heading": {
+      "pages": "Main pages",
+      "recent": "Recent posts",
+      "usage": "Usage"
+    },
+    "welcome": "AI search, summaries and quotes are welcome; please keep a link to the source when quoting.",
+    "sitemap": "The full list of URLs is in the [sitemap]({{url}}) (with hreflang for each language).",
+    "rss": "New posts: [RSS]({{url}}).",
+    "rssLangs": "New posts: [RSS]({{url}}); add `?lang={{langs}}` for other languages.",
+    "pages": {
+      "notes": "Posts",
+      "collection": "Collection: anime, films and series watched, the bookshelf, most-played music",
+      "about": "About the author",
+      "setup": "Hardware and software setup",
+      "photos": "Photography"
+    }
+  }
+}

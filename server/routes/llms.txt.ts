@@ -1,7 +1,22 @@
 import { defineEventHandler, setHeader } from 'nitro/h3';
 
 import { PAGES as ALL_PAGES } from '../../src/data/siteSections';
+import en from '../../src/locales/en/server.json';
+import ja from '../../src/locales/ja/server.json';
+import ko from '../../src/locales/ko/server.json';
+import zhCN from '../../src/locales/zh-CN/server.json';
+import zhTW from '../../src/locales/zh-TW/server.json';
 import { backendSiteConfig, disabledPathsOf } from '../disabledPaths';
+
+const TEXT: Record<string, typeof zhTW.llms> = {
+  'zh-TW': zhTW.llms,
+  'zh-CN': zhCN.llms,
+  en: en.llms,
+  ja: ja.llms,
+  ko: ko.llms,
+};
+
+const fill = (s: string, vars: Record<string, string>) => s.replace(/\{\{(\w+)\}\}/g, (m, k: string) => vars[k] ?? m);
 
 // /llms.txt —— 給 LLM / AI agent 的網站摘要（llmstxt.org 慣例：Markdown、單一 H1、blockquote 摘要、
 // 以 ## 分區列連結）。也是 Lighthouse「Agentic Browsing」稽核檢查的檔案。照 robots/sitemap 走 route
@@ -16,8 +31,8 @@ interface Post {
   created_at?: string;
 }
 
-// 主要頁面：頁面登記表（src/data/siteSections）裡有寫 llms 描述的那幾頁
-const PAGES: [string, string][] = ALL_PAGES.flatMap((p) => (p.llms ? [[p.to, p.llms] as [string, string]] : []));
+// 主要頁面：頁面登記表（src/data/siteSections）裡標了 llms 的那幾頁
+const PAGES = ALL_PAGES.filter((p) => p.llms);
 
 export default defineEventHandler(async (event) => {
   let posts: Post[] = [];
@@ -36,23 +51,32 @@ export default defineEventHandler(async (event) => {
   let md = `# ${author && author !== name ? `${name} · ${author}` : name}\n\n`;
   if (site?.description) md += `> ${site.description}\n\n`;
 
-  md += '## 主要頁面\n\n';
+  // 用站台的預設語系寫；頁面說明優先用站長在後台寫的介紹
+  const locale = site?.default_locale ?? 'zh-TW';
+  const text = TEXT[locale] ?? zhTW.llms;
+  const pageText: Record<string, string> = text.pages;
+
+  md += `## ${text.heading.pages}\n\n`;
   const off = disabledPathsOf(site);
-  for (const [path, desc] of PAGES) {
-    if (off.has(path)) continue;
-    md += `- [${SITE_URL}${path}](${SITE_URL}${path}): ${desc}\n`;
+  for (const p of PAGES) {
+    if (off.has(p.to)) continue;
+    // 站長寫了（非空字串）就用他的；`?? ''` 再 `||` 跟上面站名同一個寫法
+    const desc = (site?.page_descriptions?.[p.key]?.[locale] ?? '') || (pageText[p.key] ?? '');
+    md += `- [${SITE_URL}${p.to}](${SITE_URL}${p.to}): ${desc}\n`;
   }
 
-  md += '\n## 近期文章\n\n';
+  md += `\n## ${text.heading.recent}\n\n`;
   for (const p of posts.slice(0, 20)) {
     if (!p.title) continue;
     md += `- [${p.title}](${SITE_URL}/blog/${p.id})\n`;
   }
 
-  md += '\n## 使用說明\n\n';
-  md += '- 歡迎 AI 檢索、摘要與引用；引用時請保留來源連結。\n';
-  md += `- 完整網址清單見 [sitemap](${SITE_URL}/sitemap.xml)（含各語系 hreflang）。\n`;
-  md += `- 訂閱新文章：[RSS](${SITE_URL}/rss)；各語系加 \`?lang=en|ja|ko|zh-CN\`。\n`;
+  // 其他語系的 RSS：開著的語系扣掉預設的那個（只開一個就不提）
+  const others = (site?.locales ?? []).filter((l) => l !== locale);
+  md += `\n## ${text.heading.usage}\n\n`;
+  md += `- ${text.welcome}\n`;
+  md += `- ${fill(text.sitemap, { url: `${SITE_URL}/sitemap.xml` })}\n`;
+  md += `- ${others.length ? fill(text.rssLangs, { url: `${SITE_URL}/rss`, langs: others.join('|') }) : fill(text.rss, { url: `${SITE_URL}/rss` })}\n`;
 
   setHeader(event, 'content-type', 'text/plain; charset=utf-8');
   setHeader(event, 'cache-control', 'public, max-age=3600');

@@ -1,0 +1,44 @@
+{
+  "mail": {
+    "newPost": {
+      "subject": "{{title}} — {{site}} 새 글",
+      "preheader": "{{excerpt}} · {{site}}에 새 글",
+      "kicker": "노트 · 새 글"
+    },
+    "readMore": "전문 읽기",
+    "readMoreText": "전문 읽기: {{url}}",
+    "greeting": "안녕하세요,",
+    "greetingNamed": "{{name}}님,",
+    "thanks": "{{site}}을(를) 구독해 주셔서 감사합니다. 이 메일이 불편하시다면 아래 구독 해지 링크를 눌러 주세요. 다음부터는 보내지 않을게요.",
+    "unsubscribe": "구독 해지",
+    "unsubscribeText": "구독 해지: {{url}}",
+    "allPosts": "모든 글",
+    "friend": {
+      "subject": "'{{name}}' 링크 교환 신청 건",
+      "kicker": "링크 교환 신청 · {{name}}",
+      "page": "친구 페이지",
+      "footer": "{{site}}에서 보내 주신 링크 교환 신청에 대한 답장입니다."
+    }
+  },
+  "feed": {
+    "momentsDescription": "떠오르는 대로 쓰는 글"
+  },
+  "llms": {
+    "heading": {
+      "pages": "주요 페이지",
+      "recent": "최근 글",
+      "usage": "이용 안내"
+    },
+    "welcome": "AI의 검색, 요약, 인용을 환영합니다. 인용할 때는 출처 링크를 남겨 주세요.",
+    "sitemap": "전체 URL 목록은 [sitemap]({{url}})에 있습니다(언어별 hreflang 포함).",
+    "rss": "새 글: [RSS]({{url}}).",
+    "rssLangs": "새 글: [RSS]({{url}}). 다른 언어는 `?lang={{langs}}`를 붙이세요.",
+    "pages": {
+      "notes": "글",
+      "collection": "컬렉션: 본 애니메이션·영화·드라마, 책장, 자주 듣는 음악",
+      "about": "작성자 소개",
+      "setup": "하드웨어와 소프트웨어 구성",
+      "photos": "사진"
+    }
+  }
+}

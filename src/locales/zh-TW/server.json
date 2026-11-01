@@ -1,0 +1,44 @@
+{
+  "mail": {
+    "newPost": {
+      "subject": "{{title}} — {{site}} 新文章",
+      "preheader": "{{excerpt}} · {{site}} 新文章上架",
+      "kicker": "手記 · 新文章"
+    },
+    "readMore": "閱讀全文",
+    "readMoreText": "閱讀全文：{{url}}",
+    "greeting": "Hi，",
+    "greetingNamed": "Hi {{name}}，",
+    "thanks": "感謝你訂閱 {{site}}。如果今天這封信打擾到你，請點下面的退訂連結，下次就不會再寄了。",
+    "unsubscribe": "一鍵退訂",
+    "unsubscribeText": "退訂：{{url}}",
+    "allPosts": "所有文章",
+    "friend": {
+      "subject": "關於「{{name}}」的友鏈申請",
+      "kicker": "友鏈申請 · {{name}}",
+      "page": "朋友頁",
+      "footer": "這封信是回覆你在 {{site}} 送出的友鏈申請。"
+    }
+  },
+  "feed": {
+    "momentsDescription": "想到什麼寫什麼"
+  },
+  "llms": {
+    "heading": {
+      "pages": "主要頁面",
+      "recent": "近期文章",
+      "usage": "使用說明"
+    },
+    "welcome": "歡迎 AI 檢索、摘要與引用；引用時請保留來源連結。",
+    "sitemap": "完整網址清單見 [sitemap]({{url}})（含各語系 hreflang）。",
+    "rss": "訂閱新文章：[RSS]({{url}})。",
+    "rssLangs": "訂閱新文章：[RSS]({{url}})；各語系加 `?lang={{langs}}`。",
+    "pages": {
+      "notes": "文章",
+      "collection": "收藏：看過的動畫、電影、影集，書櫃，最常聽的音樂",
+      "about": "關於作者",
+      "setup": "軟硬體配置",
+      "photos": "攝影作品"
+    }
+  }
+}

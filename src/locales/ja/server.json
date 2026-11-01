@@ -1,0 +1,44 @@
+{
+  "mail": {
+    "newPost": {
+      "subject": "{{title}} — {{site}} の新しい記事",
+      "preheader": "{{excerpt}} · {{site}} に新しい記事",
+      "kicker": "ノート · 新しい記事"
+    },
+    "readMore": "続きを読む",
+    "readMoreText": "続きを読む：{{url}}",
+    "greeting": "こんにちは。",
+    "greetingNamed": "{{name}} さん、",
+    "thanks": "{{site}} を購読していただきありがとうございます。このメールがご迷惑でしたら、下の購読解除リンクを押してください。次からは届きません。",
+    "unsubscribe": "購読を解除",
+    "unsubscribeText": "購読解除：{{url}}",
+    "allPosts": "すべての記事",
+    "friend": {
+      "subject": "「{{name}}」の相互リンク申請について",
+      "kicker": "相互リンク申請 · {{name}}",
+      "page": "友達のページ",
+      "footer": "{{site}} から送っていただいた相互リンク申請への返信です。"
+    }
+  },
+  "feed": {
+    "momentsDescription": "思いついたことを、そのまま"
+  },
+  "llms": {
+    "heading": {
+      "pages": "主なページ",
+      "recent": "最近の記事",
+      "usage": "利用について"
+    },
+    "welcome": "AI による検索・要約・引用を歓迎します。引用の際は出典へのリンクを残してください。",
+    "sitemap": "すべての URL は [sitemap]({{url}}) にあります（各言語の hreflang 付き）。",
+    "rss": "新しい記事：[RSS]({{url}})。",
+    "rssLangs": "新しい記事：[RSS]({{url}})。ほかの言語は `?lang={{langs}}` を付けてください。",
+    "pages": {
+      "notes": "記事",
+      "collection": "コレクション：観たアニメ・映画・ドラマ、本棚、よく聴く音楽",
+      "about": "作者について",
+      "setup": "ハードウェアとソフトウェアの構成",
+      "photos": "写真"
+    }
+  }
+}

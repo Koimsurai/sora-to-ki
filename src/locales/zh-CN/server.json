@@ -1,0 +1,44 @@
+{
+  "mail": {
+    "newPost": {
+      "subject": "{{title}} — {{site}} 新文章",
+      "preheader": "{{excerpt}} · {{site}} 新文章上线",
+      "kicker": "手记 · 新文章"
+    },
+    "readMore": "阅读全文",
+    "readMoreText": "阅读全文：{{url}}",
+    "greeting": "Hi，",
+    "greetingNamed": "Hi {{name}}，",
+    "thanks": "感谢你订阅 {{site}}。如果这封信打扰到你，请点下面的退订链接，以后就不会再寄了。",
+    "unsubscribe": "一键退订",
+    "unsubscribeText": "退订：{{url}}",
+    "allPosts": "所有文章",
+    "friend": {
+      "subject": "关于“{{name}}”的友链申请",
+      "kicker": "友链申请 · {{name}}",
+      "page": "朋友页",
+      "footer": "这封信是回复你在 {{site}} 提交的友链申请。"
+    }
+  },
+  "feed": {
+    "momentsDescription": "想到什么写什么"
+  },
+  "llms": {
+    "heading": {
+      "pages": "主要页面",
+      "recent": "近期文章",
+      "usage": "使用说明"
+    },
+    "welcome": "欢迎 AI 检索、摘要与引用；引用时请保留来源链接。",
+    "sitemap": "完整网址清单见 [sitemap]({{url}})（含各语言 hreflang）。",
+    "rss": "订阅新文章：[RSS]({{url}})。",
+    "rssLangs": "订阅新文章：[RSS]({{url}})；其他语言加 `?lang={{langs}}`。",
+    "pages": {
+      "notes": "文章",
+      "collection": "收藏：看过的动画、电影、剧集，书架，最常听的音乐",
+      "about": "关于作者",
+      "setup": "软硬件配置",
+      "photos": "摄影作品"
+    }
+  }
+}

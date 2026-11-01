@@ -36,6 +36,7 @@ use takumi::prelude::*;
 
 use crate::handlers::posts::{parse_locale, sky_list};
 use crate::state::AppState;
+use crate::ui_text::{locale_of, text};
 // 模板是字串組裝，所以標題要轉義（改用 node tree 就不需要，但模板會變成一大串 builder 呼叫）
 use crate::util::escape_html;
 
@@ -55,63 +56,6 @@ fn split_title(title: &str) -> (&str, Option<&str>) {
     let Some((at, len)) = cut else { return (title, None) };
     let (main, sub) = (title[..at].trim(), title[at + len..].trim());
     if main.is_empty() || sub.is_empty() { (title, None) } else { (main, Some(sub)) }
-}
-
-// ── 語系 ───────────────────────────────────────────────────────
-
-/// 站上的五個語系 → 語系檔、takumi 的語言標記、Noto CJK 裡對應的字形版本
-/// （同一個字在繁中、簡中、日文、韓文的寫法不一樣，`.ttc` 裡四套都有）
-struct Locale {
-    code: &'static str,
-    json: &'static str,
-    lang: &'static str,
-    cjk: &'static str,
-}
-
-const LOCALES: [Locale; 5] = [
-    Locale {
-        code: "zh-TW",
-        json: include_str!("../../../src/locales/zh-TW/common.json"),
-        lang: "zh-Hant",
-        cjk: "TC",
-    },
-    Locale {
-        code: "zh-CN",
-        json: include_str!("../../../src/locales/zh-CN/common.json"),
-        lang: "zh-Hans",
-        cjk: "SC",
-    },
-    Locale { code: "en", json: include_str!("../../../src/locales/en/common.json"), lang: "en", cjk: "TC" },
-    Locale { code: "ja", json: include_str!("../../../src/locales/ja/common.json"), lang: "ja", cjk: "JP" },
-    Locale { code: "ko", json: include_str!("../../../src/locales/ko/common.json"), lang: "ko", cjk: "KR" },
-];
-
-static STRINGS: LazyLock<HashMap<&'static str, serde_json::Value>> = LazyLock::new(|| {
-    LOCALES
-        .iter()
-        .map(|l| {
-            (
-                l.code,
-                serde_json::from_str(l.json).expect("src/locales 的 JSON 由前端的測試把關，壞了編不到這裡"),
-            )
-        })
-        .collect()
-});
-
-fn locale_of(code: &str) -> &'static Locale {
-    LOCALES.iter().find(|l| l.code == code).unwrap_or(&LOCALES[0])
-}
-
-/// 語系檔裡 `a.b.c` 那一條；這個語系沒有就退回繁中
-fn text(locale: &str, key: &str) -> String {
-    let find = |code: &str| {
-        let mut v = STRINGS.get(code)?;
-        for part in key.split('.') {
-            v = v.get(part)?;
-        }
-        v.as_str().map(str::to_string)
-    };
-    find(locale).or_else(|| find("zh-TW")).unwrap_or_default()
 }
 
 // ── 頁面 ───────────────────────────────────────────────────────
@@ -641,6 +585,7 @@ mod tests {
     /// 不會等到分享圖上出現一塊空白才發現。
     #[test]
     fn 每頁每個語系都有頁名與副標() {
+        use crate::ui_text::{LOCALES, STRINGS};
         for l in &LOCALES {
             for p in &PAGES {
                 for key in [p.name, p.sub].into_iter().filter(|k| !k.is_empty()) {

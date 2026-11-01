@@ -27,8 +27,8 @@ export interface PageDef extends SiteSection {
   keywords: string;
   /** 有的話列進 sitemap */
   sitemap?: { priority: string; changefreq: string };
-  /** 有的話列進 llms.txt 的「主要頁面」 */
-  llms?: string;
+  /** 列進 llms.txt 的「主要頁面」。說明用站長寫的頁面介紹，沒寫就用 locales/<語系>/server.json 的 llms.pages */
+  llms?: true;
 }
 
 const under =
@@ -58,7 +58,7 @@ export const PAGES: PageDef[] = [
     toggleable: false,
     keywords: 'blog posts notes 文章 手記 日記',
     sitemap: { priority: '0.9', changefreq: 'daily' },
-    llms: '技術文章：開發、除錯、自架服務、AI 應用的長篇實作紀錄',
+    llms: true,
   },
   {
     key: 'moments',
@@ -88,7 +88,7 @@ export const PAGES: PageDef[] = [
     toggleable: true,
     keywords: 'collection watch anime 動畫 電影 影集 books 書櫃 閱讀 music spotify 音樂',
     sitemap: { priority: '0.6', changefreq: 'weekly' },
-    llms: '收藏：看過的動畫、電影、影集，書櫃，最常聽的音樂',
+    llms: true,
   },
   // 關於：跟「我」有關的幾頁（group: 'about'）也算在這一區，導覽列的琥珀點停在「關於」
   {
@@ -100,7 +100,7 @@ export const PAGES: PageDef[] = [
     toggleable: false,
     keywords: 'about me 關於 自我介紹',
     sitemap: { priority: '0.7', changefreq: 'monthly' },
-    llms: '關於作者',
+    llms: true,
   },
 
   // ── 收在「關於」選單裡 ──
@@ -113,7 +113,7 @@ export const PAGES: PageDef[] = [
     toggleable: true,
     keywords: 'setup gear 設備 工作站',
     sitemap: { priority: '0.5', changefreq: 'monthly' },
-    llms: '軟硬體配置',
+    llms: true,
   },
   {
     key: 'log',
@@ -145,7 +145,7 @@ export const PAGES: PageDef[] = [
     toggleable: true,
     keywords: 'photos gallery 照片 相簿 攝影',
     sitemap: { priority: '0.7', changefreq: 'weekly' },
-    llms: '攝影作品',
+    llms: true,
   },
   {
     key: 'friends',

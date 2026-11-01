@@ -754,9 +754,16 @@ pub async fn thoughts_rss(State(state): State<AppState>) -> Response {
             escape_html(&desc)
         );
     }
+    // 頁名與介紹用站台的預設語系；站長在後台幫碎念頁寫過介紹就用那句
+    let locale = crate::handlers::site_config::default_locale();
+    let description = crate::handlers::site_config::current()
+        .and_then(|s| s.page_descriptions.get("moments")?.get(&locale).cloned())
+        .unwrap_or_else(|| crate::ui_text::text(&locale, "feed.momentsDescription"));
     let xml = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\"><channel><title>碎念 · {}</title><link>{site_url}/thinking</link><description>想到什麼寫什麼</description><generator>{}</generator>{items}</channel></rss>",
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\"><channel><title>{} · {}</title><link>{site_url}/thinking</link><description>{}</description><generator>{}</generator>{items}</channel></rss>",
+        escape_html(&crate::ui_text::text(&locale, "siteNav.moments")),
         escape_html(&crate::identity::site_name()),
+        escape_html(&description),
         crate::identity::SOFTWARE,
     );
     ([(axum::http::header::CONTENT_TYPE, "application/rss+xml; charset=utf-8")], xml).into_response()
