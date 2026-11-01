@@ -266,7 +266,7 @@ export type AdminWatchItem = {
 	key: string,
 	title: string,
 	cover: string | null,
-	/**  動畫是最後一集、影集是看了幾集、電影是評分 */
+	/**  動畫是最後一集（巴哈原樣的字）、影集是看了幾集（只有數字，字由後台照語言組）、電影是評分 */
 	detail: string | null,
 	watched_at: string | null,
 	/**  bahamut | simkl | trakt … */
