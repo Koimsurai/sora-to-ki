@@ -146,7 +146,7 @@
   },
   "reactions": {
     "heading": "Hearts and reactions received",
-    "note": "Every heart, emoji reaction, comment like and thought like is logged, and so is every undo. No identity or IP is stored: the country comes from Cloudflare, and the source is the site the reader came from.",
+    "note": "Every heart, emoji reaction, comment like and thought like is logged, and so is every undo. No identity or IP is stored: the country is looked up from the IP in the DB-IP database and the IP is then discarded (or taken from Cloudflare when the site is behind it), and the source is the site the reader came from.",
     "loadFailed": "Couldn't load the log: {{message}}",
     "deleted": "(deleted)",
     "post": "Reacted {{value}} on \"{{title}}\"",
