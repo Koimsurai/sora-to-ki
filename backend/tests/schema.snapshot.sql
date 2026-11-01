@@ -108,6 +108,9 @@ table film_history
 table friend_links
   CREATE TABLE friend_links ( id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT UNIQUE, name TEXT NOT NULL, url TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', feed_url TEXT, email TEXT, message TEXT, status TEXT NOT NULL DEFAULT 'pending', checks TEXT, checked_at DATETIME, ip TEXT, sort_order INTEGER NOT NULL DEFAULT 0, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, reviewed_at DATETIME )
 
+table integration_settings
+  CREATE TABLE integration_settings ( name TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP )
+
 table ip_blacklist
   CREATE TABLE ip_blacklist ( id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT UNIQUE NOT NULL, reason TEXT DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 

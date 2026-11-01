@@ -46,7 +46,7 @@ impl SpErr {
     }
 }
 
-fn redirect_uri() -> String {
+pub(crate) fn redirect_uri() -> String {
     std::env::var("SPOTIFY_REDIRECT_URI")
         .ok()
         .filter(|s| !s.is_empty())
@@ -63,9 +63,9 @@ async fn access_token(state: &AppState) -> Result<String, SpErr> {
             return Ok(t.clone());
         }
     }
-    let id = std::env::var("SPOTIFY_CLIENT_ID").unwrap_or_default();
-    let secret = std::env::var("SPOTIFY_CLIENT_SECRET").unwrap_or_default();
-    let refresh = std::env::var("SPOTIFY_REFRESH_TOKEN").unwrap_or_default();
+    let id = crate::integrations::var("SPOTIFY_CLIENT_ID").unwrap_or_default();
+    let secret = crate::integrations::var("SPOTIFY_CLIENT_SECRET").unwrap_or_default();
+    let refresh = crate::integrations::var("SPOTIFY_REFRESH_TOKEN").unwrap_or_default();
     if id.is_empty() || secret.is_empty() || refresh.is_empty() {
         return Err(SpErr::NotConfigured);
     }
@@ -252,7 +252,7 @@ pub struct AudioFeaturesResponse {
     responses((status = 200, description = "Spotify 授權導向（302 轉跳授權頁，第三方 proxy）")))]
 pub async fn login() -> Response {
     let scope = "user-read-recently-played user-top-read user-read-private user-read-email user-read-currently-playing user-read-playback-state";
-    let client_id = std::env::var("SPOTIFY_CLIENT_ID").unwrap_or_else(|_| "undefined".into());
+    let client_id = crate::integrations::var("SPOTIFY_CLIENT_ID").unwrap_or_else(|| "undefined".into());
     let form = |s: &str| crate::util::encode_uri_component(s).replace("%20", "+");
     // 這條**不**走 ExternalUrls：它是回給瀏覽器跳轉的 302 目的地，不是我們發出的請求。
     // 而且要測它也不需要注入——直接呼叫這個函式、驗 Location 標頭就好，全程沒有網路。
@@ -589,9 +589,10 @@ pub async fn spotify_callback(
         )
             .into_response();
     };
-    let cid = std::env::var("SPOTIFY_CLIENT_ID").unwrap_or_default();
-    let secret = std::env::var("SPOTIFY_CLIENT_SECRET").unwrap_or_default();
-    let redirect = std::env::var("SPOTIFY_REDIRECT_URI").unwrap_or_default();
+    let cid = crate::integrations::var("SPOTIFY_CLIENT_ID").unwrap_or_default();
+    let secret = crate::integrations::var("SPOTIFY_CLIENT_SECRET").unwrap_or_default();
+    // 要跟 /api/spotify/login 送去授權頁的那個一字不差，不然 Spotify 拒絕換 token
+    let redirect = redirect_uri();
     let body = format!(
         "grant_type=authorization_code&code={}&redirect_uri={}",
         crate::util::encode_uri_component(code),
@@ -629,7 +630,8 @@ pub async fn spotify_callback(
     let refresh = data.get("refresh_token").and_then(|v| v.as_str()).unwrap_or("(none)");
     let html = format!(
         "<html><head><title>Spotify authorized</title></head><body style=\"font-family:sans-serif;max-width:640px;margin:40px auto\">\
-         <h2>✅ Spotify authorized</h2><p>Put this refresh token in <code>SPOTIFY_REFRESH_TOKEN</code> in <code>.env.backend</code>:</p>\
+         <h2>✅ Spotify authorized</h2><p>Paste this refresh token into Admin → Collection → Sources → Spotify \
+         (or <code>SPOTIFY_REFRESH_TOKEN</code> in <code>.env.backend</code>):</p>\
          <pre style=\"background:#f4f4f4;padding:12px;border-radius:8px;word-break:break-all;white-space:pre-wrap\">{refresh}</pre>\
          <p>This page is only for setup; the token isn't stored.</p></body></html>"
     );

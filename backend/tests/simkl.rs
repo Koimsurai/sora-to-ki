@@ -85,7 +85,7 @@ async fn activities_is_always_the_first_request() {
     let server = mock_simkl(json!({ "all": "2026-08-01T00:00:00Z" }), Some(json!({}))).await;
     let (_app, _pool, state) = test_app_with_state().await;
 
-    sync_once(&state).await;
+    sync_once(&state).await.unwrap();
 
     let p = paths(&server).await;
     assert!(!p.is_empty(), "應該有發出請求");
@@ -104,7 +104,7 @@ async fn an_unchanged_cursor_fetches_nothing_else() {
     let (_app, pool, state) = test_app_with_state().await;
     set_cursor(&pool, "2026-08-01T00:00:00Z").await;
 
-    let (films, eps) = sync_once(&state).await;
+    let (films, eps) = sync_once(&state).await.unwrap();
     assert_eq!((films, eps), (0, 0));
 
     let p = paths(&server).await;
@@ -122,7 +122,7 @@ async fn an_incremental_sync_always_sends_date_from() {
     let (_app, pool, state) = test_app_with_state().await;
     set_cursor(&pool, "2026-08-01T00:00:00Z").await;
 
-    sync_once(&state).await;
+    sync_once(&state).await.unwrap();
 
     let p = paths(&server).await;
     let items = p.iter().find(|x| x.contains("all-items")).expect("游標變了就該拉 all-items");
@@ -143,7 +143,7 @@ async fn the_first_sync_pulls_everything_without_a_date_from() {
     let server = mock_simkl(json!({ "all": "2026-08-02T00:00:00Z" }), Some(json!({}))).await;
     let (_app, _pool, state) = test_app_with_state().await;
 
-    sync_once(&state).await;
+    sync_once(&state).await.unwrap();
 
     let p = paths(&server).await;
     let items = p.iter().find(|x| x.contains("all-items")).expect("首次應該拉 all-items");
@@ -157,7 +157,7 @@ async fn every_request_carries_the_required_identification() {
     let server = mock_simkl(json!({ "all": "2026-08-02T00:00:00Z" }), Some(json!({}))).await;
     let (_app, _pool, state) = test_app_with_state().await;
 
-    sync_once(&state).await;
+    sync_once(&state).await.unwrap();
 
     for p in paths(&server).await {
         assert!(p.contains("client_id=test-client"), "{p} 少了 client_id");
@@ -174,7 +174,7 @@ async fn a_successful_sync_advances_the_cursor() {
     let _s = mock_simkl(json!({ "all": "2026-08-02T12:00:00Z" }), Some(json!({}))).await;
     let (_app, pool, state) = test_app_with_state().await;
 
-    sync_once(&state).await;
+    sync_once(&state).await.unwrap();
 
     assert_eq!(cursor(&pool).await.as_deref(), Some("2026-08-02T12:00:00Z"));
 }
@@ -204,8 +204,7 @@ async fn a_failed_fetch_keeps_the_cursor_so_the_next_run_retries() {
     let (_app, pool, state) = test_app_with_state().await;
     set_cursor(&pool, "2026-08-01T00:00:00Z").await;
 
-    let (f, e) = sync_once(&state).await;
-    assert_eq!((f, e), (0, 0));
+    assert!(sync_once(&state).await.is_err(), "拉失敗要回報失敗");
     assert_eq!(
         cursor(&pool).await.as_deref(),
         Some("2026-08-01T00:00:00Z"),
@@ -229,7 +228,7 @@ async fn a_failing_activities_endpoint_stops_the_run() {
     }
     let (_app, pool, state) = test_app_with_state().await;
 
-    assert_eq!(sync_once(&state).await, (0, 0));
+    assert!(sync_once(&state).await.is_err(), "activities 掛了要回報失敗，後台才看得到");
     assert_eq!(paths(&server).await.len(), 1, "activities 掛了就不該再打別的");
     assert_eq!(cursor(&pool).await, None);
 }
@@ -240,7 +239,7 @@ async fn an_empty_account_is_not_treated_as_an_error() {
     let server = mock_simkl(json!({ "all": Value::Null }), None).await;
     let (_app, pool, state) = test_app_with_state().await;
 
-    assert_eq!(sync_once(&state).await, (0, 0));
+    assert_eq!(sync_once(&state).await, Ok((0, 0)));
     assert_eq!(paths(&server).await.len(), 1, "沒有紀錄時不該拉 all-items");
     assert_eq!(cursor(&pool).await, None, "也不該亂推游標");
 }
@@ -255,7 +254,7 @@ async fn missing_credentials_send_no_requests_at_all() {
             std::env::set_var("SIMKL_ACCESS_TOKEN", token);
         }
         let (_app, _pool, state) = test_app_with_state().await;
-        assert_eq!(sync_once(&state).await, (0, 0));
+        assert!(sync_once(&state).await.is_err(), "缺憑證要回報失敗");
     }
     assert!(server.received_requests().await.unwrap().is_empty(), "缺憑證時不該對 Simkl 發出任何請求");
 }
@@ -283,7 +282,7 @@ async fn films_are_written_with_their_fields() {
     .await;
     let (_app, pool, state) = test_app_with_state().await;
 
-    let (films, _) = sync_once(&state).await;
+    let (films, _) = sync_once(&state).await.unwrap();
     assert_eq!(films, 1);
 
     let row: (String, Option<String>, String, Option<i64>, Option<String>, Option<i64>) = sqlx::query_as(
@@ -308,7 +307,7 @@ async fn a_film_without_a_tmdb_id_keeps_the_simkl_poster() {
     )
     .await;
     let (_app, pool, state) = test_app_with_state().await;
-    sync_once(&state).await;
+    sync_once(&state).await.unwrap();
 
     let poster: Option<String> =
         sqlx::query_scalar("SELECT poster_url FROM film_history WHERE title = '冷門片'")
@@ -337,7 +336,7 @@ async fn shows_are_written_one_row_per_episode() {
     .await;
     let (_app, pool, state) = test_app_with_state().await;
 
-    let (_, eps) = sync_once(&state).await;
+    let (_, eps) = sync_once(&state).await.unwrap();
     assert_eq!(eps, 2);
 
     let rows: Vec<(String, Option<String>)> = sqlx::query_as(
@@ -365,7 +364,7 @@ async fn anime_is_processed_the_same_way_as_shows() {
     .await;
     let (_app, pool, state) = test_app_with_state().await;
 
-    let (_, eps) = sync_once(&state).await;
+    let (_, eps) = sync_once(&state).await.unwrap();
     assert_eq!(eps, 1, "anime 也要算進集數");
 
     let label: String =
@@ -392,12 +391,12 @@ async fn re_syncing_the_same_items_is_idempotent() {
     let _s = mock_simkl(json!({ "all": "2026-08-02T00:00:00Z" }), Some(payload)).await;
     let (_app, pool, state) = test_app_with_state().await;
 
-    let first = sync_once(&state).await;
+    let first = sync_once(&state).await.unwrap();
     assert_eq!(first, (1, 1));
 
     // 把游標清掉，強迫再跑一次同一批
     sqlx::query("DELETE FROM sync_state WHERE key = 'simkl.activities_all'").execute(&pool).await.unwrap();
-    let second = sync_once(&state).await;
+    let second = sync_once(&state).await.unwrap();
     assert_eq!(second, (0, 0), "同一批再同步一次不該再計入新增");
 
     let films: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM film_history WHERE title = '重複片'")
@@ -435,7 +434,7 @@ async fn malformed_items_are_skipped_without_aborting_the_batch() {
     .await;
     let (_app, pool, state) = test_app_with_state().await;
 
-    let (films, eps) = sync_once(&state).await;
+    let (films, eps) = sync_once(&state).await.unwrap();
     assert_eq!((films, eps), (1, 1), "壞掉的項目跳過，好的仍要寫進去");
 
     let ok: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM film_history WHERE title = '好的片'")
@@ -453,38 +452,45 @@ async fn malformed_items_are_skipped_without_aborting_the_batch() {
 
 // ── worker 的啟動 ─────────────────────────────────────────────────────────
 
-/// **沒設 `ENABLE_SIMKL_SYNC` 就不該啟動 worker。**
+/// **同步沒打開，就一個請求都不發。**
 ///
-/// 這條與下一條是 `cargo mutants` 逼出來的：`spawn_sync` 原本沒有回傳值，
-/// 而它 spawn 的 task 先睡 45 秒——從外面完全看不出有沒有啟動。於是把整個函式
-/// 換成 no-op、或把開關判斷（現在在 `worker::spawn_periodic`）顛倒，都沒有任何測試會紅。
-///
-/// 後果分別是「同步永遠不跑」（在看什麼靜靜停止更新）與「沒設定卻自己開始
-/// 打上游」（而 Simkl 對未經同意的輪詢是直接停權）。
+/// 這條與下一條是 `cargo mutants` 逼出來的：worker 先睡一段才開始，從外面看不出它有沒有在跑。
+/// 把開關判斷（在 `worker::spawn_periodic`）拿掉或顛倒，後果分別是「沒設定卻自己開始打上游」
+/// （Simkl 對未經同意的輪詢是直接停權）與「同步永遠不跑」（在看什麼靜靜停止更新）。
+/// 開關現在每一輪才讀（後台可以隨時開關），所以直接看上游有沒有收到請求。
+/// 「跑到一半被打開」那條在 `worker.rs` 的單元測試裡（那邊能快轉時間）。
 #[tokio::test]
-async fn the_worker_does_not_start_unless_explicitly_enabled() {
-    let (_app, _pool, state) = test_app_with_state().await;
+async fn the_worker_sends_nothing_unless_sync_is_on() {
+    let server = mock_simkl(json!({ "all": "x" }), Some(json!({}))).await;
     for raw in ["", "0", "no", "yes"] {
-        unsafe { std::env::set_var("ENABLE_SIMKL_SYNC", raw) };
-        assert!(
-            koimsurai_web_backend::handlers::simkl::spawn_sync(state.clone()).is_none(),
-            "ENABLE_SIMKL_SYNC={raw:?} 不該啟動 worker"
-        );
+        unsafe {
+            std::env::set_var("ENABLE_SIMKL_SYNC", raw);
+            std::env::set_var("SIMKL_SYNC_DELAY_SECS", "0");
+        }
+        let (_app, _pool, state) = test_app_with_state().await;
+        let handle = koimsurai_web_backend::handlers::simkl::spawn_sync(state);
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        handle.abort();
+        assert!(server.received_requests().await.unwrap().is_empty(), "ENABLE_SIMKL_SYNC={raw:?} 不該打上游");
     }
-    unsafe { std::env::remove_var("ENABLE_SIMKL_SYNC") };
-    assert!(koimsurai_web_backend::handlers::simkl::spawn_sync(state).is_none(), "沒設 env 時預設就是不跑");
 }
 
-/// 明確啟用時才真的 spawn。
+/// 打開了就真的去同步。
 #[tokio::test]
-async fn the_worker_starts_when_enabled() {
-    let (_app, _pool, state) = test_app_with_state().await;
+async fn the_worker_syncs_when_enabled() {
+    let server = mock_simkl(json!({ "all": "x" }), Some(json!({}))).await;
     unsafe {
         std::env::set_var("ENABLE_SIMKL_SYNC", "1");
-        // 讓它睡很久，測試不會真的跑到 sync_once
-        std::env::set_var("SIMKL_SYNC_DELAY_SECS", "3600");
+        std::env::set_var("SIMKL_SYNC_DELAY_SECS", "0");
     }
+    let (_app, _pool, state) = test_app_with_state().await;
     let handle = koimsurai_web_backend::handlers::simkl::spawn_sync(state);
-    assert!(handle.is_some(), "ENABLE_SIMKL_SYNC=1 就該啟動");
-    handle.unwrap().abort();
+    for _ in 0..50 {
+        if !server.received_requests().await.unwrap().is_empty() {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+    handle.abort();
+    assert!(!server.received_requests().await.unwrap().is_empty(), "ENABLE_SIMKL_SYNC=1 就該開始同步");
 }

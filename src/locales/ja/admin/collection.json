@@ -3,7 +3,8 @@
   "tab": {
     "watch": "視聴",
     "listen": "再生",
-    "fav": "お気に入り"
+    "fav": "お気に入り",
+    "sources": "取得元"
   },
   "kind": {
     "anime": "アニメ",
@@ -17,7 +18,111 @@
   "shownNow": "「{{title}}」をサイトに表示しました",
   "favRemoved": "「{{title}}」をお気に入りから外しました",
   "favAdded": "「{{title}}」をお気に入りに追加しました",
-  "sources": "データソース",
+  "sources": {
+    "label": "データソース",
+    "intro": "コレクションのデータをどこから取ってくるか。キーはサイトのデータベースに保存され、一度保存すると表示されません。.env.backend の設定もそのまま使え、ここで入れたものが優先されます。",
+    "loading": "取得元を読み込み中",
+    "loadFailed": "取得元の設定を読み込めませんでした",
+    "group": {
+      "watch": "観ている",
+      "read": "読んでいる",
+      "listen": "聴いている",
+      "play": "遊んでいる・書いている"
+    },
+    "region": {
+      "tw": "台湾",
+      "global": "世界"
+    },
+    "status": {
+      "off": "未設定",
+      "syncOff": "同期オフ",
+      "never": "まだ同期していません",
+      "synced": "{{when}} 同期 · {{count}} 件追加",
+      "failed": "{{when}} 失敗：{{error}}",
+      "connected": "接続済み",
+      "connectedCount": "接続済み · 最近の {{count}} 曲",
+      "checkFailed": "接続できません：{{error}}"
+    },
+    "sync": "同期",
+    "settings": "設定",
+    "collapse": "閉じる",
+    "save": "保存",
+    "syncNow": "今すぐ同期",
+    "syncing": "同期中…",
+    "clear": "消去",
+    "optional": "任意",
+    "redirect": "Redirect URI",
+    "connectSpotify": "Spotify アカウントを連携",
+    "placeholder": {
+      "admin": "保存済み。新しい値を入れると上書きします",
+      "adminHint": "保存済み · 末尾 {{hint}}。新しい値を入れると上書きします",
+      "env": ".env.backend の値を使っています。入れると上書きします"
+    },
+    "saved": "{{name}} を保存しました",
+    "cleared": "{{name}} のここで入れた値を消しました",
+    "syncTurnedOn": "{{name}} の同期をオンにしました",
+    "syncTurnedOff": "{{name}} の同期をオフにしました",
+    "syncDone": "{{name}} の同期が終わりました。{{count}} 件追加",
+    "syncFailed": "{{name}} の同期に失敗しました：{{error}}",
+    "failed": "うまくいきませんでした：{{error}}",
+    "field": {
+      "TMDB_API_TOKEN": "API Read Access Token",
+      "SIMKL_CLIENT_ID": "Client ID",
+      "SIMKL_ACCESS_TOKEN": "Access Token",
+      "BAHAMUT_UID": "アカウント",
+      "BAHAMUT_PASSWORD": "パスワード",
+      "GOOGLE_BOOKS_API_KEY": "API key",
+      "SPOTIFY_CLIENT_ID": "Client ID",
+      "SPOTIFY_CLIENT_SECRET": "Client Secret",
+      "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
+      "STEAM_API_KEY": "Web API key",
+      "STEAM_ID": "Steam ID",
+      "WAKATIME_API_KEY": "API key"
+    },
+    "src": {
+      "tmdb": {
+        "name": "TMDB",
+        "what": "作品名とポスター（「観ている」に必須）",
+        "help": "themoviedb.org にログイン → 設定 → API で申請し、長い「API Read Access Token」をコピーします（短い API Key ではありません）。"
+      },
+      "simkl": {
+        "name": "Simkl",
+        "what": "視聴履歴：映画、ドラマ、アニメ",
+        "help": "simkl.com/settings/developer でアプリを作って Client ID を取得し、Access Token は Simkl API ドキュメントの PIN フローで取得します。"
+      },
+      "bahamut": {
+        "name": "アニメ瘋（巴哈姆特）",
+        "what": "巴哈姆特アニメ瘋（台湾）の視聴履歴",
+        "help": "巴哈姆特のアカウントとパスワード。家族と共有していると互いにログアウトさせてしまいますが、ここで自動的にログインし直します。"
+      },
+      "googleBooks": {
+        "name": "Google Books",
+        "what": "ISBN で書名と表紙を調べる",
+        "help": "入れなくても調べられます（Open Library を使います）。入れる場合は Google Cloud Console で Books API を有効にして API key を作ると、上限がかなり増えます。",
+        "unset": "未入力。Open Library を使用"
+      },
+      "ncl": {
+        "name": "台湾国家図書館 新刊書誌",
+        "what": "台湾で出版された本を ISBN で中国語の書名つきで",
+        "help": "キーは不要です。オンにすると毎日一回、新刊書誌をダウンロードします。"
+      },
+      "spotify": {
+        "name": "Spotify",
+        "what": "最近の再生、よく聴くジャンル",
+        "help": "developer.spotify.com でアプリを作り、Redirect URI に下の値を入れます。Client ID と Secret を保存したら「Spotify アカウントを連携」を押し、認可後のページに出る refresh token を貼って保存します。"
+      },
+      "steam": {
+        "name": "Steam",
+        "what": "最近遊んでいるゲーム",
+        "help": "steamcommunity.com/dev/apikey で Web API key を取得します。Steam ID は 17 桁の数字です。プロフィールとゲームの詳細は公開にしてください。"
+      },
+      "wakatime": {
+        "name": "WakaTime",
+        "what": "コードを書いた時間と言語",
+        "help": "wakatime.com/settings/api-key から API key をコピーします。"
+      }
+    }
+  },
   "loginDaysLeft": "ログイン残り {{days}} 日",
   "cookieExpired": "cookie 期限切れ",
   "spotifyFailed": "取得できません",

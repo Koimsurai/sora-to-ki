@@ -94,6 +94,9 @@ playwright-report/
 blob-report/
 .playwright/
 
+# 讀者國家的 IP 資料庫（backend/src/geo.rs）：開機時自動下載到 db/，在 backend/ 底下跑後端就會落在這裡
+/backend/db/
+
 # schemathesis / hypothesis 的範例資料庫（設定已改成 :memory:，舊的殘留也一併擋）
 .schemathesis/
 .hypothesis/

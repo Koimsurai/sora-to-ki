@@ -1,0 +1,166 @@
+/* 收藏的來源：一個平台一列，展開填金鑰 */
+
+.cs-group {
+  margin-top: var(--space-6);
+}
+
+.cs-group-h {
+  margin: 0 0 var(--space-1);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-8);
+  color: var(--ink-muted);
+}
+
+.cs-src {
+  border-bottom: 1px dotted var(--line);
+}
+
+.cs-head {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+}
+
+/* 列首的記號跟後台其他列表同一套：實心是好的、朱色叉號是壞了、空心是還沒設定（形狀也不同，不單靠顏色） */
+.cs-mark {
+  width: 1em;
+  font-size: var(--fs-12);
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.cs-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cs-name {
+  font-size: var(--fs-16);
+  color: var(--ink);
+}
+
+.cs-region {
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1-5);
+  border: 1px solid var(--line);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--ink-subtle);
+  vertical-align: 2px;
+}
+
+.cs-what {
+  font-size: var(--fs-13);
+  color: var(--ink-subtle);
+}
+
+/* 失敗的理由可能很長（上游的錯誤訊息）：最多佔四成寬，超過就換行，不把名字擠掉 */
+.cs-status {
+  max-width: 40%;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  line-height: var(--lh-150);
+  color: var(--ink-subtle);
+  text-align: right;
+}
+
+.cs-status,
+.cs-sync {
+  flex: none;
+}
+
+/* 開關是後台共用的 Radix Switch（樣子在 AdminTheme.css），旁邊一個小字 */
+.cs-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.cs-sync-label {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--ink-subtle);
+}
+
+.cs-body {
+  padding: 0 0 var(--space-5) calc(1em + var(--space-4));
+}
+
+.cs-help {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: var(--lh-160);
+  color: var(--ink-muted);
+}
+
+/* Spotify app 要填的 Redirect URI：整行等寬字，選得起來複製 */
+.cs-redirect {
+  margin: var(--space-3) 0 0;
+}
+
+.cs-redirect code {
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  color: var(--ink);
+  user-select: all;
+  word-break: break-all;
+}
+
+.cs-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--space-5);
+}
+
+.cs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.cs-clear {
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .cs-head {
+    flex-wrap: wrap;
+  }
+
+  .cs-status {
+    order: 3;
+    width: 100%;
+    max-width: none;
+    padding-left: calc(1em + var(--space-4));
+    text-align: left;
+  }
+
+  .cs-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 狀態：壞了是朱色、還沒設定淡一階。放在最後，蓋過上面各元件的基本顏色 ── */
+
+.cs-src[data-state="bad"] .cs-mark,
+.cs-src[data-state="bad"] .cs-status {
+  color: var(--danger);
+}
+
+.cs-src[data-state="off"] .cs-mark {
+  color: var(--ink-subtle);
+}
+
+.cs-src[data-state="off"] .cs-name {
+  color: var(--ink-muted);
+}

@@ -132,6 +132,8 @@ async fn run() -> anyhow::Result<()> {
     handlers::site_config::load_or_seed(&pool)
         .await
         .map_err(|e| anyhow::anyhow!("couldn't load site settings: {e:?}"))?;
+    // 收藏來源的金鑰與同步開關（後台填的）；要在下面的同步 worker 起來之前
+    koimsurai_web_backend::integrations::load(&pool).await?;
 
     if let Some(username) = handlers::auth::bootstrap_admin(&pool).await? {
         tracing::info!(username = %username, "全新部署：已用 ADMIN_USERNAME / ADMIN_PASSWORD 建立第一個管理員");

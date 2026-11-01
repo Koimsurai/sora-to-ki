@@ -3,7 +3,8 @@
   "tab": {
     "watch": "在看",
     "listen": "在听",
-    "fav": "最爱"
+    "fav": "最爱",
+    "sources": "来源"
   },
   "kind": {
     "anime": "动画",
@@ -17,7 +18,111 @@
   "shownNow": "〈{{title}}〉回到前台了",
   "favRemoved": "〈{{title}}〉已移出最爱",
   "favAdded": "〈{{title}}〉已加入最爱",
-  "sources": "数据来源",
+  "sources": {
+    "label": "数据来源",
+    "intro": "收藏页的数据从哪里来。密钥存在站点的数据库里，填过的不会再显示出来；.env.backend 里写了的照样有效，这里填的优先。",
+    "loading": "读取来源",
+    "loadFailed": "读不到来源的设置",
+    "group": {
+      "watch": "在看",
+      "read": "在读",
+      "listen": "在听",
+      "play": "在玩、在写"
+    },
+    "region": {
+      "tw": "台湾",
+      "global": "全球"
+    },
+    "status": {
+      "off": "未设置",
+      "syncOff": "同步已关闭",
+      "never": "还没同步过",
+      "synced": "{{when}} 同步 · 新增 {{count}} 条",
+      "failed": "{{when}} 失败：{{error}}",
+      "connected": "已连接",
+      "connectedCount": "已连接 · 最近 {{count}} 首",
+      "checkFailed": "连接失败：{{error}}"
+    },
+    "sync": "同步",
+    "settings": "设置",
+    "collapse": "收起",
+    "save": "保存",
+    "syncNow": "立即同步",
+    "syncing": "同步中…",
+    "clear": "清除",
+    "optional": "选填",
+    "redirect": "Redirect URI",
+    "connectSpotify": "关联 Spotify 账号",
+    "placeholder": {
+      "admin": "已设置，填新的会覆盖",
+      "adminHint": "已设置 · 末四位 {{hint}}，填新的会覆盖",
+      "env": "用的是 .env.backend 的设置，填了会覆盖"
+    },
+    "saved": "{{name}} 已保存",
+    "cleared": "{{name}} 已清除后台填的值",
+    "syncTurnedOn": "{{name}} 开始同步",
+    "syncTurnedOff": "{{name}} 停止同步",
+    "syncDone": "{{name}} 同步完成，新增 {{count}} 条",
+    "syncFailed": "{{name}} 同步失败：{{error}}",
+    "failed": "没有成功：{{error}}",
+    "field": {
+      "TMDB_API_TOKEN": "API Read Access Token",
+      "SIMKL_CLIENT_ID": "Client ID",
+      "SIMKL_ACCESS_TOKEN": "Access Token",
+      "BAHAMUT_UID": "账号",
+      "BAHAMUT_PASSWORD": "密码",
+      "GOOGLE_BOOKS_API_KEY": "API key",
+      "SPOTIFY_CLIENT_ID": "Client ID",
+      "SPOTIFY_CLIENT_SECRET": "Client Secret",
+      "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
+      "STEAM_API_KEY": "Web API key",
+      "STEAM_ID": "Steam ID",
+      "WAKATIME_API_KEY": "API key"
+    },
+    "src": {
+      "tmdb": {
+        "name": "TMDB",
+        "what": "片名与海报（在看一定要有）",
+        "help": "到 themoviedb.org 登录 → 设置 → API 申请，复制「API Read Access Token」那一长串（不是较短的 API Key）。"
+      },
+      "simkl": {
+        "name": "Simkl",
+        "what": "观看记录：电影、剧集、动画",
+        "help": "到 simkl.com/settings/developer 新建一个 app 拿到 Client ID；Access Token 按 Simkl API 文档的 PIN 流程获取。"
+      },
+      "bahamut": {
+        "name": "动画疯",
+        "what": "巴哈姆特动画疯（台湾）的观看记录",
+        "help": "巴哈姆特的账号与密码。账号和家人共用的话会互相挤掉登录，被挤掉时这里会自动重新登录。"
+      },
+      "googleBooks": {
+        "name": "Google Books",
+        "what": "用 ISBN 查书名与封面",
+        "help": "不填也能查（改用 Open Library）。要填的话到 Google Cloud Console 启用 Books API，创建一个 API key，查询额度会宽很多。",
+        "unset": "未填，改用 Open Library"
+      },
+      "ncl": {
+        "name": "台湾“国家图书馆”新书书目",
+        "what": "台湾出版的书，用 ISBN 查得到中文书名",
+        "help": "不需要密钥。打开后每天下载一次新书书目。"
+      },
+      "spotify": {
+        "name": "Spotify",
+        "what": "最近播放、常听的曲风",
+        "help": "到 developer.spotify.com 创建一个 app，Redirect URI 填下面那一行。Client ID 与 Secret 保存后点「关联 Spotify 账号」，把授权完成页面上的 refresh token 贴回来保存。"
+      },
+      "steam": {
+        "name": "Steam",
+        "what": "最近在玩的游戏",
+        "help": "到 steamcommunity.com/dev/apikey 申请 Web API key；Steam ID 是 17 位数字。个人资料与游戏详情要设为公开。"
+      },
+      "wakatime": {
+        "name": "WakaTime",
+        "what": "写代码的时长与语言",
+        "help": "到 wakatime.com/settings/api-key 复制 API key。"
+      }
+    }
+  },
   "loginDaysLeft": "登录还剩 {{days}} 天",
   "cookieExpired": "cookie 失效",
   "spotifyFailed": "获取失败",

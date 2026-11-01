@@ -12,15 +12,16 @@ import { at, useAdminT } from '@/i18n/admin-i18n';
 import AdminLoading from './AdminLoading';
 import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
+import CollectionSources from './CollectionSources';
 import './CollectionManager.css';
 
 // 收藏（2026-10 後台提案的「收」）：在看、在聽都是同步進來的（巴哈、Simkl、Spotify），
 // 站長決定不了「有沒有看」，只能決定「這一部／這一首要不要出現在前台」，以及哪幾部放進最愛。
 // 書在書架頁（/admin/books），這裡不重複一份。
 
-type Tab = 'watch' | 'listen' | 'fav';
+type Tab = 'watch' | 'listen' | 'fav' | 'sources';
 
-const TABS: Tab[] = ['watch', 'listen', 'fav'];
+const TABS: Tab[] = ['watch', 'listen', 'fav', 'sources'];
 
 const KINDS = new Set(['anime', 'film', 'tv', 'track']);
 /** 巴哈要翻（是簡稱），其他是服務名 */
@@ -92,7 +93,8 @@ export default function CollectionManager() {
         : t('collection.favAdded', { title: w.title }),
     );
 
-  const countOf = (k: Tab) => (k === 'watch' ? watch.length : k === 'listen' ? tracks.length : favs.length);
+  const countOf = (k: Tab) =>
+    k === 'watch' ? watch.length : k === 'listen' ? tracks.length : k === 'fav' ? favs.length : '';
   const b = bahamut.data;
 
   return (
@@ -103,7 +105,7 @@ export default function CollectionManager() {
         meta={isPending ? t('common.loading') : t('collection.meta', { watch: watch.length, fav: favs.length })}
       />
 
-      <p className="adm-coll-sources" aria-label={t('collection.sources')}>
+      <p className="adm-coll-sources" aria-label={t('collection.sources.label')}>
         {b && (
           <span data-bad={!b.ok || undefined}>
             {b.ok ? '●' : '×'} {t('collection.bahamut')}
@@ -145,7 +147,9 @@ export default function CollectionManager() {
         </div>
 
         <TabPanel tab={tab}>
-          {isPending ? (
+          {tab === 'sources' ? (
+            <CollectionSources />
+          ) : isPending ? (
             <AdminLoading label={t('collection.loadingCollection')} />
           ) : tab === 'watch' ? (
             <WatchList items={watch} busyKey={busyKey} onHide={setHidden} onFavorite={toggleFavorite} />

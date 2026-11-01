@@ -14,9 +14,9 @@ pub fn tmdb_api() -> String {
         .unwrap_or_else(|| "https://api.themoviedb.org".into())
 }
 
-/// `TMDB_API_TOKEN`；空字串視同沒設。沒設時呼叫端一律不對外發請求（各自有退路）。
+/// `TMDB_API_TOKEN`（後台填的優先，見 integrations.rs）；空字串視同沒設。沒設時呼叫端一律不對外發請求（各自有退路）。
 pub fn tmdb_token() -> Option<String> {
-    std::env::var("TMDB_API_TOKEN").ok().filter(|s| !s.is_empty())
+    crate::integrations::var("TMDB_API_TOKEN")
 }
 
 /// TMDb v3 的 GET（bearer + accept json）。`path_and_query` 以 `/3/` 開頭、query 由呼叫端編好。

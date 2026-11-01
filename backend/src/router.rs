@@ -226,6 +226,10 @@ pub fn build_router(state: AppState) -> Router {
         // 收藏頁：觀看紀錄與聽的歌要不要出現在前台
         .route("/api/admin/collection", get(handlers::collection::admin_collection))
         .route("/api/admin/collection/hidden", put(handlers::collection::admin_set_hidden))
+        // 收藏的來源：金鑰（只寫不讀）、同步開關、立刻同步
+        .route("/api/admin/sources", get(handlers::sources::list_sources))
+        .route("/api/admin/sources/{key}", put(handlers::sources::update_source))
+        .route("/api/admin/sources/{key}/sync", post(handlers::sources::sync_source))
         // OG 圖（takumi；axum 不支援 :id.png 部分參數，handler 內 strip 後綴）
         .route("/api/og/{file}", get(handlers::og::og_png))
         // 上傳（axum multipart；thumbhash 實測等價）
