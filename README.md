@@ -324,7 +324,7 @@ cargo clippy --all-targets -- -D warnings
 - **Code**: [GNU Affero General Public License v3.0](LICENSE). If you modify it and **run it as a public website**, you have to publish your modified source under the same licence
 - **Content**: the demo site's articles, photos, moments, book reviews, avatar and logo © Koimsurai, **all rights reserved**, not covered by the licence
 - If you just want to run a site, follow "Run your own site" above; no fork needed
-- Pull requests are not accepted; questions and bug reports are welcome as [issues](https://github.com/Koimsurai/sora-to-ki/issues)
+- Pull requests are not accepted; questions and bug reports are welcome as [issues](https://github.com/Koimsurai/sora-to-ki/issues). See [CONTRIBUTING.md](CONTRIBUTING.md), including how to report a security problem privately
 
 ## 🙏 Thanks
 
