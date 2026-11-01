@@ -21,12 +21,19 @@ export type Theme = (typeof THEMES)[number];
 const isTheme = (v: unknown): v is Theme => typeof v === 'string' && (THEMES as readonly string[]).includes(v);
 
 let ownerDefault: Theme = 'saturn';
-/** 站長的預設（站台設定的 theme）：router.tsx 一拿到站台設定就寫進來（伺服器與瀏覽器各一份） */
-export function setDefaultTheme(theme: string) {
+let readerChoice = true;
+/**
+ * 站長的預設（站台設定的 theme）與讀者能不能自己換（theme_switch）：router.tsx 一拿到站台設定就寫進來
+ * （伺服器與瀏覽器各一份）
+ */
+export function setDefaultTheme(theme: string, readersCanChoose = true) {
   if (isTheme(theme)) ownerDefault = theme;
+  readerChoice = readersCanChoose;
 }
 /** 站長的預設。伺服器渲染與 hydration 那一次用它：沒選過的讀者看到的就是這顆 */
 export const defaultTheme = (): Theme => ownerDefault;
+/** 讀者能不能自己換天體。不能的話頂欄的天體只顯示、不能點，大家都看站長的預設 */
+export const readersCanChoose = (): boolean => readerChoice;
 
 /** 現在的主題。讀的是 <html data-theme>（SSR、worker 讀不到，退回站長的預設） */
 export function currentTheme(): Theme {
@@ -37,11 +44,14 @@ export function currentTheme(): Theme {
 
 /**
  * head 裡的那段（在 paint 之前同步跑）：網址的 ?theme= 優先（不記下來），再來是讀者上次選的，
- * 都沒有（或讀不到 localStorage）就是站長的預設。只認白名單裡的字，不是白名單就當沒有
+ * 都沒有（或讀不到 localStorage）就是站長的預設。只認白名單裡的字，不是白名單就當沒有。
+ * 站長不開放讀者換（`readersCanChoose` 是 false）：不看讀者上次選的，只認網址參數——那是刻意給的連結
+ * （後台的「試看」、對外分享時指定天體），一般讀者不會碰到
  */
-export function themeScript(fallback: Theme): string {
+export function themeScript(fallback: Theme, readersCanChoose = true): string {
+  const stored = readersCanChoose ? "localStorage.getItem('koim-theme')" : 'null';
   return `(function(){var T=${JSON.stringify(THEMES)},d=document.documentElement,t=null;
-try{var q=new URLSearchParams(location.search).get('theme');t=q&&T.indexOf(q)>=0?q:localStorage.getItem('koim-theme');}catch(e){}
+try{var q=new URLSearchParams(location.search).get('theme');t=q&&T.indexOf(q)>=0?q:${stored};}catch(e){}
 if(!t||T.indexOf(t)<0)t=${JSON.stringify(fallback)};if(t!=='saturn')d.setAttribute('data-theme',t);})()`;
 }
 

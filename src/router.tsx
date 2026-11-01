@@ -29,7 +29,7 @@ export function getRouter() {
     if (!data) return;
     setSiteIdentity(data);
     setLocaleConfig(data.default_locale, data.locales);
-    setDefaultTheme(data.theme);
+    setDefaultTheme(data.theme, data.theme_switch);
   });
   return router;
 }

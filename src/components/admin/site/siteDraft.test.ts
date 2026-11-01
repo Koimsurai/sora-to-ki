@@ -11,6 +11,7 @@ const base: Draft = {
   github: '',
   disabled_pages: [],
   theme: 'saturn',
+  theme_switch: true,
   page_descriptions: {},
   launch_pad: { lat: 23.7, lon: 121 },
   signature: { view_box: '', steps: [] },

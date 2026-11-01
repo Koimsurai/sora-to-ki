@@ -33,6 +33,7 @@ beforeAll(() => {
     default_locale: 'zh-TW',
     locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
     theme: 'saturn',
+    theme_switch: true,
     page_descriptions: {},
     launch_pad: { lat: 23.7, lon: 121 },
     signature: null,

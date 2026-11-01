@@ -782,6 +782,11 @@ export function makeTools(api: ApiClient): Tool[] {
             description:
               '預設天體（土星、海王星、黑洞、參宿四）：讀者沒在頂欄選過時看到的那顆，分享圖也畫這顆。讀者自己選過的不受影響',
           },
+          theme_switch: {
+            type: 'boolean',
+            description:
+              '讀者能不能在頂欄自己換天體（預設 true）。false：大家都看 theme 那顆，頂欄的天體只顯示、不能點',
+          },
           page_descriptions: {
             type: 'object',
             description:
@@ -822,6 +827,7 @@ export function makeTools(api: ApiClient): Tool[] {
             'default_locale',
             'locales',
             'theme',
+            'theme_switch',
           ]),
         }),
     },

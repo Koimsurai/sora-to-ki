@@ -85,7 +85,8 @@
   "site": {
     "title": "Site",
     "latin": "Identity",
-    "lede": "Shown on the home page, in the RSS feed and on share cards. All of it can be changed in the admin later."
+    "lede": "Shown on the home page, in the RSS feed and on share cards. All of it can be changed in the admin later.",
+    "theme": "Default sky"
   },
   "pages": {
     "title": "Pages",

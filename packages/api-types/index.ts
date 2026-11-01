@@ -1325,6 +1325,8 @@ export type SiteConfig = {
 	locales: string[],
 	/**  預設天體（saturn、neptune、blackhole、betelgeuse）：讀者沒選過時看到的那顆 */
 	theme: string,
+	/**  讀者能不能在頂欄自己換天體；不能的話大家都看預設那顆 */
+	theme_switch: boolean,
 	/**  站長自己寫的介紹文字：哪一頁 → 語系 → 字。沒有的就用通用句子 */
 	page_descriptions: { [key in string]: { [key in string]: string } },
 	/**  發射台（站長在哪裡）；沒設就是台灣 */

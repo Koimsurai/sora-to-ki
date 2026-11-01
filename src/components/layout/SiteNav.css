@@ -68,6 +68,10 @@
 .snav-sky[aria-expanded="true"] {
   color: var(--ink);
 }
+/* 站長不開放讀者換天體時只是一個標示，滑過去不變色 */
+.snav-sky.is-fixed:hover {
+  color: var(--ink-subtle);
+}
 .snav-sky .sky-glyph {
   width: 18px;
   height: 18px;

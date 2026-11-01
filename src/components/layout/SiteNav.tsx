@@ -40,7 +40,7 @@ const CLOSE_AFTER_MS = 320;
 const OPENING_MS = 500;
 export default function SiteNav() {
   const { t, i18n } = useTranslation();
-  const { author } = useSiteConfig();
+  const { author, theme_switch: themeSwitch } = useSiteConfig();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const bare = stripLocalePrefix(pathname);
   const isHome = bare === '';
@@ -323,22 +323,30 @@ export default function SiteNav() {
           <LocaleLink to="/" className="snav-name" aria-label={t('siteNav.home')}>
             {author}
           </LocaleLink>
-          <button
-            type="button"
-            className="snav-sky"
-            aria-label={`${t('siteNav.sky')} ${t(`siteNav.skyNames.${theme}`)}`}
-            aria-expanded={open === 'sky'}
-            aria-controls="snav-more"
-            onMouseEnter={() => hoverMenu('sky')}
-            onClick={() => {
-              cancelIntent();
-              if (open === 'sky' && performance.now() - openedAtRef.current > OPENING_MS) setOpen(null);
-              else openMenu('sky');
-            }}
-          >
-            <ThemeGlyph theme={theme} />
-            <span className="snav-sky-name">{t(`siteNav.skyNames.${theme}`)}</span>
-          </button>
+          {/* 站長不開放讀者換天體（站台設定的 theme_switch）：只顯示這一顆，不是按鈕、沒有選單 */}
+          {themeSwitch ? (
+            <button
+              type="button"
+              className="snav-sky"
+              aria-label={`${t('siteNav.sky')} ${t(`siteNav.skyNames.${theme}`)}`}
+              aria-expanded={open === 'sky'}
+              aria-controls="snav-more"
+              onMouseEnter={() => hoverMenu('sky')}
+              onClick={() => {
+                cancelIntent();
+                if (open === 'sky' && performance.now() - openedAtRef.current > OPENING_MS) setOpen(null);
+                else openMenu('sky');
+              }}
+            >
+              <ThemeGlyph theme={theme} />
+              <span className="snav-sky-name">{t(`siteNav.skyNames.${theme}`)}</span>
+            </button>
+          ) : (
+            <span className="snav-sky is-fixed">
+              <ThemeGlyph theme={theme} />
+              <span className="snav-sky-name">{t(`siteNav.skyNames.${theme}`)}</span>
+            </span>
+          )}
         </div>
 
         <nav className="snav-links" aria-label={t('nav.menu')}>

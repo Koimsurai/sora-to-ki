@@ -90,7 +90,10 @@
       "blackhole": "藤色",
       "betelgeuse": "代赭色"
     },
-    "preview": "サイトで{{name}}を見る"
+    "preview": "サイトで{{name}}を見る",
+    "readerSwitch": "読者に天体を選ばせる",
+    "readerSwitchOn": "オン：読者が上部バーで切り替えられ、選んだものはその人のブラウザに残ります",
+    "readerSwitchOff": "オフ：全員があなたの選んだ天体を見ます。上部バーの天体は表示だけでクリックできません"
   },
   "pages": {
     "groupOrbit": "トップページの軌道",

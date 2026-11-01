@@ -90,7 +90,10 @@
       "blackhole": "Lilac",
       "betelgeuse": "Red ochre"
     },
-    "preview": "See {{name}} on the site"
+    "preview": "See {{name}} on the site",
+    "readerSwitch": "Let readers pick the sky",
+    "readerSwitchOn": "On: readers can switch from the top bar, and their choice is kept in their browser",
+    "readerSwitchOff": "Off: everyone sees the one you chose; the body in the top bar is shown but not clickable"
   },
   "pages": {
     "groupOrbit": "Orbits on the home page",
