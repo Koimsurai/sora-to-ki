@@ -53,8 +53,13 @@ pub(crate) fn ndl_book(item: &str, isbn: &str) -> Option<Value> {
         Some(v) => format!("{title} {v}"),
         None => title,
     };
-    // 作者在 dc:creator 是「姓/名」，換成一般寫法
-    let authors = tag(item, "dc:creator").map(|a| a.replace('/', "")).unwrap_or_default();
+    // 作者在 dc:creator 是「姓/名」或「姓, 名」，日文名字接起來；有拉丁字母的（外國作者）留著逗號
+    let authors = tag(item, "dc:creator")
+        .map(|a| {
+            let a = a.replace('/', "");
+            if a.chars().any(|c| c.is_ascii_alphabetic()) { a } else { a.replace(", ", "") }
+        })
+        .unwrap_or_default();
     let pages = tag(item, "dc:extent").and_then(|e| PAGES.captures(&e)?.get(1)?.as_str().parse::<i64>().ok());
     Some(json!({
         "isbn": isbn,
@@ -202,6 +207,10 @@ mod tests {
         assert_eq!(b["published_date"], "1997-12");
         assert_eq!(b["page_count"], 207);
         assert_eq!(b["isbn"], "9784088725093", "用查的那個書號，不是它自己寫的 ISBN-10");
+        let comma = NDL_ITEM.replace("尾田/栄一郎", "夏目, 漱石");
+        assert_eq!(ndl_book(&comma, "x").expect("讀得出來")["authors"], "夏目漱石");
+        let western = NDL_ITEM.replace("尾田/栄一郎", "Orwell, George");
+        assert_eq!(ndl_book(&western, "x").expect("讀得出來")["authors"], "Orwell, George");
     }
 
     #[test]
