@@ -289,6 +289,7 @@ pnpm dev
 | 電子報 | `RESEND_API_KEY` |
 | 錯誤追蹤 | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
 | 後台流量（Plausible） | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
+| 讀者國家 | `GEOIP_DOWNLOAD`（預設開，`0` 關掉每月下載 DB-IP）`GEOIP_DB` |
 | ISR 清快取 | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET`（compose 裡沒填會自動產生） |
 
 ### 常用指令
@@ -333,12 +334,10 @@ cargo clippy --all-targets -- -D warnings
 └── docker-compose.yml
 ```
 
-給 AI 助手（Claude Code 等）看的工作守則在 [`CLAUDE.md`](CLAUDE.md)，裡面也記錄了很多踩過的坑和設計理由。
-
 ## 📜 沿革
 
 - **2025-04**：開始寫，一個人的網站
-- **2026-07**：後端從 Express 整套搬到 Rust，120 多個端點逐一對拍、確認回應一模一樣才切換（[`backend/STRANGLER.md`](backend/STRANGLER.md)）
+- **2026-07**：後端從 Express 整套搬到 Rust，120 多個端點逐一對拍、確認回應一模一樣才切換
 - **2026-10**：照「三樣材料、三條規則」整站翻新成現在的宙と木。翻新前的最後一版留在 tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)，也還跑在 <https://archive.koimsurai.com>（唯讀）
 - **2026-10**：拆掉寫死的部分，開源成誰都能架的 sora-to-ki（[v0.2.0](https://github.com/Koimsurai/sora-to-ki/releases)）
 
@@ -358,3 +357,5 @@ cargo clippy --all-targets -- -D warnings
 [OpenCC](https://github.com/BYVoid/OpenCC)、[thumbhash](https://github.com/evanw/thumbhash)、[Natural Earth](https://www.naturalearthdata.com/)、
 [思源宋體](https://github.com/adobe-fonts/source-han-serif)、[Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif)，
 以及 [Vite+](https://viteplus.dev/) 與 oxc 的工具鏈。
+
+後台反應紀錄的讀者國家：[IP Geolocation by DB-IP](https://db-ip.com)（CC BY 4.0）。後端每月自動下載一次，設 `GEOIP_DOWNLOAD=0` 可以關掉。

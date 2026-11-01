@@ -267,6 +267,7 @@ Only `DATABASE_URL` and `JWT_SECRET` are required (both are in the example file)
 | Newsletter | `RESEND_API_KEY` |
 | Error tracking | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
 | Admin traffic (Plausible) | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
+| Reader countries | `GEOIP_DOWNLOAD` (on by default; `0` turns off the monthly DB-IP download) `GEOIP_DB` |
 | ISR purge | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET` (generated automatically under compose if left empty) |
 
 ### Common commands
@@ -311,12 +312,10 @@ cargo clippy --all-targets -- -D warnings
 └── docker-compose.yml
 ```
 
-Working notes for AI assistants (Claude Code and the like) live in [`CLAUDE.md`](CLAUDE.md) (in Chinese); it also records a lot of past pitfalls and the reasons behind design decisions.
-
 ## 📜 History
 
 - **April 2025**: started, as a one-person site
-- **July 2026**: the backend moved from Express to Rust in one go; all 120+ endpoints were diffed against the old ones and the switch happened only once every response matched ([`backend/STRANGLER.md`](backend/STRANGLER.md), in Chinese)
+- **July 2026**: the backend moved from Express to Rust in one go; all 120+ endpoints were diffed against the old ones and the switch happened only once every response matched
 - **October 2026**: rebuilt as today's 宙と木 around "three materials, three rules". The last version before that is the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final), still running read-only at <https://archive.koimsurai.com>
 - **October 2026**: the hard-coded parts taken out, open-sourced as sora-to-ki that anyone can run ([v0.2.0](https://github.com/Koimsurai/sora-to-ki/releases))
 
@@ -336,3 +335,5 @@ It relies on a lot of open source, with special thanks to
 [OpenCC](https://github.com/BYVoid/OpenCC), [thumbhash](https://github.com/evanw/thumbhash), [Natural Earth](https://www.naturalearthdata.com/),
 [Source Han Serif](https://github.com/adobe-fonts/source-han-serif), [Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif),
 and the [Vite+](https://viteplus.dev/) and oxc toolchain.
+
+Reader countries in the admin reaction log: [IP Geolocation by DB-IP](https://db-ip.com) (CC BY 4.0). The backend downloads it once a month; set `GEOIP_DOWNLOAD=0` to turn that off.

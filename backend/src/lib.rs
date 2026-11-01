@@ -18,6 +18,7 @@
 
 pub mod auth;
 pub mod error;
+pub mod geo;
 pub mod handlers;
 pub mod identity;
 pub mod net_guard;
