@@ -481,7 +481,12 @@ export default function TransitionLayer() {
           if (r.report) {
             // 點在 worker 裡畫的話，照 worker 的幀算（看得到的是它）
             const own = { frames: r.frames, maxFrame: r.maxFrame, long: r.longFrames, phases: { ...r.phaseMax } };
-            reportTransition({ ...r.report, ms: now - r.t0, ...(host.stats ?? own) });
+            reportTransition({
+              ...r.report,
+              ms: now - r.t0,
+              ...(host.stats ?? own),
+              host: host.stats ? 'worker' : 'main',
+            });
           }
           finish(r);
         }
