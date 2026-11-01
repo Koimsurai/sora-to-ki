@@ -113,6 +113,12 @@ async fn run() -> anyhow::Result<()> {
     // sqlite：WAL 讓讀寫可重疊；busy_timeout 避免 SQLITE_BUSY；
     // create_if_missing 讓全新部署由 migrations 從零建出 DB。
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    // 後台或精靈上傳了備份：在連資料庫之前換上去（現在這份改名留著；見 handlers/backup.rs）
+    if handlers::backup::apply_pending(&database_url)? {
+        tracing::warn!(
+            "restore: switched to the uploaded backup; the previous database was kept as *.before-restore-*"
+        );
+    }
     let connect_opts = SqliteConnectOptions::from_str(&database_url)?
         .busy_timeout(Duration::from_secs(5))
         .journal_mode(SqliteJournalMode::Wal)

@@ -2133,6 +2133,7 @@ dependencies = [
  "dotenvy",
  "ferrous-opencc",
  "flate2",
+ "futures-util",
  "http-body-util",
  "image",
  "insta",

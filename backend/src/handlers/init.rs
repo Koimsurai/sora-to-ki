@@ -103,7 +103,7 @@ pub async fn announce(pool: &SqlitePool) -> Result<(), AppError> {
 }
 
 /// 設定碼對不對。錯太多次就換一組
-async fn verify(pool: &SqlitePool, code: &str) -> Result<bool, AppError> {
+pub(crate) async fn verify(pool: &SqlitePool, code: &str) -> Result<bool, AppError> {
     let Some(expected) = stored(pool).await? else { return Ok(false) };
     if same(&normalize(code), &normalize(&expected)) {
         return Ok(true);

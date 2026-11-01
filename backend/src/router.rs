@@ -90,6 +90,19 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/init/status", get(handlers::init::status))
         .route("/api/init/check", post(handlers::init::check))
         .route("/api/init/claim", post(handlers::init::claim))
+        // 搬家：還沒有站長時用設定碼上傳備份（handlers/backup.rs）
+        .route(
+            "/api/init/restore",
+            post(handlers::backup::init_restore)
+                .route_layer(DefaultBodyLimit::max(handlers::backup::MAX_UPLOAD)),
+        )
+        // 備份：站長下載現在的資料庫、上傳一份蓋回去
+        .route("/api/admin/backup", get(handlers::backup::download))
+        .route(
+            "/api/admin/backup/restore",
+            post(handlers::backup::admin_restore)
+                .route_layer(DefaultBodyLimit::max(handlers::backup::MAX_UPLOAD)),
+        )
         // 頁面內容（關於、作品…）：公開讀、管理員整份覆蓋
         .route("/api/pages/about", get(handlers::page_content::get_about))
         .route("/api/admin/pages/about", put(handlers::page_content::put_about))
