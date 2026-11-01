@@ -141,6 +141,8 @@ fn main() {
         .register::<PollResponse>()
         .register::<CountResponse>()
         .register::<SiteConfig>()
+        .register::<koimsurai_web_backend::handlers::signature::Signature>()
+        .register::<koimsurai_web_backend::handlers::signature::SignatureStep>()
         .register::<SourcesResponse>()
         .register::<SourceInfo>()
         .register::<SourceField>()

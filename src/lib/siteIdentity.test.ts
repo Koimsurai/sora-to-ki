@@ -17,6 +17,7 @@ const config = (over: Partial<Parameters<typeof setSiteIdentity>[0]> = {}) => ({
   theme: 'saturn',
   page_descriptions: {},
   launch_pad: { lat: 23.7, lon: 121 },
+  signature: null,
   ...over,
 });
 

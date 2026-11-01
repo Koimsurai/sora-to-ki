@@ -46,6 +46,19 @@ const PROPS: Record<string, Record<string, unknown>> = {
     url: 'https://example.com',
   },
   'admin/init/OAuthGuide.tsx': { provider: 'github', url: 'https://example.com' },
+  'common/SignatureSVG.tsx': {
+    signature: {
+      view_box: '0 0 100 30',
+      steps: [
+        { kind: 'stroke', d: 'M0 20 Q50 0 100 20' },
+        { kind: 'dot', x: 50, y: 5 },
+      ],
+    },
+  },
+  'admin/site/SignatureField.tsx': {
+    draft: { signature: { view_box: '0 0 100 30', steps: [{ kind: 'stroke', d: 'M0 20L100 20' }] } },
+    patch: vi.fn(),
+  },
   'admin/site/DescriptionFields.tsx': {
     draft: {
       default_locale: 'zh-TW',

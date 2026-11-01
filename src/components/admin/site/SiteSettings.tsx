@@ -25,6 +25,7 @@ import UnsavedGuard from '../UnsavedGuard';
 import DescriptionFields from './DescriptionFields';
 import NotifySettings from './NotifySettings';
 import OrbitPreview from './OrbitPreview';
+import SignatureField from './SignatureField';
 import { IdentityFields, LocaleFields, PageToggles, ThemeFields } from './SiteFields';
 import { draftOf, siteProblems, type Draft } from './siteDraft';
 import './SiteSettings.css';
@@ -94,6 +95,7 @@ export default function SiteSettings() {
       <section className="adm-stack" aria-labelledby="sfs-identity">
         <SectionHead id="sfs-identity">{t('site.settings.identityHead')}</SectionHead>
         <IdentityFields draft={draft} patch={patch} url={config.url} touched={touched} />
+        <SignatureField draft={draft} patch={patch} />
       </section>
 
       <section className="adm-stack" aria-labelledby="sfs-theme">

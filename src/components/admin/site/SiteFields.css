@@ -365,3 +365,19 @@
     display: none;
   }
 }
+
+/* 文末簽名：畫寫好的樣子讓站長看一眼，下面兩顆按鈕 */
+.sf-signature-preview {
+  max-width: 420px;
+  padding: var(--space-3) 0;
+}
+
+.sf-signature-preview svg {
+  width: 100%;
+}
+
+.sf-signature-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}

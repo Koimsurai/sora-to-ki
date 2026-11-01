@@ -58,6 +58,13 @@
     "locate": "현재 위치 사용",
     "locating": "위치 확인 중…",
     "locateFailed": "위치를 가져오지 못했어요(브라우저 권한이 없거나 https가 아님). 위도·경도를 직접 입력해도 돼요",
+    "signature": "글 끝 서명",
+    "signatureNone": "서명이 없어서 글 끝에 아무것도 나오지 않아요.",
+    "signatureUpload": "SVG 올리기",
+    "signatureReplace": "바꾸기",
+    "signatureRemove": "빼기",
+    "signatureHint": "글마다 끝에서 작은 빛 점이 획순대로 써 나가요. 파일 안의 <path>가 한 획, <circle>이 점이고, 파일에 있는 순서대로 써요. 채운 윤곽선보다 한 줄로 그린 획이 손글씨처럼 보여요.",
+    "signatureUnusable": "이 파일에서 획을 읽지 못했어요. viewBox와 <path>가 하나 이상 있어야 해요.",
     "errors": {
       "nameRequired": "사이트 이름은 비워 둘 수 없습니다",
       "nameTooLong": "사이트 이름은 최대 {{max}}자입니다",

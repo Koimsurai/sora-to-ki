@@ -23,6 +23,7 @@ beforeAll(async () => {
     theme: 'saturn',
     page_descriptions: { notes: { en: 'Notes on Rust and the web.' } },
     launch_pad: { lat: 23.7, lon: 121 },
+    signature: null,
   });
 });
 

@@ -127,5 +127,6 @@
   "source_field_unknown": "이 출처에는 「{{field}}」 항목이 없어요",
   "source_value_too_long": "「{{field}}」이(가) 너무 길어요. 잘못 붙여 넣지 않았는지 확인해 주세요",
   "webhook_url_invalid": "Webhook URL은 http:// 또는 https://로 시작해야 합니다",
-  "webhook_url_empty": "먼저 webhook URL을 입력하세요"
+  "webhook_url_empty": "먼저 webhook URL을 입력하세요",
+  "signature_invalid": "서명을 쓸 수 없어요. viewBox가 필요하고 획은 SVG 경로만 돼요"
 }
