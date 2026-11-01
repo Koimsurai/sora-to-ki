@@ -122,5 +122,7 @@
     "milestones": "里程碑",
     "milestone": "里程碑",
     "excerptLinks": "摘要對應段落"
-  }
+  },
+  "webhook_url_invalid": "Webhook 網址要是 http:// 或 https:// 開頭",
+  "webhook_url_empty": "先填 webhook 網址"
 }

@@ -27,11 +27,11 @@ fn env_or(key: &str, default: &str) -> String {
 }
 /// 寄件人（`NEWSLETTER_FROM`，例如 `站名 <hello@send.example.com>`）。
 /// 沒有預設值：網域要先在 Resend 驗證過才寄得出去，猜一個只會換來退信。
-fn newsletter_from() -> Option<String> {
+pub(crate) fn newsletter_from() -> Option<String> {
     std::env::var("NEWSLETTER_FROM").ok().filter(|s| !s.trim().is_empty())
 }
 /// 信末的署名：站名，作者名跟站名不同時再接上作者
-fn signature() -> String {
+pub(crate) fn signature() -> String {
     let (name, author) = (crate::identity::site_name(), crate::identity::site_author());
     if author == name { name } else { format!("{name} · {author}") }
 }

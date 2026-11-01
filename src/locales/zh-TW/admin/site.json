@@ -15,7 +15,9 @@
     "confirmTitle": "換掉預設語系？",
     "confirmDesc": "預設語系會從{{from}}換成{{to}}。不帶前綴的網址（例如 {{host}}/blog）會改顯示{{to}}，已經分享出去的{{from}}連結打開也會變成{{to}}；{{from}}改到 /{{fromPrefix}}/ 底下。原本 /{{toPrefix}}/ 開頭的網址會自動轉到不帶前綴的那一條。搜尋引擎要一陣子才會重新收錄。",
     "confirmOk": "換掉並儲存",
-    "cancel": "先不要"
+    "cancel": "先不要",
+    "notifyHead": "通知",
+    "notifyNote": "有人留言、申請友鏈時送一則到你的 webhook；你回覆留言時，勾了通知的讀者會收到信。"
   },
   "descriptions": {
     "home": "首頁",
@@ -122,5 +124,20 @@
     "menuAbout": "關於",
     "menuMore": "更多",
     "off": "關"
+  },
+  "notify": {
+    "webhook": "Webhook 網址",
+    "optional": "選填，空著就不送",
+    "formats": "Discord、Slack 的網址送它們自己的格式；其他網址（ntfy、n8n、自己的服務）送 JSON：event、text、data。內容不帶讀者的信箱與 IP。",
+    "onComment": "新留言（含待審）",
+    "onFriend": "友鏈申請",
+    "test": "送一則測試",
+    "save": "儲存通知設定",
+    "saved": "通知設定存好了",
+    "testOk": "送到了，去看看有沒有收到",
+    "testFailed": "沒送到：{{error}}",
+    "mailReady": "回覆信：寄得出去（用電子報那組 Resend 設定）。讀者在留言表單勾了「站長回覆時寄信通知我」，你回覆時就會寄。",
+    "mailOff": "回覆信：寄不出去，還沒設 RESEND_API_KEY 與 NEWSLETTER_FROM。設好之後，讀者勾了通知的留言你一回覆就會寄信。",
+    "loadFailed": "讀不到通知設定"
   }
 }

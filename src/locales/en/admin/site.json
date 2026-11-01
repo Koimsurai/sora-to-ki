@@ -15,7 +15,9 @@
     "confirmTitle": "Change the default language?",
     "confirmDesc": "The default language goes from {{from}} to {{to}}. Addresses without a prefix (like {{host}}/blog) will show {{to}}, so {{from}} links you've already shared will open in {{to}}; {{from}} moves under /{{fromPrefix}}/. Addresses starting with /{{toPrefix}}/ will redirect to the same page without the prefix. Search engines will take a while to catch up.",
     "confirmOk": "Change and save",
-    "cancel": "Not now"
+    "cancel": "Not now",
+    "notifyHead": "Notifications",
+    "notifyNote": "Get a webhook message when someone comments or asks for a friend link. When you reply to a comment, readers who ticked the box get an email."
   },
   "descriptions": {
     "home": "Home",
@@ -122,5 +124,20 @@
     "menuAbout": "About",
     "menuMore": "More",
     "off": "OFF"
+  },
+  "notify": {
+    "webhook": "Webhook URL",
+    "optional": "optional, leave empty to turn off",
+    "formats": "Discord and Slack URLs get their own format; any other URL (ntfy, n8n, your own service) gets JSON with event, text and data. Readers' emails and IPs are never included.",
+    "onComment": "New comments (including ones awaiting review)",
+    "onFriend": "Friend link requests",
+    "test": "Send a test",
+    "save": "Save notification settings",
+    "saved": "Notification settings saved",
+    "testOk": "Sent. Check that it arrived",
+    "testFailed": "Not delivered: {{error}}",
+    "mailReady": "Reply emails: ready (using the newsletter's Resend settings). When a reader ticks “Email me when the author replies”, your reply is emailed to them.",
+    "mailOff": "Reply emails: off, RESEND_API_KEY and NEWSLETTER_FROM aren't set. Once they are, readers who ticked the box get an email when you reply.",
+    "loadFailed": "Couldn't load notification settings"
   }
 }

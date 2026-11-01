@@ -1365,8 +1365,12 @@ pub async fn reply_comment(
     .execute(&state.pool)
     .await
     {
-        Ok(r) => (StatusCode::CREATED, Json(json!({ "message": "success", "id": r.last_insert_rowid() })))
-            .into_response(),
+        Ok(r) => {
+            // 原留言者勾了通知就寄信告訴他（notify.rs）
+            crate::handlers::notify::owner_replied(&state, id, &content);
+            (StatusCode::CREATED, Json(json!({ "message": "success", "id": r.last_insert_rowid() })))
+                .into_response()
+        }
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }

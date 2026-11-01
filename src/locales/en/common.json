@@ -391,7 +391,12 @@
     "bodyDoneEmail": "<em>{{email}}</em> has been removed from the list.",
     "bodyDoneFarewell": "Sorry to see you go — come back anytime.",
     "viewLatest": "Check recent posts →",
-    "btnBackHome": "Back to home"
+    "btnBackHome": "Back to home",
+    "replyConfirmTitle": "Stop reply emails?",
+    "replyBodyConfirm": "You won't get an email when the author replies to your comments. Tick the box again next time you comment to turn it back on.",
+    "replyBtnConfirm": "Stop emails",
+    "replyDoneTitle": "Done ✓",
+    "replyBodyDone": "No more reply emails for comments left with this address."
   },
   "oauth": {
     "loggingIn": "Signing in...",
@@ -634,6 +639,7 @@
     "useAccount": "Use my account",
     "fieldName": "Name",
     "fieldEmail": "Email (optional, never shown)",
+    "notifyReply": "Email me when the author replies",
     "fieldWebsite": "Website (optional)",
     "fieldText": "Your message",
     "meter": "{{count}} chars · {{seconds}} s of signal",

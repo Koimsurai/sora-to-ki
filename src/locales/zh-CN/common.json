@@ -391,7 +391,12 @@
     "bodyDoneEmail": "<em>{{email}}</em> 已从订阅列表中移除。",
     "bodyDoneFarewell": "抱歉没能继续陪你，未来想回来随时都欢迎。",
     "viewLatest": "看看最近的文章 →",
-    "btnBackHome": "回首页"
+    "btnBackHome": "回首页",
+    "replyConfirmTitle": "不再接收回复通知？",
+    "replyBodyConfirm": "站长之后回复你的留言时，不会再发邮件给你。下次留言时再勾选一次就会恢复。",
+    "replyBtnConfirm": "不再通知",
+    "replyDoneTitle": "不会再发了 ✓",
+    "replyBodyDone": "这个邮箱之前勾选过的留言，都不会再收到回复通知。"
   },
   "oauth": {
     "loggingIn": "正在登录...",
@@ -634,6 +639,7 @@
     "useAccount": "改用账号",
     "fieldName": "名字",
     "fieldEmail": "Email（选填，不公开）",
+    "notifyReply": "站长回复时发邮件通知我",
     "fieldWebsite": "网站（选填）",
     "fieldText": "想说的话",
     "meter": "{{count}} 字 · 信号长度 {{seconds}} 秒",

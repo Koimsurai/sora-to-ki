@@ -16,6 +16,7 @@ pub mod init;
 pub mod link_preview;
 pub mod mailer;
 pub mod newsletter;
+pub mod notify;
 pub mod oauth;
 pub mod og;
 pub mod opencc;

@@ -122,5 +122,7 @@
     "milestones": "マイルストーン",
     "milestone": "マイルストーン",
     "excerptLinks": "要約と段落の対応"
-  }
+  },
+  "webhook_url_invalid": "Webhook の URL は http:// か https:// で始めてください",
+  "webhook_url_empty": "先に webhook の URL を入力してください"
 }
