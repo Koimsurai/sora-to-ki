@@ -86,6 +86,7 @@ async fn lastfm(state: &AppState, key: &str, user: &str) -> Result<Vec<(RecentPl
     let r = state
         .http
         .get(url)
+        .header("User-Agent", crate::identity::user_agent("listening"))
         .timeout(TIMEOUT)
         .send()
         .await
@@ -135,6 +136,7 @@ async fn listenbrainz(state: &AppState, user: &str) -> Result<Vec<RecentPlayItem
     let r = state
         .http
         .get(url)
+        .header("User-Agent", crate::identity::user_agent("listening"))
         .timeout(TIMEOUT)
         .send()
         .await
@@ -144,6 +146,18 @@ async fn listenbrainz(state: &AppState, user: &str) -> Result<Vec<RecentPlayItem
     }
     if !r.status().is_success() {
         return Err(format!("ListenBrainz answered {}", r.status().as_u16()));
+    }
+    // 短時間打太多次時，它回 200 但內容是一頁「驗證瀏覽器」的 HTML
+    let html = r
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|t| t.starts_with("text/html"));
+    if html {
+        return Err(
+            "ListenBrainz is asking for a browser check (too many requests); it will work again in a while"
+                .into(),
+        );
     }
     let v: Value = r.json().await.map_err(|_| "ListenBrainz sent something that isn't JSON".to_string())?;
     let list = v.pointer("/payload/listens").and_then(Value::as_array).cloned().unwrap_or_default();
@@ -157,7 +171,17 @@ async fn listenbrainz_now(state: &AppState, user: &str) -> Option<SpotifyTrack> 
         state.external.listenbrainz_api,
         crate::util::encode_uri_component(user)
     );
-    let v: Value = state.http.get(url).timeout(TIMEOUT).send().await.ok()?.json().await.ok()?;
+    let v: Value = state
+        .http
+        .get(url)
+        .header("User-Agent", crate::identity::user_agent("listening"))
+        .timeout(TIMEOUT)
+        .send()
+        .await
+        .ok()?
+        .json()
+        .await
+        .ok()?;
     let l = v.pointer("/payload/listens/0")?.clone();
     let mut with_time = l;
     with_time["listened_at"] = Value::from(chrono::Utc::now().timestamp());
@@ -197,9 +221,34 @@ enum Source {
     ListenBrainz { user: String },
 }
 
+impl Source {
+    /// 快取的 key：換了帳號或來源，舊的結果就不算
+    fn id(&self) -> String {
+        match self {
+            Self::LastFm { user, .. } => format!("lastfm:{user}"),
+            Self::ListenBrainz { user } => format!("listenbrainz:{user}"),
+        }
+    }
+}
+
+/// 最近播放的快取：一分鐘內重用（前台、頂欄選單、後台都會打）；抓失敗時一小時內的舊結果照用。
+/// ListenBrainz 對短時間內打很多次的 IP 會改回一頁「驗證瀏覽器」，那時候有舊的總比空的好
+static RECENT: parking_lot::Mutex<Option<(String, std::time::Instant, Vec<RecentPlayItem>)>> =
+    parking_lot::Mutex::new(None);
+const FRESH: std::time::Duration = std::time::Duration::from_secs(60);
+const STALE_OK: std::time::Duration = std::time::Duration::from_secs(3600);
+
 /// 最近播放。沒有設定任何退路來源回 `None`（呼叫端就當作沒接音樂）
 pub(crate) async fn recent(state: &AppState) -> Option<Result<RecentlyPlayedResponse, String>> {
-    let items = match which()? {
+    let source = which()?;
+    let id = source.id();
+    let cached = RECENT.lock().clone().filter(|(k, _, _)| *k == id);
+    if let Some((_, at, items)) = &cached
+        && at.elapsed() < FRESH
+    {
+        return Some(Ok(RecentlyPlayedResponse { items: items.clone() }));
+    }
+    let fetched = match source {
         Source::LastFm { key, user } => {
             // 正在播的那首也在清單最上面，「最近播放」不要重複算它
             lastfm(state, &key, &user)
@@ -208,7 +257,16 @@ pub(crate) async fn recent(state: &AppState) -> Option<Result<RecentlyPlayedResp
         }
         Source::ListenBrainz { user } => listenbrainz(state, &user).await,
     };
-    Some(items.map(|items| RecentlyPlayedResponse { items }))
+    Some(match fetched {
+        Ok(items) => {
+            *RECENT.lock() = Some((id, std::time::Instant::now(), items.clone()));
+            Ok(RecentlyPlayedResponse { items })
+        }
+        Err(e) => match cached.filter(|(_, at, _)| at.elapsed() < STALE_OK) {
+            Some((_, _, items)) => Ok(RecentlyPlayedResponse { items }),
+            None => Err(e),
+        },
+    })
 }
 
 /// 正在播的那首。沒在播、沒設定、抓失敗都是 `None`
@@ -360,6 +418,36 @@ mod tests {
         let st = state_on(&server).await;
         assert_eq!(recent(&st).await.expect("有設定").expect("抓得到").items.len(), 1);
         assert!(now_playing(&st).await.is_some_and(|n| n.is_playing));
+    }
+
+    /// 打太多次時 ListenBrainz 回 200 加一頁 HTML：要說清楚是被擋，而且一分鐘內不再去打
+    #[tokio::test]
+    async fn listenbrainz_回驗證頁時說清楚_一分鐘內用快取() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/listenbrainz/1/user/rob/listens"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "payload": { "listens": [listen()] } })),
+            )
+            .up_to_n_times(1)
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/listenbrainz/1/user/rob/listens"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_raw("<!DOCTYPE html><title>Verifying your browser</title>", "text/html"),
+            )
+            .mount(&server)
+            .await;
+        integrations::set_for_test("LASTFM_API_KEY", None);
+        integrations::set_for_test("LISTENBRAINZ_USERNAME", Some("rob"));
+        let st = state_on(&server).await;
+        assert_eq!(recent(&st).await.expect("有設定").expect("第一次抓得到").items.len(), 1);
+        assert_eq!(recent(&st).await.expect("有設定").expect("用快取").items.len(), 1);
+        assert_eq!(server.received_requests().await.expect("wiremock").len(), 1, "一分鐘內不再打");
+        let direct = listenbrainz(&st, "rob").await;
+        assert!(matches!(direct, Err(e) if e.contains("browser check")));
     }
 
     #[tokio::test]
