@@ -23,6 +23,7 @@ import { PageHead, SectionHead } from '../AdminPage';
 import { SaveBar } from '../pageEditorKit';
 import UnsavedGuard from '../UnsavedGuard';
 import DescriptionFields from './DescriptionFields';
+import BackupSection from './BackupSection';
 import NotifySettings from './NotifySettings';
 import OrbitPreview from './OrbitPreview';
 import SignatureField from './SignatureField';
@@ -135,6 +136,11 @@ export default function SiteSettings() {
         <SectionHead id="sfs-notify">{t('site.settings.notifyHead')}</SectionHead>
         <p className="adm-form-note">{t('site.settings.notifyNote')}</p>
         <NotifySettings />
+      </section>
+
+      <section className="adm-stack" aria-labelledby="sfs-backup">
+        <SectionHead id="sfs-backup">{t('site.backup.head')}</SectionHead>
+        <BackupSection />
       </section>
 
       <SaveBar dirty={dirty} saving={saving} onReset={() => setEdited(null)} onSave={trySave} />

@@ -27,7 +27,12 @@
     "start": "시작",
     "checking": "확인 중…",
     "badCode": "설정 코드가 맞지 않습니다. 10번 틀리면 새 코드로 바뀌니 로그를 다시 확인해 주세요.",
-    "envHint": ".env.backend에 OWNER_EMAIL을 설정했다면 이 페이지는 나오지 않습니다. 그 주소로 로그인한 사람이 운영자가 됩니다."
+    "envHint": ".env.backend에 OWNER_EMAIL을 설정했다면 이 페이지는 나오지 않습니다. 그 주소로 로그인한 사람이 운영자가 됩니다.",
+    "restoreSummary": "이전하나요? 예전 사이트의 백업에서 복원",
+    "restoreNote": "예전 사이트 관리 화면의 「사이트 → 백업과 이전」에서 내려받은 파일이나, 예전 호스트 ./backups의 .sqlite.gz를 쓸 수 있어요. 먼저 위의 설정 코드를 넣으세요. 복원하면 예전 사이트의 운영자가 여기의 운영자가 돼요. 이미지와 사진은 uploads와 gallery 폴더를 따로 복사하세요.",
+    "restorePick": "백업 파일 고르기",
+    "restoreUploading": "올리는 중…",
+    "restoreRestarting": "백엔드가 이 백업으로 다시 시작하는 중이에요…"
   },
   "owner": {
     "title": "운영자 등록",

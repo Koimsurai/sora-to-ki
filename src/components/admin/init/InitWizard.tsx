@@ -15,6 +15,7 @@ import AdminLoading from '../AdminLoading';
 import OrbitPreview from '../site/OrbitPreview';
 import { IdentityFields, LocaleFields, PageToggles, SiteField, ThemeFields } from '../site/SiteFields';
 import { TOGGLE_GROUPS, draftOf, siteProblems, type Draft } from '../site/siteDraft';
+import { WizardRestore } from '../site/BackupSection';
 import OAuthGuide from './OAuthGuide';
 import { STEPS, clearSession, readSession, writeSession, type Step } from './initSession';
 import './InitWizard.css';
@@ -230,6 +231,8 @@ export default function InitWizard() {
           />
         </SiteField>
         <p className="wz-hint">{t('init.gate.envHint')}</p>
+        {/* 搬家：舊站的備份直接換上來（要先填設定碼） */}
+        <WizardRestore code={code} />
       </>
     );
     foot = (

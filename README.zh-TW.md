@@ -346,7 +346,7 @@ cargo clippy --all-targets -- -D warnings
 - **程式碼**：[GNU Affero General Public License v3.0](LICENSE)。改過之後**架成網站對外提供**，也要以相同授權公開修改後的原始碼
 - **內容**：示範站上的文章、照片、碎念、書評、頭像與 logo © Koimsurai，**保留所有權利**，不在授權範圍內
 - 只是想架一個站的話，照上面「架自己的站」就好，不需要 fork
-- 不接受 PR；有問題或發現 bug 都歡迎開 [issue](https://github.com/Koimsurai/sora-to-ki/issues)
+- 不接受 PR；有問題或發現 bug 都歡迎開 [issue](https://github.com/Koimsurai/sora-to-ki/issues)。詳見 [CONTRIBUTING.md](CONTRIBUTING.md)，包括安全性問題怎麼私下回報
 
 ## 🙏 致謝
 

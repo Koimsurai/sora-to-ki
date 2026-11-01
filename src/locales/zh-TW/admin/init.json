@@ -27,7 +27,12 @@
     "start": "開始",
     "checking": "確認中…",
     "badCode": "設定碼不對。打錯 10 次會換一組新的，記得回去重新看 log。",
-    "envHint": "在 .env.backend 填了 OWNER_EMAIL 的話不會走這一頁：用那個信箱登入就是站長。"
+    "envHint": "在 .env.backend 填了 OWNER_EMAIL 的話不會走這一頁：用那個信箱登入就是站長。",
+    "restoreSummary": "搬家？從舊站的備份還原",
+    "restoreNote": "舊站後台「站台 → 備份與搬家」下載的檔案，或主機上 ./backups 裡的 .sqlite.gz 都可以。先填好上面的設定碼。換上去之後舊站的站長就是這裡的站長；圖片與照片要另外複製 uploads 與 gallery 資料夾。",
+    "restorePick": "選備份檔",
+    "restoreUploading": "上傳中…",
+    "restoreRestarting": "後端正在重開、換上這份備份…"
   },
   "owner": {
     "title": "認領站長",

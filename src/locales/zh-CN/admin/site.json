@@ -149,5 +149,17 @@
     "mailReady": "回复邮件：发得出去（用电子报那组 Resend 设置）。读者在留言表单勾选了「站长回复时发邮件通知我」，你回复时就会发。",
     "mailOff": "回复邮件：发不出去，还没设置 RESEND_API_KEY 与 NEWSLETTER_FROM。设置好之后，读者勾选了通知的留言你一回复就会发邮件。",
     "loadFailed": "读不到通知设置"
+  },
+  "backup": {
+    "head": "备份与迁移",
+    "note": "下载一份现在的数据库（文章、留言、设置、收藏记录都在里面），迁移或保险用。上传的图片与照片不在数据库里，要另外复制主机上的 uploads 与 gallery 目录。主机上每天也会自动备份到 ./backups。",
+    "download": "下载备份",
+    "downloadFailed": "下载不了（{{status}}）",
+    "restore": "从备份还原…",
+    "restarting": "收到了，后端正在重启、换上这份备份，好了会自动刷新…",
+    "confirmTitle": "用这份备份覆盖整个站？",
+    "confirmBody": "“{{name}}”会取代现在所有的文章、留言与设置。现在这份不会删除，会留在主机的数据库旁边（db.sqlite.before-restore-…），要换回来可以找得到。",
+    "confirm": "换上这份",
+    "cancel": "取消"
   }
 }

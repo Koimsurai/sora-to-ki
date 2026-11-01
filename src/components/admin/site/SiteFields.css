@@ -393,3 +393,14 @@
   gap: var(--space-2);
   margin-top: var(--space-2);
 }
+
+/* 備份：兩顆按鈕並排。「還原」是包著 file input 的 label，後台的 label 規則會把字放大，對回按鈕的字級 */
+.sf-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sf-backup-actions label.adm-btn-small {
+  font-size: var(--fs-11);
+}

@@ -27,7 +27,12 @@
     "start": "Start",
     "checking": "Checking…",
     "badCode": "That code isn't right. After 10 wrong tries a new one is issued, so check the log again.",
-    "envHint": "If OWNER_EMAIL is set in .env.backend you won't see this page: whoever signs in with that address is the owner."
+    "envHint": "If OWNER_EMAIL is set in .env.backend you won't see this page: whoever signs in with that address is the owner.",
+    "restoreSummary": "Moving? Restore from your old site",
+    "restoreNote": "Use the file downloaded from the old admin (Site → Backup and moving), or a .sqlite.gz from ./backups on the old host. Fill in the setup code above first. Once it is in, the old site’s owner is the owner here; copy the uploads and gallery folders separately for images and photos.",
+    "restorePick": "Choose backup file",
+    "restoreUploading": "Uploading…",
+    "restoreRestarting": "The backend is restarting with this backup…"
   },
   "owner": {
     "title": "Claim the site",

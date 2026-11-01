@@ -484,3 +484,20 @@
     display: none;
   }
 }
+
+/* 搬家：收起來的一行，打開才看到說明與選檔案的按鈕（放最後：要蓋過上面 .wz-btn 的外距） */
+.wz-restore {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px dotted var(--line);
+}
+
+.wz-restore summary {
+  font-size: var(--fs-13);
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.wz-restore .wz-btn {
+  margin-top: var(--space-3);
+}
