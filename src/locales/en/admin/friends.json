@@ -81,7 +81,7 @@
   "removeApproved": "It will disappear from the Friends page. To keep a record, reject it instead.",
   "removePending": "This application will be deleted entirely. To keep a record, reject it instead.",
   "keep": "Keep",
-  "check": {
+  "checkItem": {
     "label": {
       "reachable": "Site is reachable",
       "https": "HTTPS",

@@ -81,7 +81,7 @@
   "removeApproved": "링크 교환 페이지에서 사라집니다. 기록을 남기려면 거절로 바꾸세요.",
   "removePending": "이 신청이 완전히 삭제됩니다. 기록을 남기려면 거절로 바꾸세요.",
   "keep": "남겨 두기",
-  "check": {
+  "checkItem": {
     "label": {
       "reachable": "사이트 접속됨",
       "https": "HTTPS",

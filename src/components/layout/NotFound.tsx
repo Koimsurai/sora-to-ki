@@ -91,8 +91,14 @@ const NotFound = () => {
     const ctx = cv?.getContext('2d');
     if (!box || !cv || !ctx) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // 解得開才畫：被切斷的下載（部署時容器重啟）讀到了寬高卻是 broken，drawImage 會每一幀丟錯
     const img = new Image();
     img.src = ASTRONAUT_SRC;
+    let ready = false;
+    img.decode().then(
+      () => (ready = true),
+      () => undefined,
+    );
     let raf = 0;
     let last = 0;
     let start = -1;
@@ -122,7 +128,7 @@ const NotFound = () => {
         dt: reduce ? 0 : dt,
         appear: reduce ? 1 : Math.min(1, real / APPEAR_S),
         erase: leaveRef.current === null ? 0 : Math.min(1, (now - leaveRef.current) / ERASE_MS),
-        img,
+        img: ready ? img : null,
       });
     };
     raf = requestAnimationFrame(frame);

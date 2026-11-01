@@ -36,6 +36,53 @@ describe('後台語系檔', () => {
   });
 });
 
+/**
+ * JSON.parse 遇到同一層重複的 key 會默默留後面那個，上面兩條都看不出來：
+ * 朋友頁的「檢查」按鈕就是被後來加的 check 物件蓋掉，畫面上變成一句 i18next 的錯誤。
+ * 逐字走一遍，每一層物件記著看過的 key（null 是陣列）。
+ */
+function duplicateKeys(src: string): string[] {
+  const dups: string[] = [];
+  const stack: (Set<string> | null)[] = [];
+  let expectKey = false;
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (ch === '"') {
+      let end = i + 1;
+      while (src[end] !== '"') end += src[end] === '\\' ? 2 : 1;
+      const seen = stack.at(-1);
+      if (seen && expectKey) {
+        const key = src.slice(i + 1, end);
+        if (seen.has(key)) dups.push(key);
+        seen.add(key);
+        expectKey = false;
+      }
+      i = end;
+    } else if (ch === '{') {
+      stack.push(new Set());
+      expectKey = true;
+    } else if (ch === '[') stack.push(null);
+    else if (ch === '}' || ch === ']') stack.pop();
+    else if (ch === ',') expectKey = stack.at(-1) != null;
+  }
+  return dups;
+}
+
+describe('語系檔沒有重複的 key', () => {
+  it('抓得到同一層的重複、不同層同名不算', () => {
+    expect(duplicateKeys('{"a": "x", "b": {"a": "y"}, "c": ["a", {"a": 1}], "a": {}}')).toEqual(['a']);
+  });
+
+  const files = (dir: string): string[] =>
+    readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? files(`${dir}/${e.name}`) : e.name.endsWith('.json') ? [`${dir}/${e.name}`] : [],
+    );
+
+  it.each(files('src/locales'))('%s', (file) => {
+    expect(duplicateKeys(readFileSync(join(ROOT, file), 'utf8'))).toEqual([]);
+  });
+});
+
 const ADMIN_DIRS = ['src/components/admin', 'src/routes/admin', 'src/components/monaco-editor'];
 /** 不在上面那幾個資料夾、但畫面只有站長看得到的 */
 const ADMIN_FILES = ['src/lib/excerptLinks.ts', 'src/routes/preview/post.tsx'];
