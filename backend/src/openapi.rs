@@ -199,6 +199,8 @@ impl Modify for SecurityAddon {
     components(schemas(
         handlers::site_config::SiteConfig,
         handlers::site_config::SiteConfigUpdate,
+        handlers::signature::Signature,
+        handlers::signature::SignatureStep,
         handlers::sources::SourcesResponse,
         handlers::sources::SourceInfo,
         handlers::sources::SourceField,

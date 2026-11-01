@@ -1294,6 +1294,17 @@ export type SetupSpec = {
 	value?: string,
 };
 
+export type Signature = {
+	/**  SVG 的 viewBox（四個數字） */
+	view_box: string,
+	steps: SignatureStep[],
+};
+
+/**  簽名的一步：一筆，或點一個點 */
+export type SignatureStep = 
+/**  SVG 路徑的 `d` */
+{ kind: "stroke"; d: string } | { kind: "dot"; x: number | null; y: number | null };
+
 /**  `GET /api/site/config` 的回應：資料庫那份加上部署層的網址 */
 export type SiteConfig = {
 	/**  站台網址（SITE_URL），唯讀 */
@@ -1320,6 +1331,8 @@ export type SiteConfig = {
 	page_descriptions: { [key in string]: { [key in string]: string } },
 	/**  發射台（站長在哪裡）；沒設就是台灣 */
 	launch_pad: LaunchPad,
+	/**  文末的手寫簽名；沒有是 null（文末就不顯示） */
+	signature: Signature | null,
 };
 
 /**  即時檢查的結果（沒有背景同步、讀者來的時候才去抓的那幾個：TMDB、Spotify、Steam…） */

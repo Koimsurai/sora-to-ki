@@ -127,5 +127,6 @@
   "source_field_unknown": "这个来源没有「{{field}}」这一项",
   "source_value_too_long": "「{{field}}」太长了，检查一下是不是贴错了",
   "webhook_url_invalid": "Webhook 地址要以 http:// 或 https:// 开头",
-  "webhook_url_empty": "先填 webhook 地址"
+  "webhook_url_empty": "先填 webhook 地址",
+  "signature_invalid": "签名不能用：要有 viewBox，笔画只能是 SVG 路径"
 }

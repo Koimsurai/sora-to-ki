@@ -58,6 +58,13 @@
     "locate": "用目前的位置",
     "locating": "定位中…",
     "locateFailed": "拿不到位置（瀏覽器沒給權限，或這個網址不是 https）。手動填經緯度也一樣",
+    "signature": "文末簽名",
+    "signatureNone": "沒有簽名，文章結尾不會出現。",
+    "signatureUpload": "上傳 SVG",
+    "signatureReplace": "換一個",
+    "signatureRemove": "拿掉",
+    "signatureHint": "每篇文章結尾，一顆小光點照筆順把它寫出來。檔案裡的 <path> 是一筆、<circle> 是一個點，照檔案裡的順序寫；用單線描出來的（不是填色的外框）寫起來最像手寫。",
+    "signatureUnusable": "這個檔案讀不出筆畫：要有 viewBox，裡面至少一個 <path>。",
     "errors": {
       "nameRequired": "站名不能是空的",
       "nameTooLong": "站名最多 {{max}} 個字",

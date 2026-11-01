@@ -34,6 +34,7 @@ pub mod report_tunnel;
 pub mod rss;
 pub mod search_console;
 pub mod series;
+pub mod signature;
 pub mod simkl;
 pub mod site;
 pub mod site_config;

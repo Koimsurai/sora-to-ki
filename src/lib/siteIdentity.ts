@@ -22,6 +22,7 @@ let current: SiteConfig = {
   theme_switch: true,
   page_descriptions: {},
   launch_pad: { lat: 23.7, lon: 121 },
+  signature: null,
 };
 
 /** root 的 beforeLoad 用：後端回來的設定。站名是空的（後端連不上時的退路）就不採用 */

@@ -36,6 +36,7 @@ import '@/components/common/article-shell.css';
 import './BlogPost.css';
 import './ArticleFrame.css';
 import SignatureSVG from '@/components/common/SignatureSVG';
+import { useSiteConfig } from '@/data/siteConfig';
 import { LinkCard } from '@/components/common/LinkCard';
 import { LinkHoverPreview } from '@/components/common/LinkHoverPreview';
 import { Modal, ModalTitle } from '@/components/common/Modal';
@@ -1047,6 +1048,8 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
   const tagLabel = useTagLabel();
   const categoryLabel = useCategoryLabel();
   const navLocale = useLocale();
+  /** 站長的手寫簽名（站台設定）；沒有就不顯示 */
+  const { signature } = useSiteConfig();
   const [copied, setCopied] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -1521,7 +1524,7 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
         </article>
         {/* 簽名與文末那一整塊在畫面外很遠：內文分批掛的時候等內文掛完才掛（簽名要量 SVG 路徑長度、
             留言與回應各自要排版），不跟內文的第一批擠在轉場飛行的同一幀 */}
-        {bodyDone && <SignatureSVG className="blog-signature" />}
+        {bodyDone && signature && <SignatureSVG signature={signature} className="blog-signature" />}
 
         {/* 文末：原本右邊的五顆浮動圓鈕收成一行字，接著是反應、系列、上下篇、同分類、留言 */}
         {bodyDone && (

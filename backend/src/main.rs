@@ -132,6 +132,10 @@ async fn run() -> anyhow::Result<()> {
     handlers::site_config::load_or_seed(&pool)
         .await
         .map_err(|e| anyhow::anyhow!("couldn't load site settings: {e:?}"))?;
+    // 已經有設定、還沒有簽名的站：SITE_SIGNATURE_FILE 有給就讀一次（見 handlers/signature.rs）
+    handlers::site_config::seed_signature(&pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("couldn't seed the signature: {e:?}"))?;
     // 收藏來源的金鑰與同步開關（後台填的）；要在下面的同步 worker 起來之前
     koimsurai_web_backend::integrations::load(&pool).await?;
 
