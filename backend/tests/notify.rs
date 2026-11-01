@@ -272,7 +272,11 @@ async fn 後台設定_讀寫與送測試() {
 
     let (status, v) = request(&app, "GET", "/api/admin/notify", None, Some(&token)).await;
     assert_eq!(status.as_u16(), 200);
-    assert_eq!(v["settings"]["webhook_url"], "", "沒設過是空的");
+    assert_eq!(
+        v["settings"],
+        json!({ "webhook_url": "", "on_comment": true, "on_friend": true }),
+        "沒設過：空網址、兩類都開"
+    );
 
     let (status, v) = request(
         &app,

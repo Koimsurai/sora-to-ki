@@ -37,7 +37,7 @@ const EXCERPT_MAX: usize = 300;
 // ── 設定 ──────────────────────────────────────────────────────────────
 
 /// 後台的通知設定
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub struct NotifySettings {
     /// 空字串是沒設
     #[serde(default)]
@@ -52,6 +52,13 @@ pub struct NotifySettings {
 
 const fn yes() -> bool {
     true
+}
+
+/// 還沒存過時：沒有網址，兩類都開著（跟 serde 缺欄位時一樣，derive 的 Default 會給 false）
+impl Default for NotifySettings {
+    fn default() -> Self {
+        Self { webhook_url: String::new(), on_comment: true, on_friend: true }
+    }
 }
 
 async fn load(state: &AppState) -> NotifySettings {
@@ -722,6 +729,11 @@ mod tests {
     fn 設定缺欄位時兩類通知預設開() {
         let s: NotifySettings = serde_json::from_str(r#"{"webhook_url":"https://x.example"}"#).unwrap();
         assert!(s.on_comment && s.on_friend);
+        assert_eq!(
+            NotifySettings::default(),
+            serde_json::from_str::<NotifySettings>("{}").unwrap(),
+            "沒存過跟缺欄位一樣"
+        );
         let off: NotifySettings = serde_json::from_str(r#"{"on_friend":false}"#).unwrap();
         assert!(off.on_comment && !off.on_friend && off.webhook_url.is_empty());
     }
