@@ -27,7 +27,12 @@
     "start": "开始",
     "checking": "确认中…",
     "badCode": "设置码不对。输错 10 次会换一组新的，记得回去重新看 log。",
-    "envHint": "在 .env.backend 填了 OWNER_EMAIL 的话不会走这一页：用那个邮箱登录就是站长。"
+    "envHint": "在 .env.backend 填了 OWNER_EMAIL 的话不会走这一页：用那个邮箱登录就是站长。",
+    "restoreSummary": "迁移？从旧站的备份还原",
+    "restoreNote": "旧站后台「站点 → 备份与迁移」下载的文件，或主机上 ./backups 里的 .sqlite.gz 都可以。先填好上面的设置码。换上去之后旧站的站长就是这里的站长；图片与照片要另外复制 uploads 与 gallery 目录。",
+    "restorePick": "选择备份文件",
+    "restoreUploading": "上传中…",
+    "restoreRestarting": "后端正在重启、换上这份备份…"
   },
   "owner": {
     "title": "认领站长",

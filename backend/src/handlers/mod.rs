@@ -1,6 +1,7 @@
 pub mod admin;
 pub mod analytics;
 pub mod auth;
+pub mod backup;
 pub mod bahamut;
 pub mod books;
 pub mod categories;

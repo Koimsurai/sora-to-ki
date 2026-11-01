@@ -146,5 +146,17 @@
     "mailReady": "Reply emails: ready (using the newsletter's Resend settings). When a reader ticks “Email me when the author replies”, your reply is emailed to them.",
     "mailOff": "Reply emails: off, RESEND_API_KEY and NEWSLETTER_FROM aren't set. Once they are, readers who ticked the box get an email when you reply.",
     "loadFailed": "Couldn't load notification settings"
+  },
+  "backup": {
+    "head": "Backup and moving",
+    "note": "Download a copy of the current database (posts, comments, settings and collection history are all in it), for moving or safekeeping. Uploaded images and photos aren't in the database; copy the uploads and gallery folders on the host separately. The host also backs up to ./backups every day.",
+    "download": "Download backup",
+    "downloadFailed": "Couldn't download ({{status}})",
+    "restore": "Restore from backup…",
+    "restarting": "Got it. The backend is restarting with this backup; the page will reload when it is back…",
+    "confirmTitle": "Replace the whole site with this backup?",
+    "confirmBody": "\"{{name}}\" will replace every post, comment and setting. The current database is not deleted: it stays next to the database on the host (db.sqlite.before-restore-…) if you need it back.",
+    "confirm": "Use this backup",
+    "cancel": "Cancel"
   }
 }
