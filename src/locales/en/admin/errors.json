@@ -122,5 +122,8 @@
     "milestones": "Milestones",
     "milestone": "Milestone",
     "excerptLinks": "Excerpt links"
-  }
+  },
+  "source_unknown": "There is no source called {{source}}",
+  "source_field_unknown": "This source has no field called {{field}}",
+  "source_value_too_long": "{{field}} is too long; check what was pasted"
 }

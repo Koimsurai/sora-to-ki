@@ -122,5 +122,8 @@
     "milestones": "マイルストーン",
     "milestone": "マイルストーン",
     "excerptLinks": "要約と段落の対応"
-  }
+  },
+  "source_unknown": "「{{source}}」という取得元はありません",
+  "source_field_unknown": "この取得元に「{{field}}」という項目はありません",
+  "source_value_too_long": "「{{field}}」が長すぎます。貼り間違いがないか確認してください"
 }

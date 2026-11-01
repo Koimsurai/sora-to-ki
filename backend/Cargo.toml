@@ -120,6 +120,9 @@ wiremock = "0.6"
 # property testing：JS 相容層（util.rs / og.rs）的不變量——手挑案例只能覆蓋想得到的，
 # 這些函式要對齊 JS 的 UTF-16 語意，CJK/emoji/surrogate 的邊界靠隨機輸入才掃得到。
 proptest = "1"
+# 時間可以暫停、快轉（`#[tokio::test(start_paused = true)]`）：同步 worker 的開關要驗「關著的一小時內
+# 一輪都不跑」，真的等一小時不可能。正式建置的 tokio 不帶這個 feature
+tokio = { version = "1", features = ["test-util"] }
 
 # Lint 規則在 workspace root 的 Cargo.toml，單一來源。
 [lints]

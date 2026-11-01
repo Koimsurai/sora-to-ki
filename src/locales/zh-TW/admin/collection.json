@@ -3,7 +3,8 @@
   "tab": {
     "watch": "在看",
     "listen": "在聽",
-    "fav": "最愛"
+    "fav": "最愛",
+    "sources": "來源"
   },
   "kind": {
     "anime": "動畫",
@@ -17,7 +18,111 @@
   "shownNow": "〈{{title}}〉回到前台了",
   "favRemoved": "〈{{title}}〉拿出最愛了",
   "favAdded": "〈{{title}}〉放進最愛了",
-  "sources": "資料來源",
+  "sources": {
+    "label": "資料來源",
+    "intro": "收藏頁的資料從哪裡來。金鑰存在站上的資料庫，填過的不會再顯示出來；.env.backend 裡有寫的照樣有效，這裡填的優先。",
+    "loading": "讀取來源",
+    "loadFailed": "讀不到來源的設定",
+    "group": {
+      "watch": "在看",
+      "read": "在讀",
+      "listen": "在聽",
+      "play": "在玩、在寫"
+    },
+    "region": {
+      "tw": "台灣",
+      "global": "全球"
+    },
+    "status": {
+      "off": "沒設定",
+      "syncOff": "同步關著",
+      "never": "還沒同步過",
+      "synced": "{{when}} 同步 · 新增 {{count}} 筆",
+      "failed": "{{when}} 失敗：{{error}}",
+      "connected": "已連上",
+      "connectedCount": "已連上 · 最近 {{count}} 首",
+      "checkFailed": "連不上：{{error}}"
+    },
+    "sync": "同步",
+    "settings": "設定",
+    "collapse": "收起",
+    "save": "儲存",
+    "syncNow": "立刻同步",
+    "syncing": "同步中…",
+    "clear": "清除",
+    "optional": "選填",
+    "redirect": "Redirect URI",
+    "connectSpotify": "連結 Spotify 帳號",
+    "placeholder": {
+      "admin": "已設定，填新的會蓋過去",
+      "adminHint": "已設定 · 末四碼 {{hint}}，填新的會蓋過去",
+      "env": "用的是 .env.backend 的設定，填了會蓋過去"
+    },
+    "saved": "{{name}} 存好了",
+    "cleared": "{{name}} 清掉了後台填的值",
+    "syncTurnedOn": "{{name}} 開始同步",
+    "syncTurnedOff": "{{name}} 停止同步",
+    "syncDone": "{{name}} 同步完成，新增 {{count}} 筆",
+    "syncFailed": "{{name}} 同步失敗：{{error}}",
+    "failed": "沒有成功：{{error}}",
+    "field": {
+      "TMDB_API_TOKEN": "API Read Access Token",
+      "SIMKL_CLIENT_ID": "Client ID",
+      "SIMKL_ACCESS_TOKEN": "Access Token",
+      "BAHAMUT_UID": "帳號",
+      "BAHAMUT_PASSWORD": "密碼",
+      "GOOGLE_BOOKS_API_KEY": "API key",
+      "SPOTIFY_CLIENT_ID": "Client ID",
+      "SPOTIFY_CLIENT_SECRET": "Client Secret",
+      "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
+      "STEAM_API_KEY": "Web API key",
+      "STEAM_ID": "Steam ID",
+      "WAKATIME_API_KEY": "API key"
+    },
+    "src": {
+      "tmdb": {
+        "name": "TMDB",
+        "what": "片名與海報（在看一定要有）",
+        "help": "到 themoviedb.org 登入 → 設定 → API 申請，複製「API Read Access Token」那一長串（不是比較短的 API Key）。"
+      },
+      "simkl": {
+        "name": "Simkl",
+        "what": "觀看紀錄：電影、影集、動畫",
+        "help": "到 simkl.com/settings/developer 新增一個 app 拿到 Client ID；Access Token 照 Simkl API 文件的 PIN 流程取得。"
+      },
+      "bahamut": {
+        "name": "動畫瘋",
+        "what": "巴哈姆特動畫瘋的觀看紀錄",
+        "help": "巴哈姆特的帳號與密碼。帳號跟家人共用的話會互相擠掉登入，被擠掉時這裡會自動重新登入。"
+      },
+      "googleBooks": {
+        "name": "Google Books",
+        "what": "用 ISBN 查書名與封面",
+        "help": "不填也能查（改用 Open Library）。要填的話到 Google Cloud Console 啟用 Books API，建一把 API key，查詢額度會寬很多。",
+        "unset": "沒填，改用 Open Library"
+      },
+      "ncl": {
+        "name": "國家圖書館新書書目",
+        "what": "台灣出版的書，用 ISBN 查得到中文書名",
+        "help": "不用金鑰。打開後每天下載一次國家圖書館的新書書目。"
+      },
+      "spotify": {
+        "name": "Spotify",
+        "what": "最近播放、常聽的曲風",
+        "help": "到 developer.spotify.com 建一個 app，Redirect URI 填下面那一行。Client ID 與 Secret 存好之後按「連結 Spotify 帳號」，把授權完頁面上的 refresh token 貼回來存檔。"
+      },
+      "steam": {
+        "name": "Steam",
+        "what": "最近在玩的遊戲",
+        "help": "到 steamcommunity.com/dev/apikey 申請 Web API key；Steam ID 是 17 位數字。個人檔案與遊戲詳細資料要設成公開。"
+      },
+      "wakatime": {
+        "name": "WakaTime",
+        "what": "寫程式的時數與語言",
+        "help": "到 wakatime.com/settings/api-key 複製 API key。"
+      }
+    }
+  },
   "loginDaysLeft": "登入還有 {{days}} 天",
   "cookieExpired": "cookie 失效",
   "spotifyFailed": "抓不到",

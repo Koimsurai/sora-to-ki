@@ -33,6 +33,7 @@ pub mod series;
 pub mod simkl;
 pub mod site;
 pub mod site_config;
+pub mod sources;
 pub mod spotify;
 pub mod stats;
 pub mod tags;

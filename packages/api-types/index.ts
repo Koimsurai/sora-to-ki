@@ -1320,11 +1320,57 @@ export type SiteConfig = {
 	launch_pad: LaunchPad,
 };
 
+/**  即時檢查的結果（沒有背景同步、讀者來的時候才去抓的那幾個：TMDB、Spotify、Steam…） */
+export type SourceCheck = {
+	ok: boolean,
+	/**  有的話是抓到幾筆（Spotify 最近播放） */
+	count?: number | null,
+	/**  失敗的理由（英文） */
+	error?: string | null,
+};
+
 /**  一個來源與從它進站時先看的那幾頁 */
 export type SourceEntries = {
 	source: string,
 	visitors: number,
 	entries: AnalyticsRow[],
+};
+
+/**  一格設定的狀態 */
+export type SourceField = {
+	/**  環境變數名，也是寫入時的 key */
+	env: string,
+	secret: boolean,
+	optional: boolean,
+	/**  值從哪來：`admin`（後台填的）、`env`（環境變數）；沒填是 null */
+	from?: string | null,
+	/**  一般欄位的末四碼（密碼與 token 不給） */
+	hint?: string | null,
+};
+
+export type SourceInfo = {
+	key: string,
+	fields: SourceField[],
+	/**  必填的都填了 */
+	configured: boolean,
+	/**  有背景同步的話，開關現在的狀態 */
+	sync?: boolean | null,
+	/**  最近一次同步的結果 */
+	last?: SyncRecord | null,
+	/**  沒有背景同步的來源：這次打開頁面時的即時檢查 */
+	check?: SourceCheck | null,
+};
+
+/**  改一個來源：`values` 裡的值是新的金鑰，`null` 是清掉（退回環境變數）；沒帶的欄位不動 */
+export type SourceUpdate = {
+	values?: { [key in string]: string | null },
+	sync?: boolean | null,
+};
+
+export type SourcesResponse = {
+	sources: SourceInfo[],
+	/**  Spotify app 要填的 Redirect URI */
+	spotify_redirect: string,
 };
 
 export type SpotifyAlbum = {
@@ -1465,6 +1511,17 @@ export type SubscribersResponse = {
 	message: string,
 	subscribers: SubscriberRow[],
 	pagination: Pagination,
+};
+
+/**  某個來源最近一次同步的結果，存在 `sync_state` 的 `source:<key>` */
+export type SyncRecord = {
+	/**  UTC，`YYYY-MM-DD HH:MM:SS` */
+	at: string,
+	ok: boolean,
+	/**  這一輪新寫進來幾筆 */
+	count?: number | null,
+	/**  失敗的理由（英文，給站長看的診斷） */
+	error?: string | null,
 };
 
 /**  `POST /api/admin/tags` 的 201 回應。 */

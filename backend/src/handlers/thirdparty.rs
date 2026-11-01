@@ -665,11 +665,11 @@ fn github_event_from(ev: &Value) -> Option<GithubEvent> {
 
 use base64::Engine;
 
-fn wakatime_key() -> Option<String> {
-    std::env::var("WAKATIME_API_KEY").ok().filter(|s| !s.is_empty())
+pub(crate) fn wakatime_key() -> Option<String> {
+    crate::integrations::var("WAKATIME_API_KEY")
 }
 
-fn waka_auth(key: &str) -> String {
+pub(crate) fn waka_auth(key: &str) -> String {
     format!("Basic {}", base64::engine::general_purpose::STANDARD.encode(key))
 }
 
@@ -887,9 +887,9 @@ pub async fn wakatime_projects(State(state): State<AppState>) -> Response {
 
 // ── Steam（純代理 4 支；/steam/profile 有 SWR 快取留 proxy）────────────────
 
-fn steam_env() -> Option<(String, String)> {
-    let key = std::env::var("STEAM_API_KEY").ok().filter(|s| !s.is_empty())?;
-    let id = std::env::var("STEAM_ID").ok().filter(|s| !s.is_empty())?;
+pub(crate) fn steam_env() -> Option<(String, String)> {
+    let key = crate::integrations::var("STEAM_API_KEY")?;
+    let id = crate::integrations::var("STEAM_ID")?;
     Some((key, id))
 }
 
@@ -1104,7 +1104,7 @@ fn s_or_empty(v: Option<&Value>) -> String {
 /// 後台看得到的 warning。
 async fn search_google_books(http: &reqwest::Client, base: &str, q: &str) -> Result<Vec<Value>, String> {
     let mut url = format!("{base}/books/v1/volumes?q={}&maxResults=10", encode_uri_component(q));
-    if let Some(key) = std::env::var("GOOGLE_BOOKS_API_KEY").ok().filter(|s| !s.is_empty()) {
+    if let Some(key) = crate::integrations::var("GOOGLE_BOOKS_API_KEY") {
         url.push_str("&key=");
         url.push_str(&encode_uri_component(&key));
     }

@@ -236,13 +236,26 @@ fn current_ym() -> u32 {
     u32::try_from(now.year()).unwrap_or(2026) * 100 + now.month()
 }
 
-/// 啟動匯入 worker（`ENABLE_TW_ISBN_SYNC=1` 才啟動）：啟動後等 90 秒先跑一輪，
+/// 跑一輪並記下結果（worker 與後台的「立刻同步」共用）。有月份沒抓到但其他月份有進來，
+/// 仍算成功（缺的下一輪會補）；一筆都沒進來而且有失敗才算失敗
+pub async fn sync_and_record(state: &AppState) -> Result<u32, String> {
+    let (n, failed) = sync_once(state, current_ym()).await;
+    tracing::info!("[tw-isbn] sync done: {n} rows imported, {failed} months failed");
+    let result = if n == 0 && failed > 0 {
+        Err(format!("Couldn't download {failed} month(s) of the National Central Library list"))
+    } else {
+        Ok(u32::try_from(n).unwrap_or(u32::MAX))
+    };
+    crate::integrations::record(&state.pool, "ncl", result.clone()).await;
+    result
+}
+
+/// 啟動匯入 worker（`ENABLE_TW_ISBN_SYNC` 開著才跑，後台可以隨時開關）：啟動後等 90 秒先跑一輪，
 /// 之後每天一輪（`TW_ISBN_SYNC_PERIOD_SECS` 可調）。
-pub fn spawn_sync(state: AppState) -> Option<tokio::task::JoinHandle<()>> {
+pub fn spawn_sync(state: AppState) -> tokio::task::JoinHandle<()> {
     let period = crate::worker::env_secs("TW_ISBN_SYNC_PERIOD_SECS", 24 * 3600);
     crate::worker::spawn_periodic(state, "tw-isbn", "ENABLE_TW_ISBN_SYNC", 90, period, |s| async move {
-        let (n, failed) = sync_once(&s, current_ym()).await;
-        tracing::info!("[tw-isbn] sync done: {n} rows imported, {failed} months failed");
+        let _ = sync_and_record(&s).await;
     })
 }
 

@@ -51,12 +51,13 @@ fn user_agent() -> String {
 /// 游標的 key。值是 /sync/activities 的 `all` 欄位，原樣存、原樣送回去當 date_from。
 const CURSOR_KEY: &str = "simkl.activities_all";
 
+// 金鑰：後台（收藏 → 來源）填的優先，沒有的看環境變數（見 integrations.rs）
 fn client_id() -> String {
-    std::env::var("SIMKL_CLIENT_ID").unwrap_or_default()
+    crate::integrations::var("SIMKL_CLIENT_ID").unwrap_or_default()
 }
 
 fn access_token() -> String {
-    std::env::var("SIMKL_ACCESS_TOKEN").unwrap_or_default()
+    crate::integrations::var("SIMKL_ACCESS_TOKEN").unwrap_or_default()
 }
 
 /// 官方要求每個請求都帶 client_id / app-name / app-version 這三個 query 參數。
@@ -237,28 +238,29 @@ async fn upsert_show_episodes(state: &AppState, item: &Value) -> u32 {
 }
 
 /// 跑一次同步。回傳 (新增電影數, 新增集數)；沒有變動時回 (0, 0) 且不打 all-items。
-pub async fn sync_once(state: &AppState) -> (u32, u32) {
+/// 失敗的理由（英文）會顯示在後台的來源列表上。
+pub async fn sync_once(state: &AppState) -> Result<(u32, u32), &'static str> {
     if client_id().is_empty() || access_token().is_empty() {
         tracing::warn!("[Simkl] 缺 SIMKL_CLIENT_ID / SIMKL_ACCESS_TOKEN — 跳過");
-        return (0, 0);
+        return Err("Client ID or access token is missing");
     }
 
     // 步驟 1：先問 activities（官方規則的第一步）
     let Some(act) = simkl_get(state, "/sync/activities").await else {
         tracing::warn!("[Simkl] /sync/activities 失敗 — 跳過這次");
-        return (0, 0);
+        return Err("Simkl didn't answer /sync/activities (check the token)");
     };
     let Some(latest) = act.get("all").and_then(|v| v.as_str()) else {
         // 帳號還沒有任何紀錄時 `all` 是 null，這是正常狀態不是錯誤
         tracing::info!("[Simkl] 帳號目前沒有任何觀看紀錄");
-        return (0, 0);
+        return Ok((0, 0));
     };
 
     // 步驟 2：比對游標。相同就結束——大部分的輪詢都會停在這裡。
     let cursor = load_cursor(state).await;
     if cursor.as_deref() == Some(latest) {
         tracing::debug!("[Simkl] 沒有變動（游標 {latest}）");
-        return (0, 0);
+        return Ok((0, 0));
     }
 
     // 步驟 3：有變才拉。有游標就走增量；沒有就是首次同步（Phase 1）。
@@ -272,7 +274,7 @@ pub async fn sync_once(state: &AppState) -> (u32, u32) {
     let Some(data) = simkl_get(state, &path).await else {
         // 沒拿到就不要動游標，下次重試同一段
         tracing::warn!("[Simkl] all-items 失敗 — 保留游標下次重試");
-        return (0, 0);
+        return Err("Simkl didn't answer /sync/all-items; will retry next round");
     };
 
     let mut films = 0u32;
@@ -292,7 +294,14 @@ pub async fn sync_once(state: &AppState) -> (u32, u32) {
     // 只有真的處理完才推進游標——中途失敗時寧可下次重拉，也不要漏資料
     save_cursor(state, latest).await;
     tracing::info!("[Simkl] 同步完成：+{films} 部電影、+{episodes} 集（游標 → {latest}）");
-    (films, episodes)
+    Ok((films, episodes))
+}
+
+/// 跑一輪並記下結果（worker 與後台的「立刻同步」共用）
+pub async fn sync_and_record(state: &AppState) -> Result<u32, String> {
+    let result = sync_once(state).await.map(|(films, episodes)| films + episodes).map_err(str::to_string);
+    crate::integrations::record(&state.pool, "simkl", result.clone()).await;
+    result
 }
 
 /// 輪詢週期（秒），預設 6 小時。
@@ -309,16 +318,16 @@ pub(crate) fn delay_secs(raw: Option<&str>) -> u64 {
     crate::worker::secs_or(raw, 45)
 }
 
-/// 啟動 Simkl 同步 worker（`ENABLE_SIMKL_SYNC=1` 才啟動）；沒啟用時回 `None`。
+/// 啟動 Simkl 同步 worker（`ENABLE_SIMKL_SYNC` 開著才跑，後台可以隨時開關）。
 ///
 /// 週期預設 6 小時，但每次只會打一個很輕的 /sync/activities；只有時間戳變了才拉資料。
 /// 這是官方 "Never run unconditional background polling timers" 那條規則的做法——
 /// 被禁止的是無條件全量輪詢，不是定期檢查有沒有變動。
-pub fn spawn_sync(state: AppState) -> Option<tokio::task::JoinHandle<()>> {
+pub fn spawn_sync(state: AppState) -> tokio::task::JoinHandle<()> {
     let delay = delay_secs(std::env::var("SIMKL_SYNC_DELAY_SECS").ok().as_deref());
     let period = period_secs(std::env::var("SIMKL_SYNC_PERIOD_SECS").ok().as_deref());
     crate::worker::spawn_periodic(state, "Simkl", "ENABLE_SIMKL_SYNC", delay, period, |s| async move {
-        let _ = sync_once(&s).await;
+        let _ = sync_and_record(&s).await;
     })
 }
 

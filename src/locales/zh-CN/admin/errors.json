@@ -122,5 +122,8 @@
     "milestones": "里程碑",
     "milestone": "里程碑",
     "excerptLinks": "摘要对应段落"
-  }
+  },
+  "source_unknown": "没有「{{source}}」这个来源",
+  "source_field_unknown": "这个来源没有「{{field}}」这一项",
+  "source_value_too_long": "「{{field}}」太长了，检查一下是不是贴错了"
 }

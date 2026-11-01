@@ -21,6 +21,7 @@ pub mod error;
 pub mod geo;
 pub mod handlers;
 pub mod identity;
+pub mod integrations;
 pub mod net_guard;
 pub mod openapi;
 pub mod revalidate;

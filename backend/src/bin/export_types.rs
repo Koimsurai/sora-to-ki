@@ -51,6 +51,9 @@ use koimsurai_web_backend::handlers::series::{
 };
 use koimsurai_web_backend::handlers::site::CountResponse;
 use koimsurai_web_backend::handlers::site_config::SiteConfig;
+use koimsurai_web_backend::handlers::sources::{
+    SourceCheck, SourceField, SourceInfo, SourceUpdate, SourcesResponse,
+};
 use koimsurai_web_backend::handlers::spotify::{
     AudioFeature, AudioFeaturesResponse, NowPlayingResponse, RecentPlayItem, RecentlyPlayedResponse,
     SpotifyAlbum, SpotifyArtist, SpotifyExternalUrls, SpotifyImage, SpotifyTrack, TopGenre,
@@ -76,6 +79,7 @@ use koimsurai_web_backend::handlers::watch::{
     TmdbSearchResult, TvResponse, TvRow, WatchFavoriteRow, WatchFavoritesResponse, WatchNowResponse,
     WatchStatsResponse,
 };
+use koimsurai_web_backend::integrations::SyncRecord;
 use specta_typescript::Typescript;
 
 fn main() {
@@ -137,6 +141,12 @@ fn main() {
         .register::<PollResponse>()
         .register::<CountResponse>()
         .register::<SiteConfig>()
+        .register::<SourcesResponse>()
+        .register::<SourceInfo>()
+        .register::<SourceField>()
+        .register::<SourceCheck>()
+        .register::<SourceUpdate>()
+        .register::<SyncRecord>()
         .register::<Ground>()
         .register::<InitStatus>()
         .register::<AboutContent>()

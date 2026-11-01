@@ -3,7 +3,8 @@
   "tab": {
     "watch": "보는 중",
     "listen": "듣는 중",
-    "fav": "즐겨찾기"
+    "fav": "즐겨찾기",
+    "sources": "출처"
   },
   "kind": {
     "anime": "애니메이션",
@@ -17,7 +18,111 @@
   "shownNow": "〈{{title}}〉이(가) 사이트에 다시 표시됩니다",
   "favRemoved": "〈{{title}}〉을(를) 즐겨찾기에서 뺐습니다",
   "favAdded": "〈{{title}}〉을(를) 즐겨찾기에 넣었습니다",
-  "sources": "데이터 출처",
+  "sources": {
+    "label": "데이터 출처",
+    "intro": "컬렉션 페이지의 데이터를 어디서 가져올지. 키는 사이트 데이터베이스에 저장되고, 한 번 저장하면 다시 보여 주지 않아요. .env.backend에 적힌 값도 그대로 쓰이고, 여기서 넣은 값이 우선이에요.",
+    "loading": "출처 불러오는 중",
+    "loadFailed": "출처 설정을 불러오지 못했어요",
+    "group": {
+      "watch": "보는 중",
+      "read": "읽는 중",
+      "listen": "듣는 중",
+      "play": "하는 중 · 쓰는 중"
+    },
+    "region": {
+      "tw": "대만",
+      "global": "전 세계"
+    },
+    "status": {
+      "off": "설정 안 됨",
+      "syncOff": "동기화 꺼짐",
+      "never": "아직 동기화 안 함",
+      "synced": "{{when}} 동기화 · 새로 {{count}}개",
+      "failed": "{{when}} 실패: {{error}}",
+      "connected": "연결됨",
+      "connectedCount": "연결됨 · 최근 {{count}}곡",
+      "checkFailed": "연결 안 됨: {{error}}"
+    },
+    "sync": "동기화",
+    "settings": "설정",
+    "collapse": "닫기",
+    "save": "저장",
+    "syncNow": "지금 동기화",
+    "syncing": "동기화 중…",
+    "clear": "지우기",
+    "optional": "선택",
+    "redirect": "Redirect URI",
+    "connectSpotify": "Spotify 계정 연결",
+    "placeholder": {
+      "admin": "저장됨. 새 값을 넣으면 덮어써요",
+      "adminHint": "저장됨 · 끝자리 {{hint}}. 새 값을 넣으면 덮어써요",
+      "env": ".env.backend 값을 쓰는 중. 넣으면 덮어써요"
+    },
+    "saved": "{{name}} 저장했어요",
+    "cleared": "{{name}}에 여기서 넣은 값을 지웠어요",
+    "syncTurnedOn": "{{name}} 동기화를 켰어요",
+    "syncTurnedOff": "{{name}} 동기화를 껐어요",
+    "syncDone": "{{name}} 동기화 완료, 새로 {{count}}개",
+    "syncFailed": "{{name}} 동기화 실패: {{error}}",
+    "failed": "안 됐어요: {{error}}",
+    "field": {
+      "TMDB_API_TOKEN": "API Read Access Token",
+      "SIMKL_CLIENT_ID": "Client ID",
+      "SIMKL_ACCESS_TOKEN": "Access Token",
+      "BAHAMUT_UID": "계정",
+      "BAHAMUT_PASSWORD": "비밀번호",
+      "GOOGLE_BOOKS_API_KEY": "API key",
+      "SPOTIFY_CLIENT_ID": "Client ID",
+      "SPOTIFY_CLIENT_SECRET": "Client Secret",
+      "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
+      "STEAM_API_KEY": "Web API key",
+      "STEAM_ID": "Steam ID",
+      "WAKATIME_API_KEY": "API key"
+    },
+    "src": {
+      "tmdb": {
+        "name": "TMDB",
+        "what": "작품명과 포스터 (「보는 중」에 꼭 필요)",
+        "help": "themoviedb.org에 로그인 → 설정 → API에서 신청하고, 긴 「API Read Access Token」을 복사하세요 (짧은 API Key가 아니에요)."
+      },
+      "simkl": {
+        "name": "Simkl",
+        "what": "시청 기록: 영화, 드라마, 애니메이션",
+        "help": "simkl.com/settings/developer에서 앱을 만들어 Client ID를 받고, Access Token은 Simkl API 문서의 PIN 절차로 받으세요."
+      },
+      "bahamut": {
+        "name": "애니메 광 (바하무트)",
+        "what": "바하무트 애니메 광(대만)의 시청 기록",
+        "help": "바하무트 계정과 비밀번호. 가족과 계정을 같이 쓰면 서로 로그아웃시키는데, 그럴 때 여기서 자동으로 다시 로그인해요."
+      },
+      "googleBooks": {
+        "name": "Google Books",
+        "what": "ISBN으로 책 제목과 표지 찾기",
+        "help": "넣지 않아도 찾을 수 있어요 (Open Library 사용). 넣으려면 Google Cloud Console에서 Books API를 켜고 API key를 만드세요. 한도가 훨씬 넉넉해져요.",
+        "unset": "비어 있음, Open Library 사용"
+      },
+      "ncl": {
+        "name": "대만 국가도서관 신간 서지",
+        "what": "대만에서 나온 책을 ISBN으로, 중국어 제목까지",
+        "help": "키가 필요 없어요. 켜 두면 하루에 한 번 신간 서지를 내려받아요."
+      },
+      "spotify": {
+        "name": "Spotify",
+        "what": "최근 재생, 자주 듣는 장르",
+        "help": "developer.spotify.com에서 앱을 만들고 Redirect URI에 아래 값을 넣으세요. Client ID와 Secret을 저장한 뒤 「Spotify 계정 연결」을 누르고, 승인 후 페이지에 나오는 refresh token을 붙여 넣어 저장하세요."
+      },
+      "steam": {
+        "name": "Steam",
+        "what": "최근에 하는 게임",
+        "help": "steamcommunity.com/dev/apikey에서 Web API key를 받으세요. Steam ID는 17자리 숫자예요. 프로필과 게임 세부 정보를 공개로 설정해야 해요."
+      },
+      "wakatime": {
+        "name": "WakaTime",
+        "what": "코딩 시간과 언어",
+        "help": "wakatime.com/settings/api-key에서 API key를 복사하세요."
+      }
+    }
+  },
   "loginDaysLeft": "로그인 {{days}}일 남음",
   "cookieExpired": "cookie 만료",
   "spotifyFailed": "가져올 수 없음",

@@ -324,8 +324,8 @@ const LOGIN_VCODE: &str = "9487";
 const LOGIN_COOLDOWN_MS: i64 = 60 * 60 * 1000;
 
 fn login_credentials() -> Option<(String, String)> {
-    let uid = std::env::var("BAHAMUT_UID").ok().filter(|s| !s.is_empty())?;
-    let pwd = std::env::var("BAHAMUT_PASSWORD").ok().filter(|s| !s.is_empty())?;
+    let uid = crate::integrations::var("BAHAMUT_UID")?;
+    let pwd = crate::integrations::var("BAHAMUT_PASSWORD")?;
     Some((uid, pwd))
 }
 
@@ -570,11 +570,30 @@ pub async fn sync_bahamut_history(state: &AppState) -> Value {
     json!({ "ok": true, "totalEntries": total, "newEntries": new_entries, "coversFetched": covers_fetched })
 }
 
-/// 啟動 bahamut 同步 worker（`ENABLE_BAHAMUT_SYNC=1` 才啟動；30s 首跑 + 6h 週期）。
-pub fn spawn_sync(state: AppState) -> Option<tokio::task::JoinHandle<()>> {
+/// 跑一輪並記下結果（worker 與後台的「立刻同步」共用）。另一輪正在跑的話不算失敗，也不記
+pub async fn sync_and_record(state: &AppState) -> Result<u32, String> {
+    let r = sync_bahamut_history(state).await;
+    if r.get("busy").and_then(Value::as_bool) == Some(true) {
+        return Ok(0);
+    }
+    let result = if r.get("ok").and_then(Value::as_bool) == Some(true) {
+        Ok(r.get("newEntries").and_then(Value::as_u64).and_then(|n| u32::try_from(n).ok()).unwrap_or(0))
+    } else if r.get("skipped").is_some() {
+        Err("Not signed in: the account or password is missing, or the login cookie expired".to_string())
+    } else if r.get("deadSession").and_then(Value::as_bool) == Some(true) {
+        Err("The login expired and signing in again didn't work".to_string())
+    } else {
+        Err(r.get("error").and_then(Value::as_str).unwrap_or("Sync failed").to_string())
+    };
+    crate::integrations::record(&state.pool, "bahamut", result.clone()).await;
+    result
+}
+
+/// 啟動 bahamut 同步 worker（`ENABLE_BAHAMUT_SYNC` 開著才跑，後台可以隨時開關；30s 首跑 + 6h 週期）。
+pub fn spawn_sync(state: AppState) -> tokio::task::JoinHandle<()> {
     let delay = crate::worker::env_secs("BAHAMUT_SYNC_DELAY_SECS", 30);
     crate::worker::spawn_periodic(state, "Bahamut", "ENABLE_BAHAMUT_SYNC", delay, 6 * 3600, |s| async move {
-        let _ = sync_bahamut_history(&s).await;
+        let _ = sync_and_record(&s).await;
     })
 }
 
