@@ -168,6 +168,8 @@ async fn run() -> anyhow::Result<()> {
     handlers::tw_isbn::spawn_sync(state.clone());
     // 排程發佈與回收桶：一律啟動（見 handlers/post_lifecycle.rs）
     handlers::post_lifecycle::spawn(state.clone());
+    // 讀者的國家（反應紀錄用）：DB-IP 的國家資料庫，預設每月自己抓（GEOIP_DOWNLOAD=0 關掉；見 geo.rs）
+    koimsurai_web_backend::geo::spawn(&state);
 
     let app = router::build_router(state);
 

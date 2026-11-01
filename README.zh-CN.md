@@ -289,6 +289,7 @@ pnpm dev
 | 邮件订阅 | `RESEND_API_KEY` |
 | 错误追踪 | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
 | 后台流量（Plausible） | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
+| 读者国家 | `GEOIP_DOWNLOAD`（默认开，`0` 关掉每月下载 DB-IP）`GEOIP_DB` |
 | ISR 清缓存 | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET`（compose 里没填会自动生成） |
 
 ### 常用命令
@@ -358,3 +359,5 @@ cargo clippy --all-targets -- -D warnings
 [OpenCC](https://github.com/BYVoid/OpenCC)、[thumbhash](https://github.com/evanw/thumbhash)、[Natural Earth](https://www.naturalearthdata.com/)、
 [思源宋体](https://github.com/adobe-fonts/source-han-serif)、[Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif)，
 以及 [Vite+](https://viteplus.dev/) 与 oxc 的工具链。
+
+后台反应记录的读者国家：[IP Geolocation by DB-IP](https://db-ip.com)（CC BY 4.0）。后端每月自动下载一次，设 `GEOIP_DOWNLOAD=0` 可以关掉。

@@ -4,7 +4,7 @@
 //! 這裡另外把每一次按下、收回記一筆，後台才看得到「什麼時候、哪一篇、讀者從哪裡來」。
 //!
 //! 不記身分：沒有 IP、沒有 User-Agent 原文。脈絡只留這幾樣：
-//!   - 國家：Cloudflare 的 `CF-IPCountry`（nginx 的 `/api/` 照原樣轉過來）
+//!   - 國家：Cloudflare 的 `CF-IPCountry`，沒有就用 IP 查 DB-IP 的國家資料庫（`geo.rs`），只留國碼
 //!   - 來源網站：前台在 `X-Visit-Referrer` 帶這次是從哪個網站連進來的（只有主機名）
 //!   - 語系：前台在 `X-Visit-Locale` 帶讀者當時在哪個語系
 //!   - 手機或電腦：看 User-Agent 判斷，只留結論
@@ -39,10 +39,12 @@ impl VisitCtx {
     pub fn from_headers(h: &HeaderMap) -> Self {
         let get = |k: &str| h.get(k).and_then(|v| v.to_str().ok()).map(str::trim).filter(|s| !s.is_empty());
         // XX 是 Cloudflare 判斷不出來，T1 是 Tor：兩個都不是國家
+        // 沒走 Cloudflare 就用 IP 查（geo.rs），IP 查完就丟、不進 VisitCtx
         let country = get("cf-ipcountry")
             .filter(|c| c.len() == 2 && c.bytes().all(|b| b.is_ascii_alphabetic()))
             .map(str::to_ascii_uppercase)
-            .filter(|c| c != "XX" && c != "T1");
+            .filter(|c| c != "XX" && c != "T1")
+            .or_else(|| crate::handlers::comments::client_ip(h).parse().ok().and_then(crate::geo::country));
         let referrer = get("x-visit-referrer").map(str::to_ascii_lowercase).filter(|r| {
             r.len() <= 100
                 && r.contains('.')
