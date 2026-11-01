@@ -142,6 +142,7 @@ pub fn build_router(state: AppState) -> Router {
         // newsletter
         .route("/api/newsletter/subscribe", post(handlers::newsletter::subscribe))
         .route("/api/newsletter/unsubscribe", post(handlers::newsletter::unsubscribe))
+        .route("/api/comments/notify/unsubscribe", post(handlers::notify::unsubscribe))
         .route("/api/newsletter/by-token/{token}", get(handlers::newsletter::by_token))
         .route("/api/newsletter/subscribers", get(handlers::newsletter::subscribers))
         // admin authed 讀 + CRUD 寫入
@@ -188,6 +189,8 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/admin/reactions", get(handlers::reaction_log::admin_reactions))
         .route("/api/admin/comments/{id}/status", patch(handlers::admin::patch_comment_status))
         .route("/api/admin/comments/{id}/reply", post(handlers::admin::reply_comment))
+        .route("/api/admin/notify", get(handlers::notify::admin_get).put(handlers::notify::admin_put))
+        .route("/api/admin/notify/test", post(handlers::notify::admin_test))
         .route(
             "/api/admin/comments/{id}",
             put(handlers::admin::update_comment).delete(handlers::admin::delete_comment),

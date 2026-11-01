@@ -391,7 +391,12 @@
     "bodyDoneEmail": "<em>{{email}}</em> 已從訂閱列表中移除。",
     "bodyDoneFarewell": "抱歉沒能繼續陪你，未來想回來隨時都歡迎。",
     "viewLatest": "看看最近的文章 →",
-    "btnBackHome": "回首頁"
+    "btnBackHome": "回首頁",
+    "replyConfirmTitle": "不再收到回覆通知？",
+    "replyBodyConfirm": "站長之後回覆你的留言時，不會再寄信給你。下次留言時再勾一次就會恢復。",
+    "replyBtnConfirm": "不再通知",
+    "replyDoneTitle": "不會再寄了 ✓",
+    "replyBodyDone": "這個信箱之前勾過的留言，都不會再收到回覆通知。"
   },
   "oauth": {
     "loggingIn": "正在登入...",
@@ -634,6 +639,7 @@
     "useAccount": "改用帳號",
     "fieldName": "名字",
     "fieldEmail": "Email（選填，不公開）",
+    "notifyReply": "站長回覆時寄信通知我",
     "fieldWebsite": "網站（選填）",
     "fieldText": "想說的話",
     "meter": "{{count}} 字 · 訊號長度 {{seconds}} 秒",

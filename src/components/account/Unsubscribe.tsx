@@ -15,11 +15,9 @@ const PHASE = {
   error: 'error',
 };
 
-function Unsubscribe() {
+function NewsletterUnsubscribe({ token }: { token?: string }) {
   const { t } = useTranslation();
   const { author } = useSiteConfig();
-  const search = useRouterState({ select: (s) => s.location.search }) as { token?: string };
-  const token = search.token;
   // token 驗證讀取改由 TanStack Query（consume 生成 SubscriberByToken）；
   // 退訂 POST 仍是 mutation，用 action 狀態驅動 confirm→pending→done。
   const {
@@ -151,6 +149,86 @@ function Unsubscribe() {
         )}
       </div>
     </div>
+  );
+}
+
+/** 回覆信裡的退訂（`?reply=<token>`）：同一個信箱勾過的回覆通知全部拿掉。不先查 token，按下去才知道有沒有效 */
+function ReplyUnsubscribe({ token }: { token: string }) {
+  const { t } = useTranslation();
+  const [phase, setPhase] = useState<'confirm' | 'pending' | 'done' | 'error'>('confirm');
+
+  const confirm = async () => {
+    setPhase('pending');
+    try {
+      const res = await fetch('/api/comments/notify/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      setPhase(res.ok ? 'done' : 'error');
+    } catch {
+      setPhase('error');
+    }
+  };
+
+  return (
+    <div className="unsubscribe-shell">
+      <div className="unsubscribe-card">
+        {phase === 'confirm' && (
+          <>
+            <h1 className="unsubscribe-title">{t('unsubscribe.replyConfirmTitle')}</h1>
+            <p className="unsubscribe-body">{t('unsubscribe.replyBodyConfirm')}</p>
+            <div className="unsubscribe-actions">
+              <button
+                type="button"
+                className="unsubscribe-btn unsubscribe-btn--danger"
+                onClick={() => {
+                  void confirm();
+                }}
+              >
+                {t('unsubscribe.replyBtnConfirm')}
+              </button>
+              <LocaleLink to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
+                {t('unsubscribe.btnKeep')}
+              </LocaleLink>
+            </div>
+          </>
+        )}
+        {phase === 'pending' && <p className="unsubscribe-status">{t('unsubscribe.processing')}</p>}
+        {phase === 'done' && (
+          <>
+            <h1 className="unsubscribe-title">{t('unsubscribe.replyDoneTitle')}</h1>
+            <p className="unsubscribe-body">{t('unsubscribe.replyBodyDone')}</p>
+            <div className="unsubscribe-actions">
+              <LocaleLink to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
+                {t('unsubscribe.btnBackHome')}
+              </LocaleLink>
+            </div>
+          </>
+        )}
+        {phase === 'error' && (
+          <>
+            <h1 className="unsubscribe-title">{t('unsubscribe.errorTitle')}</h1>
+            <p className="unsubscribe-body">{t('unsubscribe.invalidLink')}</p>
+            <div className="unsubscribe-actions">
+              <LocaleLink to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
+                {t('unsubscribe.btnBackHome')}
+              </LocaleLink>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** 電子報（`?token=`）與留言的回覆通知（`?reply=`）共用這一頁 */
+function Unsubscribe() {
+  const search = useRouterState({ select: (s) => s.location.search }) as { token?: string; reply?: string };
+  return search.reply ? (
+    <ReplyUnsubscribe token={String(search.reply)} />
+  ) : (
+    <NewsletterUnsubscribe token={search.token} />
   );
 }
 

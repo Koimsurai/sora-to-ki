@@ -122,5 +122,7 @@
     "milestones": "Milestones",
     "milestone": "Milestone",
     "excerptLinks": "Excerpt links"
-  }
+  },
+  "webhook_url_invalid": "The webhook URL must start with http:// or https://",
+  "webhook_url_empty": "Fill in the webhook URL first"
 }

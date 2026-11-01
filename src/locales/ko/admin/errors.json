@@ -122,5 +122,7 @@
     "milestones": "마일스톤",
     "milestone": "마일스톤",
     "excerptLinks": "요약과 단락 연결"
-  }
+  },
+  "webhook_url_invalid": "Webhook URL은 http:// 또는 https://로 시작해야 합니다",
+  "webhook_url_empty": "먼저 webhook URL을 입력하세요"
 }

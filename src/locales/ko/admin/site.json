@@ -15,7 +15,9 @@
     "confirmTitle": "기본 언어를 바꿀까요?",
     "confirmDesc": "기본 언어가 {{from}}에서 {{to}}(으)로 바뀝니다. 접두사 없는 주소(예: {{host}}/blog)는 {{to}}(으)로 보이고, 이미 공유한 {{from}} 링크도 열면 {{to}}(으)로 나옵니다. {{from}}은(는) /{{fromPrefix}}/ 아래로 옮겨집니다. /{{toPrefix}}/로 시작하던 주소는 접두사 없는 같은 페이지로 자동으로 넘어갑니다. 검색 엔진에 반영되기까지 시간이 걸립니다.",
     "confirmOk": "바꾸고 저장",
-    "cancel": "그만두기"
+    "cancel": "그만두기",
+    "notifyHead": "알림",
+    "notifyNote": "누군가 댓글을 남기거나 링크 교환을 신청하면 webhook으로 보냅니다. 댓글에 답글을 달면 알림을 선택한 독자에게 메일이 갑니다."
   },
   "descriptions": {
     "home": "홈",
@@ -122,5 +124,20 @@
     "menuAbout": "소개",
     "menuMore": "더 보기",
     "off": "끔"
+  },
+  "notify": {
+    "webhook": "Webhook URL",
+    "optional": "선택, 비우면 보내지 않음",
+    "formats": "Discord와 Slack URL에는 각자의 형식으로, 그 밖의 URL(ntfy, n8n, 직접 만든 서비스)에는 JSON(event, text, data)으로 보냅니다. 독자의 이메일과 IP는 넣지 않습니다.",
+    "onComment": "새 댓글(검토 대기 포함)",
+    "onFriend": "링크 교환 신청",
+    "test": "테스트 보내기",
+    "save": "알림 설정 저장",
+    "saved": "알림 설정을 저장했습니다",
+    "testOk": "보냈습니다. 도착했는지 확인하세요",
+    "testFailed": "전달되지 않았습니다: {{error}}",
+    "mailReady": "답글 메일: 보낼 수 있습니다(뉴스레터의 Resend 설정 사용). 독자가 「운영자가 답글을 달면 메일로 알림」을 선택했다면 답글을 달 때 메일이 갑니다.",
+    "mailOff": "답글 메일: 보낼 수 없습니다. RESEND_API_KEY와 NEWSLETTER_FROM이 설정되지 않았습니다. 설정하면 알림을 선택한 독자에게 답글을 달 때 메일이 갑니다.",
+    "loadFailed": "알림 설정을 불러올 수 없습니다"
   }
 }

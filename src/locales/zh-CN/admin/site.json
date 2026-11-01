@@ -15,7 +15,9 @@
     "confirmTitle": "换掉默认语言？",
     "confirmDesc": "默认语言会从{{from}}换成{{to}}。不带前缀的网址（例如 {{host}}/blog）会改显示{{to}}，已经分享出去的{{from}}链接打开也会变成{{to}}；{{from}}改到 /{{fromPrefix}}/ 底下。原本 /{{toPrefix}}/ 开头的网址会自动转到不带前缀的那一条。搜索引擎要一阵子才会重新收录。",
     "confirmOk": "换掉并保存",
-    "cancel": "先不要"
+    "cancel": "先不要",
+    "notifyHead": "通知",
+    "notifyNote": "有人留言、申请友链时发一条到你的 webhook；你回复留言时，勾选了通知的读者会收到邮件。"
   },
   "descriptions": {
     "home": "首页",
@@ -122,5 +124,20 @@
     "menuAbout": "关于",
     "menuMore": "更多",
     "off": "关"
+  },
+  "notify": {
+    "webhook": "Webhook 地址",
+    "optional": "选填，留空就不发",
+    "formats": "Discord、Slack 的地址发它们自己的格式；其他地址（ntfy、n8n、自己的服务）发 JSON：event、text、data。内容不带读者的邮箱与 IP。",
+    "onComment": "新留言（含待审）",
+    "onFriend": "友链申请",
+    "test": "发一条测试",
+    "save": "保存通知设置",
+    "saved": "通知设置已保存",
+    "testOk": "发出去了，去看看有没有收到",
+    "testFailed": "没发出去：{{error}}",
+    "mailReady": "回复邮件：发得出去（用电子报那组 Resend 设置）。读者在留言表单勾选了「站长回复时发邮件通知我」，你回复时就会发。",
+    "mailOff": "回复邮件：发不出去，还没设置 RESEND_API_KEY 与 NEWSLETTER_FROM。设置好之后，读者勾选了通知的留言你一回复就会发邮件。",
+    "loadFailed": "读不到通知设置"
   }
 }

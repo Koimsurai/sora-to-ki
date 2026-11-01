@@ -46,7 +46,7 @@ pub struct SubscriberByToken {
 }
 
 /// `crypto.randomBytes(16).toString('hex')` 等價：32 hex 字元。
-fn gen_unsub_token() -> String {
+pub(crate) fn gen_unsub_token() -> String {
     let mut b = [0u8; 16];
     // rand 0.9 起 thread_rng() 改名 rng()（舊名在 0.10 已移除）
     rand::rng().fill_bytes(&mut b);
