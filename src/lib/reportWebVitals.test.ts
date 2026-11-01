@@ -380,22 +380,49 @@ describe('INP 的診斷欄位', () => {
 describe('自己量的 TX（換頁順暢度）與 BOOT（開場）', () => {
   const phases = { leave: 16.7, fly: 33.4, grow: 17.2 };
 
-  it('換頁跑完送 TX：值是最長那一幀，細節是 幀數/長幀數/總時長/收、飛、長各自最長的一幀，target 是從哪頁到哪頁', async () => {
+  it('換頁跑完送 TX：值是最長那一幀，細節是 幀數/長幀數/總時長/收、飛、長各自最長的一幀/誰畫的（w／m），target 是從哪頁到哪頁', async () => {
     const init = await load();
     const { reportTransition } = await import('@/store/pageTransition');
     init();
-    reportTransition({ from: '/', to: '/blog', ms: 2149.6, frames: 142, maxFrame: 33.4, long: 0, phases });
+    reportTransition({
+      from: '/',
+      to: '/blog',
+      ms: 2149.6,
+      frames: 142,
+      maxFrame: 33.4,
+      long: 0,
+      phases,
+      host: 'worker',
+    });
     expect(lastBody()).toMatchObject({
       metric: 'TX',
       value: 33,
       rating: 'good',
       target: '/ → /blog',
-      detail: '142/0/2150/17/33/17',
+      detail: '142/0/2150/17/33/17/w',
       navType: 'spa',
     });
-    reportTransition({ from: '/blog', to: '/about', ms: 2000, frames: 100, maxFrame: 80, long: 2, phases });
+    reportTransition({
+      from: '/blog',
+      to: '/about',
+      ms: 2000,
+      frames: 100,
+      maxFrame: 80,
+      long: 2,
+      phases,
+      host: 'main',
+    });
     expect(lastBody()).toMatchObject({ rating: 'needs-improvement' });
-    reportTransition({ from: '/about', to: '/', ms: 2000, frames: 100, maxFrame: 101, long: 3, phases });
+    reportTransition({
+      from: '/about',
+      to: '/',
+      ms: 2000,
+      frames: 100,
+      maxFrame: 101,
+      long: 3,
+      phases,
+      host: 'worker',
+    });
     expect(lastBody()).toMatchObject({ rating: 'poor' });
   });
 
@@ -426,8 +453,8 @@ describe('自己量的 TX（換頁順暢度）與 BOOT（開場）', () => {
         { startTime: now - 400, duration: 60, renderStart: 0, scripts: [] },
       ],
     });
-    reportTransition({ from: '/', to: '/watch', ms: 2000, frames: 100, maxFrame: 180, long: 2, phases });
-    expect(lastBody()).toMatchObject({ detail: '100/2/2000/17/33/17/180/143/30/Collection' });
+    reportTransition({ from: '/', to: '/watch', ms: 2000, frames: 100, maxFrame: 180, long: 2, phases, host: 'main' });
+    expect(lastBody()).toMatchObject({ detail: '100/2/2000/17/33/17/m/180/143/30/Collection' });
   });
 
   it('LoAF 的腳本名稱：沒有檔名時用 invoker，只留後端收的字元；沒有腳本的長幀寫 -', async () => {

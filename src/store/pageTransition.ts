@@ -156,6 +156,8 @@ export interface TransitionReport {
   long: number;
   /** 收、飛、長各自最長的一幀（毫秒） */
   phases: { leave: number; fly: number; grow: number };
+  /** 點是誰畫的：worker（預設）或主執行緒（不支援 OffscreenCanvas、?txw=0）。上面的幀就是照畫它的那條迴圈量的 */
+  host: 'worker' | 'main';
 }
 const transitionListeners = new Set<(r: TransitionReport) => void>();
 export function reportTransition(r: TransitionReport) {

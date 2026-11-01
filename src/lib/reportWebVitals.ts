@@ -243,7 +243,10 @@ export function initWebVitals() {
       { name: 'TX', value: Math.round(r.maxFrame), rating: rate(r.maxFrame, TX_GOOD, TX_POOR), navigationType: 'spa' },
       {
         target: `${r.from} → ${r.to}`,
-        detail: [r.frames, r.long, Math.round(r.ms), phases, loaf].filter((v) => v !== '').join('/'),
+        // 第 7 格是誰畫的（w／m）；2026-11-01 之前的資料沒有這一格，第 7 格直接是 LoAF 的數字
+        detail: [r.frames, r.long, Math.round(r.ms), phases, r.host === 'worker' ? 'w' : 'm', loaf]
+          .filter((v) => v !== '')
+          .join('/'),
       },
     );
   });
