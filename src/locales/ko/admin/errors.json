@@ -125,5 +125,7 @@
   },
   "source_unknown": "「{{source}}」라는 출처는 없어요",
   "source_field_unknown": "이 출처에는 「{{field}}」 항목이 없어요",
-  "source_value_too_long": "「{{field}}」이(가) 너무 길어요. 잘못 붙여 넣지 않았는지 확인해 주세요"
+  "source_value_too_long": "「{{field}}」이(가) 너무 길어요. 잘못 붙여 넣지 않았는지 확인해 주세요",
+  "webhook_url_invalid": "Webhook URL은 http:// 또는 https://로 시작해야 합니다",
+  "webhook_url_empty": "먼저 webhook URL을 입력하세요"
 }

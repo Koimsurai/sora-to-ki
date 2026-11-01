@@ -100,6 +100,22 @@
   border-color: var(--signal);
 }
 
+/* 站長回覆時寄信通知：跟「以某某的身分留言」同一層的小字，框用墨色 */
+.cf-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  font-size: var(--fs-13);
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.cf-check input {
+  margin: 0;
+  accent-color: var(--ink);
+}
+
 .cf-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.4fr) 120px;

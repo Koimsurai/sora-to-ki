@@ -9,6 +9,7 @@ import { FaGithub, FaGoogle } from 'react-icons/fa';
 import { bandPath } from '@/components/about/messagesWave';
 import { useAuth } from '@/contexts/auth';
 import { commentsQueryOptions } from '@/data/commentsData';
+import { useLocale } from '@/hooks/useLocale';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { validateCommentDraft, type CommentDraftError } from '@/lib/comments';
 import './CommentForm.css';
@@ -77,11 +78,14 @@ export default function CommentForm({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user, isLoggedIn, providers, getGoogleAuthUrl, getGitHubAuthUrl } = useAuth();
+  const locale = useLocale();
   const [text, setText] = useState('');
   const [author, setAuthor] = useState('');
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [anonymous, setAnonymous] = useState(false);
+  /** 站長回覆時寄信通知（預設不勾：email 欄誰都能亂填，勾了才算同意） */
+  const [notify, setNotify] = useState(false);
   const [captcha, setCaptcha] = useState({ a: 0, b: 0 });
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [error, setError] = useState<CommentDraftError | 'failed' | null>(null);
@@ -92,6 +96,7 @@ export default function CommentForm({
   /** 剛送出的那段字：上緣的波形往右飛走，飛完清掉 */
   const [flying, setFlying] = useState<string | null>(null);
   const asUser = isLoggedIn && !anonymous;
+  const replyEmail = asUser ? (user?.email ?? '') : email.trim();
   const open = focused || text !== '' || replyTo !== null || error !== null;
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -105,6 +110,7 @@ export default function CommentForm({
       setAuthor(localStorage.getItem('comment_author') ?? '');
       setEmail(localStorage.getItem('comment_email') ?? '');
       setWebsite(localStorage.getItem('comment_website') ?? '');
+      setNotify(localStorage.getItem('comment_notify') === '1');
     } catch {
       // 私密視窗或封鎖了網站資料：沒有記住的東西就算了
     }
@@ -181,6 +187,11 @@ export default function CommentForm({
     setFlying(content);
     window.setTimeout(() => setFlying(null), FLY_MS);
     setBusy(true);
+    try {
+      localStorage.setItem('comment_notify', notify ? '1' : '0');
+    } catch {
+      // 記不住也沒關係
+    }
     if (!asUser) {
       try {
         localStorage.setItem('comment_author', author);
@@ -197,11 +208,13 @@ export default function CommentForm({
         body: JSON.stringify({
           author: asUser ? (user?.displayName ?? '') : author.trim(),
           content: replyTo ? `@${replyTo.author} ${content}` : content,
-          email: asUser ? (user?.email ?? '') : email.trim(),
+          email: replyEmail,
           website: asUser ? '' : website.trim(),
           avatar_url: asUser ? (user?.avatar ?? '') : '',
           provider: asUser ? (user?.provider ?? '') : '',
           parent_id: replyTo?.id ?? null,
+          notify_reply: notify && replyEmail !== '',
+          locale,
           ...(!asUser && { captcha: Number.parseInt(captchaAnswer, 10), captchaAnswer: captcha.a + captcha.b }),
         }),
       });
@@ -336,6 +349,12 @@ export default function CommentForm({
                 </label>
               </div>
             </>
+          )}
+          {replyEmail !== '' && (
+            <label className="cf-check">
+              <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+              <span>{t('signal.notifyReply')}</span>
+            </label>
           )}
           {replyTo && (
             <p className="cf-replying">

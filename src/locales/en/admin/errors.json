@@ -125,5 +125,7 @@
   },
   "source_unknown": "There is no source called {{source}}",
   "source_field_unknown": "This source has no field called {{field}}",
-  "source_value_too_long": "{{field}} is too long; check what was pasted"
+  "source_value_too_long": "{{field}} is too long; check what was pasted",
+  "webhook_url_invalid": "The webhook URL must start with http:// or https://",
+  "webhook_url_empty": "Fill in the webhook URL first"
 }

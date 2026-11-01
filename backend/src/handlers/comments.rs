@@ -29,6 +29,10 @@ pub struct CommentBody {
     website: Option<String>,
     avatar_url: Option<String>,
     parent_id: Option<i64>,
+    /// 站長回覆時寄信通知（表單上的勾選框；有填 email 才算數）
+    notify_reply: Option<bool>,
+    /// 留言當時的語系：回覆信用這個語言寫
+    locale: Option<String>,
 }
 
 /// 取 client IP：對齊 Express `req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || ''`。
@@ -131,30 +135,58 @@ async fn create_comment(
 
     // INSERT（is_admin 固定 0；parent_id 0/缺 → NULL）
     let sql = format!(
-        "INSERT INTO comments ({target_col}, author, content, email, website, ip, status, is_admin, avatar_url, parent_id) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)"
+        "INSERT INTO comments ({target_col}, author, content, email, website, ip, status, is_admin, avatar_url, parent_id, \
+         notify_reply, notify_token, locale) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)"
     );
     let parent = body.parent_id.filter(|&n| n != 0);
+    let email = body.email.unwrap_or_default().trim().to_string();
+    // 沒留信箱，勾了也沒地方寄
+    let notify = body.notify_reply == Some(true) && !email.is_empty();
+    let locale = body.locale.filter(|l| crate::handlers::posts::I18N_LOCALES.contains(&l.as_str()));
     let result = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(target_id)
         .bind(&author)
         .bind(&content)
-        .bind(body.email.unwrap_or_default())
+        .bind(&email)
         .bind(body.website.unwrap_or_default())
         .bind(&ip)
         .bind(status)
         .bind(body.avatar_url.unwrap_or_default())
         .bind(parent)
+        .bind(i64::from(notify))
+        .bind(notify.then(crate::handlers::newsletter::gen_unsub_token))
+        .bind(locale)
         .execute(&state.pool)
         .await;
 
     match result {
         Err(e) => crate::error::internal_error(StatusCode::BAD_REQUEST, e),
-        Ok(r) => (
-            StatusCode::CREATED,
-            Json(json!({ "message": "success", "id": r.last_insert_rowid(), "status": status })),
-        )
-            .into_response(),
+        Ok(r) => {
+            // 站長在前台登入後回覆：寄信給原留言者；其他人的留言：通知站長
+            if is_oauth && crate::handlers::notify::is_owner(state, headers).await {
+                if let Some(p) = parent {
+                    crate::handlers::notify::owner_replied(state, p, &content);
+                }
+            } else if status != "spam" {
+                let target = match target_col {
+                    "post_id" => crate::handlers::notify::Target::Post(target_id.to_string()),
+                    "thought_id" => crate::handlers::notify::Target::Thought(target_id.to_string()),
+                    _ => crate::handlers::notify::Target::Page(target_id.to_string()),
+                };
+                crate::handlers::notify::comment_created(
+                    state,
+                    target,
+                    &author,
+                    &content,
+                    status == "pending",
+                );
+            }
+            (
+                StatusCode::CREATED,
+                Json(json!({ "message": "success", "id": r.last_insert_rowid(), "status": status })),
+            )
+                .into_response()
+        }
     }
 }
 

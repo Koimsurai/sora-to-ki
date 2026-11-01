@@ -157,3 +157,9 @@
     display: none;
   }
 }
+
+.sfs-notify-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

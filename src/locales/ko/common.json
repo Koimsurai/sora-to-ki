@@ -391,7 +391,12 @@
     "bodyDoneEmail": "<em>{{email}}</em>를 구독 목록에서 제거했어요.",
     "bodyDoneFarewell": "함께하지 못해 아쉽지만, 언제든 다시 와주세요.",
     "viewLatest": "최근 글 보기 →",
-    "btnBackHome": "홈으로"
+    "btnBackHome": "홈으로",
+    "replyConfirmTitle": "답글 알림을 끌까요?",
+    "replyBodyConfirm": "운영자가 댓글에 답글을 달아도 더 이상 메일을 보내지 않습니다. 다음에 댓글을 남길 때 다시 선택하면 켜집니다.",
+    "replyBtnConfirm": "알림 끄기",
+    "replyDoneTitle": "껐습니다 ✓",
+    "replyBodyDone": "이 주소로 알림을 선택했던 댓글에는 더 이상 답글 알림이 가지 않습니다."
   },
   "oauth": {
     "loggingIn": "로그인 중...",
@@ -634,6 +639,7 @@
     "useAccount": "계정으로",
     "fieldName": "이름",
     "fieldEmail": "이메일 (선택, 비공개)",
+    "notifyReply": "운영자가 답글을 달면 메일로 알림",
     "fieldWebsite": "웹사이트 (선택)",
     "fieldText": "남길 말",
     "meter": "{{count}}자 · 신호 길이 {{seconds}}초",

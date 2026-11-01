@@ -391,7 +391,12 @@
     "bodyDoneEmail": "<em>{{email}}</em> を購読リストから削除しました。",
     "bodyDoneFarewell": "ご縁を続けられず残念です。いつでも戻ってきてくださいね。",
     "viewLatest": "最新の記事を見る →",
-    "btnBackHome": "ホームへ"
+    "btnBackHome": "ホームへ",
+    "replyConfirmTitle": "返信通知を止めますか？",
+    "replyBodyConfirm": "管理人があなたのコメントに返信しても、メールは届かなくなります。次にコメントするときにもう一度チェックすれば再開します。",
+    "replyBtnConfirm": "通知を止める",
+    "replyDoneTitle": "止めました ✓",
+    "replyBodyDone": "このアドレスでチェックしたコメントには、もう返信通知は届きません。"
   },
   "oauth": {
     "loggingIn": "ログイン中...",
@@ -634,6 +639,7 @@
     "useAccount": "アカウントを使う",
     "fieldName": "名前",
     "fieldEmail": "メール（任意・非公開）",
+    "notifyReply": "管理人が返信したらメールで知らせる",
     "fieldWebsite": "サイト（任意）",
     "fieldText": "メッセージ",
     "meter": "{{count}} 文字 · 信号の長さ {{seconds}} 秒",

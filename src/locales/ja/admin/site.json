@@ -15,7 +15,9 @@
     "confirmTitle": "デフォルトの言語を変えますか？",
     "confirmDesc": "デフォルトの言語が{{from}}から{{to}}に変わります。接頭辞のない URL（たとえば {{host}}/blog）は{{to}}で表示されるようになり、共有済みの{{from}}のリンクも開くと{{to}}になります。{{from}}は /{{fromPrefix}}/ の下に移ります。/{{toPrefix}}/ で始まっていた URL は、接頭辞のない同じページへ自動で転送されます。検索エンジンに反映されるまでしばらくかかります。",
     "confirmOk": "変更して保存",
-    "cancel": "やめておく"
+    "cancel": "やめておく",
+    "notifyHead": "通知",
+    "notifyNote": "コメントや相互リンクの申請があると webhook に送ります。あなたがコメントに返信すると、通知にチェックした読者にメールが届きます。"
   },
   "descriptions": {
     "home": "トップページ",
@@ -122,5 +124,20 @@
     "menuAbout": "について",
     "menuMore": "もっと",
     "off": "オフ"
+  },
+  "notify": {
+    "webhook": "Webhook の URL",
+    "optional": "任意、空なら送りません",
+    "formats": "Discord と Slack の URL にはそれぞれの形式で、それ以外（ntfy、n8n、自分のサービス）には JSON（event、text、data）で送ります。読者のメールアドレスと IP は含みません。",
+    "onComment": "新しいコメント（承認待ちを含む）",
+    "onFriend": "相互リンクの申請",
+    "test": "テストを送る",
+    "save": "通知設定を保存",
+    "saved": "通知設定を保存しました",
+    "testOk": "送りました。届いたか確認してください",
+    "testFailed": "届きませんでした：{{error}}",
+    "mailReady": "返信メール：送信できます（ニュースレターの Resend 設定を使用）。読者が「管理人が返信したらメールで知らせる」にチェックしていれば、返信時にメールが届きます。",
+    "mailOff": "返信メール：送信できません。RESEND_API_KEY と NEWSLETTER_FROM が未設定です。設定すれば、通知にチェックした読者に返信時にメールが届きます。",
+    "loadFailed": "通知設定を読み込めません"
   }
 }

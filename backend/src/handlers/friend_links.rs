@@ -525,8 +525,11 @@ pub async fn apply(
     .execute(pool)
     .await;
     match r {
-        Ok(r) => (StatusCode::CREATED, Json(json!({ "message": "Received", "id": r.last_insert_rowid() })))
-            .into_response(),
+        Ok(r) => {
+            crate::handlers::notify::friend_applied(&state, &app.name, &app.url, app.message.as_deref());
+            (StatusCode::CREATED, Json(json!({ "message": "Received", "id": r.last_insert_rowid() })))
+                .into_response()
+        }
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
