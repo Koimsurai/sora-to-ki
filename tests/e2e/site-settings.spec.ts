@@ -26,7 +26,7 @@ test.describe('站台設定', () => {
     });
     await gotoAdminUntil(page, '/admin/site', (p) => p.getByRole('heading', { name: '站台設定' }));
 
-    const save = page.getByRole('button', { name: '儲存' });
+    const save = page.getByRole('button', { name: '儲存', exact: true });
     await expect(save).toBeDisabled();
     await page.getByLabel('站名', { exact: true }).fill('');
     await save.click();
@@ -51,12 +51,50 @@ test.describe('站台設定', () => {
     await gotoAdminUntil(page, '/admin/site', (p) => p.getByRole('heading', { name: '站台設定' }));
 
     await page.getByRole('radio', { name: 'English' }).check();
-    await page.getByRole('button', { name: '儲存' }).click();
+    await page.getByRole('button', { name: '儲存', exact: true }).click();
     const dialog = page.getByRole('alertdialog');
     await expect(dialog).toContainText('換掉預設語系？');
     await expect(dialog).toContainText('/en/');
     await dialog.getByRole('button', { name: '先不要' }).click();
     await expect(dialog).toBeHidden();
     expect(calls).toBe(0);
+  });
+
+  test('通知：填 webhook、關掉友鏈申請，另外存；送測試帶的是框裡的網址', async ({ page }) => {
+    let saved: Record<string, unknown> | null = null;
+    let tested: Record<string, unknown> | null = null;
+    // 兩支都攔下來：真的存下去或真的送出去，會讓後面的留言測試去打一個不存在的網址
+    await page.route('**/api/admin/notify', async (r) => {
+      if (r.request().method() !== 'PUT') return r.continue();
+      saved = r.request().postDataJSON() as Record<string, unknown>;
+      await r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ settings: saved, mail_ready: false }),
+      });
+    });
+    await page.route('**/api/admin/notify/test', async (r) => {
+      tested = r.request().postDataJSON() as Record<string, unknown>;
+      await r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+    });
+    await gotoAdminUntil(page, '/admin/site', (p) => p.getByRole('heading', { name: '通知' }));
+
+    const save = page.getByRole('button', { name: '儲存通知設定' });
+    await expect(save).toBeDisabled();
+    await page.getByLabel(/Webhook 網址/).fill('https://discord.com/api/webhooks/1/abc');
+    await page.getByRole('checkbox', { name: '友鏈申請' }).uncheck();
+    await page.getByRole('button', { name: '送一則測試' }).click();
+    await expect(page.getByText('送到了')).toBeVisible();
+    expect(tested).toEqual({ webhook_url: 'https://discord.com/api/webhooks/1/abc' });
+
+    await save.click();
+    await expect(page.getByText('通知設定存好了')).toBeVisible();
+    expect(saved).toEqual({
+      webhook_url: 'https://discord.com/api/webhooks/1/abc',
+      on_comment: true,
+      on_friend: false,
+    });
+    // 站台設定那一份沒有被動到
+    await expect(page.getByRole('button', { name: '儲存', exact: true })).toBeDisabled();
   });
 });
