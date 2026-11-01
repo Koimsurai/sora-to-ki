@@ -233,7 +233,8 @@ export function initWebVitals() {
   onFCP(send);
   onTTFB(send);
   // 站內換頁：值是最長那一幀；target 記從哪頁到哪頁。細節是
-  //   幀數/長幀數/總時長/收、飛、長各自最長的一幀/LoAF 的摘要（loafSummary，不支援就沒有這四欄）
+  //   幀數/長幀數/總時長/收、飛、長各自最長的一幀/誰畫的（w 是 worker、m 是主執行緒）/LoAF 的摘要（loafSummary，不支援就沒有這四欄）
+  // 「誰畫的」是 2026-11-01 加的，之前的資料第 7 格直接是 LoAF 的數字
   // 前三欄的位置不變（migration 0028 寫的格式），舊的資料照樣讀得懂
   subscribeTransitions((r) => {
     const now = performance.now();
@@ -243,7 +244,6 @@ export function initWebVitals() {
       { name: 'TX', value: Math.round(r.maxFrame), rating: rate(r.maxFrame, TX_GOOD, TX_POOR), navigationType: 'spa' },
       {
         target: `${r.from} → ${r.to}`,
-        // 第 7 格是誰畫的（w／m）；2026-11-01 之前的資料沒有這一格，第 7 格直接是 LoAF 的數字
         detail: [r.frames, r.long, Math.round(r.ms), phases, r.host === 'worker' ? 'w' : 'm', loaf]
           .filter((v) => v !== '')
           .join('/'),
