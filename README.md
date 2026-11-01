@@ -311,12 +311,10 @@ cargo clippy --all-targets -- -D warnings
 └── docker-compose.yml
 ```
 
-Working notes for AI assistants (Claude Code and the like) live in [`CLAUDE.md`](CLAUDE.md) (in Chinese); it also records a lot of past pitfalls and the reasons behind design decisions.
-
 ## 📜 History
 
 - **April 2025**: started, as a one-person site
-- **July 2026**: the backend moved from Express to Rust in one go; all 120+ endpoints were diffed against the old ones and the switch happened only once every response matched ([`backend/STRANGLER.md`](backend/STRANGLER.md), in Chinese)
+- **July 2026**: the backend moved from Express to Rust in one go; all 120+ endpoints were diffed against the old ones and the switch happened only once every response matched
 - **October 2026**: rebuilt as today's 宙と木 around "three materials, three rules". The last version before that is the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final), still running read-only at <https://archive.koimsurai.com>
 - **October 2026**: the hard-coded parts taken out, open-sourced as sora-to-ki that anyone can run ([v0.2.0](https://github.com/Koimsurai/sora-to-ki/releases))
 

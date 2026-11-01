@@ -98,12 +98,14 @@ blob-report/
 .schemathesis/
 .hypothesis/
 
-# 工作用的計畫／筆記，不進版控
-# ⚠️ 這行只擋**新檔**。docs/ 下已被追蹤的 3 個檔案不受影響（gitignore 管不到已追蹤的），
-#    目前是 archive/Setup.md、changelog.txt、seo-baseline-2026-07-28.md。
-#    它們也不會再被推上去，除非有人改動它們。真要讓它們從 repo 消失得跑
-#    `git rm --cached -r docs/`，那會讓它們從 GitHub 上不見——所以沒有自動做。
+# 開發用的筆記與 AI 助手的守則，只留在本機，不進版控（自架的人用不到）
 docs/
+/CLAUDE.md
+/.claude/
+/.mcp.json
+/.probe-js.mjs
+/backend/STRANGLER.md
+/backend/SPECTA_PLAN.md
 
 # Lighthouse CI 的報告輸出（每次 lhci autorun 重產）
 .lighthouseci/
