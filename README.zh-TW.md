@@ -333,12 +333,10 @@ cargo clippy --all-targets -- -D warnings
 └── docker-compose.yml
 ```
 
-給 AI 助手（Claude Code 等）看的工作守則在 [`CLAUDE.md`](CLAUDE.md)，裡面也記錄了很多踩過的坑和設計理由。
-
 ## 📜 沿革
 
 - **2025-04**：開始寫，一個人的網站
-- **2026-07**：後端從 Express 整套搬到 Rust，120 多個端點逐一對拍、確認回應一模一樣才切換（[`backend/STRANGLER.md`](backend/STRANGLER.md)）
+- **2026-07**：後端從 Express 整套搬到 Rust，120 多個端點逐一對拍、確認回應一模一樣才切換
 - **2026-10**：照「三樣材料、三條規則」整站翻新成現在的宙と木。翻新前的最後一版留在 tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)，也還跑在 <https://archive.koimsurai.com>（唯讀）
 - **2026-10**：拆掉寫死的部分，開源成誰都能架的 sora-to-ki（[v0.2.0](https://github.com/Koimsurai/sora-to-ki/releases)）
 

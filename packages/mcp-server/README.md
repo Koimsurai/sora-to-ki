@@ -20,11 +20,23 @@ Claude Code ──啟動子程序──▶ mcp-server (stdio)
 ## 設定（Claude Code，在 server 上）
 
 ⚠️ **一定要用跑在 server 那台的 Claude Code**（後端 `127.0.0.1:3002` 只綁 loopback，
-出不了那台機器；開發機的 Claude Desktop 連不到、也看不到這份 `.mcp.json`）。
+出不了那台機器；開發機的 Claude Desktop 連不到）。
 
-專案根有 [`.mcp.json`](../../.mcp.json)，Claude Code 開啟專案時**自動偵測**、跳出來讓你允許
-`koimsurai-admin`。憑證**零設定**——server 上直接讀後端同一份 `.env.backend`（`ADMIN_USERNAME`
-/ `ADMIN_PASSWORD`），不必碰環境變數。
+在專案根放一份 `.mcp.json`（不進版控），Claude Code 開啟專案時會**自動偵測**、跳出來讓你允許：
+
+```json
+{
+  "mcpServers": {
+    "koimsurai-admin": {
+      "command": "pnpm",
+      "args": ["exec", "tsx", "packages/mcp-server/src/index.ts"]
+    }
+  }
+}
+```
+
+憑證**零設定**——server 上直接讀後端同一份 `.env.backend`（`ADMIN_USERNAME` / `ADMIN_PASSWORD`），
+不必碰環境變數。
 
 > `.mcp.json` 是在既有 session 啟動後才建立的話，該 session 不會熱載入 → **開一個新的
 > Claude Code session** 才會偵測到。
