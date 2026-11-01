@@ -4,7 +4,10 @@ import { describe, expect, it } from 'vite-plus/test';
 import { currentTheme, defaultTheme, setDefaultTheme, themeScript, type Theme } from './theme';
 
 /** 在假的 document／location／localStorage 上跑一次那段腳本，回傳掛上的 data-theme（沒掛是 null） */
-function run(fallback: Theme, { search = '', stored = null as string | null, blocked = false } = {}) {
+function run(
+  fallback: Theme,
+  { search = '', stored = null as string | null, blocked = false, readersCanChoose = true } = {},
+) {
   const attrs = new Map<string, string>();
   const document = { documentElement: { setAttribute: (k: string, v: string) => attrs.set(k, v) } };
   const localStorage = {
@@ -14,7 +17,7 @@ function run(fallback: Theme, { search = '', stored = null as string | null, blo
     },
   };
   // oxlint-disable-next-line typescript/no-implied-eval -- 測的就是那段要注入 head 的字串本身
-  const script = new Function('document', 'location', 'localStorage', themeScript(fallback)) as (
+  const script = new Function('document', 'location', 'localStorage', themeScript(fallback, readersCanChoose)) as (
     ...args: unknown[]
   ) => void;
   script(document, { search }, localStorage);
@@ -42,6 +45,12 @@ describe('themeScript', () => {
 
   it('localStorage 讀不到（被擋）也還是站長的預設', () => {
     expect(run('blackhole', { blocked: true })).toBe('blackhole');
+  });
+
+  it('站長不開放讀者換：讀者上次選的不算，網址參數（後台的試看、分享連結）照樣有效', () => {
+    expect(run('neptune', { stored: 'blackhole', readersCanChoose: false })).toBe('neptune');
+    expect(run('saturn', { stored: 'blackhole', readersCanChoose: false })).toBeNull();
+    expect(run('neptune', { search: '?theme=betelgeuse', readersCanChoose: false })).toBe('betelgeuse');
   });
 });
 

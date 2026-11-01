@@ -31,6 +31,7 @@ describe('站台設定改成預設英文、只開英文與日文', () => {
       default_locale: 'en',
       locales: ['en', 'ja'],
       theme: 'saturn',
+      theme_switch: true,
       page_descriptions: {},
       launch_pad: { lat: 23.7, lon: 121 },
     });

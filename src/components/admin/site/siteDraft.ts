@@ -15,6 +15,8 @@ export interface Draft {
   disabled_pages: string[];
   /** 預設天體（lib/theme 的 THEMES）：只有站台設定頁改，初次設定的精靈不問 */
   theme: string;
+  /** 讀者能不能在頂欄自己換天體 */
+  theme_switch: boolean;
   /** 介紹文字：哪一頁 → 語系 → 字（站台設定頁的「介紹文字」那段） */
   page_descriptions: Record<string, Record<string, string>>;
   /** 發射台：站長在哪裡（航行日誌的火箭從這裡升空、收藏頁地球上的琥珀點） */
@@ -62,6 +64,7 @@ export function draftOf(config: SiteConfig, defaultLocale = config.default_local
     github: config.github,
     disabled_pages: config.disabled_pages,
     theme: config.theme,
+    theme_switch: config.theme_switch,
     page_descriptions: config.page_descriptions,
     launch_pad: {
       lat: config.launch_pad.lat ?? DEFAULT_PAD.lat,

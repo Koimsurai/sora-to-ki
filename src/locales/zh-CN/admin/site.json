@@ -83,7 +83,10 @@
       "blackhole": "淡紫",
       "betelgeuse": "赭红"
     },
-    "preview": "在前台看看{{name}}"
+    "preview": "在前台看看{{name}}",
+    "readerSwitch": "让读者自己挑天体",
+    "readerSwitchOn": "开着：读者可以在顶栏换，选过的记在他的浏览器",
+    "readerSwitchOff": "关着：大家都看你选的这一颗，顶栏的天体只显示、不能点"
   },
   "pages": {
     "groupOrbit": "首页的轨道",

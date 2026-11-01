@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 
+import { Switch } from '@/components/ui/switch';
 import { useAdminT } from '@/i18n/admin-i18n';
 import { ThemeGlyph } from '@/components/common/ThemeGlyph';
 import { SUPPORTED_LOCALES } from '@/lib/locales';
@@ -89,8 +90,11 @@ export function LocaleFields({ draft, patch }: { draft: Draft; patch: Patch }) {
   );
 }
 
-/** 預設天體（單選）：讀者沒在頂欄選過時看到的那顆，分享圖也畫它 */
-export function ThemeFields({ draft, patch }: { draft: Draft; patch: Patch }) {
+/**
+ * 預設天體（單選）：讀者沒在頂欄選過時看到的那顆，分享圖也畫它。
+ * `brief`：初次設定的精靈用，只有四顆可選，不放試看連結與讀者開關（那些在站台設定頁）
+ */
+export function ThemeFields({ draft, patch, brief = false }: { draft: Draft; patch: Patch; brief?: boolean }) {
   const { t } = useAdminT();
   return (
     <>
@@ -106,10 +110,21 @@ export function ThemeFields({ draft, patch }: { draft: Draft; patch: Patch }) {
         ))}
       </fieldset>
       <p className="sf-hint">{t('site.theme.note')}</p>
-      {/* ?theme= 只換開的那一頁、不記下來（lib/theme），站長看完不會把自己的瀏覽器換掉 */}
-      <a className="sf-theme-try" href={`/?theme=${draft.theme}`} target="_blank" rel="noopener">
-        {t('site.theme.preview', { name: t(`site.theme.name.${draft.theme}`) })} ↗
-      </a>
+      {!brief && (
+        <>
+          {/* ?theme= 只換開的那一頁、不記下來（lib/theme），站長看完不會把自己的瀏覽器換掉 */}
+          <a className="sf-theme-try" href={`/?theme=${draft.theme}`} target="_blank" rel="noopener">
+            {t('site.theme.preview', { name: t(`site.theme.name.${draft.theme}`) })} ↗
+          </a>
+          <label className="sf-check sf-theme-switch">
+            <Switch checked={draft.theme_switch} onCheckedChange={(on) => patch({ theme_switch: on })} />
+            <span>
+              {t('site.theme.readerSwitch')}
+              <em>{t(draft.theme_switch ? 'site.theme.readerSwitchOn' : 'site.theme.readerSwitchOff')}</em>
+            </span>
+          </label>
+        </>
+      )}
     </>
   );
 }

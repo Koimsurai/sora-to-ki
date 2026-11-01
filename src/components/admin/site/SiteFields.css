@@ -207,6 +207,18 @@
   color: var(--ink);
 }
 
+/* 讀者能不能自己換天體：開關（後台共用的 Radix Switch）＋一行字，下面一行小字說現在是哪一種 */
+.sf-theme-switch {
+  margin-top: var(--space-4);
+}
+
+.sf-theme-switch em {
+  display: block;
+  font-style: normal;
+  font-size: var(--fs-12);
+  color: var(--ink-subtle);
+}
+
 .sf-checks {
   display: grid;
   grid-template-columns: 1fr 1fr;

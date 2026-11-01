@@ -30,7 +30,7 @@ import { hex, palette } from '@/lib/palette';
 import { siteConfigQueryOptions } from '@/data/siteConfig';
 import { siteName, siteTitle } from '@/lib/siteIdentity';
 import { BOOT_MOUNT_SCRIPT, BOOT_RING_FLAT, BOOT_SCRIPT } from '@/lib/bootRing';
-import { THEMES, defaultTheme, themeScript } from '@/lib/theme';
+import { THEMES, defaultTheme, readersCanChoose, themeScript } from '@/lib/theme';
 import { prewarmSpaceBackdrop } from '@/components/backdrop/prewarm';
 
 // 3D 背景在這裡就先開始準備（worker、GPU 探測、chunk），跟頁面其他工作同時進行（backdrop/prewarm）
@@ -336,7 +336,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <script
           // 字串常量加上站長的預設（defaultTheme 只會是白名單裡的字），網址參數只拿來比對白名單，不落地
           // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
-          dangerouslySetInnerHTML={{ __html: themeScript(defaultTheme()) }}
+          dangerouslySetInnerHTML={{ __html: themeScript(defaultTheme(), readersCanChoose()) }}
         />
         {/* 開場（index.css 的 #boot、layout/TransitionLayer 的 enter）：在 paint 之前掛上 html[data-boot]，
             頁面就先藏在夜色後面、不會先閃出來；外圈那道線照載入的階段推（window.__bootP，lib/bootRing）。

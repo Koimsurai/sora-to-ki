@@ -83,7 +83,10 @@
       "blackhole": "연보라색",
       "betelgeuse": "다홍색"
     },
-    "preview": "사이트에서 {{name}} 보기"
+    "preview": "사이트에서 {{name}} 보기",
+    "readerSwitch": "독자가 천체를 고르게 하기",
+    "readerSwitchOn": "켜짐: 독자가 상단 바에서 바꿀 수 있고, 고른 것은 그 사람의 브라우저에 남아요",
+    "readerSwitchOff": "꺼짐: 모두가 당신이 고른 천체를 봐요. 상단 바의 천체는 보이기만 하고 누를 수 없어요"
   },
   "pages": {
     "groupOrbit": "홈의 궤도",

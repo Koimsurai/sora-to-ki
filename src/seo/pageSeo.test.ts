@@ -21,6 +21,7 @@ beforeAll(async () => {
     default_locale: 'zh-TW',
     locales: ['zh-TW', 'en'],
     theme: 'saturn',
+    theme_switch: true,
     page_descriptions: { notes: { en: 'Notes on Rust and the web.' } },
     launch_pad: { lat: 23.7, lon: 121 },
   });

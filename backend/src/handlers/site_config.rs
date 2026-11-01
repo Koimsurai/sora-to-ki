@@ -83,6 +83,9 @@ pub struct SiteSettings {
     /// 預設天體（主題）：讀者沒在頂欄選過時看到的那顆，分享圖也畫這顆。`None`＝土星
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub theme: Option<String>,
+    /// 讀者能不能在頂欄自己換天體。`None`＝能（預設開放）；`Some(false)`＝大家都看站長的預設
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme_switch: Option<bool>,
     /// 站長自己寫的介紹文字：哪一頁（[`DESCRIBABLE`]）→ 語系 → 字。
     /// 沒寫的就用前端字串檔裡的通用句子（各頁在搜尋結果裡的描述、「關於」選單開頭那一句）
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -255,6 +258,7 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         default_locale: None,
         locales: None,
         theme: None,
+        theme_switch: None,
         page_descriptions: BTreeMap::new(),
         launch_pad: None,
     };
@@ -299,6 +303,8 @@ pub struct SiteConfig {
     pub locales: Vec<String>,
     /// 預設天體（saturn、neptune、blackhole、betelgeuse）：讀者沒選過時看到的那顆
     pub theme: String,
+    /// 讀者能不能在頂欄自己換天體；不能的話大家都看預設那顆
+    pub theme_switch: bool,
     /// 站長自己寫的介紹文字：哪一頁 → 語系 → 字。沒有的就用通用句子
     pub page_descriptions: BTreeMap<String, BTreeMap<String, String>>,
     /// 發射台（站長在哪裡）；沒設就是台灣
@@ -320,6 +326,7 @@ impl From<SiteSettings> for SiteConfig {
             default_locale,
             locales,
             theme: theme_of(s.theme.as_deref()).unwrap_or(THEMES[0]).to_string(),
+            theme_switch: s.theme_switch.unwrap_or(true),
             page_descriptions: s.page_descriptions,
             launch_pad: s.launch_pad.unwrap_or(DEFAULT_PAD),
         }
@@ -345,6 +352,8 @@ pub struct SiteConfigUpdate {
     pub locales: Option<Vec<String>>,
     /// 預設天體（saturn、neptune、blackhole、betelgeuse）
     pub theme: Option<String>,
+    /// 讀者能不能在頂欄自己換天體
+    pub theme_switch: Option<bool>,
     /// 介紹文字（整份換掉）：哪一頁（home、notes…、aboutLead）→ 語系 → 字；空字串＝用通用句子
     pub page_descriptions: Option<BTreeMap<String, BTreeMap<String, String>>>,
     /// 發射台：緯度（-70～70）、經度（-180～180），存到小數點後一位（大概的城市就好，不要填自己家）
@@ -382,6 +391,10 @@ fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, Pr
                 .param("theme", t.as_str())
         })?;
         s.theme = Some(t.to_string());
+    }
+    if let Some(on) = body.theme_switch {
+        // 開著是預設：存成「沒設」，設定裡只留關掉這種例外
+        s.theme_switch = (!on).then_some(false);
     }
     if let Some(name) = body.name {
         let name = name.trim();
@@ -572,9 +585,22 @@ mod tests {
             default_locale: None,
             locales: None,
             theme: None,
+            theme_switch: None,
             page_descriptions: BTreeMap::new(),
             launch_pad: None,
         }
+    }
+
+    #[test]
+    fn 讀者換天體預設開著_關掉才存() {
+        assert!(SiteConfig::from(base()).theme_switch);
+        let off = apply(base(), SiteConfigUpdate { theme_switch: Some(false), ..Default::default() })
+            .expect("收得下");
+        assert_eq!(off.theme_switch, Some(false));
+        assert!(!SiteConfig::from(off.clone()).theme_switch);
+        let on =
+            apply(off, SiteConfigUpdate { theme_switch: Some(true), ..Default::default() }).expect("收得下");
+        assert_eq!(on.theme_switch, None, "開著是預設，存成沒設");
     }
 
     #[test]

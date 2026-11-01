@@ -13,7 +13,7 @@ import { sameTitle } from '@/lib/pageTitle';
 import AdminLangSwitch from '../AdminLangSwitch';
 import AdminLoading from '../AdminLoading';
 import OrbitPreview from '../site/OrbitPreview';
-import { IdentityFields, LocaleFields, PageToggles, SiteField } from '../site/SiteFields';
+import { IdentityFields, LocaleFields, PageToggles, SiteField, ThemeFields } from '../site/SiteFields';
 import { TOGGLE_GROUPS, draftOf, siteProblems, type Draft } from '../site/siteDraft';
 import OAuthGuide from './OAuthGuide';
 import { STEPS, clearSession, readSession, writeSession, type Step } from './initSession';
@@ -324,6 +324,9 @@ export default function InitWizard() {
       <>
         <PageHead title={t('init.site.title')} latin={t('init.site.latin')} lede={t('init.site.lede')} />
         <IdentityFields draft={draft} patch={patch} url={url} touched={touched} />
+        {/* 天體：四顆挑一顆當預設（讀者能不能自己換、試看連結在之後的站台設定頁） */}
+        <span className="sf-label">{t('init.site.theme')}</span>
+        <ThemeFields draft={draft} patch={patch} brief />
       </>
     );
     foot = (
