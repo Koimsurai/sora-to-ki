@@ -31,7 +31,9 @@
     },
     "region": {
       "tw": "台湾",
-      "global": "全球"
+      "global": "全球",
+      "cnjp": "中日",
+      "kr": "韩国"
     },
     "status": {
       "off": "未设置",
@@ -77,7 +79,19 @@
       "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
-      "WAKATIME_API_KEY": "API key"
+      "WAKATIME_API_KEY": "API key",
+      "BANGUMI_USERNAME": "用户名",
+      "BANGUMI_TOKEN": "Access Token",
+      "ANILIST_USERNAME": "用户名",
+      "MAL_USERNAME": "用户名",
+      "MAL_CLIENT_ID": "Client ID",
+      "LETTERBOXD_USERNAME": "用户名",
+      "NLK_API_KEY": "API 密钥",
+      "NEODB_TOKEN": "Access Token",
+      "NEODB_URL": "站点网址",
+      "LASTFM_USERNAME": "用户名",
+      "LASTFM_API_KEY": "API key",
+      "LISTENBRAINZ_USERNAME": "用户名"
     },
     "src": {
       "tmdb": {
@@ -95,10 +109,30 @@
         "what": "巴哈姆特动画疯（台湾）的观看记录",
         "help": "巴哈姆特的账号与密码。账号和家人共用的话会互相挤掉登录，被挤掉时这里会自动重新登录。"
       },
+      "bangumi": {
+        "name": "Bangumi 番组计划",
+        "what": "动画、日剧国剧的收藏与进度",
+        "help": "填 Bangumi 的用户名（个人主页网址最后那段）。收藏设为私密的话，再到 next.bgm.tv/demo/access-token 创建一个 Access Token 填进来。"
+      },
+      "anilist": {
+        "name": "AniList",
+        "what": "动画的观看进度",
+        "help": "填 AniList 的用户名。列表要公开（Settings → Lists 不要勾 private）。"
+      },
+      "mal": {
+        "name": "MyAnimeList",
+        "what": "动画的观看进度",
+        "help": "填 MyAnimeList 的用户名；再到 myanimelist.net/apiconfig 创建一个 app（类型选 web），把 Client ID 填进来。列表要公开。"
+      },
+      "letterboxd": {
+        "name": "Letterboxd",
+        "what": "看过的电影与评分",
+        "help": "填 Letterboxd 的用户名。读的是公开的 RSS，只拿得到最近大约 50 条，之后每六小时补新的。"
+      },
       "googleBooks": {
         "name": "Google Books",
         "what": "用 ISBN 查书名与封面",
-        "help": "不填也能查（改用 Open Library）。要填的话到 Google Cloud Console 启用 Books API，创建一个 API key，查询额度会宽很多。",
+        "help": "不填也能查（改用 Open Library）。要填的话到 Google Cloud Console 启用 Books API，创建一个 API key，查询额度会宽很多。日本的书号会自动先问国立国会图书馆。",
         "unset": "未填，改用 Open Library"
       },
       "ncl": {
@@ -106,10 +140,30 @@
         "what": "台湾出版的书，用 ISBN 查得到中文书名",
         "help": "不需要密钥。打开后每天下载一次新书书目。"
       },
+      "nlk": {
+        "name": "韩国国立中央图书馆",
+        "what": "韩国出版的书，用 ISBN 查得到韩文书名",
+        "help": "到 nl.go.kr/seoji 的「OPEN API」申请一个密钥（免费）。填了之后，978-89 与 979-11 开头的书号会先问这里。"
+      },
+      "neodb": {
+        "name": "NeoDB",
+        "what": "书、电影、剧集的标记（豆瓣的数据可以搬进去）",
+        "help": "到 NeoDB 的 /developer/ 页面生成一个 Access Token（neodb.social 的是 neodb.social/developer）。用的不是 neodb.social 的话，「站点网址」填你那台的网址。书进书架，看过的电影与剧集进在看。"
+      },
       "spotify": {
         "name": "Spotify",
         "what": "最近播放、常听的曲风",
         "help": "到 developer.spotify.com 创建一个 app，Redirect URI 填下面那一行。Client ID 与 Secret 保存后点「关联 Spotify 账号」，把授权完成页面上的 refresh token 贴回来保存。"
+      },
+      "lastfm": {
+        "name": "Last.fm",
+        "what": "最近播放（网易云、KKBOX、Apple Music 等通过 scrobbler 都会进来）",
+        "help": "填 Last.fm 用户名，再到 last.fm/api/account/create 创建一个 API key。没接 Spotify 的时候，「在听」改用这里。"
+      },
+      "listenbrainz": {
+        "name": "ListenBrainz",
+        "what": "最近播放（MusicBrainz 的开放记录，不需要密钥）",
+        "help": "填 ListenBrainz 用户名就好。没接 Spotify、也没接 Last.fm 的时候，「在听」改用这里。"
       },
       "steam": {
         "name": "Steam",
@@ -155,5 +209,6 @@
   "remove": "移除",
   "saved": "已保存",
   "quoteLabel": "{{title}} 的一句话",
-  "quotePlaceholder": "留一句话"
+  "quotePlaceholder": "留一句话",
+  "episodesWatched": "看了 {{count}} 集"
 }

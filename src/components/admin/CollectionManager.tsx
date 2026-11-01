@@ -105,8 +105,9 @@ export default function CollectionManager() {
         meta={isPending ? t('common.loading') : t('collection.meta', { watch: watch.length, fav: favs.length })}
       />
 
+      {/* 一眼看的兩個：動畫瘋的登入還剩幾天、在聽抓不抓得到。沒接的不列（每個來源的完整狀態在「來源」分頁） */}
       <p className="adm-coll-sources" aria-label={t('collection.sources.label')}>
-        {b && (
+        {b && (b.ok || b.jwtExpiresAt !== null) && (
           <span data-bad={!b.ok || undefined}>
             {b.ok ? '●' : '×'} {t('collection.bahamut')}
             {b.ok
@@ -116,12 +117,15 @@ export default function CollectionManager() {
               : ` · ${t('collection.cookieExpired')}`}
           </span>
         )}
-        <span data-bad={data?.tracks_error ? true : undefined}>
-          {data?.tracks_error ? '×' : '●'} Spotify
-          {data?.tracks_error
-            ? ` · ${t('collection.spotifyFailed')}`
-            : ` · ${t('collection.spotifyRecent', { count: tracks.length })}`}
-        </span>
+        {/* 在聽可能是 Spotify、Last.fm 或 ListenBrainz，這裡只說抓不抓得到 */}
+        {(tracks.length > 0 || data?.tracks_error) && (
+          <span data-bad={data?.tracks_error ? true : undefined}>
+            {data?.tracks_error ? '×' : '●'} {t('collection.tab.listen')}
+            {data?.tracks_error
+              ? ` · ${t('collection.spotifyFailed')}`
+              : ` · ${t('collection.spotifyRecent', { count: tracks.length })}`}
+          </span>
+        )}
         <Link to="/admin/books" className="adm-coll-link">
           {t('collection.booksLink')}
         </Link>
@@ -199,8 +203,12 @@ function WatchList({
               <span className="adm-meta">
                 {[
                   KINDS.has(w.kind) ? t(`collection.kind.${w.kind}`) : null,
-                  // 巴哈的集數是原樣的字（「[03]」「特別篇」），不再包一層「第…集」
-                  w.kind === 'anime' && w.detail ? t('collection.watchedUpTo', { detail: w.detail }) : w.detail,
+                  // 巴哈的集數是原樣的字（「[03]」「特別篇」），不再包一層「第…集」；影集只給集數
+                  w.kind === 'anime' && w.detail
+                    ? t('collection.watchedUpTo', { detail: w.detail })
+                    : w.kind === 'tv' && w.detail
+                      ? t('collection.episodesWatched', { count: Number(w.detail) })
+                      : w.detail,
                   formatWhen(w.watched_at, 'yyyy.MM.dd'),
                   w.source
                     ? w.source === 'bahamut'

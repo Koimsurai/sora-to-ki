@@ -54,11 +54,33 @@ pub const SOURCES: &[Source] = &[
         sync: Some("ENABLE_BAHAMUT_SYNC"),
     },
     Source {
+        key: "bangumi",
+        fields: &[field("BANGUMI_USERNAME"), Field { env: "BANGUMI_TOKEN", secret: true, optional: true }],
+        sync: Some("ENABLE_BANGUMI_SYNC"),
+    },
+    Source { key: "anilist", fields: &[field("ANILIST_USERNAME")], sync: Some("ENABLE_ANILIST_SYNC") },
+    Source {
+        key: "mal",
+        fields: &[field("MAL_USERNAME"), field("MAL_CLIENT_ID")],
+        sync: Some("ENABLE_MAL_SYNC"),
+    },
+    Source {
+        key: "letterboxd",
+        fields: &[field("LETTERBOXD_USERNAME")],
+        sync: Some("ENABLE_LETTERBOXD_SYNC"),
+    },
+    Source {
         key: "googleBooks",
         fields: &[Field { env: "GOOGLE_BOOKS_API_KEY", secret: true, optional: true }],
         sync: None,
     },
     Source { key: "ncl", fields: &[], sync: Some("ENABLE_TW_ISBN_SYNC") },
+    Source { key: "nlk", fields: &[secret("NLK_API_KEY")], sync: None },
+    Source {
+        key: "neodb",
+        fields: &[secret("NEODB_TOKEN"), Field { env: "NEODB_URL", secret: false, optional: true }],
+        sync: Some("ENABLE_NEODB_SYNC"),
+    },
     Source {
         key: "spotify",
         fields: &[
@@ -68,6 +90,8 @@ pub const SOURCES: &[Source] = &[
         ],
         sync: None,
     },
+    Source { key: "lastfm", fields: &[field("LASTFM_USERNAME"), secret("LASTFM_API_KEY")], sync: None },
+    Source { key: "listenbrainz", fields: &[field("LISTENBRAINZ_USERNAME")], sync: None },
     Source { key: "steam", fields: &[secret("STEAM_API_KEY"), field("STEAM_ID")], sync: None },
     Source { key: "wakatime", fields: &[secret("WAKATIME_API_KEY")], sync: None },
 ];
