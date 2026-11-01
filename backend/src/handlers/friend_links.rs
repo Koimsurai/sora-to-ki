@@ -820,7 +820,7 @@ pub async fn admin_update_friend(
 
     let mail = match (reply, before.email.as_deref()) {
         (Some(text), Some(to)) => {
-            let subject = format!("關於「{}」的友鏈申請", app.name);
+            let subject = crate::handlers::mailer::friend_reply_subject(&app.name);
             let (html, plain) =
                 crate::handlers::mailer::render_friend_reply(&crate::identity::site_url(), &app.name, text);
             Some(match crate::handlers::mailer::send_one(&state, to, &subject, &plain, &html).await {

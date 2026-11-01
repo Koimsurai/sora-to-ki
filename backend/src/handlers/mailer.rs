@@ -17,6 +17,7 @@ use axum::{
 use serde_json::{Map, Value, json};
 
 use crate::state::AppState;
+use crate::ui_text::{fill, site_text};
 use crate::util::{encode_uri_component, escape_html};
 
 const BATCH_SIZE: usize = 100;
@@ -95,8 +96,25 @@ struct Post {
     excerpt: Option<String>,
 }
 
+// 信件是站長寄的，用站台的預設語系寫（訂閱者沒有存語系；文章本來就是那個語系寫的）
+fn say(key: &str, vars: &[(&str, &str)]) -> String {
+    fill(&site_text(key), vars)
+}
+
+/// `<html lang>` 與內文字型：同一個漢字在繁中、簡中、日文、韓文的字形不一樣，字型要選對那一套
+fn mail_lang() -> (&'static str, &'static str) {
+    let locale = crate::ui_text::locale_of(&crate::handlers::site_config::default_locale());
+    let fonts = match locale.cjk {
+        "SC" => "'Noto Serif SC','Source Han Serif SC','Songti SC','SimSun',Georgia,serif",
+        "JP" => "'Noto Serif JP','Source Han Serif JP','Hiragino Mincho ProN','Yu Mincho',Georgia,serif",
+        "KR" => "'Noto Serif KR','Source Han Serif KR','AppleMyungjo','Batang',Georgia,serif",
+        _ => "'Noto Serif TC','Source Han Serif TC','Songti TC','PMingLiU',Georgia,serif",
+    };
+    (locale.lang, fonts)
+}
+
 fn render_subject(post: &Post) -> String {
-    format!("{} — {} 新文章", post.title, crate::identity::site_name())
+    say("mail.newPost.subject", &[("title", &post.title), ("site", &crate::identity::site_name())])
 }
 
 fn render_text(site: &str, post: &Post, sub: &Sub) -> String {
@@ -107,11 +125,11 @@ fn render_text(site: &str, post: &Post, sub: &Sub) -> String {
         String::new(),
         post.excerpt.clone().unwrap_or_default(),
         String::new(),
-        format!("閱讀全文：{url}"),
+        say("mail.readMoreText", &[("url", &url)]),
         String::new(),
         format!("— {}", signature()),
         String::new(),
-        format!("退訂：{unsub}"),
+        say("mail.unsubscribeText", &[("url", &unsub)]),
     ]
     .join("\n")
 }
@@ -123,8 +141,8 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
     let url = post_url(site, &post.id);
     let unsub = unsubscribe_url(site, &sub.token);
     let greeting = match &sub.name {
-        Some(n) if !n.is_empty() => format!("Hi {}，", escape_html(n)),
-        _ => "Hi，".to_string(),
+        Some(n) if !n.is_empty() => say("mail.greetingNamed", &[("name", &escape_html(n))]),
+        _ => say("mail.greeting", &[]),
     };
     // post.excerpt && post.excerpt.length > 320 ? '…' : ''（原始 excerpt UTF-16 長度）
     let ellipsis = match &post.excerpt {
@@ -142,21 +160,29 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
     };
     let site_bare = site.strip_prefix("https://").or_else(|| site.strip_prefix("http://")).unwrap_or(site);
     let brand = escape_html(&crate::identity::site_name());
+    let (lang, fonts) = mail_lang();
+    let preheader = say("mail.newPost.preheader", &[("excerpt", &excerpt), ("site", &brand)]);
+    let kicker = say("mail.newPost.kicker", &[]);
+    let read_more = say("mail.readMore", &[]);
+    let thanks = say("mail.thanks", &[("site", &brand)]);
+    let unsubscribe = say("mail.unsubscribe", &[]);
+    let all_posts = say("mail.allPosts", &[]);
 
+    // 跟站上翻新後（2026-10）同一套：黑底（--ground）、紙色的宋體字（--paper）、琥珀點（--amber）、
+    // 等寬字加點線底線的連結。信件客戶端不吃外部 CSS 與網頁字型，全部寫 inline、字型只用本機有的。
+    // （這段說明寫在 Rust 這邊，不放進信裡的 HTML 註解：那會原樣寄給每個訂閱者）
     format!(
         r#"<!doctype html>
-<html lang="zh-Hant">
+<html lang="{lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
 </head>
-<body style="margin:0;padding:0;background:#0a0a0c;font-family:'Noto Serif TC','Source Han Serif TC','Songti TC','PMingLiU',Georgia,serif;color:#f1ece3;">
+<body style="margin:0;padding:0;background:#0a0a0c;font-family:{fonts};color:#f1ece3;">
 <div style="display:none;max-height:0;overflow:hidden;color:transparent;">
-{excerpt} · {brand} 新文章上架
+{preheader}
 </div>
-<!-- 跟站上翻新後（2026-10）同一套：黑底（--ground）、紙色的宋體字（--paper）、琥珀點（--amber）、
-     等寬字加點線底線的連結。信件客戶端不吃外部 CSS 與網頁字型，全部寫 inline、字型只用本機有的 -->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0c;">
   <tr><td align="center" style="padding:40px 20px;">
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
@@ -168,14 +194,14 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
       <!-- post -->
       <tr><td style="padding:28px 0 0 0;border-top:1px solid rgba(241,236,227,0.1);">
         <p style="margin:0 0 16px 0;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px;letter-spacing:0.06em;color:rgba(241,236,227,0.4);">
-          <span style="color:#e9c17a;">●</span>&nbsp; 手記 · 新文章
+          <span style="color:#e9c17a;">●</span>&nbsp; {kicker}
         </p>
         <h1 style="margin:0 0 18px 0;font-size:26px;line-height:1.45;color:#f1ece3;font-weight:600;">
           {title}
         </h1>
         {excerpt_block}
         <p style="margin:0;">
-          <a href="{url}" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;letter-spacing:0.06em;color:#e9c17a;text-decoration:none;border-bottom:1px dotted rgba(233,193,122,0.6);padding-bottom:2px;">閱讀全文 →</a>
+          <a href="{url}" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;letter-spacing:0.06em;color:#e9c17a;text-decoration:none;border-bottom:1px dotted rgba(233,193,122,0.6);padding-bottom:2px;">{read_more} →</a>
         </p>
       </td></tr>
 
@@ -183,7 +209,7 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
       <tr><td style="padding:44px 0 0 0;font-size:13px;line-height:1.8;color:rgba(241,236,227,0.55);">
         {greeting}
         <br>
-        感謝你訂閱 {brand}。如果今天這封信打擾到你，請點下面的退訂連結，下次就不會再寄了。
+        {thanks}
       </td></tr>
 
       <!-- footer -->
@@ -193,9 +219,9 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
           <a href="{site}" style="color:rgba(241,236,227,0.7);text-decoration:underline;">{site_bare}</a>.
         </p>
         <p style="margin:8px 0 0 0;font-size:11px;line-height:1.8;">
-          <a href="{unsub}" style="color:rgba(241,236,227,0.7);text-decoration:underline;">一鍵退訂</a>
+          <a href="{unsub}" style="color:rgba(241,236,227,0.7);text-decoration:underline;">{unsubscribe}</a>
           <span style="color:rgba(241,236,227,0.4);">&nbsp;·&nbsp;</span>
-          <a href="{site}/blog" style="color:rgba(241,236,227,0.7);text-decoration:underline;">所有文章</a>
+          <a href="{site}/blog" style="color:rgba(241,236,227,0.7);text-decoration:underline;">{all_posts}</a>
         </p>
       </td></tr>
     </table>
@@ -206,8 +232,13 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
     )
 }
 
+/// 友鏈審核回信的主旨（純文字，不轉義）
+pub(crate) fn friend_reply_subject(site_name: &str) -> String {
+    say("mail.friend.subject", &[("name", site_name)])
+}
+
 /// 友鏈審核的回信：站長寫的那段放中間，前面標明是哪個站的申請，後面署名與朋友頁連結。
-/// 版型跟新文章通知信同一套（見 [`render_email`]）。回傳 (HTML, 純文字)
+/// 版型跟新文章通知信同一套（見 [`render_email`]）。回傳 (HTML, 純文字)。主旨見 [`friend_reply_subject`]
 pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (String, String) {
     let name = escape_html(site_name);
     // 空一行是分段，單一個換行是段內換行
@@ -227,15 +258,28 @@ pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (
     let brand = escape_html(&crate::identity::site_name());
     let signature = signature();
     let signature_html = escape_html(&signature);
+    let (lang, fonts) = mail_lang();
+    let title = say("mail.friend.subject", &[("name", &name)]);
+    let kicker = say("mail.friend.kicker", &[("name", &name)]);
+    let friends_page = say("mail.friend.page", &[]);
+    let footer = say(
+        "mail.friend.footer",
+        &[(
+            "site",
+            &format!(
+                r#"<a href="{site}/friends" style="color:rgba(241,236,227,0.7);text-decoration:underline;">{site_bare}</a>"#
+            ),
+        )],
+    );
     let html = format!(
         r#"<!doctype html>
-<html lang="zh-Hant">
+<html lang="{lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>關於「{name}」的友鏈申請</title>
+<title>{title}</title>
 </head>
-<body style="margin:0;padding:0;background:#0a0a0c;font-family:'Noto Serif TC','Source Han Serif TC','Songti TC','PMingLiU',Georgia,serif;color:#f1ece3;">
+<body style="margin:0;padding:0;background:#0a0a0c;font-family:{fonts};color:#f1ece3;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0c;">
   <tr><td align="center" style="padding:40px 20px;">
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
@@ -245,7 +289,7 @@ pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (
 
       <tr><td style="padding:28px 0 0 0;border-top:1px solid rgba(241,236,227,0.1);">
         <p style="margin:0 0 20px 0;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px;letter-spacing:0.06em;color:rgba(241,236,227,0.4);">
-          <span style="color:#e9c17a;">●</span>&nbsp; 友鏈申請 · {name}
+          <span style="color:#e9c17a;">●</span>&nbsp; {kicker}
         </p>
         {body}
       </td></tr>
@@ -254,12 +298,12 @@ pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (
         — {signature_html}
       </td></tr>
       <tr><td style="padding:12px 0 0 0;">
-        <a href="{site}/friends" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;letter-spacing:0.06em;color:#e9c17a;text-decoration:none;border-bottom:1px dotted rgba(233,193,122,0.6);padding-bottom:2px;">朋友頁 →</a>
+        <a href="{site}/friends" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;letter-spacing:0.06em;color:#e9c17a;text-decoration:none;border-bottom:1px dotted rgba(233,193,122,0.6);padding-bottom:2px;">{friends_page} →</a>
       </td></tr>
 
       <tr><td style="padding:40px 0 0 0;">
         <p style="margin:0;padding-top:20px;border-top:1px solid rgba(241,236,227,0.1);font-size:11px;line-height:1.8;color:rgba(241,236,227,0.4);">
-          這封信是回覆你在 <a href="{site}/friends" style="color:rgba(241,236,227,0.7);text-decoration:underline;">{site_bare}</a> 送出的友鏈申請。
+          {footer}
         </p>
       </td></tr>
     </table>
@@ -432,6 +476,27 @@ pub async fn send_newsletter_route(
 #[cfg(test)]
 mod tests {
     use super::render_friend_reply;
+
+    /// 預設語系是英文的站：兩種信從主旨到頁尾都不能出現中文，`<html lang>` 也跟著換
+    #[test]
+    fn 預設語系是英文時信裡沒有中文() {
+        crate::handlers::site_config::set_default_locale_for_test("en");
+        let han = |s: &str| s.chars().any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c));
+        let post =
+            super::Post { id: serde_json::json!(7), title: "Title".into(), excerpt: Some("Excerpt".into()) };
+        let sub = super::Sub { email: "a@b.c".into(), name: Some("Ann".into()), token: "t".into() };
+        let site = "https://example.com";
+        let email = super::render_email(site, &post, &sub);
+        assert!(!han(&email), "{email}");
+        assert!(email.contains(r#"<html lang="en">"#));
+        assert!(email.contains("Hi Ann,"));
+        for s in [super::render_subject(&post), super::render_text(site, &post, &sub)] {
+            assert!(!han(&s), "{s}");
+        }
+        let (html, text) = render_friend_reply(site, "Ink", "OK");
+        assert!(!han(&html) && !han(&text), "{html}");
+        assert_eq!(super::friend_reply_subject("Ink"), "About your link request for “Ink”");
+    }
 
     #[test]
     fn 友鏈回信_站長的字照原樣分段_而且會跳脫() {

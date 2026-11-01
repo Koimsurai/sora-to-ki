@@ -135,6 +135,12 @@ pub fn set_theme_for_test(theme: &str) {
     THEME.store(THEMES.iter().position(|t| *t == theme).unwrap_or(0), Ordering::Relaxed);
 }
 
+/// 只換預設語系（測試用；nextest 每個測試各自一個行程，不會互相影響）
+#[cfg(test)]
+pub fn set_default_locale_for_test(locale: &str) {
+    set_current(SiteSettings { default_locale: Some(locale.to_string()), ..SiteSettings::default() });
+}
+
 /// 字串 → 能選的天體（大小寫不拘）
 fn theme_of(t: Option<&str>) -> Option<&'static str> {
     let t = t?.trim();
