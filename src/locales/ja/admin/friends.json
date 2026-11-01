@@ -81,7 +81,7 @@
   "removeApproved": "相互リンクページから消えます。記録を残したい場合は却下にしてください。",
   "removePending": "この申請は完全に削除されます。記録を残したい場合は却下にしてください。",
   "keep": "残す",
-  "check": {
+  "checkItem": {
     "label": {
       "reachable": "サイトにつながる",
       "https": "HTTPS",

@@ -39,11 +39,11 @@ const hostOf = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '
 
 /** 清單上的一行摘要：「4 / 5 · 還沒連回來」，沒檢查過就說沒檢查過 */
 /** 檢查項目的名字：後端給的 key 換成站長的語言；認不得的 key 用存著的字 */
-const checkLabel = (c: FriendCheck) => at(`friends.check.label.${c.key}`, { defaultValue: c.label });
+const checkLabel = (c: FriendCheck) => at(`friends.checkItem.label.${c.key}`, { defaultValue: c.label });
 
 /** 檢查的說明：有 code 就照站長的語言填 params；舊的紀錄（存在資料庫裡、沒有 code）照原樣 */
 const checkDetail = (c: FriendCheck) =>
-  c.code ? at(`friends.check.detail.${c.code}`, { ...c.params, defaultValue: c.detail }) : c.detail;
+  c.code ? at(`friends.checkItem.detail.${c.code}`, { ...c.params, defaultValue: c.detail }) : c.detail;
 
 function checkSummary(f: AdminFriendRow): { text: string; bad: boolean } {
   if (f.checks.length === 0) return { text: at('friends.checkNone'), bad: false };

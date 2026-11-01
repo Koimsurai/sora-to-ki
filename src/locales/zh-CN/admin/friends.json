@@ -81,7 +81,7 @@
   "removeApproved": "会从朋友页上消失。想保留记录的话，改成退回就好。",
   "removePending": "这份申请会被整个删除。想保留记录的话，改成退回就好。",
   "keep": "保留",
-  "check": {
+  "checkItem": {
     "label": {
       "reachable": "网站访问得到",
       "https": "HTTPS",

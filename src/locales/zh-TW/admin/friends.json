@@ -81,7 +81,7 @@
   "removeApproved": "會從朋友頁上消失。想留著紀錄的話，改成退回就好。",
   "removePending": "這份申請會整個刪掉。想留著紀錄的話，改成退回就好。",
   "keep": "留著",
-  "check": {
+  "checkItem": {
     "label": {
       "reachable": "網站連得到",
       "https": "HTTPS",

@@ -40,7 +40,8 @@ export default function VideoPlayer({
   width?: number;
   height?: number;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  // webkitEnterFullscreen 只有 iPhone 的 Safari 有（TS 的 DOM 型別沒收）
+  const videoRef = useRef<HTMLVideoElement & { webkitEnterFullscreen?: () => void }>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -151,7 +152,10 @@ export default function VideoPlayer({
   const toggleFullscreen = useCallback(() => {
     const el = wrapRef.current;
     if (!el) return;
-    if (document.fullscreenElement)
+    // iPhone 的 Safari 只有影片元素能全螢幕（自己的播放器），元素上沒有 requestFullscreen
+    if (typeof el.requestFullscreen !== 'function') {
+      videoRef.current?.webkitEnterFullscreen?.();
+    } else if (document.fullscreenElement)
       void document.exitFullscreen().catch(() => {
         /* 忽略 */
       });
