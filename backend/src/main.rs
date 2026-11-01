@@ -172,6 +172,8 @@ async fn run() -> anyhow::Result<()> {
     handlers::post_lifecycle::spawn(state.clone());
     // 依地區挑的觀看紀錄：Bangumi、AniList、MyAnimeList、Letterboxd（開關在後台；見 handlers/watch_sources.rs）
     handlers::watch_sources::spawn_all(&state);
+    // NeoDB 的書架與觀看紀錄（見 handlers/read_sources.rs）
+    handlers::read_sources::spawn_sync(&state);
     // 讀者的國家（反應紀錄用）：DB-IP 的國家資料庫，預設每月自己抓（GEOIP_DOWNLOAD=0 關掉；見 geo.rs）
     koimsurai_web_backend::geo::spawn(&state);
 

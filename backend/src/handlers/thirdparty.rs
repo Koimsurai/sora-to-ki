@@ -1336,6 +1336,12 @@ pub async fn books_search_external(
     };
     let ncl_first = is_isbn || input.chars().any(is_cjk);
     books = merge_with_ncl(ncl, books, ncl_first);
+    // 日本、韓國的書號先問那個國家的國家圖書館（handlers/isbn_regions.rs）；封面一樣從 Google 那筆補
+    if is_isbn {
+        let (regional, warning) = crate::handlers::isbn_regions::lookup(&state, &clean_isbn).await;
+        warnings.extend(warning);
+        books = merge_with_ncl(regional, books, true);
+    }
     if books.is_empty() {
         books = search_open_library(&state.http, &state.external.openlibrary, &input, is_isbn).await;
     }

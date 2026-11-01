@@ -184,6 +184,13 @@ async fn check(state: &AppState, key: &str) -> SourceCheck {
             ),
             None => Err("Not set".to_string()),
         },
+        "nlk" => crate::handlers::isbn_regions::check_nlk(state).await,
+        "lastfm" | "listenbrainz" => {
+            return match crate::handlers::listen_sources::check(state, key).await {
+                Ok(n) => SourceCheck { count: Some(n), ..ok },
+                Err(e) => fail(e),
+            };
+        }
         "spotify" => {
             return match tokio::time::timeout(
                 CHECK_TIMEOUT,
@@ -307,6 +314,7 @@ pub async fn sync_source(
         "simkl" => crate::handlers::simkl::sync_and_record(&state).await,
         "bahamut" => crate::handlers::bahamut::sync_and_record(&state).await,
         "ncl" => crate::handlers::tw_isbn::sync_and_record(&state).await,
+        "neodb" => crate::handlers::read_sources::sync_and_record(&state).await,
         other => match crate::handlers::watch_sources::sync_and_record(&state, other).await {
             Some(r) => r,
             None => return unknown_source(&key),

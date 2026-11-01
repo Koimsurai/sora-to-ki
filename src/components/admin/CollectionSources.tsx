@@ -20,7 +20,7 @@ type Group = 'watch' | 'read' | 'listen' | 'play';
 type State = 'ok' | 'bad' | 'off';
 
 /** 每個來源放在哪一組、哪個地區的人在用；名字與說明在語系檔（collection.sources.src.<key>） */
-const META: Record<string, { group: Group; region?: 'tw' | 'cnjp' | 'global' }> = {
+const META: Record<string, { group: Group; region?: 'tw' | 'cnjp' | 'kr' | 'global' }> = {
   tmdb: { group: 'watch' },
   simkl: { group: 'watch', region: 'global' },
   bahamut: { group: 'watch', region: 'tw' },
@@ -30,7 +30,11 @@ const META: Record<string, { group: Group; region?: 'tw' | 'cnjp' | 'global' }> 
   letterboxd: { group: 'watch', region: 'global' },
   googleBooks: { group: 'read', region: 'global' },
   ncl: { group: 'read', region: 'tw' },
+  nlk: { group: 'read', region: 'kr' },
+  neodb: { group: 'read', region: 'global' },
   spotify: { group: 'listen', region: 'global' },
+  lastfm: { group: 'listen', region: 'global' },
+  listenbrainz: { group: 'listen', region: 'global' },
   steam: { group: 'play', region: 'global' },
   wakatime: { group: 'play', region: 'global' },
 };

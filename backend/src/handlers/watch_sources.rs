@@ -97,7 +97,7 @@ async fn upsert_film(conn: &mut SqliteConnection, source: &str, f: &Film) -> boo
 }
 
 /// 整輪包在一個交易裡：第一次同步一個帳號動輒上萬集，一集一個交易要等一分鐘以上
-async fn write_all(pool: &SqlitePool, source: &str, entries: &[Entry]) -> Result<u32, String> {
+pub(crate) async fn write_all(pool: &SqlitePool, source: &str, entries: &[Entry]) -> Result<u32, String> {
     let failed = |e: sqlx::Error| format!("Couldn't save to the database: {e}");
     let mut tx = pool.begin().await.map_err(failed)?;
     let mut n = 0;
@@ -168,6 +168,7 @@ async fn first_sync(pool: &SqlitePool, key: &str) -> bool {
 /// Bangumi 的條目類型：2 動畫、6 三次元（日劇、陸劇…）
 const BGM_ANIME: u8 = 2;
 const BGM_REAL: u8 = 6;
+const BGM_BOOK: u8 = 1;
 
 /// `/v0/users/{u}/collections` 的一筆 → 我們的紀錄。只收「看過」(2) 與「在看」(3)
 pub(crate) fn bangumi_entry(c: &Value, locale: &str) -> Option<Entry> {
@@ -209,9 +210,11 @@ async fn bangumi_sync(state: &AppState) -> Result<u32, String> {
     let token = integrations::var("BANGUMI_TOKEN");
     let pages = if first_sync(&state.pool, "bangumi").await { 20 } else { 1 };
     let locale = locale();
-    let mut entries = Vec::new();
-    for subject_type in [BGM_ANIME, BGM_REAL] {
-        for kind in [3, 2] {
+    let (mut entries, mut books) = (Vec::new(), Vec::new());
+    // 書（1）也一起：想讀、讀過、在讀都收，進書架（handlers/read_sources.rs）
+    for subject_type in [BGM_ANIME, BGM_REAL, BGM_BOOK] {
+        let kinds: &[u8] = if subject_type == BGM_BOOK { &[3, 2, 1] } else { &[3, 2] };
+        for &kind in kinds {
             for page in 0..pages {
                 let url = format!(
                     "{}/v0/users/{}/collections?subject_type={subject_type}&type={kind}&limit=50&offset={}",
@@ -226,14 +229,21 @@ async fn bangumi_sync(state: &AppState) -> Result<u32, String> {
                 }
                 let data = get_json(req, "Bangumi").await?;
                 let list = data.get("data").and_then(Value::as_array).cloned().unwrap_or_default();
-                entries.extend(list.iter().filter_map(|c| bangumi_entry(c, &locale)));
+                if subject_type == BGM_BOOK {
+                    books.extend(
+                        list.iter().filter_map(|c| crate::handlers::read_sources::bangumi_book(c, &locale)),
+                    );
+                } else {
+                    entries.extend(list.iter().filter_map(|c| bangumi_entry(c, &locale)));
+                }
                 if list.len() < 50 {
                     break;
                 }
             }
         }
     }
-    write_all(&state.pool, "bangumi", &entries).await
+    let n = crate::handlers::read_sources::write_books(&state.pool, "bangumi", &books).await?;
+    Ok(n + write_all(&state.pool, "bangumi", &entries).await?)
 }
 
 // ── AniList ─────────────────────────────────────────────────────────────

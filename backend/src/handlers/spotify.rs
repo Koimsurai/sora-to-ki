@@ -290,9 +290,20 @@ pub async fn recently_played(State(state): State<AppState>) -> Response {
             payload.items.retain(|i| !hidden.contains(&i.track.id));
             Json(payload).into_response()
         }
-        // 沒接 Spotify 的環境（CI、新部署）：空清單，不是 500——收藏頁與頂欄選單都會打這支，
-        // 回 500 的話瀏覽器每次都在 console 記一筆錯誤
-        Err(SpErr::NotConfigured) => Json(RecentlyPlayedResponse::default()).into_response(),
+        // 沒接 Spotify：有 Last.fm／ListenBrainz 就用它們（handlers/listen_sources.rs）；都沒有就是
+        // 空清單，不是 500——收藏頁與頂欄選單都會打這支，回 500 的話瀏覽器每次都在 console 記一筆錯誤
+        Err(SpErr::NotConfigured) => match crate::handlers::listen_sources::recent(&state).await {
+            Some(Ok(mut payload)) => {
+                let hidden = crate::handlers::collection::hidden_keys(&state.pool, "track").await;
+                payload.items.retain(|i| !hidden.contains(&i.track.id));
+                Json(payload).into_response()
+            }
+            Some(Err(e)) => {
+                tracing::warn!("[listening] {e}");
+                Json(RecentlyPlayedResponse::default()).into_response()
+            }
+            None => Json(RecentlyPlayedResponse::default()).into_response(),
+        },
         Err(e) => err_json("Failed to fetch Spotify recently played", &e),
     }
 }
@@ -308,7 +319,9 @@ pub(crate) async fn recent_unfiltered(state: &AppState) -> Result<RecentlyPlayed
     .await;
     match r {
         Ok(v) => Ok(serde_json::from_value::<RecentlyPlayedResponse>(v).unwrap_or_default()),
-        Err(SpErr::NotConfigured) => Ok(RecentlyPlayedResponse::default()),
+        Err(SpErr::NotConfigured) => crate::handlers::listen_sources::recent(state)
+            .await
+            .unwrap_or_else(|| Ok(RecentlyPlayedResponse::default())),
         Err(e) => Err(e.details().to_string()),
     }
 }
@@ -319,9 +332,12 @@ pub(crate) async fn recent_unfiltered(state: &AppState) -> Result<RecentlyPlayed
 pub async fn now_playing(State(state): State<AppState>) -> Response {
     let token = match access_token(&state).await {
         Ok(t) => t,
-        Err(SpErr::NotConfigured | _) => {
-            return Json(NowPlayingResponse::default()).into_response();
+        // 沒接 Spotify：Last.fm／ListenBrainz 有記到正在播的就用它
+        Err(SpErr::NotConfigured) => {
+            let playing = crate::handlers::listen_sources::now_playing(&state).await;
+            return Json(playing.unwrap_or_default()).into_response();
         }
+        Err(_) => return Json(NowPlayingResponse::default()).into_response(),
     };
     match sp_get(&state, "/v1/me/player/currently-playing", &token, None).await {
         Ok((status, v)) => {

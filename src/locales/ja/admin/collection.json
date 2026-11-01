@@ -32,7 +32,8 @@
     "region": {
       "tw": "台湾",
       "global": "世界",
-      "cnjp": "中国・日本"
+      "cnjp": "中国・日本",
+      "kr": "韓国"
     },
     "status": {
       "off": "未設定",
@@ -84,7 +85,13 @@
       "ANILIST_USERNAME": "ユーザー名",
       "MAL_USERNAME": "ユーザー名",
       "MAL_CLIENT_ID": "Client ID",
-      "LETTERBOXD_USERNAME": "ユーザー名"
+      "LETTERBOXD_USERNAME": "ユーザー名",
+      "NLK_API_KEY": "API キー",
+      "NEODB_TOKEN": "Access Token",
+      "NEODB_URL": "インスタンスの URL",
+      "LASTFM_USERNAME": "ユーザー名",
+      "LASTFM_API_KEY": "API key",
+      "LISTENBRAINZ_USERNAME": "ユーザー名"
     },
     "src": {
       "tmdb": {
@@ -125,7 +132,7 @@
       "googleBooks": {
         "name": "Google Books",
         "what": "ISBN で書名と表紙を調べる",
-        "help": "入れなくても調べられます（Open Library を使います）。入れる場合は Google Cloud Console で Books API を有効にして API key を作ると、上限がかなり増えます。",
+        "help": "入れなくても調べられます（Open Library を使います）。入れる場合は Google Cloud Console で Books API を有効にして API key を作ると、上限がかなり増えます。日本の ISBN は自動的に国立国会図書館を先に調べます。",
         "unset": "未入力。Open Library を使用"
       },
       "ncl": {
@@ -133,10 +140,30 @@
         "what": "台湾で出版された本を ISBN で中国語の書名つきで",
         "help": "キーは不要です。オンにすると毎日一回、新刊書誌をダウンロードします。"
       },
+      "nlk": {
+        "name": "韓国国立中央図書館",
+        "what": "韓国で出版された本を ISBN で、韓国語の書名つきで",
+        "help": "nl.go.kr/seoji の「OPEN API」で無料のキーを申請します。入れると、978-89 と 979-11 で始まる ISBN はまずここを調べます。"
+      },
+      "neodb": {
+        "name": "NeoDB",
+        "what": "本・映画・ドラマの記録（豆瓣のデータを移せます）",
+        "help": "NeoDB の /developer/ ページで Access Token を作ります（neodb.social なら neodb.social/developer）。neodb.social 以外のインスタンスなら、その URL を入れてください。本は本棚へ、観た映画とドラマは「観ている」へ入ります。"
+      },
       "spotify": {
         "name": "Spotify",
         "what": "最近の再生、よく聴くジャンル",
         "help": "developer.spotify.com でアプリを作り、Redirect URI に下の値を入れます。Client ID と Secret を保存したら「Spotify アカウントを連携」を押し、認可後のページに出る refresh token を貼って保存します。"
+      },
+      "lastfm": {
+        "name": "Last.fm",
+        "what": "最近の再生（NetEase、KKBOX、Apple Music なども scrobbler 経由で入ります）",
+        "help": "Last.fm のユーザー名を入れ、last.fm/api/account/create で API key を作ります。Spotify をつないでいないとき、「聴いている」はこれを使います。"
+      },
+      "listenbrainz": {
+        "name": "ListenBrainz",
+        "what": "最近の再生（MusicBrainz のオープンな記録。キー不要）",
+        "help": "ListenBrainz のユーザー名を入れるだけです。Spotify も Last.fm もつないでいないとき、「聴いている」はこれを使います。"
       },
       "steam": {
         "name": "Steam",

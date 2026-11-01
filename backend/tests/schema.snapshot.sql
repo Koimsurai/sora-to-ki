@@ -12,6 +12,9 @@ index idx_anime_history_video
 index idx_anime_history_watched
   CREATE INDEX idx_anime_history_watched ON anime_history(last_watched_at DESC)
 
+index idx_books_external_id
+  CREATE UNIQUE INDEX idx_books_external_id ON books(external_id) WHERE external_id IS NOT NULL
+
 index idx_books_reading_status
   CREATE INDEX idx_books_reading_status ON books(reading_status)
 
@@ -88,7 +91,7 @@ table anime_history
   CREATE TABLE anime_history ( anime_sn INTEGER NOT NULL, video_sn INTEGER NOT NULL, title TEXT, cover_url TEXT, episode TEXT, last_watched_at DATETIME DEFAULT CURRENT_TIMESTAMP, synced_at DATETIME DEFAULT CURRENT_TIMESTAMP, tmdb_id INTEGER, PRIMARY KEY (anime_sn, video_sn) )
 
 table books
-  CREATE TABLE books ( id INTEGER PRIMARY KEY AUTOINCREMENT, isbn TEXT, title TEXT NOT NULL, authors TEXT, publisher TEXT, published_date TEXT, description TEXT, cover_url TEXT, page_count INTEGER, language TEXT, categories TEXT, reading_status TEXT DEFAULT 'to-read', rating REAL, personal_notes TEXT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, date_updated DATETIME DEFAULT CURRENT_TIMESTAMP, date_started DATETIME, date_finished DATETIME )
+  CREATE TABLE books ( id INTEGER PRIMARY KEY AUTOINCREMENT, isbn TEXT, title TEXT NOT NULL, authors TEXT, publisher TEXT, published_date TEXT, description TEXT, cover_url TEXT, page_count INTEGER, language TEXT, categories TEXT, reading_status TEXT DEFAULT 'to-read', rating REAL, personal_notes TEXT, date_added DATETIME DEFAULT CURRENT_TIMESTAMP, date_updated DATETIME DEFAULT CURRENT_TIMESTAMP, date_started DATETIME, date_finished DATETIME , source TEXT, external_id TEXT)
 
 table categories
   CREATE TABLE categories ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, short_description TEXT DEFAULT '' , name_en TEXT, name_ja TEXT, name_ko TEXT, name_zh_cn TEXT, description_en TEXT, description_ja TEXT, description_ko TEXT, description_zh_cn TEXT, short_description_en TEXT, short_description_ja TEXT, short_description_ko TEXT, short_description_zh_cn TEXT, name_zh_tw TEXT, description_zh_tw TEXT, short_description_zh_tw TEXT)

@@ -32,7 +32,8 @@
     "region": {
       "tw": "台灣",
       "global": "全球",
-      "cnjp": "中日"
+      "cnjp": "中日",
+      "kr": "韓國"
     },
     "status": {
       "off": "沒設定",
@@ -84,7 +85,13 @@
       "ANILIST_USERNAME": "帳號名",
       "MAL_USERNAME": "帳號名",
       "MAL_CLIENT_ID": "Client ID",
-      "LETTERBOXD_USERNAME": "帳號名"
+      "LETTERBOXD_USERNAME": "帳號名",
+      "NLK_API_KEY": "API 金鑰",
+      "NEODB_TOKEN": "Access Token",
+      "NEODB_URL": "站台網址",
+      "LASTFM_USERNAME": "帳號名",
+      "LASTFM_API_KEY": "API key",
+      "LISTENBRAINZ_USERNAME": "帳號名"
     },
     "src": {
       "tmdb": {
@@ -125,7 +132,7 @@
       "googleBooks": {
         "name": "Google Books",
         "what": "用 ISBN 查書名與封面",
-        "help": "不填也能查（改用 Open Library）。要填的話到 Google Cloud Console 啟用 Books API，建一把 API key，查詢額度會寬很多。",
+        "help": "不填也能查（改用 Open Library）。要填的話到 Google Cloud Console 啟用 Books API，建一把 API key，查詢額度會寬很多。日本的書號會自動先問國立國會圖書館。",
         "unset": "沒填，改用 Open Library"
       },
       "ncl": {
@@ -133,10 +140,30 @@
         "what": "台灣出版的書，用 ISBN 查得到中文書名",
         "help": "不用金鑰。打開後每天下載一次國家圖書館的新書書目。"
       },
+      "nlk": {
+        "name": "韓國國立中央圖書館",
+        "what": "韓國出版的書，用 ISBN 查得到韓文書名",
+        "help": "到 nl.go.kr/seoji 的「OPEN API」申請一把金鑰（免費）。填了之後，978-89 與 979-11 開頭的書號會先問這裡。"
+      },
+      "neodb": {
+        "name": "NeoDB",
+        "what": "書、電影、影集的標記（豆瓣的資料可以搬進去）",
+        "help": "到 NeoDB 的 /developer/ 頁面產生一個 Access Token（neodb.social 的是 neodb.social/developer）。用的不是 neodb.social 的話，「站台網址」填你那台的網址。書進書架，看過的電影與影集進在看。"
+      },
       "spotify": {
         "name": "Spotify",
         "what": "最近播放、常聽的曲風",
         "help": "到 developer.spotify.com 建一個 app，Redirect URI 填下面那一行。Client ID 與 Secret 存好之後按「連結 Spotify 帳號」，把授權完頁面上的 refresh token 貼回來存檔。"
+      },
+      "lastfm": {
+        "name": "Last.fm",
+        "what": "最近播放（網易雲、KKBOX、Apple Music 等透過 scrobbler 都會進來）",
+        "help": "填 Last.fm 帳號名，再到 last.fm/api/account/create 建一把 API key。沒接 Spotify 的時候，「在聽」改用這裡。"
+      },
+      "listenbrainz": {
+        "name": "ListenBrainz",
+        "what": "最近播放（MusicBrainz 的開放紀錄，不用金鑰）",
+        "help": "填 ListenBrainz 帳號名就好。沒接 Spotify、也沒接 Last.fm 的時候，「在聽」改用這裡。"
       },
       "steam": {
         "name": "Steam",

@@ -32,7 +32,8 @@
     "region": {
       "tw": "대만",
       "global": "전 세계",
-      "cnjp": "중국·일본"
+      "cnjp": "중국·일본",
+      "kr": "한국"
     },
     "status": {
       "off": "설정 안 됨",
@@ -84,7 +85,13 @@
       "ANILIST_USERNAME": "사용자 이름",
       "MAL_USERNAME": "사용자 이름",
       "MAL_CLIENT_ID": "Client ID",
-      "LETTERBOXD_USERNAME": "사용자 이름"
+      "LETTERBOXD_USERNAME": "사용자 이름",
+      "NLK_API_KEY": "API 키",
+      "NEODB_TOKEN": "Access Token",
+      "NEODB_URL": "인스턴스 URL",
+      "LASTFM_USERNAME": "사용자 이름",
+      "LASTFM_API_KEY": "API key",
+      "LISTENBRAINZ_USERNAME": "사용자 이름"
     },
     "src": {
       "tmdb": {
@@ -125,7 +132,7 @@
       "googleBooks": {
         "name": "Google Books",
         "what": "ISBN으로 책 제목과 표지 찾기",
-        "help": "넣지 않아도 찾을 수 있어요 (Open Library 사용). 넣으려면 Google Cloud Console에서 Books API를 켜고 API key를 만드세요. 한도가 훨씬 넉넉해져요.",
+        "help": "넣지 않아도 찾을 수 있어요 (Open Library 사용). 넣으려면 Google Cloud Console에서 Books API를 켜고 API key를 만드세요. 한도가 훨씬 넉넉해져요. 일본 ISBN은 자동으로 국립국회도서관부터 찾아요.",
         "unset": "비어 있음, Open Library 사용"
       },
       "ncl": {
@@ -133,10 +140,30 @@
         "what": "대만에서 나온 책을 ISBN으로, 중국어 제목까지",
         "help": "키가 필요 없어요. 켜 두면 하루에 한 번 신간 서지를 내려받아요."
       },
+      "nlk": {
+        "name": "국립중앙도서관",
+        "what": "한국에서 나온 책을 ISBN으로, 한국어 제목까지",
+        "help": "nl.go.kr/seoji의 「OPEN API」에서 무료 키를 신청하세요. 넣으면 978-89, 979-11로 시작하는 ISBN은 여기부터 찾아요."
+      },
+      "neodb": {
+        "name": "NeoDB",
+        "what": "책·영화·드라마 기록 (더우반 데이터를 옮겨 올 수 있어요)",
+        "help": "NeoDB의 /developer/ 페이지에서 Access Token을 만드세요 (neodb.social이라면 neodb.social/developer). neodb.social이 아닌 인스턴스라면 그 URL을 넣으세요. 책은 책장으로, 본 영화와 드라마는 「보는 중」으로 들어가요."
+      },
       "spotify": {
         "name": "Spotify",
         "what": "최근 재생, 자주 듣는 장르",
         "help": "developer.spotify.com에서 앱을 만들고 Redirect URI에 아래 값을 넣으세요. Client ID와 Secret을 저장한 뒤 「Spotify 계정 연결」을 누르고, 승인 후 페이지에 나오는 refresh token을 붙여 넣어 저장하세요."
+      },
+      "lastfm": {
+        "name": "Last.fm",
+        "what": "최근 재생 (멜론·NetEase·Apple Music 등도 scrobbler로 들어와요)",
+        "help": "Last.fm 사용자 이름을 넣고, last.fm/api/account/create에서 API key를 만드세요. Spotify를 연결하지 않았을 때 「듣는 중」은 이걸 써요."
+      },
+      "listenbrainz": {
+        "name": "ListenBrainz",
+        "what": "최근 재생 (MusicBrainz의 공개 기록, 키 필요 없음)",
+        "help": "ListenBrainz 사용자 이름만 넣으면 돼요. Spotify도 Last.fm도 연결하지 않았을 때 「듣는 중」은 이걸 써요."
       },
       "steam": {
         "name": "Steam",

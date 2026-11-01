@@ -32,7 +32,8 @@
     "region": {
       "tw": "Taiwan",
       "global": "Global",
-      "cnjp": "China & Japan"
+      "cnjp": "China & Japan",
+      "kr": "Korea"
     },
     "status": {
       "off": "Not set up",
@@ -84,7 +85,13 @@
       "ANILIST_USERNAME": "Username",
       "MAL_USERNAME": "Username",
       "MAL_CLIENT_ID": "Client ID",
-      "LETTERBOXD_USERNAME": "Username"
+      "LETTERBOXD_USERNAME": "Username",
+      "NLK_API_KEY": "API key",
+      "NEODB_TOKEN": "Access Token",
+      "NEODB_URL": "Instance URL",
+      "LASTFM_USERNAME": "Username",
+      "LASTFM_API_KEY": "API key",
+      "LISTENBRAINZ_USERNAME": "Username"
     },
     "src": {
       "tmdb": {
@@ -125,7 +132,7 @@
       "googleBooks": {
         "name": "Google Books",
         "what": "Look up titles and covers by ISBN",
-        "help": "Lookups work without it (falling back to Open Library). To add one, enable the Books API in the Google Cloud Console and create an API key for a much larger quota.",
+        "help": "Lookups work without it (falling back to Open Library). To add one, enable the Books API in the Google Cloud Console and create an API key for a much larger quota. Japanese ISBNs are looked up at the National Diet Library first, automatically.",
         "unset": "Not set, using Open Library"
       },
       "ncl": {
@@ -133,10 +140,30 @@
         "what": "Books published in Taiwan, with their Chinese titles by ISBN",
         "help": "No key needed. Once on, it downloads the library's new-book list once a day."
       },
+      "nlk": {
+        "name": "National Library of Korea",
+        "what": "Books published in Korea, with their Korean titles by ISBN",
+        "help": "Request a free key under \"OPEN API\" at nl.go.kr/seoji. Once set, ISBNs starting with 978-89 or 979-11 are looked up here first."
+      },
+      "neodb": {
+        "name": "NeoDB",
+        "what": "Books, films and series you have marked (Douban data can be moved in)",
+        "help": "Generate an Access Token on your NeoDB instance's /developer/ page (neodb.social/developer for neodb.social). If you are not on neodb.social, enter your instance URL. Books go to the bookshelf; films and series you have watched go to Watching."
+      },
       "spotify": {
         "name": "Spotify",
         "what": "Recently played and favourite genres",
         "help": "Create an app at developer.spotify.com and use the Redirect URI below. Save the Client ID and Secret, press \"Connect Spotify account\", then paste the refresh token from the page you land on and save."
+      },
+      "lastfm": {
+        "name": "Last.fm",
+        "what": "Recently played (NetEase, KKBOX, Apple Music and more arrive through scrobblers)",
+        "help": "Enter your Last.fm username and create an API key at last.fm/api/account/create. Listening uses this when Spotify is not connected."
+      },
+      "listenbrainz": {
+        "name": "ListenBrainz",
+        "what": "Recently played (MusicBrainz's open listening history, no key needed)",
+        "help": "Just enter your ListenBrainz username. Listening uses this when neither Spotify nor Last.fm is connected."
       },
       "steam": {
         "name": "Steam",

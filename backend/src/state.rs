@@ -84,6 +84,14 @@ pub struct ExternalUrls {
     pub anilist_api: String,
     pub mal_api: String,
     pub letterboxd: String,
+    /// 「在聽」不用 Spotify 的退路（handlers/listen_sources.rs）
+    pub lastfm_api: String,
+    pub listenbrainz_api: String,
+    /// 日本國立國會圖書館、韓國國立中央圖書館（handlers/isbn_regions.rs）
+    pub ndl: String,
+    pub nlk: String,
+    /// NeoDB（handlers/read_sources.rs）。站長用的是別台的話，後台填 `NEODB_URL` 蓋過這個
+    pub neodb: String,
     /// Plausible 的 Stats API（handlers/analytics.rs）。
     ///
     /// 這一個是例外，讀 `PLAUSIBLE_BASE_URL`：其他上游每個部署都一樣，Plausible 卻常常是
@@ -113,6 +121,11 @@ impl Default for ExternalUrls {
             anilist_api: "https://graphql.anilist.co".into(),
             mal_api: "https://api.myanimelist.net".into(),
             letterboxd: "https://letterboxd.com".into(),
+            lastfm_api: "https://ws.audioscrobbler.com".into(),
+            listenbrainz_api: "https://api.listenbrainz.org".into(),
+            ndl: "https://ndlsearch.ndl.go.jp".into(),
+            nlk: "https://www.nl.go.kr".into(),
+            neodb: "https://neodb.social".into(),
             plausible: std::env::var("PLAUSIBLE_BASE_URL")
                 .ok()
                 .map(|s| s.trim().trim_end_matches('/').to_string())
@@ -148,6 +161,11 @@ impl ExternalUrls {
             anilist_api: format!("{base}/anilist"),
             mal_api: format!("{base}/mal"),
             letterboxd: format!("{base}/letterboxd"),
+            lastfm_api: format!("{base}/lastfm"),
+            listenbrainz_api: format!("{base}/listenbrainz"),
+            ndl: format!("{base}/ndl"),
+            nlk: format!("{base}/nlk"),
+            neodb: format!("{base}/neodb"),
             plausible: format!("{base}/plausible"),
         }
     }
