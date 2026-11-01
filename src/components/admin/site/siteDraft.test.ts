@@ -13,6 +13,7 @@ const base: Draft = {
   theme: 'saturn',
   page_descriptions: {},
   launch_pad: { lat: 23.7, lon: 121 },
+  signature: { view_box: '', steps: [] },
 };
 
 describe('siteProblems', () => {

@@ -58,6 +58,13 @@
     "locate": "現在地を使う",
     "locating": "位置を取得中…",
     "locateFailed": "位置を取得できませんでした（ブラウザの許可がないか、https ではない）。緯度経度を直接入力しても同じです",
+    "signature": "記事末尾のサイン",
+    "signatureNone": "サインはありません。記事の最後には何も出ません。",
+    "signatureUpload": "SVG をアップロード",
+    "signatureReplace": "差し替える",
+    "signatureRemove": "外す",
+    "signatureHint": "各記事の最後で、小さな光の点が書き順どおりに書いていきます。ファイル内の <path> が一画、<circle> が点で、ファイルの順に書きます。塗りの輪郭ではなく一本線で描いたものほど手書きらしく見えます。",
+    "signatureUnusable": "このファイルから筆画を読み取れません。viewBox と、少なくとも一つの <path> が必要です。",
     "errors": {
       "nameRequired": "サイト名は空にできません",
       "nameTooLong": "サイト名は {{max}} 文字までです",

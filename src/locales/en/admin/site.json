@@ -58,6 +58,13 @@
     "locate": "Use my location",
     "locating": "Locating…",
     "locateFailed": "Couldn't get your location (no browser permission, or the site isn't on https). Typing the coordinates works just as well",
+    "signature": "Signature",
+    "signatureNone": "No signature; nothing appears at the end of posts.",
+    "signatureUpload": "Upload SVG",
+    "signatureReplace": "Replace",
+    "signatureRemove": "Remove",
+    "signatureHint": "At the end of every post, a small point of light writes it out stroke by stroke. Each <path> in the file is a stroke and each <circle> a dot, written in file order; single-line strokes (not filled outlines) look the most like handwriting.",
+    "signatureUnusable": "Couldn't find any strokes in this file: it needs a viewBox and at least one <path>.",
     "errors": {
       "nameRequired": "The site name can't be empty",
       "nameTooLong": "The site name can be at most {{max}} characters",
