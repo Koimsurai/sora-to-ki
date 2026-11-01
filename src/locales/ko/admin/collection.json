@@ -31,7 +31,8 @@
     },
     "region": {
       "tw": "대만",
-      "global": "전 세계"
+      "global": "전 세계",
+      "cnjp": "중국·일본"
     },
     "status": {
       "off": "설정 안 됨",
@@ -77,7 +78,13 @@
       "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
-      "WAKATIME_API_KEY": "API key"
+      "WAKATIME_API_KEY": "API key",
+      "BANGUMI_USERNAME": "사용자 이름",
+      "BANGUMI_TOKEN": "Access Token",
+      "ANILIST_USERNAME": "사용자 이름",
+      "MAL_USERNAME": "사용자 이름",
+      "MAL_CLIENT_ID": "Client ID",
+      "LETTERBOXD_USERNAME": "사용자 이름"
     },
     "src": {
       "tmdb": {
@@ -94,6 +101,26 @@
         "name": "애니메 광 (바하무트)",
         "what": "바하무트 애니메 광(대만)의 시청 기록",
         "help": "바하무트 계정과 비밀번호. 가족과 계정을 같이 쓰면 서로 로그아웃시키는데, 그럴 때 여기서 자동으로 다시 로그인해요."
+      },
+      "bangumi": {
+        "name": "Bangumi",
+        "what": "애니메이션·드라마 컬렉션과 진행 상황",
+        "help": "Bangumi 사용자 이름(프로필 URL의 마지막 부분)을 넣으세요. 컬렉션이 비공개라면 next.bgm.tv/demo/access-token에서 Access Token을 만들어 넣으세요."
+      },
+      "anilist": {
+        "name": "AniList",
+        "what": "애니메이션 시청 진행 상황",
+        "help": "AniList 사용자 이름을 넣으세요. 리스트는 공개여야 해요 (Settings → Lists에서 private 해제)."
+      },
+      "mal": {
+        "name": "MyAnimeList",
+        "what": "애니메이션 시청 진행 상황",
+        "help": "MyAnimeList 사용자 이름을 넣고, myanimelist.net/apiconfig에서 앱(유형: web)을 만들어 Client ID를 넣으세요. 리스트는 공개여야 해요."
+      },
+      "letterboxd": {
+        "name": "Letterboxd",
+        "what": "본 영화와 평점",
+        "help": "Letterboxd 사용자 이름을 넣으세요. 공개 RSS를 읽어서 최근 약 50개까지만 가져오고, 이후로는 6시간마다 새 기록을 가져와요."
       },
       "googleBooks": {
         "name": "Google Books",
@@ -155,5 +182,6 @@
   "remove": "빼기",
   "saved": "저장했습니다",
   "quoteLabel": "{{title}}의 한마디",
-  "quotePlaceholder": "한마디 남기기"
+  "quotePlaceholder": "한마디 남기기",
+  "episodesWatched": "{{count}}화 시청"
 }

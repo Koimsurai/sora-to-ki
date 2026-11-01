@@ -112,7 +112,7 @@ fn title_tag(html: &str) -> Option<String> {
 /// 和標題／摘要共用的，於是那個「顯示用的長度上限」也套到了網址上。GitHub repo 頁的
 /// og:image 是 719 個字的預簽章網址，砍到 400 剛好把 `X-Amz-SignedHeaders=ho` 從中間
 /// 切斷 → 簽章失效 → 圖一律 401。截斷要留給真正的文字欄位，見 `clamp_text`。
-fn decode_entities(s: &str) -> String {
+pub(crate) fn decode_entities(s: &str) -> String {
     s.replace("&amp;", "&")
         .replace("&quot;", "\"")
         .replace("&#39;", "'")

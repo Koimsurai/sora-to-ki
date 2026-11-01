@@ -307,7 +307,10 @@ pub async fn sync_source(
         "simkl" => crate::handlers::simkl::sync_and_record(&state).await,
         "bahamut" => crate::handlers::bahamut::sync_and_record(&state).await,
         "ncl" => crate::handlers::tw_isbn::sync_and_record(&state).await,
-        _ => return unknown_source(&key),
+        other => match crate::handlers::watch_sources::sync_and_record(&state, other).await {
+            Some(r) => r,
+            None => return unknown_source(&key),
+        },
     };
     Json(info(&state, source).await).into_response()
 }

@@ -95,7 +95,7 @@ async fn 後台列得出每一部_標出藏了沒與在不在最愛() {
     assert_eq!(anime["hidden"], true);
     assert_eq!(anime["title"], "想藏的動畫");
     assert_eq!(find("anime", "100")["detail"], "2", "動畫一部一列，帶最後一集");
-    assert_eq!(find("tv", "想藏的影集")["detail"], "看了 2 集");
+    assert_eq!(find("tv", "想藏的影集")["detail"], "2", "只給集數，字由後台照語言組");
     assert!(find("film", "1")["favorite_id"].is_number(), "tmdb 對得上的電影要標出在最愛裡");
     assert_eq!(find("film", "2")["favorite_id"], Value::Null);
     assert_eq!(watch[0]["key"], "200", "照最後看的時間排，新的在前");

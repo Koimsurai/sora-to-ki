@@ -79,6 +79,11 @@ pub struct ExternalUrls {
     ///   `web` 回 HTML（封面圖的 og:image）。
     pub bahamut_api: String,
     pub bahamut_web: String,
+    /// 依地區挑的觀看紀錄來源（handlers/watch_sources.rs）：Bangumi、AniList、MyAnimeList、Letterboxd
+    pub bangumi_api: String,
+    pub anilist_api: String,
+    pub mal_api: String,
+    pub letterboxd: String,
     /// Plausible 的 Stats API（handlers/analytics.rs）。
     ///
     /// 這一個是例外，讀 `PLAUSIBLE_BASE_URL`：其他上游每個部署都一樣，Plausible 卻常常是
@@ -104,6 +109,10 @@ impl Default for ExternalUrls {
             korean_advice: "https://korean-advice-open-api.vercel.app".into(),
             bahamut_api: anigamer::DEFAULT_API_BASE.into(),
             bahamut_web: anigamer::DEFAULT_WEB_BASE.into(),
+            bangumi_api: "https://api.bgm.tv".into(),
+            anilist_api: "https://graphql.anilist.co".into(),
+            mal_api: "https://api.myanimelist.net".into(),
+            letterboxd: "https://letterboxd.com".into(),
             plausible: std::env::var("PLAUSIBLE_BASE_URL")
                 .ok()
                 .map(|s| s.trim().trim_end_matches('/').to_string())
@@ -135,6 +144,10 @@ impl ExternalUrls {
             korean_advice: format!("{base}/korean-advice"),
             bahamut_api: format!("{base}/bahamut-api"),
             bahamut_web: format!("{base}/bahamut-web"),
+            bangumi_api: format!("{base}/bangumi"),
+            anilist_api: format!("{base}/anilist"),
+            mal_api: format!("{base}/mal"),
+            letterboxd: format!("{base}/letterboxd"),
             plausible: format!("{base}/plausible"),
         }
     }

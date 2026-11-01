@@ -45,3 +45,4 @@ pub mod tw_isbn;
 pub mod upload;
 pub mod vitals;
 pub mod watch;
+pub mod watch_sources;

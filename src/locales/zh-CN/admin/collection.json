@@ -31,7 +31,8 @@
     },
     "region": {
       "tw": "台湾",
-      "global": "全球"
+      "global": "全球",
+      "cnjp": "中日"
     },
     "status": {
       "off": "未设置",
@@ -77,7 +78,13 @@
       "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
-      "WAKATIME_API_KEY": "API key"
+      "WAKATIME_API_KEY": "API key",
+      "BANGUMI_USERNAME": "用户名",
+      "BANGUMI_TOKEN": "Access Token",
+      "ANILIST_USERNAME": "用户名",
+      "MAL_USERNAME": "用户名",
+      "MAL_CLIENT_ID": "Client ID",
+      "LETTERBOXD_USERNAME": "用户名"
     },
     "src": {
       "tmdb": {
@@ -94,6 +101,26 @@
         "name": "动画疯",
         "what": "巴哈姆特动画疯（台湾）的观看记录",
         "help": "巴哈姆特的账号与密码。账号和家人共用的话会互相挤掉登录，被挤掉时这里会自动重新登录。"
+      },
+      "bangumi": {
+        "name": "Bangumi 番组计划",
+        "what": "动画、日剧国剧的收藏与进度",
+        "help": "填 Bangumi 的用户名（个人主页网址最后那段）。收藏设为私密的话，再到 next.bgm.tv/demo/access-token 创建一个 Access Token 填进来。"
+      },
+      "anilist": {
+        "name": "AniList",
+        "what": "动画的观看进度",
+        "help": "填 AniList 的用户名。列表要公开（Settings → Lists 不要勾 private）。"
+      },
+      "mal": {
+        "name": "MyAnimeList",
+        "what": "动画的观看进度",
+        "help": "填 MyAnimeList 的用户名；再到 myanimelist.net/apiconfig 创建一个 app（类型选 web），把 Client ID 填进来。列表要公开。"
+      },
+      "letterboxd": {
+        "name": "Letterboxd",
+        "what": "看过的电影与评分",
+        "help": "填 Letterboxd 的用户名。读的是公开的 RSS，只拿得到最近大约 50 条，之后每六小时补新的。"
       },
       "googleBooks": {
         "name": "Google Books",
@@ -155,5 +182,6 @@
   "remove": "移除",
   "saved": "已保存",
   "quoteLabel": "{{title}} 的一句话",
-  "quotePlaceholder": "留一句话"
+  "quotePlaceholder": "留一句话",
+  "episodesWatched": "看了 {{count}} 集"
 }

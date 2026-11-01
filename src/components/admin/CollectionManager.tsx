@@ -199,8 +199,12 @@ function WatchList({
               <span className="adm-meta">
                 {[
                   KINDS.has(w.kind) ? t(`collection.kind.${w.kind}`) : null,
-                  // 巴哈的集數是原樣的字（「[03]」「特別篇」），不再包一層「第…集」
-                  w.kind === 'anime' && w.detail ? t('collection.watchedUpTo', { detail: w.detail }) : w.detail,
+                  // 巴哈的集數是原樣的字（「[03]」「特別篇」），不再包一層「第…集」；影集只給集數
+                  w.kind === 'anime' && w.detail
+                    ? t('collection.watchedUpTo', { detail: w.detail })
+                    : w.kind === 'tv' && w.detail
+                      ? t('collection.episodesWatched', { count: Number(w.detail) })
+                      : w.detail,
                   formatWhen(w.watched_at, 'yyyy.MM.dd'),
                   w.source
                     ? w.source === 'bahamut'

@@ -50,7 +50,7 @@ pub struct AdminWatchItem {
     pub key: String,
     pub title: String,
     pub cover: Option<String>,
-    /// 動畫是最後一集、影集是看了幾集、電影是評分
+    /// 動畫是最後一集（巴哈原樣的字）、影集是看了幾集（只有數字，字由後台照語言組）、電影是評分
     pub detail: Option<String>,
     pub watched_at: Option<String>,
     /// bahamut | simkl | trakt …
@@ -116,7 +116,7 @@ pub async fn admin_collection(
                   CASE WHEN rating IS NULL THEN NULL ELSE '★ ' || rating END, watched_date, source, tmdb_id \
              FROM film_history \
            UNION ALL \
-           SELECT 'tv', series_name, series_name, MAX(poster_url), '看了 ' || COUNT(*) || ' 集', \
+           SELECT 'tv', series_name, series_name, MAX(poster_url), CAST(COUNT(*) AS TEXT), \
                   MAX(watched_date), MAX(source), MAX(tmdb_id) \
              FROM tv_history GROUP BY series_name \
          ) w ORDER BY w.watched_at DESC NULLS LAST LIMIT ?",

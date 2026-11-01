@@ -86,10 +86,11 @@ const filmItems = (rows: FilmRow[]): WatchItem[] =>
     href: f.tmdb_id ? `https://www.themoviedb.org/movie/${f.tmdb_id}` : null,
   }));
 
+/** 影集紀錄：Bangumi、AniList、MyAnimeList 同步進來的動畫在 genres 記成 `anime`，顯示成動畫 */
 const tvItems = (rows: TvRow[]): WatchItem[] =>
   rows.map((s) => ({
     id: `t${s.series_name}`,
-    kind: 'tv',
+    kind: s.genres === 'anime' ? 'anime' : 'tv',
     title: s.series_name,
     cover: s.poster_url,
     date: s.last_watched ?? '',

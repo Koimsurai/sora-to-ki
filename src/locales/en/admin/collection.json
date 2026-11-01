@@ -31,7 +31,8 @@
     },
     "region": {
       "tw": "Taiwan",
-      "global": "Global"
+      "global": "Global",
+      "cnjp": "China & Japan"
     },
     "status": {
       "off": "Not set up",
@@ -77,7 +78,13 @@
       "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
-      "WAKATIME_API_KEY": "API key"
+      "WAKATIME_API_KEY": "API key",
+      "BANGUMI_USERNAME": "Username",
+      "BANGUMI_TOKEN": "Access Token",
+      "ANILIST_USERNAME": "Username",
+      "MAL_USERNAME": "Username",
+      "MAL_CLIENT_ID": "Client ID",
+      "LETTERBOXD_USERNAME": "Username"
     },
     "src": {
       "tmdb": {
@@ -94,6 +101,26 @@
         "name": "Bahamut Anime Crazy",
         "what": "Watch history from Bahamut Anime Crazy (Taiwan)",
         "help": "Your Bahamut account and password. If family members share the account they'll sign each other out; this signs back in automatically."
+      },
+      "bangumi": {
+        "name": "Bangumi",
+        "what": "Anime and live-action series, with progress",
+        "help": "Enter your Bangumi username (the last part of your profile URL). If your collection is private, also create an Access Token at next.bgm.tv/demo/access-token."
+      },
+      "anilist": {
+        "name": "AniList",
+        "what": "Anime watch progress",
+        "help": "Enter your AniList username. Your lists must be public (Settings → Lists, leave \"private\" unticked)."
+      },
+      "mal": {
+        "name": "MyAnimeList",
+        "what": "Anime watch progress",
+        "help": "Enter your MyAnimeList username, then create an app at myanimelist.net/apiconfig (type: web) and enter its Client ID. Your list must be public."
+      },
+      "letterboxd": {
+        "name": "Letterboxd",
+        "what": "Films watched, with ratings",
+        "help": "Enter your Letterboxd username. This reads the public RSS feed, which only has about the last 50 entries; new ones are picked up every six hours."
       },
       "googleBooks": {
         "name": "Google Books",
@@ -155,5 +182,6 @@
   "remove": "Remove",
   "saved": "Saved",
   "quoteLabel": "Note for {{title}}",
-  "quotePlaceholder": "Leave a short note"
+  "quotePlaceholder": "Leave a short note",
+  "episodesWatched": "Episodes watched: {{count}}"
 }
