@@ -1,219 +1,67 @@
-/* ═══════════════════════════════════════════════════
-   Koim Loader — 全站統一 loading 元件
-   雙層軌道 (conic-gradient + mask 切薄環) 反向旋轉
-   中央漸層光球 + 紫光暈呼吸縮放
-   文字漸層 shimmer + 跳動三點
-   ═══════════════════════════════════════════════════ */
+/* 前台的載入中（元件見 KoimLoader.tsx）：琥珀點呼吸，旁邊一行等寬小字，不轉圈。
+   點跟開場（index.css 的 #boot）同一顆：同樣的大小、光暈與呼吸節奏 */
 
 .koim-loader-shell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-6);
   position: relative;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
   padding: var(--space-8) var(--space-4);
 }
+
 .koim-loader-shell--fullscreen {
   min-height: 80vh;
-  gap: var(--space-9);
 }
+
 .koim-loader-shell--inline {
-  padding: var(--space-4);
-  gap: var(--space-3);
   min-height: auto;
+  padding: var(--space-4);
 }
 
 .koim-loader {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: koimLoaderBreath 2.4s ease-in-out infinite;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-round);
+  background: var(--signal);
+  box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
+  animation: koim-loader-breathe 1.6s ease-in-out infinite;
 }
 
-/* 三種尺寸：對應 outer / inner inset / core / glow inset */
 .koim-loader-shell--sm .koim-loader {
-  width: 56px;
-  height: 56px;
+  width: 5px;
+  height: 5px;
 }
-.koim-loader-shell--md .koim-loader {
-  width: 88px;
-  height: 88px;
-}
+
 .koim-loader-shell--lg .koim-loader {
-  width: 120px;
-  height: 120px;
-}
-
-.koim-loader-orbit {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--r-round);
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    var(--ink-subtle) 110deg,
-    var(--ink-body) 200deg,
-    transparent 240deg
-  );
-  -webkit-mask: radial-gradient(
-    circle,
-    transparent calc(50% - 1.5px),
-    #000 calc(50% - 1.5px),
-    #000 calc(50% - 0.5px),
-    transparent calc(50% - 0.5px)
-  );
-  mask: radial-gradient(
-    circle,
-    transparent calc(50% - 1.5px),
-    #000 calc(50% - 1.5px),
-    #000 calc(50% - 0.5px),
-    transparent calc(50% - 0.5px)
-  );
-}
-.koim-loader-orbit-1 {
-  animation: koimSpin 1.6s linear infinite;
-}
-.koim-loader-orbit-2 {
-  background: conic-gradient(
-    from 180deg,
-    transparent 0deg,
-    var(--ink-body) 90deg,
-    var(--ink-subtle) 180deg,
-    transparent 220deg
-  );
-  animation: koimSpinReverse 2.4s linear infinite;
-}
-.koim-loader-shell--sm .koim-loader-orbit-2 {
-  inset: 9px;
-}
-.koim-loader-shell--md .koim-loader-orbit-2 {
-  inset: 14px;
-}
-.koim-loader-shell--lg .koim-loader-orbit-2 {
-  inset: 20px;
-}
-
-.koim-loader-core {
-  position: relative;
-  border-radius: var(--r-round);
-  background: linear-gradient(135deg, var(--ink) 0%, var(--ink) 50%, var(--ink) 100%);
-  box-shadow:
-    0 0 14px rgba(var(--paper-rgb), 0.7),
-    0 0 28px rgba(var(--paper-rgb), 0.35);
-  z-index: 2;
-}
-.koim-loader-shell--sm .koim-loader-core {
-  width: 14px;
-  height: 14px;
-}
-.koim-loader-shell--md .koim-loader-core {
-  width: 22px;
-  height: 22px;
-}
-.koim-loader-shell--lg .koim-loader-core {
-  width: 30px;
-  height: 30px;
-}
-
-.koim-loader-glow {
-  position: absolute;
-  inset: -20px;
-  background: radial-gradient(circle, var(--wash-strong) 0%, transparent 65%);
-  pointer-events: none;
-  filter: blur(var(--blur-4));
-  animation: koimLoaderBreath 2.4s ease-in-out infinite reverse;
-}
-
-@keyframes koimSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes koimSpinReverse {
-  to {
-    transform: rotate(-360deg);
-  }
-}
-@keyframes koimLoaderBreath {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.06);
-  }
+  width: 7px;
+  height: 7px;
 }
 
 .koim-loader-text {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin: 0;
-  font-size: var(--fs-14);
-  letter-spacing: var(--ls-8);
-  background: linear-gradient(90deg, var(--line-strong) 0%, var(--ink) 50%, var(--line-strong) 100%);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: koimShimmer 3s linear infinite;
-}
-.koim-loader-shell--sm .koim-loader-text {
-  font-size: var(--fs-12);
-}
-.koim-loader-shell--lg .koim-loader-text {
-  font-size: var(--fs-16);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-18);
+  color: var(--ink-subtle);
 }
 
-@keyframes koimShimmer {
-  to {
-    background-position: -200% 0;
-  }
-}
-
-.koim-loader-dots {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: var(--space-1);
-  margin-left: var(--space-0-5);
-}
-.koim-loader-dots i {
-  width: 4px;
-  height: 4px;
-  background: linear-gradient(135deg, var(--ink), var(--ink));
-  border-radius: var(--r-round);
-  display: inline-block;
-  animation: koimDot 1.2s ease-in-out infinite;
-}
-.koim-loader-dots i:nth-child(2) {
-  animation-delay: 0.15s;
-}
-.koim-loader-dots i:nth-child(3) {
-  animation-delay: 0.3s;
-}
-@keyframes koimDot {
+@keyframes koim-loader-breathe {
   0%,
-  80%,
   100% {
-    opacity: 0.25;
-    transform: translateY(0);
+    opacity: 0.55;
+    transform: scale(0.85);
   }
-  40% {
+
+  50% {
     opacity: 1;
-    transform: translateY(-3px);
+    transform: scale(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .koim-loader,
-  .koim-loader-glow,
-  .koim-loader-orbit-1,
-  .koim-loader-orbit-2,
-  .koim-loader-text,
-  .koim-loader-dots i {
+  .koim-loader {
     animation: none;
   }
 }

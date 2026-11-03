@@ -399,7 +399,8 @@
     "replyBodyDone": "这个邮箱之前勾选过的留言，都不会再收到回复通知。"
   },
   "oauth": {
-    "loggingIn": "正在登录...",
+    "loggingIn": "正在登录…",
+    "back": "回到刚才的页面",
     "errorNoCode": "登录失败：未收到授权码",
     "errorGeneric": "登录失败，请稍后再试"
   },

@@ -1,18 +1,20 @@
 import './KoimLoader.css';
 
 interface KoimLoaderProps {
-  /** 預設 md */
+  /** 預設 md：點的大小 */
   size?: 'sm' | 'md' | 'lg';
   /** 載入文字（可省略） */
   text?: string;
   /** 是否撐滿視窗高度（預設 false） */
   fullscreen?: boolean;
-  /** 內嵌模式：尺寸縮小且不留白（用於 Suspense fallback） */
+  /** 內嵌模式：不留白（用於 Suspense fallback） */
   inline?: boolean;
 }
 
 /**
- * 全站統一 loader：雙層軌道 + 漸層核心 + 紫光暈呼吸
+ * 前台的載入中：一顆琥珀點在呼吸，旁邊一行等寬小字。
+ * 跟開場（#boot）與後台的 AdminLoading 同一個語言（2026-10 翻新）：站上「正在發生的事」是那顆點，不轉圈。
+ * 翻新前是雙層旋轉軌道加紫光暈，登入回呼、文章載入、client-only 頁面的 fallback 都還在用舊的。
  */
 function KoimLoader({ size = 'md', text, fullscreen = false, inline = false }: KoimLoaderProps) {
   const cls = [
@@ -25,27 +27,11 @@ function KoimLoader({ size = 'md', text, fullscreen = false, inline = false }: K
     .join(' ');
 
   return (
-    // role="status" + aria-live 是載入指示器的標準 live-region 寫法；
-    // <output> 的語意是「表單運算結果」，跟這裡不是同一回事
-    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
-    <div className={cls} role="status" aria-busy="true" aria-live="polite">
-      <div className="koim-loader" aria-hidden>
-        <div className="koim-loader-orbit koim-loader-orbit-1" />
-        <div className="koim-loader-orbit koim-loader-orbit-2" />
-        <div className="koim-loader-core" />
-        <div className="koim-loader-glow" />
-      </div>
-      {text && (
-        <p className="koim-loader-text">
-          {text}
-          <span className="koim-loader-dots">
-            <i></i>
-            <i></i>
-            <i></i>
-          </span>
-        </p>
-      )}
-    </div>
+    // <output> 本身就是 role="status"：報讀器會念出載入的字，不用另外加 role
+    <output className={cls} aria-busy="true">
+      <span className="koim-loader" aria-hidden="true" />
+      {text && <span className="koim-loader-text">{text}</span>}
+    </output>
   );
 }
 

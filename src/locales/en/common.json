@@ -399,7 +399,8 @@
     "replyBodyDone": "No more reply emails for comments left with this address."
   },
   "oauth": {
-    "loggingIn": "Signing in...",
+    "loggingIn": "Signing in…",
+    "back": "Back to where you were",
     "errorNoCode": "Sign-in failed: no authorization code received",
     "errorGeneric": "Sign-in failed, please try again later"
   },

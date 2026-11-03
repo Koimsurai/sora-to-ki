@@ -399,7 +399,8 @@
     "replyBodyDone": "這個信箱之前勾過的留言，都不會再收到回覆通知。"
   },
   "oauth": {
-    "loggingIn": "正在登入...",
+    "loggingIn": "正在登入…",
+    "back": "回到剛才的頁面",
     "errorNoCode": "登入失敗：未收到授權碼",
     "errorGeneric": "登入失敗，請稍後再試"
   },

@@ -3,6 +3,7 @@ import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth';
 import KoimLoader from '@/components/common/KoimLoader';
+import './OAuthCallback.css';
 
 function OAuthCallback() {
   const { t } = useTranslation();
@@ -12,6 +13,8 @@ function OAuthCallback() {
   // 原本在 effect 裡 setError，等於先繪一次 loading 畫面、effect 再補繪成錯誤畫面。
   // asyncError 才是真狀態（登入請求失敗後才知道）。
   const [asyncError, setAsyncError] = useState('');
+  /** 失敗時「回去」連到哪：登入前記下的那一頁，沒有就首頁 */
+  const [back, setBack] = useState('/');
   const error = search.code ? asyncError : t('oauth.errorNoCode');
 
   useEffect(() => {
@@ -32,6 +35,7 @@ function OAuthCallback() {
       })
       .catch((err: unknown) => {
         console.error('OAuth login error:', err);
+        setBack(sessionStorage.getItem('oauth_return_to') ?? '/');
         setAsyncError(t('oauth.errorGeneric'));
       });
     // 刻意只跑一次：OAuth 的 code 是一次性授權碼，effect 重跑等於拿已失效的 code
@@ -40,33 +44,20 @@ function OAuthCallback() {
   }, []);
 
   if (error) {
+    // 跟 404、退訂頁同一套（2026-10 翻新）：字靠左，叉號配 --danger，回去的連結是等寬字加點線底線
     return (
-      <div
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: '#fff' }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>❌ {error}</p>
-          <button
-            onClick={() => {
-              window.location.assign('/blog');
-            }}
-            style={{
-              padding: '8px 20px',
-              borderRadius: '8px',
-              background: 'var(--wash)',
-              border: '1px solid var(--line)',
-              color: 'var(--ink)',
-              cursor: 'pointer',
-            }}
-          >
-            {t('nav.notes')}
-          </button>
-        </div>
+      <div className="oauth-shell">
+        <p className="oauth-error">
+          <b aria-hidden="true">✕</b>
+          {error}
+        </p>
+        <a className="oauth-back" href={back}>
+          {t('oauth.back')}
+        </a>
       </div>
     );
   }
 
-  // 統一用站內 KoimLoader（不再用獨立的 spinner）
   return <KoimLoader fullscreen size="lg" text={t('oauth.loggingIn')} />;
 }
 
