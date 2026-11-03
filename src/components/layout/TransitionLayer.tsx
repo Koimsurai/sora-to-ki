@@ -24,6 +24,7 @@ import { currentTheme, onTheme } from '@/lib/theme';
 import { currentFold, offCrease } from '@/lib/viewportFold';
 import {
   after,
+  bootHeld,
   reportBoot,
   reportTransition,
   currentPage,
@@ -51,6 +52,8 @@ const WAIT_LIMIT_MS = 1500;
 const BOOT_MIN_MS = 1100;
 const BOOT_QUICK_MS = 300;
 const BOOT_WAIT_MS = 3500;
+/** 有人要開場先別退場（登入回呼換授權碼，store/pageTransition 的 holdBoot）：最多再等多久 */
+const BOOT_HOLD_MAX_MS = 15000;
 /** 那一圈畫滿之後停一下再飛；夜色淡掉要多久（跟 index.css 的 #boot 一樣） */
 const BOOT_CLOSE_MS = 260;
 /** 不交棒的時候，環收回點裡要多久（跟 index.css 的 data-boot-collapse 一樣） */
@@ -656,6 +659,14 @@ export default function TransitionLayer() {
         }),
         after(BOOT_WAIT_MS),
       ]);
+      // 登入回呼：換授權碼的時候點與環繼續停著，成功就整頁跳走、不會走到下面
+      const held = bootHeld();
+      if (held) {
+        // head 裡那個 6 秒的保險是怕 JS 沒來；這裡 JS 已經在跑，上限改由 BOOT_HOLD_MAX_MS 管
+        window.clearTimeout(window.__bootFailsafe);
+        await Promise.race([held, after(BOOT_HOLD_MAX_MS)]);
+        wait.last = 'hold';
+      }
       const waitedAt = performance.now();
       // 第一次來的人多停一下，看得到那顆點在呼吸（performance.now() 從這次載入開始算）
       await after(Math.max(0, (quick ? BOOT_QUICK_MS : BOOT_MIN_MS) - performance.now()));

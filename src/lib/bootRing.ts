@@ -19,6 +19,8 @@ declare global {
   interface Window {
     /** 把開場環推到進度 p（0–1，照弧長）；不帶參數是把現在的進度擺上去（#boot 剛解析完時） */
     __bootP?: (p?: number) => void;
+    /** 保險：JS 一直沒來就在 6 秒後拿掉開場。JS 接手、又有人要開場多等（登入回呼）時由 TransitionLayer 取消 */
+    __bootFailsafe?: number;
   }
 }
 
@@ -56,7 +58,7 @@ if(p!=null)go(p,400);};
 window.__bootP.angle=ang;
 var set=function(v){window.__bootP(v);};
 set(0.12);document.addEventListener('DOMContentLoaded',function(){set(0.45);});if(document.fonts)document.fonts.ready.then(function(){set(0.65);});addEventListener('load',function(){set(0.85);});
-setTimeout(function(){d.removeAttribute('data-boot');},6000);
+window.__bootFailsafe=setTimeout(function(){d.removeAttribute('data-boot');},6000);
 }catch(e){}})()`;
 
 /** #boot 剛解析完就跑：把現在的進度擺上去，第一次繪製時環與筆尖已經在 0.12 的位置 */

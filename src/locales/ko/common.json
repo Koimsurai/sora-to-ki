@@ -399,9 +399,18 @@
     "replyBodyDone": "이 주소로 알림을 선택했던 댓글에는 더 이상 답글 알림이 가지 않습니다."
   },
   "oauth": {
-    "loggingIn": "로그인 중...",
-    "errorNoCode": "로그인 실패: 인증 코드를 받지 못했어요",
-    "errorGeneric": "로그인에 실패했어요. 나중에 다시 시도해주세요"
+    "back": "보던 페이지로 돌아가기",
+    "failTitle": "로그인하지 못했습니다.",
+    "fail": {
+      "cancelled": "{{provider}} 인증 페이지에서 취소해서 이 사이트에는 아무것도 전달되지 않았습니다.",
+      "noCode": "이 주소에는 {{provider}} 인증 코드가 없습니다. 이 페이지를 직접 연 것 같습니다.",
+      "rejected": "{{provider}}에서 인증은 됐지만 이 사이트에서 본인 확인을 하지 못했습니다. 코드는 한 번만 쓸 수 있어서 다시 시도하면 새 코드를 받습니다."
+    },
+    "from": "인증한 곳",
+    "stoppedAt": "멈춘 단계",
+    "stepAuthorize": "인증",
+    "stepVerify": "본인 확인",
+    "retry": "{{provider}}로 다시 시도"
   },
   "about": {
     "title": "소개",

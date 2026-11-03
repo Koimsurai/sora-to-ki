@@ -399,9 +399,18 @@
     "replyBodyDone": "No more reply emails for comments left with this address."
   },
   "oauth": {
-    "loggingIn": "Signing in...",
-    "errorNoCode": "Sign-in failed: no authorization code received",
-    "errorGeneric": "Sign-in failed, please try again later"
+    "back": "Back to where you were",
+    "failTitle": "Sign-in didn't go through.",
+    "fail": {
+      "cancelled": "You cancelled on the {{provider}} authorization page, so nothing was shared with this site.",
+      "noCode": "This address has no {{provider}} authorization code. The page may have been opened directly.",
+      "rejected": "{{provider}} authorized you, but this site couldn't confirm who you are. A code only works once, so trying again gets a fresh one."
+    },
+    "from": "Authorized by",
+    "stoppedAt": "Stopped at",
+    "stepAuthorize": "authorization",
+    "stepVerify": "identity check",
+    "retry": "Try again with {{provider}}"
   },
   "about": {
     "title": "About",

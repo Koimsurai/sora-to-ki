@@ -399,9 +399,18 @@
     "replyBodyDone": "這個信箱之前勾過的留言，都不會再收到回覆通知。"
   },
   "oauth": {
-    "loggingIn": "正在登入...",
-    "errorNoCode": "登入失敗：未收到授權碼",
-    "errorGeneric": "登入失敗，請稍後再試"
+    "back": "回到剛才的頁面",
+    "failTitle": "登入沒有成功。",
+    "fail": {
+      "cancelled": "你在 {{provider}} 的授權頁按了取消，這裡沒有拿到任何資料。",
+      "noCode": "這個網址沒有帶 {{provider}} 的授權碼，可能是直接打開了這一頁。",
+      "rejected": "{{provider}} 授權了，但這裡沒能確認你的身分。授權碼只能用一次，再試一次會拿新的。"
+    },
+    "from": "授權來源",
+    "stoppedAt": "停在",
+    "stepAuthorize": "授權",
+    "stepVerify": "確認身分",
+    "retry": "回 {{provider}} 再試一次"
   },
   "about": {
     "title": "關於我",

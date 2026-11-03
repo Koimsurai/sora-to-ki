@@ -399,9 +399,18 @@
     "replyBodyDone": "这个邮箱之前勾选过的留言，都不会再收到回复通知。"
   },
   "oauth": {
-    "loggingIn": "正在登录...",
-    "errorNoCode": "登录失败：未收到授权码",
-    "errorGeneric": "登录失败，请稍后再试"
+    "back": "回到刚才的页面",
+    "failTitle": "登录没有成功。",
+    "fail": {
+      "cancelled": "你在 {{provider}} 的授权页点了取消，这里没有拿到任何数据。",
+      "noCode": "这个网址没有带 {{provider}} 的授权码，可能是直接打开了这一页。",
+      "rejected": "{{provider}} 授权了，但这里没能确认你的身份。授权码只能用一次，再试一次会拿新的。"
+    },
+    "from": "授权来源",
+    "stoppedAt": "停在",
+    "stepAuthorize": "授权",
+    "stepVerify": "确认身份",
+    "retry": "回 {{provider}} 再试一次"
   },
   "about": {
     "title": "关于我",

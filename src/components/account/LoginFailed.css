@@ -1,0 +1,183 @@
+/* 登入失敗（account/LoginFailed）：右邊是開場那道沒畫滿的斜環，字在左邊，版面跟 404（layout/NotFound.css）一樣。
+   ⚠ 不畫星星：全站的太空背景就在後面跑 */
+
+.lf-page {
+  position: relative;
+  height: 100svh;
+  min-height: 560px;
+  overflow: hidden;
+  font-family: var(--serif);
+  color: var(--ink);
+  --lf-edge: max(var(--space-10), calc(50% - 640px));
+}
+
+.lf-sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 正方形的框，環在正中間（svg 的 viewBox 也是正方形） */
+.lf-ring {
+  position: absolute;
+  top: 50%;
+  left: 66%;
+  width: min(44vw, 560px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+.lf-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.lf-ring :is(ellipse, path) {
+  fill: none;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* 跟開場一樣：整圈很淡的底線，畫到的那一段亮 */
+.lf-ring-base {
+  stroke: var(--line);
+}
+
+.lf-ring-prog {
+  stroke: var(--ink-muted);
+}
+
+/* 停下的那一端：跟開場同一顆點，同樣的呼吸（index.css 的 boot-breathe） */
+.lf-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  translate: -50% -50%;
+  border-radius: var(--r-full);
+  background: var(--signal);
+  box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
+  animation: boot-breathe 1.6s ease-in-out infinite;
+}
+
+.lf-inner {
+  position: absolute;
+  top: 50%;
+  left: var(--lf-edge);
+  display: grid;
+  gap: var(--space-3);
+  max-width: 480px;
+  transform: translateY(-50%);
+}
+
+.lf-code {
+  font-family: var(--latin-display);
+  font-size: var(--fs-56);
+  line-height: var(--lh-100);
+  color: var(--ink-muted);
+}
+
+.lf-title {
+  margin: 0;
+  font-size: var(--fs-32);
+  font-weight: 600;
+  line-height: var(--lh-130);
+}
+
+.lf-sub {
+  margin: 0;
+  font-size: var(--fs-16);
+  line-height: var(--lh-170);
+  color: var(--ink-muted);
+}
+
+.lf-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-4);
+}
+
+.lf-meta-label {
+  color: var(--ink-subtle);
+}
+
+.lf-meta-value {
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--signal);
+}
+
+.lf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin-top: var(--space-4);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-6);
+}
+
+:where(.lf-actions) :where(a, button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.lf-link {
+  display: inline-flex;
+  padding-bottom: var(--space-px);
+  color: var(--ink-muted);
+  border-bottom: 1px dotted var(--line-strong);
+  transition:
+    color var(--dur-200) ease,
+    border-color var(--dur-200) ease;
+}
+
+.lf-link:hover,
+.lf-link:focus-visible {
+  color: var(--ink);
+  border-bottom-color: var(--signal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-dot {
+    animation: none;
+  }
+}
+
+/* 窄的：環在上面，字壓在下面（同 404） */
+@media (max-width: 760px) {
+  .lf-page {
+    --lf-edge: var(--space-4);
+  }
+
+  .lf-ring {
+    top: 32%;
+    left: 50%;
+    width: min(88vw, 420px);
+  }
+
+  .lf-inner {
+    top: auto;
+    right: var(--lf-edge);
+    bottom: var(--page-bottom);
+    transform: none;
+  }
+
+  .lf-title {
+    font-size: var(--fs-24);
+  }
+}
+
+@media (max-height: 519px) and (orientation: landscape) {
+  .lf-page {
+    min-height: 0;
+  }
+}
