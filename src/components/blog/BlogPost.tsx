@@ -1352,7 +1352,7 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
     return (
       <div className="blog-post-container loading">
         <div className="blog-post-dim-overlay" />
-        <KoimLoader fullscreen text={t('blog.loading')} />
+        <KoimLoader fullscreen text="從星際載入文章" />
       </div>
     );
   }
