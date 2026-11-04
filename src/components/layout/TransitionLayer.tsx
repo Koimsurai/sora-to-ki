@@ -623,10 +623,9 @@ export default function TransitionLayer() {
     const enter = async () => {
       if (!root.hasAttribute('data-boot')) return;
       const quick = root.dataset.boot === 'quick';
-      const loaded = new Promise<void>((resolve) => {
-        if (document.readyState === 'complete') resolve();
-        else window.addEventListener('load', () => resolve(), { once: true, signal: bootAbort.signal });
-      });
+      // 只等第一眼看得到的（這一頁畫出來、字型、首頁的 3D）。整頁的 load 不等：它等的是每一張圖，
+      // 包括捲到很下面才看得到的，而文章的圖都帶寬高、晚到也不會擠動版面。
+      // 網路慢的讀者 JS 本來就晚到（實地 6–9 秒），再等圖片會被開場多擋最多 BOOT_WAIT_MS
       // 兩幀：這一頁的元件掛上、量得到錨點
       const painted = new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
@@ -644,19 +643,21 @@ export default function TransitionLayer() {
       // 實驗室重現不了，只能從實地資料看
       const startedAt = performance.now();
       const wait = { last: 'none', done: false };
-      const waitFor = (p: Promise<unknown>, name: string) =>
-        p.then(() => {
+      /** 還沒等到的：等到上限時一起上報，才知道讀者那端卡在哪一項 */
+      const pending = new Set<string>();
+      const waitFor = (p: Promise<unknown>, name: string) => {
+        pending.add(name);
+        return p.then(() => {
+          pending.delete(name);
           wait.last = name;
         });
+      };
       await Promise.race([
-        Promise.all([
-          waitFor(loaded, 'load'),
-          waitFor(document.fonts.ready, 'fonts'),
-          waitFor(painted, 'paint'),
-          waitFor(skyDrawn, 'sky'),
-        ]).then(() => {
-          wait.done = true;
-        }),
+        Promise.all([waitFor(document.fonts.ready, 'fonts'), waitFor(painted, 'paint'), waitFor(skyDrawn, 'sky')]).then(
+          () => {
+            wait.done = true;
+          },
+        ),
         after(BOOT_WAIT_MS),
       ]);
       // 登入回呼：換授權碼的時候點與環繼續停著，成功就整頁跳走、不會走到下面
@@ -710,6 +711,7 @@ export default function TransitionLayer() {
         startedAt,
         waitedAt,
         waitedFor: wait.done ? wait.last : 'cap',
+        pending: wait.done ? [] : [...pending],
       });
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(frame);

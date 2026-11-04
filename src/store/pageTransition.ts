@@ -183,8 +183,13 @@ export interface BootReport {
   startedAt: number;
   /** 等完（或等到上限）的時間；之後是最短停留與收場動畫 */
   waitedAt: number;
-  /** 最後等到的那一項：load（整頁含圖片）、fonts、paint、sky（首頁的 3D）、hold（登入回呼要它等）；cap 是等到上限 */
+  /**
+   * 最後等到的那一項：fonts、paint、sky（首頁的 3D）、hold（登入回呼要它等）；cap 是等到上限。
+   * 2026-11-04 之前還有 load（整頁含圖片），之後不等它了
+   */
   waitedFor: string;
+  /** 等到上限時還沒等到的那幾項（沒等到上限是空的） */
+  pending: string[];
 }
 let lastBoot: BootReport | null = null;
 const bootListeners = new Set<(r: BootReport) => void>();

@@ -473,7 +473,7 @@ describe('自己量的 TX（換頁順暢度）與 BOOT（開場）', () => {
   it('開場比上報早結束也照送：BOOT 是退場的時間，細節是 ring／collapse 與等待的分段', async () => {
     const init = await load();
     const { reportBoot } = await import('@/store/pageTransition');
-    reportBoot({ at: 1360.2, end: 'ring', startedAt: 412.6, waitedAt: 980.4, waitedFor: 'sky' });
+    reportBoot({ at: 1360.2, end: 'ring', startedAt: 412.6, waitedAt: 980.4, waitedFor: 'sky', pending: [] });
     init();
     expect(lastBody()).toMatchObject({
       metric: 'BOOT',
@@ -481,6 +481,21 @@ describe('自己量的 TX（換頁順暢度）與 BOOT（開場）', () => {
       rating: 'good',
       detail: 'ring/413/980/sky',
     });
+  });
+
+  it('等到上限的：多一格還沒等到的那幾項', async () => {
+    const init = await load();
+    const { reportBoot } = await import('@/store/pageTransition');
+    reportBoot({
+      at: 10900,
+      end: 'collapse',
+      startedAt: 6500,
+      waitedAt: 10000,
+      waitedFor: 'cap',
+      pending: ['fonts', 'sky'],
+    });
+    init();
+    expect(lastBody()).toMatchObject({ metric: 'BOOT', detail: 'collapse/6500/10000/cap/fonts.sky' });
   });
 
   it('有沒有硬體 GPU：探測完才帶，還沒探測完不帶這個欄位', async () => {
