@@ -191,26 +191,68 @@ export default function StarfieldGpu({
   // 用完就收掉整個 3D，頁面留下黑紙與 CSS 星空。
   const MAX_RECOVERIES = 3;
 
-  const recover = useCallback((reason: string) => {
-    if (recoveriesRef.current >= MAX_RECOVERIES) {
-      console.warn(`[StarfieldGpu] ${reason}；已重建 ${MAX_RECOVERIES} 次仍失敗，放棄 3D（留下 CSS 星空）`);
-      setFailed(true);
-      return;
-    }
-    recoveriesRef.current += 1;
-    console.warn(`[StarfieldGpu] ${reason}；第 ${recoveriesRef.current} 次重建`);
-    // 分頁還在背景時重建沒有意義（GPU 資源正是那時候被回收的），等切回來再做。
-    if (document.hidden) {
-      const once = () => {
-        if (document.hidden) return;
-        document.removeEventListener('visibilitychange', once);
-        setGeneration((g) => g + 1);
-      };
-      document.addEventListener('visibilitychange', once);
-      return;
-    }
-    recoverTimerRef.current = setTimeout(() => setGeneration((g) => g + 1), 500);
+  // 上報到 GlitchTip：掉了幾次、當時分頁在不在背景、在背景放了多久。
+  // Console 那行只有開著 DevTools 才看得到，讀者那邊發生了什麼原本無從得知
+  const backendRef = useRef(backend);
+  backendRef.current = backend;
+  /** 這次藏起來的時間點（0 是看得見）、上一段在背景放了多久 */
+  const hiddenRef = useRef({ since: 0, last: 0 });
+  useEffect(() => {
+    const h = hiddenRef.current;
+    const onVis = () => {
+      if (document.hidden) h.since = performance.now();
+      else if (h.since) {
+        h.last = performance.now() - h.since;
+        h.since = 0;
+      }
+    };
+    onVis();
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
+  const reportLost = useCallback((reason: string, outcome: 'rebuild' | 'give-up') => {
+    const h = hiddenRef.current;
+    const now = performance.now();
+    void import('@/lib/errorReporting').then((m) =>
+      m.reportWarning(
+        '星空的 GPU 掉了',
+        { backend: backendRef.current, outcome, hidden: String(document.hidden) },
+        {
+          reason,
+          attempt: recoveriesRef.current,
+          hiddenMs: h.since ? Math.round(now - h.since) : 0,
+          lastHiddenMs: Math.round(h.last),
+          uptimeMs: Math.round(now),
+        },
+      ),
+    );
+  }, []);
+
+  const recover = useCallback(
+    (reason: string) => {
+      if (recoveriesRef.current >= MAX_RECOVERIES) {
+        console.warn(`[StarfieldGpu] ${reason}；已重建 ${MAX_RECOVERIES} 次仍失敗，放棄 3D（留下 CSS 星空）`);
+        reportLost(reason, 'give-up');
+        setFailed(true);
+        return;
+      }
+      recoveriesRef.current += 1;
+      console.warn(`[StarfieldGpu] ${reason}；第 ${recoveriesRef.current} 次重建`);
+      reportLost(reason, 'rebuild');
+      // 分頁還在背景時重建沒有意義（GPU 資源正是那時候被回收的），等切回來再做。
+      if (document.hidden) {
+        const once = () => {
+          if (document.hidden) return;
+          document.removeEventListener('visibilitychange', once);
+          setGeneration((g) => g + 1);
+        };
+        document.addEventListener('visibilitychange', once);
+        return;
+      }
+      recoverTimerRef.current = setTimeout(() => setGeneration((g) => g + 1), 500);
+    },
+    [reportLost],
+  );
 
   // 首頁衛星的亮度：首頁送過來就轉給 runner。控制介面就緒（backend 變了）時也補送一次
   useEffect(() => subscribeSatelliteGlow((g) => controlRef.current?.glow(g)), [backend]);
