@@ -123,7 +123,7 @@ export type ToWorker =
   | { type: 'init'; canvas: OffscreenCanvas; origin: number; style: PaintStyle }
   | { type: 'size'; w: number; h: number; dpr: number }
   | { type: 'style'; style: PaintStyle }
-  | { type: 'begin'; start: SceneStart; carry: boolean }
+  | { type: 'begin'; start: SceneStart; carry: boolean; id: number }
   | { type: 'release'; at: number }
   | { type: 'plan'; input: PlanInput; at: number }
   | { type: 'input'; input: FrameInput }
@@ -132,6 +132,8 @@ export type ToWorker =
 /** worker → 主執行緒：一幀一則，效果照發生的順序 */
 export interface FromWorker {
   type: 'frame';
+  /** 哪一趟的（begin 帶過去的 id）：上一趟的回報晚到，不能拿來當這一趟的狀態 */
+  id: number;
   state: SceneState | null;
   effects: Effect[];
   done: boolean;
@@ -171,9 +173,20 @@ export function createWorkerHost(canvas: HTMLCanvasElement, style: PaintStyle, f
   let state: SceneState | null = null;
   let done = false;
   let stats: FrameStats | null = null;
+  /** 這一趟是第幾趟；收掉（end）也換號，之後晚到的回報一律不認 */
+  let id = 0;
+  /** 已經送出、worker 可能還沒收到的放行（放行的時間，0 是還沒）與排路線 */
+  let released = 0;
+  let planned = false;
   worker.onmessage = (e: MessageEvent<FromWorker>) => {
     const m = e.data;
-    state = m.state;
+    if (m.id !== id) return;
+    // 回報可能是 worker 收到放行、排路線之前畫的那一幀：照已經送出的算，不被蓋回去
+    // （蓋回「還沒排」的話，控制端會再排一次）
+    let s = m.state;
+    if (s && released && s.phase === 'leave') s = { ...s, phase: 'fly', launchAt: released };
+    if (s && planned && !s.planned) s = { ...s, planned: true };
+    state = s;
     if (m.done) done = true;
     if (m.stats) stats = m.stats;
     for (const effect of m.effects) applyEffect(fx, effect);
@@ -189,6 +202,9 @@ export function createWorkerHost(canvas: HTMLCanvasElement, style: PaintStyle, f
       return stats;
     },
     begin(start, carry) {
+      id++;
+      released = 0;
+      planned = false;
       done = false;
       stats = null;
       // 先當作已經開始（worker 下一幀才會回報）：控制端這一幀就要讀到收的那一段
@@ -203,13 +219,15 @@ export function createWorkerHost(canvas: HTMLCanvasElement, style: PaintStyle, f
         screen: start.from,
         screenVel: { x: 0, y: 0 },
       };
-      post({ type: 'begin', start, carry });
+      post({ type: 'begin', start, carry, id });
     },
     release(now) {
+      released = now;
       if (state) state = { ...state, phase: 'fly', launchAt: now };
       post({ type: 'release', at: now });
     },
     plan(input, now) {
+      planned = true;
       if (state) state = { ...state, planned: true };
       post({ type: 'plan', input, at: now });
     },
@@ -217,6 +235,7 @@ export function createWorkerHost(canvas: HTMLCanvasElement, style: PaintStyle, f
       post({ type: 'input', input });
     },
     end() {
+      id++;
       state = null;
       done = false;
       post({ type: 'end' });

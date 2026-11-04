@@ -256,7 +256,8 @@ export function createScene(
      */
     plan({ anchor, arrival, w, h, ring }: PlanInput, now: number) {
       const r = run;
-      if (!r) return;
+      // 一趟只排一次：已經排好（或已經在長）再排，頁面會被藏回透明、鏡頭從半路重飛一次
+      if (r?.phase !== 'fly' || r.flight) return;
       const mid = { x: w / 2, y: h / 2 };
       const approach = arrival?.approach && arrival.approach.length > 1 ? arrival.approach : null;
       const target = approach ? approach[0] : anchor;

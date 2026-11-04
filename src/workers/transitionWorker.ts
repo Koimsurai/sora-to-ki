@@ -27,6 +27,8 @@ let input: FrameInput | null = null;
 let raf = 0;
 let effects: Effect[] = [];
 let done = false;
+/** 這一趟的 id（begin 帶來的），回報時帶回去 */
+let id = 0;
 /** 這一趟的幀（TX 照它上報：看得到的點是這裡畫的） */
 let stats: FrameStats = { frames: 0, maxFrame: 0, long: 0, phases: { leave: 0, fly: 0, grow: 0 } };
 let prevFrame = 0;
@@ -53,7 +55,7 @@ const report = () => {
         screenVel: r.screenVel,
       }
     : null;
-  const message: FromWorker = { type: 'frame', state, effects, done, ...(done ? { stats } : {}) };
+  const message: FromWorker = { type: 'frame', id, state, effects, done, ...(done ? { stats } : {}) };
   self.postMessage(message);
   effects = [];
 };
@@ -130,6 +132,7 @@ self.onmessage = (e: MessageEvent<ToWorker>) => {
       trail: s.trail.map((q) => ({ ...q, t: local(q.t) })),
     };
     const prev = scene.run;
+    id = m.id;
     done = false;
     scene.begin(m.carry && prev ? carried(prev, begin) : begin);
     stats = { frames: 0, maxFrame: 0, long: 0, phases: { leave: 0, fly: 0, grow: 0 } };
