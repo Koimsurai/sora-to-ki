@@ -72,3 +72,17 @@ export async function initErrorReporting(): Promise<void> {
     },
   });
 }
+
+/**
+ * 不是例外、但想知道發生過的事（例如星空的 GPU 掉了、自己重建）。同一個 message 會歸成同一個 issue，
+ * 細節放 tags 與 extra。沒啟用上報（本機、爬蟲）時什麼都不做。tags 與 extra 不放任何個資
+ */
+export async function reportWarning(
+  message: string,
+  tags: Record<string, string>,
+  extra: Record<string, unknown> = {},
+): Promise<void> {
+  if (!started) return;
+  const { captureMessage } = await import('@sentry/browser');
+  captureMessage(message, { level: 'warning', tags, extra });
+}

@@ -180,8 +180,13 @@ export default function Colophon() {
     const ctx = cv?.getContext('2d');
     if (!el || !cv || !ctx) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const img = new Image();
-    img.src = SEXTANT_SRC;
+    // 載好才畫：載入失敗的圖 complete 也是 true，寬高還可能已經從檔頭讀到，drawImage 照樣丟（GlitchTip 上的 'broken' state）
+    let img: HTMLImageElement | null = null;
+    const sextant = new Image();
+    sextant.onload = () => {
+      img = sextant;
+    };
+    sextant.src = SEXTANT_SRC;
     let raf = 0;
     let last = 0;
     let start = -1;
