@@ -663,14 +663,16 @@ fn github_event_from(ev: &Value) -> Option<GithubEvent> {
 
 // ── WakaTime ──────────────────────────────────────────────────────────────
 
-use base64::Engine;
-
+/// 變數名沿用 `WAKATIME_API_KEY`，但裡面要放的是個人 OAuth token（wakatime.com/oauth）。
+/// 2026-11-01 起 WakaTime 的 API key 只能給編輯器外掛寫入，讀取一律 403
+/// （「API Key authentication is only allowed for supported plugin endpoints」）；
+/// 官方文件說個人用就把 OAuth token 放在原本 API key 的位置，所以不換名字，自架者不用改設定檔
 pub(crate) fn wakatime_key() -> Option<String> {
     crate::integrations::var("WAKATIME_API_KEY")
 }
 
-pub(crate) fn waka_auth(key: &str) -> String {
-    format!("Basic {}", base64::engine::general_purpose::STANDARD.encode(key))
+pub(crate) fn waka_auth(token: &str) -> String {
+    format!("Bearer {token}")
 }
 
 /// 整合沒設定（沒填金鑰）時的狀態碼：200，body 帶 `error` 說明。
@@ -678,7 +680,8 @@ pub(crate) fn waka_auth(key: &str) -> String {
 /// 前端看 `error` 欄位決定不顯示那一塊（data/logData.ts），跟 spotify 的 now-playing 同一個做法
 const UNCONFIGURED: StatusCode = StatusCode::OK;
 
-const WAKA_UNCONFIGURED: &str = "WakaTime isn't set up (set WAKATIME_API_KEY in .env.backend)";
+const WAKA_UNCONFIGURED: &str =
+    "WakaTime isn't set up (put an OAuth token from wakatime.com/oauth in WAKATIME_API_KEY)";
 
 /// WakaTime 的 `grand_total`（前端只用 text，total_seconds 一起帶著方便日後算）。
 #[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
@@ -2032,11 +2035,10 @@ mod tests {
     }
 
     #[test]
-    fn waka_auth_是_base64_的_basic() {
-        // 打錯就是每一次請求都 401，而 handler 會把它包成 error 欄位回 200 給前端——
+    fn waka_auth_是_bearer_token() {
+        // 打錯就是每一次請求都 401/403，而 handler 會把它包成 error 欄位回 200 給前端，
         // 看起來像「今天沒寫程式」而不是「認證壞了」。
-        assert_eq!(waka_auth("abc"), "Basic YWJj");
-        assert_eq!(waka_auth(""), "Basic ");
+        assert_eq!(waka_auth("waka_tok_abc"), "Bearer waka_tok_abc");
     }
 
     // 這裡的 percent 是從 JSON 原樣讀進來、沒有經過任何運算就寫進欄位，

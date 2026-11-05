@@ -79,7 +79,7 @@
       "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
-      "WAKATIME_API_KEY": "API key",
+      "WAKATIME_API_KEY": "OAuth token",
       "BANGUMI_USERNAME": "用户名",
       "BANGUMI_TOKEN": "Access Token",
       "ANILIST_USERNAME": "用户名",
@@ -173,7 +173,7 @@
       "wakatime": {
         "name": "WakaTime",
         "what": "写代码的时长与语言",
-        "help": "到 wakatime.com/settings/api-key 复制 API key。"
+        "help": "到 wakatime.com/oauth 复制个人的 OAuth token。2026-11-01 起 API key 只能给编辑器插件用，读不到数据。"
       }
     }
   },
