@@ -494,11 +494,16 @@
 }
 
 .cl-repo {
-  font-family: var(--mono-font);
-  font-size: var(--fs-12);
+  font-size: var(--fs-13);
   text-decoration: underline;
   text-decoration-color: var(--line);
   text-underline-offset: 4px;
+}
+
+.cl-repo-star {
+  display: inline-block;
+  margin-inline-end: var(--space-1);
+  text-decoration: none;
 }
 
 /* ── 問答：天上的一顆星，對準它目鏡裡就是問答。左邊題目、右邊答案，點題目換答案——
