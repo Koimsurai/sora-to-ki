@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AdminTrackItem, AdminWatchItem, WatchFavoriteRow as WatchFavorite } from '@koimsurai/api-types';
 import { toast } from 'sonner';
@@ -21,7 +21,8 @@ import './CollectionManager.css';
 
 type Tab = 'watch' | 'listen' | 'fav' | 'sources';
 
-const TABS: Tab[] = ['watch', 'listen', 'fav', 'sources'];
+/** 內容的三個分頁；「來源設定」是設定，不是第四種收藏，另外擺在右邊（.adm-tabs-aside） */
+const TABS: Tab[] = ['watch', 'listen', 'fav'];
 
 const KINDS = new Set(['anime', 'film', 'tv', 'track']);
 /** 巴哈要翻（是簡稱），其他是服務名 */
@@ -47,7 +48,9 @@ export default function CollectionManager() {
   const { data, isPending } = useQuery(adminCollectionQueryOptions);
   const favorites = useQuery(watchFavoritesQueryOptions('zh-TW'));
   const bahamut = useQuery({ ...adminBahamutStatusQueryOptions, retry: false });
-  const [tab, setTab] = useState<Tab>('watch');
+  // 非嚴格的 useSearch，理由同 PostsList：元件不綁死某一條路由也掛得起來
+  const search: { tab?: string } = useSearch({ strict: false });
+  const [tab, setTab] = useState<Tab>(search.tab === 'sources' ? 'sources' : 'watch');
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const watch = data?.watch ?? [];
@@ -96,6 +99,9 @@ export default function CollectionManager() {
   const countOf = (k: Tab) =>
     k === 'watch' ? watch.length : k === 'listen' ? tracks.length : k === 'fav' ? favs.length : '';
   const b = bahamut.data;
+  const showBahamut = b != null && (b.ok || b.jwtExpiresAt !== null);
+  const showListen = tracks.length > 0 || data?.tracks_error != null;
+  const toSources = () => setTab('sources');
 
   return (
     <div className="adm-page adm-page-narrow">
@@ -103,33 +109,38 @@ export default function CollectionManager() {
         title={t('nav.collection')}
         latin="Collection"
         meta={isPending ? t('common.loading') : t('collection.meta', { watch: watch.length, fav: favs.length })}
+        actions={
+          <Link to="/admin/books" className="adm-row-action">
+            {t('collection.booksLink')}
+          </Link>
+        }
       />
 
-      {/* 一眼看的兩個：動畫瘋的登入還剩幾天、在聽抓不抓得到。沒接的不列（每個來源的完整狀態在「來源」分頁） */}
-      <p className="adm-coll-sources" aria-label={t('collection.sources.label')}>
-        {b && (b.ok || b.jwtExpiresAt !== null) && (
-          <span data-bad={!b.ok || undefined}>
-            {b.ok ? '●' : '×'} {t('collection.bahamut')}
-            {b.ok
-              ? b.daysLeft !== null
-                ? ` · ${t('collection.loginDaysLeft', { days: b.daysLeft })}`
-                : ''
-              : ` · ${t('collection.cookieExpired')}`}
-          </span>
-        )}
-        {/* 在聽可能是 Spotify、Last.fm 或 ListenBrainz，這裡只說抓不抓得到 */}
-        {(tracks.length > 0 || data?.tracks_error) && (
-          <span data-bad={data?.tracks_error ? true : undefined}>
-            {data?.tracks_error ? '×' : '●'} {t('collection.tab.listen')}
-            {data?.tracks_error
-              ? ` · ${t('collection.spotifyFailed')}`
-              : ` · ${t('collection.spotifyRecent', { count: tracks.length })}`}
-          </span>
-        )}
-        <Link to="/admin/books" className="adm-coll-link">
-          {t('collection.booksLink')}
-        </Link>
-      </p>
+      {/* 一眼看的兩個：動畫瘋的登入還剩幾天、在聽抓不抓得到。沒接的不列（每個來源的完整狀態在「來源設定」）；
+          兩個都沒有就整行不畫，不留兩條線夾著的空白 */}
+      {(showBahamut || showListen) && (
+        <p className="adm-coll-sources" aria-label={t('collection.sources.label')}>
+          {b && showBahamut && (
+            <span data-bad={!b.ok || undefined}>
+              {b.ok ? '●' : '×'} {t('collection.bahamut')}
+              {b.ok
+                ? b.daysLeft !== null
+                  ? ` · ${t('collection.loginDaysLeft', { days: b.daysLeft })}`
+                  : ''
+                : ` · ${t('collection.cookieExpired')}`}
+            </span>
+          )}
+          {/* 在聽可能是 Spotify、Last.fm 或 ListenBrainz，這裡只說抓不抓得到 */}
+          {showListen && (
+            <span data-bad={data?.tracks_error ? true : undefined}>
+              {data?.tracks_error ? '×' : '●'} {t('collection.tab.listen')}
+              {data?.tracks_error
+                ? ` · ${t('collection.spotifyFailed')}`
+                : ` · ${t('collection.spotifyRecent', { count: tracks.length })}`}
+            </span>
+          )}
+        </p>
+      )}
 
       <section className="adm-stack" aria-label={t('nav.collection')}>
         <div className="adm-toolbar">
@@ -147,6 +158,17 @@ export default function CollectionManager() {
                 <span className="adm-meta">{isPending ? '' : countOf(key)}</span>
               </button>
             ))}
+            <span className="adm-tabs-aside">
+              <button
+                type="button"
+                className="adm-tab"
+                aria-pressed={tab === 'sources'}
+                onClick={() => setTab('sources')}
+              >
+                <span className="adm-tab-dot" aria-hidden="true" />
+                {t('collection.tab.sources')}
+              </button>
+            </span>
           </div>
         </div>
 
@@ -156,7 +178,13 @@ export default function CollectionManager() {
           ) : isPending ? (
             <AdminLoading label={t('collection.loadingCollection')} />
           ) : tab === 'watch' ? (
-            <WatchList items={watch} busyKey={busyKey} onHide={setHidden} onFavorite={toggleFavorite} />
+            <WatchList
+              items={watch}
+              busyKey={busyKey}
+              onHide={setHidden}
+              onFavorite={toggleFavorite}
+              onSources={toSources}
+            />
           ) : tab === 'listen' ? (
             <ListenList
               tracks={tracks}
@@ -164,6 +192,7 @@ export default function CollectionManager() {
               error={data?.tracks_error ?? null}
               busyKey={busyKey}
               onHide={setHidden}
+              onSources={toSources}
             />
           ) : (
             <FavoriteList favorites={favs} loading={favorites.isPending} busyKey={busyKey} run={run} />
@@ -179,14 +208,16 @@ function WatchList({
   busyKey,
   onHide,
   onFavorite,
+  onSources,
 }: {
   items: AdminWatchItem[];
   busyKey: string | null;
   onHide: (kind: string, key: string, title: string, hidden: boolean) => Promise<void>;
   onFavorite: (w: AdminWatchItem) => Promise<void>;
+  onSources: () => void;
 }) {
   const { t } = useAdminT();
-  if (items.length === 0) return <p className="adm-empty">{t('collection.watchEmpty')}</p>;
+  if (items.length === 0) return <EmptyWithSources text={t('collection.watchEmpty')} onSources={onSources} />;
   return (
     <>
       <p className="adm-form-note">{t('collection.watchNote')}</p>
@@ -249,25 +280,40 @@ function WatchList({
   );
 }
 
+/** 空的清單：說為什麼空，並直接帶去接來源 */
+function EmptyWithSources({ text, onSources }: { text: string; onSources: () => void }) {
+  const { t } = useAdminT();
+  return (
+    <p className="adm-empty">
+      {text}{' '}
+      <button type="button" className="adm-row-action adm-inline-action" onClick={onSources}>
+        {t('collection.goSources')}
+      </button>
+    </p>
+  );
+}
+
 function ListenList({
   tracks,
   hiddenTracks,
   error,
   busyKey,
   onHide,
+  onSources,
 }: {
   tracks: AdminTrackItem[];
   hiddenTracks: { key: string; title: string; hidden_at: string }[];
   error: string | null;
   busyKey: string | null;
   onHide: (kind: string, key: string, title: string, hidden: boolean) => Promise<void>;
+  onSources: () => void;
 }) {
   const { t } = useAdminT();
   return (
     <>
       <p className="adm-form-note">{t('collection.listenNote')}</p>
       {error && <p className="adm-empty">{t('collection.spotifyError', { error })}</p>}
-      {!error && tracks.length === 0 && <p className="adm-empty">{t('collection.listenEmpty')}</p>}
+      {!error && tracks.length === 0 && <EmptyWithSources text={t('collection.listenEmpty')} onSources={onSources} />}
       <ul className="adm-coll-list">
         {tracks.map((tr) => (
           <li key={`${tr.id}:${tr.played_at}`} className="adm-coll-row" data-hidden={tr.hidden || undefined}>

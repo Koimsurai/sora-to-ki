@@ -163,3 +163,8 @@
   flex-wrap: wrap;
   gap: var(--space-3);
 }
+
+/* 儲存列之後的立即動作（備份）：留一段距離，跟表單分成兩塊 */
+.sfs-actions {
+  margin-top: var(--space-10);
+}

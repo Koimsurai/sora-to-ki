@@ -60,9 +60,14 @@ test.describe('站台設定', () => {
     expect(calls).toBe(0);
   });
 
-  test('通知：填 webhook、關掉友鏈申請，另外存；送測試帶的是框裡的網址', async ({ page }) => {
+  test('通知：填 webhook、關掉友鏈申請，按整頁的儲存只送通知那支；送測試帶的是框裡的網址', async ({ page }) => {
     let saved: Record<string, unknown> | null = null;
     let tested: Record<string, unknown> | null = null;
+    let siteCalls = 0;
+    await page.route('**/api/admin/site/config', async (r) => {
+      if (r.request().method() === 'PUT') siteCalls++;
+      await r.continue();
+    });
     // 兩支都攔下來：真的存下去或真的送出去，會讓後面的留言測試去打一個不存在的網址
     await page.route('**/api/admin/notify', async (r) => {
       if (r.request().method() !== 'PUT') return r.continue();
@@ -79,7 +84,8 @@ test.describe('站台設定', () => {
     });
     await gotoAdminUntil(page, '/admin/site', (p) => p.getByRole('heading', { name: '通知' }));
 
-    const save = page.getByRole('button', { name: '儲存通知設定' });
+    // 通知跟整頁共用最底下那一列的「儲存」（原本有自己的「儲存通知設定」）
+    const save = page.getByRole('button', { name: '儲存', exact: true });
     await expect(save).toBeDisabled();
     await page.getByLabel(/Webhook 網址/).fill('https://discord.com/api/webhooks/1/abc');
     await page.getByRole('checkbox', { name: '友鏈申請' }).uncheck();
@@ -87,14 +93,16 @@ test.describe('站台設定', () => {
     await expect(page.getByText('送到了')).toBeVisible();
     expect(tested).toEqual({ webhook_url: 'https://discord.com/api/webhooks/1/abc' });
 
+    await expect(save).toBeEnabled();
     await save.click();
-    await expect(page.getByText('通知設定存好了')).toBeVisible();
+    await expect(page.getByText('站台設定存好了')).toBeVisible();
     expect(saved).toEqual({
       webhook_url: 'https://discord.com/api/webhooks/1/abc',
       on_comment: true,
       on_friend: false,
     });
-    // 站台設定那一份沒有被動到
-    await expect(page.getByRole('button', { name: '儲存', exact: true })).toBeDisabled();
+    // 站台設定那一份沒改，就不送
+    expect(siteCalls).toBe(0);
+    await expect(save).toBeDisabled();
   });
 });

@@ -5,6 +5,7 @@
   "go": {
     "review": "Review →",
     "look": "View →",
+    "relogin": "Sign in again →",
     "continue": "Keep writing →",
     "list": "View list →"
   },

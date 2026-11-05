@@ -142,8 +142,6 @@
     "onComment": "New comments (including ones awaiting review)",
     "onFriend": "Friend link requests",
     "test": "Send a test",
-    "save": "Save notification settings",
-    "saved": "Notification settings saved",
     "testOk": "Sent. Check that it arrived",
     "testFailed": "Not delivered: {{error}}",
     "mailReady": "Reply emails: ready (using the newsletter's Resend settings). When a reader ticks “Email me when the author replies”, your reply is emailed to them.",
@@ -152,6 +150,7 @@
   },
   "backup": {
     "head": "Backup and moving",
+    "immediate": "These buttons act right away; they aren't part of Save above.",
     "note": "Download a copy of the current database (posts, comments, settings and collection history are all in it), for moving or safekeeping. Uploaded images and photos aren't in the database; copy the uploads and gallery folders on the host separately. The host also backs up to ./backups every day.",
     "download": "Download backup",
     "downloadFailed": "Couldn't download ({{status}})",

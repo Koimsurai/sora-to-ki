@@ -230,7 +230,7 @@ export default function PostsList() {
             </div>
           ) : (
             <div className="adm-table-wrap">
-              <table className="adm-table">
+              <table className="adm-table adm-table-stack">
                 <thead>
                   <tr>
                     <th scope="col">{t('posts.col.title')}</th>

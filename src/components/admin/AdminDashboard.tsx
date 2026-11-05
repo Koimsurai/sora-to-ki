@@ -170,6 +170,10 @@ export default function AdminDashboard() {
             {b.ok ? t('dashboard.todo.bahamutExpiringDetail') : t('dashboard.todo.bahamutExpiredDetail')}
           </span>
         </span>
+        {/* 重新登入在收藏的來源設定（動畫瘋那一列） */}
+        <Link to="/admin/collection" search={{ tab: 'sources' }} className="adm-row-action">
+          {t('dashboard.go.relogin')}
+        </Link>
       </li>,
     );
   }

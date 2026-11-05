@@ -25,6 +25,7 @@ import UnsavedGuard from '../UnsavedGuard';
 import DescriptionFields from './DescriptionFields';
 import BackupSection from './BackupSection';
 import NotifySettings from './NotifySettings';
+import { notifyQueryOptions, saveNotify, type NotifyDraft } from './notifyApi';
 import OrbitPreview from './OrbitPreview';
 import SignatureField from './SignatureField';
 import { IdentityFields, LocaleFields, PageToggles, ThemeFields } from './SiteFields';
@@ -32,13 +33,16 @@ import { draftOf, siteProblems, type Draft } from './siteDraft';
 import './SiteSettings.css';
 
 // 站台設定（/admin/site）：身分、天體、語系、頁面開關四段，欄位跟初次設定的精靈是同一組（SiteFields）。
-// 四段一起存（PUT /api/admin/site/config 收整份）；最後的通知是另一支 API，自己存（NotifySettings）。換預設語系會讓全站網址整批改掉，存之前再問一次。
+// 整頁一個儲存列：站台設定（PUT /api/admin/site/config 收整份）與通知（另一支 API，見 NotifySettings）
+// 改了哪個就送哪個。備份是按下就執行的動作，不經過儲存。換預設語系會讓全站網址整批改掉，存之前再問一次。
 
 export default function SiteSettings() {
   const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { data: config, isPending } = useQuery(siteConfigQueryOptions);
+  const notify = useQuery(notifyQueryOptions);
   const [edited, setEdited] = useState<Draft | null>(null);
+  const [notifyEdited, setNotifyEdited] = useState<NotifyDraft | null>(null);
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -47,29 +51,55 @@ export default function SiteSettings() {
   if (isPending || !config) return <AdminLoading page />;
   const base = draftOf(config);
   const draft = edited ?? base;
-  const dirty = edited !== null && JSON.stringify(edited) !== JSON.stringify(base);
+  const siteDirty = edited !== null && JSON.stringify(edited) !== JSON.stringify(base);
+  const notifyDraft = notifyEdited ?? notify.data?.settings ?? null;
+  /** 通知有改、而且跟存著的不一樣時才是那份草稿，否則 null */
+  const notifyPending =
+    notifyEdited !== null && JSON.stringify(notifyEdited) !== JSON.stringify(notify.data?.settings)
+      ? notifyEdited
+      : null;
+  const dirty = siteDirty || notifyPending !== null;
   const patch = (p: Partial<Draft>) => setEdited({ ...draft, ...p });
+  const patchNotify = (p: Partial<NotifyDraft>) => {
+    if (notifyDraft) setNotifyEdited({ ...notifyDraft, ...p });
+  };
   const host = config.url.replace(/^https?:\/\//, '');
+
+  const saveSite = async (): Promise<boolean> => {
+    const res = await fetch('/api/admin/site/config', {
+      method: 'PUT',
+      headers: jsonAuthHeaders(),
+      body: JSON.stringify(draft),
+    });
+    const body = (await res.json().catch(() => ({}))) as SiteConfig & { error?: string };
+    if (!res.ok) {
+      toast.error(apiErrorText(body, at, 'errors', t('common.saveFailed', { status: res.status })));
+      return false;
+    }
+    queryClient.setQueryData(siteConfigQueryOptions.queryKey, body);
+    // 語系列（後台編輯器的語系分頁、譯名欄）讀的是這一份，存好就跟上
+    setLocaleConfig(body.default_locale, body.locales);
+    setEdited(null);
+    setTouched(false);
+    return true;
+  };
 
   const save = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/admin/site/config', {
-        method: 'PUT',
-        headers: jsonAuthHeaders(),
-        body: JSON.stringify(draft),
-      });
-      const body = (await res.json().catch(() => ({}))) as SiteConfig & { error?: string };
-      if (!res.ok) {
-        toast.error(apiErrorText(body, at, 'errors', t('common.saveFailed', { status: res.status })));
-        return;
+      // 兩支各自成敗：站台存好、通知失敗時，站台那份已經是新的，只留通知的修改給站長再按一次
+      const siteOk = siteDirty ? await saveSite() : true;
+      let notifyOk = true;
+      if (notifyPending) {
+        try {
+          queryClient.setQueryData(notifyQueryOptions.queryKey, await saveNotify(notifyPending));
+          setNotifyEdited(null);
+        } catch (e) {
+          notifyOk = false;
+          toast.error(e instanceof Error ? e.message : t('common.offline'));
+        }
       }
-      queryClient.setQueryData(siteConfigQueryOptions.queryKey, body);
-      // 語系列（後台編輯器的語系分頁、譯名欄）讀的是這一份，存好就跟上
-      setLocaleConfig(body.default_locale, body.locales);
-      setEdited(null);
-      setTouched(false);
-      toast.success(t('site.settings.saved'));
+      if (siteOk && notifyOk) toast.success(t('site.settings.saved'));
     } catch {
       toast.error(t('common.offline'));
     } finally {
@@ -83,7 +113,7 @@ export default function SiteSettings() {
       toast.error(t('site.settings.invalid'));
       return;
     }
-    if (draft.default_locale !== config.default_locale) setConfirming(true);
+    if (siteDirty && draft.default_locale !== config.default_locale) setConfirming(true);
     else void save();
   };
 
@@ -135,15 +165,29 @@ export default function SiteSettings() {
       <section className="adm-stack" aria-labelledby="sfs-notify">
         <SectionHead id="sfs-notify">{t('site.settings.notifyHead')}</SectionHead>
         <p className="adm-form-note">{t('site.settings.notifyNote')}</p>
-        <NotifySettings />
+        {notify.isError ? (
+          <p className="sf-hint">{t('site.notify.loadFailed')}</p>
+        ) : notify.data && notifyDraft ? (
+          <NotifySettings data={notify.data} draft={notifyDraft} patch={patchNotify} />
+        ) : null}
       </section>
 
-      <section className="adm-stack" aria-labelledby="sfs-backup">
+      <SaveBar
+        dirty={dirty}
+        saving={saving}
+        onReset={() => {
+          setEdited(null);
+          setNotifyEdited(null);
+        }}
+        onSave={trySave}
+      />
+
+      {/* 備份放在儲存列之後、另起一塊：這裡的按鈕按下就執行，跟上面的儲存無關 */}
+      <section className="adm-stack sfs-actions" aria-labelledby="sfs-backup">
         <SectionHead id="sfs-backup">{t('site.backup.head')}</SectionHead>
+        <p className="adm-form-note">{t('site.backup.immediate')}</p>
         <BackupSection />
       </section>
-
-      <SaveBar dirty={dirty} saving={saving} onReset={() => setEdited(null)} onSave={trySave} />
       <UnsavedGuard dirty={dirty} />
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>

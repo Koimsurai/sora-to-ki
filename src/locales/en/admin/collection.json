@@ -4,7 +4,7 @@
     "watch": "Watching",
     "listen": "Listening",
     "fav": "Favorites",
-    "sources": "Sources"
+    "sources": "Source settings"
   },
   "kind": {
     "anime": "Anime",
@@ -183,7 +183,8 @@
   "spotifyRecent": "recent: {{count}}",
   "booksLink": "Books are on the bookshelf →",
   "loadingCollection": "Loading collection",
-  "watchEmpty": "No watch history yet. It shows up here once Bahamut or Simkl syncs.",
+  "watchEmpty": "No watch history yet. It shows up here once a watch source is connected and synced.",
+  "goSources": "Open source settings →",
   "watchNote": "Synced records can't be edited — you can only choose whether they appear on the site. Films and TV shows can go in the top row of the collection page.",
   "untitled": "(untitled)",
   "watchedUpTo": "Up to {{detail}}",
@@ -195,7 +196,7 @@
   "shown": "On site",
   "listenNote": "Straight from Spotify (the last 50 plays). Here you can only choose which ones stay off the site.",
   "spotifyError": "Spotify is unavailable right now: {{error}}",
-  "listenEmpty": "Nothing played recently. This stays empty if Spotify isn't connected.",
+  "listenEmpty": "Nothing played recently. Listening needs Spotify, Last.fm or ListenBrainz connected.",
   "otherHidden": "Other hidden songs",
   "hiddenOn": "Hidden {{date}}",
   "unhide": "Make public again",

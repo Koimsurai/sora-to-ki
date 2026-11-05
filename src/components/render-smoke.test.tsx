@@ -59,6 +59,12 @@ const PROPS: Record<string, Record<string, unknown>> = {
     draft: { signature: { view_box: '0 0 100 30', steps: [{ kind: 'stroke', d: 'M0 20L100 20' }] } },
     patch: vi.fn(),
   },
+  // 通知欄位跟整頁一起存，草稿由 SiteSettings 持有
+  'admin/site/NotifySettings.tsx': {
+    data: { settings: { webhook_url: '', on_comment: true, on_friend: true }, mail_ready: false },
+    draft: { webhook_url: '', on_comment: true, on_friend: true },
+    patch: vi.fn(),
+  },
   'admin/site/DescriptionFields.tsx': {
     draft: {
       default_locale: 'zh-TW',

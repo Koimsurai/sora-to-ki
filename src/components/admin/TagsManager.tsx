@@ -154,7 +154,7 @@ export default function TagsManager() {
           <p className="adm-empty">{tags.length === 0 ? t('taxonomy.tags.empty') : t('taxonomy.tags.noMatch')}</p>
         ) : (
           <div className="adm-table-wrap">
-            <table className="adm-table">
+            <table className="adm-table adm-table-stack">
               <thead>
                 <tr>
                   <th scope="col">{t('taxonomy.col.name')}</th>
