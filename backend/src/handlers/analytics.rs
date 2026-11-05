@@ -6,7 +6,7 @@
 //!   3. Plausible 的「Embed dashboard」要一條沒有密碼的分享連結才嵌得進來——拿到網址的人
 //!      都看得到，而且外觀是 Plausible 自己的，跟後台不搭。
 //!
-//! 設定（`.env.backend`）：
+//! 設定（後台流量頁填的優先，沒填的讀 `.env.backend`；見 `integrations.rs`）：
 //!   - `PLAUSIBLE_API_KEY`：Plausible 的 Account Settings → API Keys 建一把 Stats API key。
 //!     沒設的話端點回 `configured: false`，後台顯示怎麼設，不算錯誤。
 //!   - `PLAUSIBLE_SITE_ID`：選填，預設是 `SITE_URL` 的 host（Plausible 裡的站台名稱）。
@@ -35,15 +35,19 @@ const TOP_N: u64 = 10;
 /// 每篇文章那張表取幾篇
 const POSTS_N: usize = 10;
 
+// 三個設定都走 integrations::var：後台（流量頁）填的優先，沒有的看環境變數
 fn api_key() -> Option<String> {
-    std::env::var("PLAUSIBLE_API_KEY").ok().filter(|s| !s.trim().is_empty())
+    crate::integrations::var("PLAUSIBLE_API_KEY")
 }
 
 fn site_id() -> String {
-    std::env::var("PLAUSIBLE_SITE_ID")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(crate::identity::site_host)
+    crate::integrations::var("PLAUSIBLE_SITE_ID").unwrap_or_else(crate::identity::site_host)
+}
+
+/// 後台填了自架的位址就用它；沒有的話是開機時讀好的那個（環境變數或官方預設，測試換成 mock）
+fn base_url(state: &AppState) -> String {
+    crate::integrations::stored("PLAUSIBLE_BASE_URL")
+        .map_or_else(|| state.external.plausible.clone(), |u| u.trim_end_matches('/').to_string())
 }
 
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
@@ -368,7 +372,7 @@ fn rows_from(body: &Value) -> Vec<AnalyticsRow> {
 async fn query(state: &AppState, key: &str, body: Value) -> Result<Value, String> {
     let resp = state
         .http
-        .post(format!("{}/api/v2/query", state.external.plausible))
+        .post(format!("{}/api/v2/query", base_url(state)))
         .bearer_auth(key)
         .timeout(TIMEOUT)
         .json(&body)
@@ -392,7 +396,7 @@ async fn query(state: &AppState, key: &str, body: Value) -> Result<Value, String
 async fn realtime(state: &AppState, key: &str, site: &str) -> Option<i64> {
     let resp = state
         .http
-        .get(format!("{}/api/v1/stats/realtime/visitors", state.external.plausible))
+        .get(format!("{}/api/v1/stats/realtime/visitors", base_url(state)))
         .query(&[("site_id", site)])
         .bearer_auth(key)
         .timeout(TIMEOUT)
@@ -429,7 +433,7 @@ pub async fn admin_analytics(
         (json!([start, end]), json!(prev), start, end)
     };
     let site = site_id();
-    let dashboard_url = format!("{}/{site}", state.external.plausible);
+    let dashboard_url = format!("{}/{site}", base_url(&state));
     let Some(key) = api_key() else {
         return Json(AnalyticsResponse {
             period: period.into(),

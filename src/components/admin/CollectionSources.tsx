@@ -16,7 +16,7 @@ import './CollectionSources.css';
 // 收藏的來源（收藏 → 來源）：每個平台一列，狀態、同步開關、展開填金鑰。
 // 金鑰只寫不讀（後端 handlers/sources.rs）：填過的只知道「填了」，一般欄位多給末四碼。
 
-type Group = 'watch' | 'read' | 'listen' | 'play';
+type Group = 'watch' | 'read' | 'listen' | 'play' | 'traffic';
 type State = 'ok' | 'bad' | 'off';
 
 /** 每個來源放在哪一組、哪個地區的人在用；名字與說明在語系檔（collection.sources.src.<key>） */
@@ -37,8 +37,11 @@ const META: Record<string, { group: Group; region?: 'tw' | 'cnjp' | 'kr' | 'glob
   listenbrainz: { group: 'listen', region: 'global' },
   steam: { group: 'play', region: 'global' },
   wakatime: { group: 'play', region: 'global' },
+  // 不在收藏頁列：流量頁沒設定時用同一套表單（AdminAnalytics 的 Setup）
+  plausible: { group: 'traffic' },
 };
 
+/** 收藏頁的來源設定列這四組；流量那組只在流量頁 */
 const GROUPS: Group[] = ['watch', 'read', 'listen', 'play'];
 
 const sourcesQuery = {
@@ -82,7 +85,18 @@ function describe(s: SourceInfo, t: (k: string, o?: Record<string, unknown>) => 
 
 const MARK: Record<State, string> = { ok: '●', bad: '×', off: '○' };
 
-export default function CollectionSources() {
+export default function CollectionSources({
+  groups = GROUPS,
+  intro = true,
+  onChanged,
+}: {
+  /** 列哪幾組；流量頁只要 ['traffic'] */
+  groups?: Group[];
+  /** 上面那句「收藏頁的資料從哪裡來」 */
+  intro?: boolean;
+  /** 存好、清掉、同步完之後（流量頁要重抓一次報表） */
+  onChanged?: () => void;
+} = {}) {
   const { t } = useAdminT();
   const queryClient = useQueryClient();
   const { data, isPending, isError } = useQuery(sourcesQuery);
@@ -109,6 +123,7 @@ export default function CollectionSources() {
       toast.success(done(next));
       // 收藏頁的資料可能跟著變了（新的同步、換了金鑰）
       void queryClient.invalidateQueries({ queryKey: ['admin', 'collection'] });
+      onChanged?.();
     } catch (e) {
       toast.error(t('collection.sources.failed', { error: e instanceof Error ? e.message : '' }));
     } finally {
@@ -170,8 +185,8 @@ export default function CollectionSources() {
 
   return (
     <div className="cs sfs">
-      <p className="adm-form-note">{t('collection.sources.intro')}</p>
-      {GROUPS.map((g) => {
+      {intro && <p className="adm-form-note">{t('collection.sources.intro')}</p>}
+      {groups.map((g) => {
         const list = data.sources.filter((s) => META[s.key]?.group === g);
         if (list.length === 0) return null;
         return (

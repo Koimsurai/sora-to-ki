@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AnalyticsPoint, AnalyticsResponse, AnalyticsRow, PostPerf, ReactionLogEvent } from '@koimsurai/api-types';
 import { useState, type CSSProperties } from 'react';
 import { Trans } from 'react-i18next';
@@ -8,6 +8,7 @@ import { adminLang, at, useAdminT } from '@/i18n/admin-i18n';
 import { isLocale } from '@/lib/locales';
 import AdminLoading from './AdminLoading';
 import { PageHead, SectionHead, TabPanel } from './AdminPage';
+import CollectionSources from './CollectionSources';
 import './AdminAnalytics.css';
 
 // 流量：自架 Plausible 的數字，畫成後台自己的樣子（後端代理 Stats API，見 handlers/analytics.rs）。
@@ -647,24 +648,18 @@ function Rank({
   );
 }
 
-/** 還沒設 key：照著做三步就好 */
+/** 還沒設 key：直接在這裡填（跟收藏的來源設定同一套，存進後台、不用重啟）。原本只有「去改 .env.backend 再重啟」的說明 */
 function Setup() {
-  const { t, i18n } = useAdminT();
-  const tags = { b: <b />, code: <code /> };
+  const { t } = useAdminT();
+  const queryClient = useQueryClient();
   return (
     <div className="adm-an-setup">
       <p>{t('analytics.setup.intro')}</p>
-      <ol>
-        <li>
-          <Trans t={t} i18n={i18n} i18nKey="analytics.setup.step1" components={tags} />
-        </li>
-        <li>
-          <Trans t={t} i18n={i18n} i18nKey="analytics.setup.step2" components={tags} />
-        </li>
-        <li>
-          <Trans t={t} i18n={i18n} i18nKey="analytics.setup.step3" components={tags} />
-        </li>
-      </ol>
+      <CollectionSources
+        groups={['traffic']}
+        intro={false}
+        onChanged={() => void queryClient.invalidateQueries({ queryKey: ['admin', 'analytics'] })}
+      />
       <p className="adm-meta">{t('analytics.setup.keyNote')}</p>
     </div>
   );
