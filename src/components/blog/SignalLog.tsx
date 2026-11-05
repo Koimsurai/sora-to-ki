@@ -7,6 +7,7 @@ import type { CommentRow } from '@koimsurai/api-types';
 import { bandPath, freqOf } from '@/components/about/messagesWave';
 import { groupComments } from '@/lib/comments';
 import { utcStamp as stampOf } from '@/lib/serverDate';
+import { websiteHref } from '@/lib/website';
 import './SignalLog.css';
 
 /** 一列的頻寬與高（SVG viewBox；畫面上橫向拉滿那一欄） */
@@ -47,6 +48,7 @@ export default function SignalLog({ comments, liked, onLike, onReply }: Props) {
           const isReply = c.parent_id != null;
           const stamp = stampOf(c.created_at);
           const showDate = i === 0 || stampOf(rows[i - 1].created_at).date !== stamp.date;
+          const site = websiteHref(c.website);
           return (
             <li key={c.id} className={isReply ? 'sl-item is-reply' : 'sl-item'}>
               <time className="sl-stamp" dateTime={c.created_at}>
@@ -64,8 +66,8 @@ export default function SignalLog({ comments, liked, onLike, onReply }: Props) {
               </svg>
               <div className="sl-body">
                 <div className="sl-head">
-                  {c.website ? (
-                    <a className="sl-author" href={c.website} target="_blank" rel="noopener noreferrer nofollow ugc">
+                  {site ? (
+                    <a className="sl-author" href={site} target="_blank" rel="noopener noreferrer nofollow ugc">
                       {c.author}
                     </a>
                   ) : (
