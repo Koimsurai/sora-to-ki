@@ -63,6 +63,36 @@ fn js_loose_eq(a: &Value, b: &Value) -> bool {
     }
 }
 
+/// 留言者填的網站：只填網域的補 `https://`（不然前台當成相對路徑，連到 `/blog/<網域>`），
+/// 不是 http(s) 的（`javascript:` 之類）、沒有點的、含空白的一律存成空字串。
+/// 前台 `src/lib/website.ts` 對舊資料做同一件事
+fn normalize_website(raw: &str) -> String {
+    let s = raw.trim();
+    if s.is_empty() || s.len() > 2048 || s.chars().any(char::is_whitespace) {
+        return String::new();
+    }
+    let lower = s.to_ascii_lowercase();
+    let full = if lower.starts_with("https://") || lower.starts_with("http://") {
+        s.to_string()
+    } else {
+        // `host:8080` 的冒號後面是數字，不是協定；其他帶冒號的開頭（javascript:、mailto:）都不收
+        let head = s.split('/').next().unwrap_or_default();
+        if let Some((_, after)) = head.split_once(':')
+            && !after.starts_with(|c: char| c.is_ascii_digit())
+        {
+            return String::new();
+        }
+        format!("https://{}", s.trim_start_matches('/'))
+    };
+    let host = full
+        .split_once("://")
+        .map_or("", |(_, rest)| rest)
+        .split(['/', '?', '#', ':'])
+        .next()
+        .unwrap_or_default();
+    if host.contains('.') && !host.contains('@') { full } else { String::new() }
+}
+
 /// createComment 等價：author/content 必填 → OAuth 偵測 → captcha（匿名）→ IP 黑名單 →
 /// 關鍵字過濾（reject/spam）→ 審核狀態 → INSERT → 201。target_col 為 'post_id'|'thought_id'|'page'（固定）。
 async fn create_comment(
@@ -148,7 +178,7 @@ async fn create_comment(
         .bind(&author)
         .bind(&content)
         .bind(&email)
-        .bind(body.website.unwrap_or_default())
+        .bind(normalize_website(body.website.as_deref().unwrap_or_default()))
         .bind(&ip)
         .bind(status)
         .bind(body.avatar_url.unwrap_or_default())
@@ -259,4 +289,39 @@ pub async fn page_comment(
         return StatusCode::NOT_FOUND.into_response();
     }
     create_comment(&state, &headers, "page", &page, body).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_website;
+
+    #[test]
+    fn bare_domain_gets_https() {
+        assert_eq!(normalize_website("ikuka.blog"), "https://ikuka.blog");
+        assert_eq!(normalize_website(" www.example.com/about "), "https://www.example.com/about");
+        assert_eq!(normalize_website("//example.com"), "https://example.com");
+        assert_eq!(normalize_website("example.com:8080/x"), "https://example.com:8080/x");
+    }
+
+    #[test]
+    fn http_urls_kept() {
+        assert_eq!(normalize_website("https://wind.ink"), "https://wind.ink");
+        assert_eq!(normalize_website("HTTP://example.com/a?b=1"), "HTTP://example.com/a?b=1");
+    }
+
+    #[test]
+    fn non_sites_dropped() {
+        for bad in [
+            "",
+            "javascript:alert(1)",
+            "data:text/html,hi",
+            "mailto:a@b.com",
+            "我的部落格",
+            "localhost",
+            "a b.com",
+            "https://user@evil.com",
+        ] {
+            assert_eq!(normalize_website(bad), "", "{bad}");
+        }
+    }
 }

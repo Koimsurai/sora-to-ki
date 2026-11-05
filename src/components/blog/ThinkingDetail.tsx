@@ -16,6 +16,7 @@ import { useThoughtAdmin } from '@/hooks/useThoughtAdmin';
 import { LocaleLink } from '@/i18n/locale-link';
 import { groupComments } from '@/lib/comments';
 import { utcStamp } from '@/lib/serverDate';
+import { websiteHref } from '@/lib/website';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import type { Pt } from '@/store/pageTransition';
 import { estimateZoom, layoutSegment, zoomArc, type ZoomSpec } from './comet';
@@ -43,11 +44,12 @@ function Bit({
 }) {
   const { t } = useTranslation();
   const stamp = utcStamp(c.created_at);
+  const site = websiteHref(c.website);
   return (
     <>
       <div className="mo-post-head">
-        {c.website ? (
-          <a className="mo-bit-author" href={c.website} target="_blank" rel="noopener noreferrer nofollow ugc">
+        {site ? (
+          <a className="mo-bit-author" href={site} target="_blank" rel="noopener noreferrer nofollow ugc">
             {c.author}
           </a>
         ) : (
