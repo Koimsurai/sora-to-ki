@@ -27,7 +27,8 @@
       "watch": "在看",
       "read": "在读",
       "listen": "在听",
-      "play": "在玩、在写"
+      "play": "在玩、在写",
+      "traffic": "流量"
     },
     "region": {
       "tw": "台湾",
@@ -80,6 +81,9 @@
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
       "WAKATIME_TOKEN": "OAuth token",
+      "PLAUSIBLE_API_KEY": "Stats API key",
+      "PLAUSIBLE_SITE_ID": "Plausible 里的站点名称",
+      "PLAUSIBLE_BASE_URL": "自建的 Plausible 地址",
       "BANGUMI_USERNAME": "用户名",
       "BANGUMI_TOKEN": "Access Token",
       "ANILIST_USERNAME": "用户名",
@@ -174,6 +178,11 @@
         "name": "WakaTime",
         "what": "写代码的时长与语言",
         "help": "到 wakatime.com/oauth 复制个人的 OAuth token。2026-11-01 起 API key 只能给编辑器插件用，读不到数据。"
+      },
+      "plausible": {
+        "name": "Plausible",
+        "what": "访客、热门页面、来源与设备",
+        "help": "在 Plausible 右上角头像 → Account Settings → API Keys → New API Key，类型选 Stats API，粘贴到下面保存即可，不用重启。站点名称和本站网址一样就不用填；用的是官方的 plausible.io 也不用填地址。"
       }
     }
   },

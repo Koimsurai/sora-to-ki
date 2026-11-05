@@ -173,10 +173,7 @@
     "totals": "文章收到 {{hearts}} 颗爱心、首页留下 {{marks}} 个印记（只有总数，没有细节）"
   },
   "setup": {
-    "intro": "还没接上 Plausible。后端需要一把 Stats API 的 key：",
-    "step1": "打开 Plausible，右上角头像 → <b>Account Settings</b> → <b>API Keys</b> → <b>New API Key</b>，类型选 <b>Stats API</b>。",
-    "step2": "把 key 加进服务器的 <code>.env.backend</code>：<code>PLAUSIBLE_API_KEY=…</code>（Plausible 里的站点名称不是 <code>koimsurai.com</code> 的话，再加一行 <code>PLAUSIBLE_SITE_ID=…</code>）",
-    "step3": "重启后端：<code>docker compose up -d backend-rs</code>",
-    "keyNote": "key 只在后端，不会进入前端代码。"
+    "intro": "还没接上 Plausible。点「设置」粘贴一把 Stats API 的 key 即可：",
+    "keyNote": "key 存在站点的数据库里，只有后端读得到，不会进入前端代码。写在 .env.backend 的 PLAUSIBLE_API_KEY 也照样有效。"
   }
 }

@@ -27,7 +27,8 @@
       "watch": "観ている",
       "read": "読んでいる",
       "listen": "聴いている",
-      "play": "遊んでいる・書いている"
+      "play": "遊んでいる・書いている",
+      "traffic": "アクセス"
     },
     "region": {
       "tw": "台湾",
@@ -80,6 +81,9 @@
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
       "WAKATIME_TOKEN": "OAuth token",
+      "PLAUSIBLE_API_KEY": "Stats API key",
+      "PLAUSIBLE_SITE_ID": "Plausible でのサイト名",
+      "PLAUSIBLE_BASE_URL": "セルフホストの Plausible の URL",
       "BANGUMI_USERNAME": "ユーザー名",
       "BANGUMI_TOKEN": "Access Token",
       "ANILIST_USERNAME": "ユーザー名",
@@ -174,6 +178,11 @@
         "name": "WakaTime",
         "what": "コードを書いた時間と言語",
         "help": "wakatime.com/oauth から個人用の OAuth token をコピーします。2026-11-01 以降、API key はエディタのプラグイン専用になり、データを読めません。"
+      },
+      "plausible": {
+        "name": "Plausible",
+        "what": "訪問者、人気ページ、流入元、デバイス",
+        "help": "Plausible の右上のアバター → Account Settings → API Keys → New API Key で種類を Stats API にし、下に貼って保存します。再起動は不要です。サイト名がこのサイトのアドレスと同じなら空欄、公式の plausible.io なら URL も空欄で構いません。"
       }
     }
   },

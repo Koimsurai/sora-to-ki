@@ -27,7 +27,8 @@
       "watch": "Watching",
       "read": "Reading",
       "listen": "Listening",
-      "play": "Playing & coding"
+      "play": "Playing & coding",
+      "traffic": "Traffic"
     },
     "region": {
       "tw": "Taiwan",
@@ -80,6 +81,9 @@
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
       "WAKATIME_TOKEN": "OAuth token",
+      "PLAUSIBLE_API_KEY": "Stats API key",
+      "PLAUSIBLE_SITE_ID": "Site name in Plausible",
+      "PLAUSIBLE_BASE_URL": "Self-hosted Plausible URL",
       "BANGUMI_USERNAME": "Username",
       "BANGUMI_TOKEN": "Access Token",
       "ANILIST_USERNAME": "Username",
@@ -174,6 +178,11 @@
         "name": "WakaTime",
         "what": "Coding time and languages",
         "help": "Copy your personal OAuth token from wakatime.com/oauth. Since 2026-11-01, API keys only work for editor plugins and can't read data."
+      },
+      "plausible": {
+        "name": "Plausible",
+        "what": "Visitors, top pages, sources and devices",
+        "help": "In Plausible, open your avatar → Account Settings → API Keys → New API Key, choose Stats API, paste it below and save; no restart needed. Leave the site name empty if it matches this site's address, and the URL empty if you use plausible.io."
       }
     }
   },

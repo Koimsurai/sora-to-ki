@@ -38,7 +38,9 @@
   flex-direction: column;
   gap: var(--space-6);
   padding: var(--space-7) 0 var(--space-6);
-  overflow-y: auto;
+  /* 側欄本身不捲，捲的是中間的選單（.adm-nav）：筆電高度（900 以下）原本要在側欄裡另外捲，
+     才看得到最底下的回到前台、語言與登出 */
+  overflow: hidden;
   background: var(--ground);
   border-right: 1px solid var(--line);
 }
@@ -51,9 +53,12 @@
 }
 
 .adm-nav {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  overflow-y: auto;
 }
 
 /* 分組名後面一條點線拉到底（跟前台 ⌘K 的分組標題同一種） */

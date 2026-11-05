@@ -173,10 +173,7 @@
     "totals": "글에 받은 하트 {{hearts}}개, 홈에 남은 흔적 {{marks}}개(합계만 있고 세부 내역은 없음)"
   },
   "setup": {
-    "intro": "Plausible이 연결되지 않았습니다. 백엔드에 Stats API 키가 필요합니다:",
-    "step1": "Plausible을 열고 오른쪽 위 프로필 → <b>Account Settings</b> → <b>API Keys</b> → <b>New API Key</b>에서 유형으로 <b>Stats API</b>를 고릅니다.",
-    "step2": "키를 서버의 <code>.env.backend</code>에 추가합니다: <code>PLAUSIBLE_API_KEY=…</code>(Plausible의 사이트 이름이 <code>koimsurai.com</code>이 아니면 <code>PLAUSIBLE_SITE_ID=…</code>도 추가)",
-    "step3": "백엔드를 재시작합니다: <code>docker compose up -d backend-rs</code>",
-    "keyNote": "키는 백엔드에만 있고 프런트엔드 코드에는 들어가지 않습니다."
+    "intro": "Plausible이 연결되지 않았습니다. '설정'에서 Stats API 키를 붙여 넣으면 됩니다:",
+    "keyNote": "키는 사이트 데이터베이스에 저장되고 백엔드만 읽으며 프런트엔드 코드에는 들어가지 않습니다. .env.backend의 PLAUSIBLE_API_KEY도 그대로 쓸 수 있습니다."
   }
 }

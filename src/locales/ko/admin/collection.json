@@ -27,7 +27,8 @@
       "watch": "보는 중",
       "read": "읽는 중",
       "listen": "듣는 중",
-      "play": "하는 중 · 쓰는 중"
+      "play": "하는 중 · 쓰는 중",
+      "traffic": "방문"
     },
     "region": {
       "tw": "대만",
@@ -80,6 +81,9 @@
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
       "WAKATIME_TOKEN": "OAuth token",
+      "PLAUSIBLE_API_KEY": "Stats API key",
+      "PLAUSIBLE_SITE_ID": "Plausible의 사이트 이름",
+      "PLAUSIBLE_BASE_URL": "직접 운영하는 Plausible 주소",
       "BANGUMI_USERNAME": "사용자 이름",
       "BANGUMI_TOKEN": "Access Token",
       "ANILIST_USERNAME": "사용자 이름",
@@ -174,6 +178,11 @@
         "name": "WakaTime",
         "what": "코딩 시간과 언어",
         "help": "wakatime.com/oauth에서 개인 OAuth token을 복사하세요. 2026-11-01부터 API key는 에디터 플러그인 전용이라 데이터를 읽을 수 없습니다."
+      },
+      "plausible": {
+        "name": "Plausible",
+        "what": "방문자, 인기 페이지, 유입 경로, 기기",
+        "help": "Plausible 오른쪽 위 아바타 → Account Settings → API Keys → New API Key에서 유형을 Stats API로 만들고 아래에 붙여 저장하세요. 재시작은 필요 없습니다. 사이트 이름이 이 사이트 주소와 같으면 비워 두고, 공식 plausible.io를 쓰면 주소도 비워 두세요."
       }
     }
   },

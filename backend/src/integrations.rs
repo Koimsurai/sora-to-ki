@@ -94,6 +94,17 @@ pub const SOURCES: &[Source] = &[
     Source { key: "listenbrainz", fields: &[field("LISTENBRAINZ_USERNAME")], sync: None },
     Source { key: "steam", fields: &[secret("STEAM_API_KEY"), field("STEAM_ID")], sync: None },
     Source { key: "wakatime", fields: &[secret("WAKATIME_TOKEN")], sync: None },
+    // 不是收藏的來源，是後台「流量」頁的資料：設定方式一樣（後台填的優先），放在同一張表裡；
+    // 前端收藏的來源設定只列它認得的分組，這一個顯示在流量頁
+    Source {
+        key: "plausible",
+        fields: &[
+            secret("PLAUSIBLE_API_KEY"),
+            Field { env: "PLAUSIBLE_SITE_ID", secret: false, optional: true },
+            Field { env: "PLAUSIBLE_BASE_URL", secret: false, optional: true },
+        ],
+        sync: None,
+    },
 ];
 
 pub fn source(key: &str) -> Option<&'static Source> {

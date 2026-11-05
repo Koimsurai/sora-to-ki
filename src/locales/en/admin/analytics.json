@@ -173,10 +173,7 @@
     "totals": "Hearts on posts: {{hearts}} · Marks on the home page: {{marks}} (totals only, no details)"
   },
   "setup": {
-    "intro": "Plausible isn't connected. The backend needs a Stats API key:",
-    "step1": "Open Plausible, click your avatar (top right) → <b>Account Settings</b> → <b>API Keys</b> → <b>New API Key</b>, and choose <b>Stats API</b> as the type.",
-    "step2": "Add the key to <code>.env.backend</code> on the server: <code>PLAUSIBLE_API_KEY=…</code> (if the site name in Plausible isn't <code>koimsurai.com</code>, also add <code>PLAUSIBLE_SITE_ID=…</code>)",
-    "step3": "Restart the backend: <code>docker compose up -d backend-rs</code>",
-    "keyNote": "The key stays on the backend and never reaches the frontend code."
+    "intro": "Plausible isn't connected. Open Settings and paste a Stats API key:",
+    "keyNote": "The key is stored in the site's database, read only by the backend, and never reaches the frontend code. PLAUSIBLE_API_KEY in .env.backend still works too."
   }
 }
