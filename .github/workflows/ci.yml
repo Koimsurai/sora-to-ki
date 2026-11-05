@@ -167,7 +167,7 @@ jobs:
       #
       # 判讀：改完的「第一次」run 會慢（要建立並上傳 GB 級快取），第二次才是真實水準。
       # 快取大小若沒從 76 MB 跳到 GB 級，代表這個假設也錯了。
-      - uses: Swatinem/rust-cache@258712b0b7b1ddf8bddc9fc3b0faca682b2736c3 # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: .
           prefix-key: v1-rust
@@ -339,7 +339,7 @@ jobs:
           cache: pnpm
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
       # workspace root 在根目錄（見 backend job 那段說明）
-      - uses: Swatinem/rust-cache@258712b0b7b1ddf8bddc9fc3b0faca682b2736c3 # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: .
           prefix-key: v1-rust
@@ -523,7 +523,7 @@ jobs:
           node-version: 26
           cache: pnpm
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
-      - uses: Swatinem/rust-cache@258712b0b7b1ddf8bddc9fc3b0faca682b2736c3 # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: .
           prefix-key: v1-rust
@@ -532,7 +532,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       # 明確裝一份 Chrome 而不是賭 runner 映像自帶。ubuntu-latest 目前確實有，
       # 但那是映像的實作細節，哪天拿掉就會變成「lighthouse 突然找不到瀏覽器」。
-      - uses: browser-actions/setup-chrome@2e1d749697dd1612b833dba4a722266286fbefcd # v2.1.2
+      - uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2.2.0
         id: chrome
         with:
           chrome-version: stable
@@ -646,7 +646,7 @@ jobs:
         with:
           node-version: 26
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
-      - uses: Swatinem/rust-cache@258712b0b7b1ddf8bddc9fc3b0faca682b2736c3 # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: .
           prefix-key: v1-rust
