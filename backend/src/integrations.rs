@@ -93,7 +93,7 @@ pub const SOURCES: &[Source] = &[
     Source { key: "lastfm", fields: &[field("LASTFM_USERNAME"), secret("LASTFM_API_KEY")], sync: None },
     Source { key: "listenbrainz", fields: &[field("LISTENBRAINZ_USERNAME")], sync: None },
     Source { key: "steam", fields: &[secret("STEAM_API_KEY"), field("STEAM_ID")], sync: None },
-    Source { key: "wakatime", fields: &[secret("WAKATIME_API_KEY")], sync: None },
+    Source { key: "wakatime", fields: &[secret("WAKATIME_TOKEN")], sync: None },
 ];
 
 pub fn source(key: &str) -> Option<&'static Source> {

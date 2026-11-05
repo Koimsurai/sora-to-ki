@@ -79,7 +79,7 @@
       "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
-      "WAKATIME_API_KEY": "OAuth token",
+      "WAKATIME_TOKEN": "OAuth token",
       "BANGUMI_USERNAME": "ユーザー名",
       "BANGUMI_TOKEN": "Access Token",
       "ANILIST_USERNAME": "ユーザー名",

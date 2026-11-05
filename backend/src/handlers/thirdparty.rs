@@ -663,12 +663,12 @@ fn github_event_from(ev: &Value) -> Option<GithubEvent> {
 
 // ── WakaTime ──────────────────────────────────────────────────────────────
 
-/// 變數名沿用 `WAKATIME_API_KEY`，但裡面要放的是個人 OAuth token（wakatime.com/oauth）。
-/// 2026-11-01 起 WakaTime 的 API key 只能給編輯器外掛寫入，讀取一律 403
-/// （「API Key authentication is only allowed for supported plugin endpoints」）；
-/// 官方文件說個人用就把 OAuth token 放在原本 API key 的位置，所以不換名字，自架者不用改設定檔
+/// 個人 OAuth token（wakatime.com/oauth）。2026-11-01 起 WakaTime 的 API key 只能給編輯器外掛寫入，
+/// 讀取一律 403（「API Key authentication is only allowed for supported plugin endpoints」）。
+/// 舊名 `WAKATIME_API_KEY` 照樣讀：官方文件說個人用就把 token 貼在原本 API key 的位置，
+/// 已經這樣換好的自架者不用再改設定檔
 pub(crate) fn wakatime_key() -> Option<String> {
-    crate::integrations::var("WAKATIME_API_KEY")
+    crate::integrations::var("WAKATIME_TOKEN").or_else(|| crate::integrations::var("WAKATIME_API_KEY"))
 }
 
 pub(crate) fn waka_auth(token: &str) -> String {
@@ -681,7 +681,7 @@ pub(crate) fn waka_auth(token: &str) -> String {
 const UNCONFIGURED: StatusCode = StatusCode::OK;
 
 const WAKA_UNCONFIGURED: &str =
-    "WakaTime isn't set up (put an OAuth token from wakatime.com/oauth in WAKATIME_API_KEY)";
+    "WakaTime isn't set up (put an OAuth token from wakatime.com/oauth in WAKATIME_TOKEN)";
 
 /// WakaTime 的 `grand_total`（前端只用 text，total_seconds 一起帶著方便日後算）。
 #[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
@@ -2014,7 +2014,7 @@ mod tests {
     // 這一整塊在補之前是 0 覆蓋。它全部是「重新塑形上游回應」的程式：塑錯了不會
     // crash，前端只會拿到 undefined 然後畫出一片空白，而且沒有任何錯誤訊息。
 
-    /// WAKATIME_API_KEY 同樣是 process 全域，理由同 STEAM_ENV_LOCK。
+    /// WAKATIME_TOKEN 同樣是 process 全域，理由同 STEAM_ENV_LOCK。
     static WAKA_ENV_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
         std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
@@ -2024,14 +2024,31 @@ mod tests {
     impl Drop for WakaKey {
         fn drop(&mut self) {
             // SAFETY: 靠 WAKA_ENV_LOCK 串行化（guard 還握在手上）。
-            unsafe { std::env::remove_var("WAKATIME_API_KEY") };
+            unsafe { std::env::remove_var("WAKATIME_TOKEN") };
         }
     }
     async fn with_waka_key() -> WakaKey {
         let g = WAKA_ENV_LOCK.lock().await;
         // SAFETY: 同上。
-        unsafe { std::env::set_var("WAKATIME_API_KEY", "test-waka-key") };
+        unsafe { std::env::set_var("WAKATIME_TOKEN", "test-waka-key") };
         WakaKey(g)
+    }
+
+    #[tokio::test]
+    async fn wakatime_token_優先_舊名照樣讀() {
+        let _g = WAKA_ENV_LOCK.lock().await;
+        // SAFETY: 靠 WAKA_ENV_LOCK 串行化。
+        unsafe {
+            std::env::remove_var("WAKATIME_TOKEN");
+            std::env::set_var("WAKATIME_API_KEY", "old-name");
+        }
+        assert_eq!(wakatime_key().as_deref(), Some("old-name"));
+        unsafe { std::env::set_var("WAKATIME_TOKEN", "new-name") };
+        assert_eq!(wakatime_key().as_deref(), Some("new-name"));
+        unsafe {
+            std::env::remove_var("WAKATIME_TOKEN");
+            std::env::remove_var("WAKATIME_API_KEY");
+        }
     }
 
     #[test]
@@ -2184,7 +2201,10 @@ mod tests {
     async fn wakatime_沒設定_key_時三支都回_200_並說明原因() {
         let _g = WAKA_ENV_LOCK.lock().await;
         // SAFETY: 靠 WAKA_ENV_LOCK 串行化。
-        unsafe { std::env::remove_var("WAKATIME_API_KEY") };
+        unsafe {
+            std::env::remove_var("WAKATIME_TOKEN");
+            std::env::remove_var("WAKATIME_API_KEY");
+        }
         let server = MockServer::start().await; // 不掛任何 route：一旦有人送請求就會 404
         let st = state_with_mock(&server).await;
 
