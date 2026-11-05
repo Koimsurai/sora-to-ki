@@ -369,7 +369,11 @@ export default function Colophon() {
     ),
     license: (
       <a className="cl-repo" href={SOFTWARE_REPO} target="_blank" rel="noopener noreferrer">
-        {SOFTWARE_REPO.replace(/^https:\/\//, '')}
+        {/* 空心星：懂 GitHub 的人會想到可以按星，其他人看到的就是原始碼連結。不放星星數，數字小時反效果 */}
+        <span className="cl-repo-star" aria-hidden="true">
+          ☆
+        </span>
+        {t('colophon.repoLink')}
       </a>
     ),
   };
