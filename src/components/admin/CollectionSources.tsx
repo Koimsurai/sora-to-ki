@@ -190,10 +190,18 @@ export default function CollectionSources({
         const list = data.sources.filter((s) => META[s.key]?.group === g);
         if (list.length === 0) return null;
         return (
-          <section key={g} className="cs-group" aria-labelledby={`cs-${g}`}>
-            <h3 id={`cs-${g}`} className="cs-group-h">
-              {t(`collection.sources.group.${g}`)}
-            </h3>
+          <section
+            key={g}
+            className="cs-group"
+            aria-labelledby={groups.length > 1 ? `cs-${g}` : undefined}
+            aria-label={groups.length > 1 ? undefined : t(`collection.sources.group.${g}`)}
+          >
+            {/* 只有一組（流量頁）時頁名就是那一組，不再重複一個小標題 */}
+            {groups.length > 1 && (
+              <h3 id={`cs-${g}`} className="cs-group-h">
+                {t(`collection.sources.group.${g}`)}
+              </h3>
+            )}
             <ul className="adm-list">
               {list.map((s) => {
                 const [state, status] = describe(s, t);
