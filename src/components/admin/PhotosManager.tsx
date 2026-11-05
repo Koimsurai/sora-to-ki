@@ -176,14 +176,20 @@ function PhotoEditor({ photo, onSaved }: { photo: AdminPhoto; onSaved: () => voi
     tags: (photo.tags ?? []).join('、'),
     tagsEn: (photo.tagsEn ?? []).join(', '),
   };
-  const [title, setTitle] = useState(photo.title);
+  // 還沒取標題的（標題就是檔名）欄位留空、檔名只當 placeholder：原本把檔名當值填進去，
+  // 縮圖寫「未命名」、右邊卻像已經有標題，看不出到底取了沒。存的時候空的就是檔名（後端也這樣認）
+  const [title, setTitle] = useState(() => (untitled(photo) ? '' : photo.title));
   const [description, setDescription] = useState(initial.description);
   const [tags, setTags] = useState(initial.tags);
   const [tagsEn, setTagsEn] = useState(initial.tagsEn);
   const [saving, setSaving] = useState(false);
   const frame = frameOf(photo);
+  const titleToSave = title.trim() || photo.original_title;
   const dirty =
-    title !== photo.title || description !== initial.description || tags !== initial.tags || tagsEn !== initial.tagsEn;
+    titleToSave !== photo.title ||
+    description !== initial.description ||
+    tags !== initial.tags ||
+    tagsEn !== initial.tagsEn;
 
   // 兩個開關按下去就先變（不等伺服器回來），存不進去再改回去
   const [flags, setFlags] = useState({ featured: photo.featured, hidden: photo.hidden });
@@ -217,7 +223,10 @@ function PhotoEditor({ photo, onSaved }: { photo: AdminPhoto; onSaved: () => voi
         className="adm-form"
         onSubmit={(e) => {
           e.preventDefault();
-          void save({ title, description, tags: splitTags(tags), tags_en: splitTags(tagsEn) }, t('photos.saved'));
+          void save(
+            { title: titleToSave, description, tags: splitTags(tags), tags_en: splitTags(tagsEn) },
+            t('photos.saved'),
+          );
         }}
       >
         <label className="adm-field">
@@ -231,11 +240,12 @@ function PhotoEditor({ photo, onSaved }: { photo: AdminPhoto; onSaved: () => voi
         </label>
         <label className="adm-field">
           <span className="adm-caps">{t('photos.field.tags')}</span>
-          <input value={tags} onChange={(e) => setTags(e.target.value)} />
+          {/* 標籤常常十幾個，單行輸入框會把後面切掉，改成會換行的框 */}
+          <textarea rows={2} value={tags} onChange={(e) => setTags(e.target.value)} />
         </label>
         <label className="adm-field">
           <span className="adm-caps">{t('photos.field.tagsEn')}</span>
-          <input value={tagsEn} onChange={(e) => setTagsEn(e.target.value)} />
+          <textarea rows={2} value={tagsEn} onChange={(e) => setTagsEn(e.target.value)} />
         </label>
         <div className="adm-form-actions">
           <button type="submit" className="adm-btn adm-btn-primary" disabled={!dirty || saving}>

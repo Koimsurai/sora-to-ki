@@ -96,8 +96,9 @@
     "slug": "網址 slug",
     "slugHint": "文章網址是 /blog/<slug>。留空會自動從英文標題產生；改了也不會斷——舊網址會自動 301 到新的。",
     "layout": "樣板類型",
-    "layoutRecord": "📅 紀錄（時效性）",
-    "layoutColumn": "💎 專欄（無時間性）",
+    "slugPlaceholder": "留空就從英文標題產生",
+    "layoutRecord": "紀錄（時效性）",
+    "layoutColumn": "專欄（無時間性）",
     "allowComments": "允許留言"
   },
   "cover": {

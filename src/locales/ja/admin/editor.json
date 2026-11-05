@@ -96,8 +96,9 @@
     "slug": "URL スラッグ",
     "slugHint": "記事の URL は /blog/<slug> です。空欄なら英語タイトルから自動生成。変更してもリンクは切れません（旧 URL は新 URL へ自動で 301 リダイレクト）。",
     "layout": "テンプレート",
-    "layoutRecord": "📅 記録（時事性あり）",
-    "layoutColumn": "💎 コラム（時事性なし）",
+    "slugPlaceholder": "空欄なら英語タイトルから生成",
+    "layoutRecord": "記録（時事性あり）",
+    "layoutColumn": "コラム（時事性なし）",
     "allowComments": "コメントを許可"
   },
   "cover": {

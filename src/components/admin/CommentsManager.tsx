@@ -304,6 +304,9 @@ export default function CommentsManager() {
     { key: 'spam', label: t('comments.status.spam'), count: counts.spam },
     { key: 'trash', label: t('comments.status.trash'), count: counts.trash },
     { key: 'all', label: t('comments.tabs.all'), count: totalAll },
+  ];
+  /** 設定，不是篩選：跟收藏的來源設定一樣，用髮絲線隔在後面（.adm-tabs-aside） */
+  const settingTabs: { key: View; label: string }[] = [
     { key: 'blacklist', label: t('comments.tabs.blacklist') },
     { key: 'keywords', label: t('comments.tabs.keywords') },
   ];
@@ -332,6 +335,20 @@ export default function CommentsManager() {
                 {tab.count !== undefined && <span className="adm-meta">{tab.count}</span>}
               </button>
             ))}
+            <span className="adm-tabs-aside">
+              {settingTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className="adm-tab"
+                  aria-pressed={view === tab.key}
+                  onClick={() => switchView(tab.key)}
+                >
+                  <span className="adm-tab-dot" aria-hidden="true" />
+                  {tab.label}
+                </button>
+              ))}
+            </span>
           </div>
           {isList && (
             <label className="adm-prompt">

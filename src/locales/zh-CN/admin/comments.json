@@ -2,7 +2,7 @@
   "status": {
     "pending": "待审",
     "approved": "已批准",
-    "spam": "垃圾",
+    "spam": "垃圾留言",
     "trash": "回收站"
   },
   "done": {

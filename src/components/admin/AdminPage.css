@@ -818,10 +818,12 @@
   color: var(--ink);
 }
 
-/* 每一列都有一顆，平常不搶眼（淡墨點線框），滑過或聚焦才變朱色 */
+/* 會刪東西的那一顆：朱色點線框（--danger 一定配點線框），字維持淡墨，滑過或聚焦整顆變朱色。
+   原本框也是淡墨，跟停用的按鈕分不出來 */
 .adm-icon-btn-flare {
   border-style: dotted;
-  color: var(--ink-subtle);
+  border-color: var(--danger);
+  color: var(--ink-muted);
 }
 
 .adm-icon-btn-flare:hover,

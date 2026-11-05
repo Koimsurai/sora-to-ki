@@ -96,8 +96,9 @@
     "slug": "网址 slug",
     "slugHint": "文章网址是 /blog/<slug>。留空会自动从英文标题生成；改了也不会失效——旧网址会自动 301 到新的。",
     "layout": "模板类型",
-    "layoutRecord": "📅 记录（有时效性）",
-    "layoutColumn": "💎 专栏（无时效性）",
+    "slugPlaceholder": "留空就从英文标题生成",
+    "layoutRecord": "记录（有时效性）",
+    "layoutColumn": "专栏（无时效性）",
     "allowComments": "允许评论"
   },
   "cover": {

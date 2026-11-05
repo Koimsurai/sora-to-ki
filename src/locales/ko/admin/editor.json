@@ -96,8 +96,9 @@
     "slug": "URL 슬러그",
     "slugHint": "글 주소는 /blog/<slug>입니다. 비워 두면 영어 제목에서 자동으로 만듭니다. 바꿔도 링크는 끊기지 않습니다 — 예전 주소는 새 주소로 자동 301 리디렉션됩니다.",
     "layout": "템플릿 유형",
-    "layoutRecord": "📅 기록 (시의성 있음)",
-    "layoutColumn": "💎 칼럼 (시의성 없음)",
+    "slugPlaceholder": "비워 두면 영어 제목에서 생성",
+    "layoutRecord": "기록 (시의성 있음)",
+    "layoutColumn": "칼럼 (시의성 없음)",
     "allowComments": "댓글 허용"
   },
   "cover": {

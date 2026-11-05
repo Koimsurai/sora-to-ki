@@ -270,6 +270,7 @@ function WatchList({
                 disabled={busyKey !== null}
                 onClick={() => void onHide(w.kind, w.key, w.title, !w.hidden)}
               >
+                <span className="adm-coll-dot" aria-hidden="true" />
                 {w.hidden ? t('collection.hidden') : t('collection.shown')}
               </button>
             </span>
@@ -337,6 +338,7 @@ function ListenList({
                 disabled={busyKey !== null}
                 onClick={() => void onHide('track', tr.id, tr.name, !tr.hidden)}
               >
+                <span className="adm-coll-dot" aria-hidden="true" />
                 {tr.hidden ? t('collection.hidden') : t('collection.shown')}
               </button>
             </span>
