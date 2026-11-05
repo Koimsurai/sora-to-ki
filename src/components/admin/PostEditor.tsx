@@ -855,7 +855,7 @@ export default function PostEditor() {
       {/* Main Content */}
       <div className="flex flex-1 min-h-0">
         <Form {...form}>
-          <form className="flex flex-1 min-h-0">
+          <form className="flex flex-1 min-h-0 pe-form">
             {/* Hidden buttons for AdminLayout header to trigger */}
             <button
               id="save-draft-btn"
@@ -897,7 +897,7 @@ export default function PostEditor() {
               }}
             />
             {/* Left Column - Editor */}
-            <main className="flex-1 overflow-y-auto p-6 min-w-0 space-y-0">
+            <main className="flex-1 overflow-y-auto p-6 min-w-0 space-y-0 pe-main">
               {/* Locale tabs */}
               {/* 語系分頁：正在編的是琥珀點、已經有內容的是墨點、還沒寫的是空心 */}
               <div className="pe-locales">
@@ -1028,7 +1028,8 @@ export default function PostEditor() {
             </main>
 
             {/* Right Column - Settings */}
-            <aside className="w-[300px] shrink-0 hidden lg:block pe-side">
+            {/* 窄螢幕（< 1024）接在編輯區下面，不是藏起來：原本 hidden lg:block，手機上分類、標籤、網址、排程全都改不到 */}
+            <aside className="w-[300px] shrink-0 pe-side">
               <div className="p-4 space-y-5">
                 {/* Category & Tags */}
                 <div>

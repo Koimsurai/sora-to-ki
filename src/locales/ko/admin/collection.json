@@ -4,7 +4,7 @@
     "watch": "보는 중",
     "listen": "듣는 중",
     "fav": "즐겨찾기",
-    "sources": "출처"
+    "sources": "출처 설정"
   },
   "kind": {
     "anime": "애니메이션",
@@ -183,7 +183,8 @@
   "spotifyRecent": "최근 {{count}}곡",
   "booksLink": "책은 책장에 →",
   "loadingCollection": "컬렉션 불러오는 중",
-  "watchEmpty": "아직 시청 기록이 없습니다. Bahamut, Simkl을 동기화하면 여기에 표시됩니다.",
+  "watchEmpty": "아직 시청 기록이 없습니다. 시청 출처를 연결하고 동기화하면 여기에 표시됩니다.",
+  "goSources": "출처 설정으로 →",
   "watchNote": "동기화된 기록은 수정할 수 없고, 사이트에 표시할지만 정할 수 있습니다. 영화와 드라마는 컬렉션 페이지 맨 윗줄에 올릴 수 있습니다.",
   "untitled": "(이름 없음)",
   "watchedUpTo": "{{detail}}까지 시청",
@@ -195,7 +196,7 @@
   "shown": "사이트에 표시",
   "listenNote": "Spotify에서 바로 가져옵니다(최근 재생 50곡). 여기서는 사이트에 표시하지 않을 곡만 고를 수 있습니다.",
   "spotifyError": "지금 Spotify에서 가져올 수 없습니다: {{error}}",
-  "listenEmpty": "최근 재생한 곡이 없습니다. Spotify가 연결되지 않았다면 비어 있습니다.",
+  "listenEmpty": "최근 재생한 곡이 없습니다. Spotify, Last.fm, ListenBrainz 중 하나를 연결하세요.",
   "otherHidden": "그 밖의 비공개 노래",
   "hiddenOn": "{{date}}에 숨김",
   "unhide": "다시 공개",

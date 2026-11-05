@@ -18,10 +18,6 @@
   color: var(--danger);
 }
 
-.adm-coll-link {
-  margin-left: auto;
-}
-
 /* ── 清單：一列一部（一首），點線分隔；不公開的整列退成淡墨 ── */
 .adm-coll-list {
   margin: 0;

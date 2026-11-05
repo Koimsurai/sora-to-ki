@@ -1,74 +1,31 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { at, useAdminT } from '@/i18n/admin-i18n';
 import { apiErrorText } from '@/lib/apiError';
 import { jsonAuthHeaders } from '@/lib/authToken';
+import type { NotifyDraft, NotifyResponse } from './notifyApi';
 import { SiteField } from './SiteFields';
 
 // 通知（/admin/site 的一段）：給站長自己的 webhook，與回覆信那條管道的狀態。
-// 跟上面的站台設定分開存：webhook 網址是密鑰，走只有站長讀得到的 /api/admin/notify（後端 notify.rs）。
+// webhook 網址是密鑰，走只有站長讀得到的 /api/admin/notify（後端 notify.rs），不跟站台設定同一支 API；
+// 但畫面上跟整頁一起存（SiteSettings 的儲存列），不再有自己的「儲存通知設定」：
+// 一頁三種存法，站長分不出改了哪個要按哪個。「送一則測試」是立即動作，留在這裡
 
-interface Settings {
-  webhook_url: string;
-  on_comment: boolean;
-  on_friend: boolean;
-}
-
-interface NotifyResponse {
-  settings: Settings;
-  /** Resend 與寄件人都設好了，回覆信寄得出去 */
-  mail_ready: boolean;
-}
-
-const notifyQueryOptions = {
-  queryKey: ['admin', 'notify'] as const,
-  queryFn: async (): Promise<NotifyResponse> => {
-    const res = await fetch('/api/admin/notify', { headers: jsonAuthHeaders() });
-    if (!res.ok) throw new Error(String(res.status));
-    return (await res.json()) as NotifyResponse;
-  },
-};
-
-export default function NotifySettings() {
+export default function NotifySettings({
+  data,
+  draft,
+  patch,
+}: {
+  data: NotifyResponse;
+  draft: NotifyDraft;
+  patch: (p: Partial<NotifyDraft>) => void;
+}) {
   const { t } = useAdminT();
-  const queryClient = useQueryClient();
-  const { data, isError } = useQuery(notifyQueryOptions);
-  const [edited, setEdited] = useState<Settings | null>(null);
-  const [busy, setBusy] = useState<'save' | 'test' | null>(null);
-
-  if (isError) return <p className="sf-hint">{t('site.notify.loadFailed')}</p>;
-  if (!data) return null;
-  const draft = edited ?? data.settings;
-  const dirty = edited !== null && JSON.stringify(edited) !== JSON.stringify(data.settings);
-  const patch = (p: Partial<Settings>) => setEdited({ ...draft, ...p });
-
-  const save = async () => {
-    setBusy('save');
-    try {
-      const res = await fetch('/api/admin/notify', {
-        method: 'PUT',
-        headers: jsonAuthHeaders(),
-        body: JSON.stringify(draft),
-      });
-      const body = (await res.json().catch(() => ({}))) as NotifyResponse & { error?: string };
-      if (!res.ok) {
-        toast.error(apiErrorText(body, at, 'errors', t('common.saveFailed', { status: res.status })));
-        return;
-      }
-      queryClient.setQueryData(notifyQueryOptions.queryKey, body);
-      setEdited(null);
-      toast.success(t('site.notify.saved'));
-    } catch {
-      toast.error(t('common.offline'));
-    } finally {
-      setBusy(null);
-    }
-  };
+  const [testing, setTesting] = useState(false);
 
   const test = async () => {
-    setBusy('test');
+    setTesting(true);
     try {
       const res = await fetch('/api/admin/notify/test', {
         method: 'POST',
@@ -82,7 +39,7 @@ export default function NotifySettings() {
     } catch {
       toast.error(t('common.offline'));
     } finally {
-      setBusy(null);
+      setTesting(false);
     }
   };
 
@@ -116,20 +73,11 @@ export default function NotifySettings() {
         <button
           type="button"
           className="adm-btn"
-          disabled={busy !== null || draft.webhook_url.trim() === ''}
-          aria-busy={busy === 'test'}
+          disabled={testing || draft.webhook_url.trim() === ''}
+          aria-busy={testing}
           onClick={() => void test()}
         >
           {t('site.notify.test')}
-        </button>
-        <button
-          type="button"
-          className="adm-btn adm-btn-primary"
-          disabled={busy !== null || !dirty}
-          aria-busy={busy === 'save'}
-          onClick={() => void save()}
-        >
-          {t('site.notify.save')}
         </button>
       </div>
     </>

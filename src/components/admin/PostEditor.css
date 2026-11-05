@@ -131,6 +131,27 @@
   border-left: 1px solid var(--line);
 }
 
+/* 窄螢幕：編輯區與設定上下排，整個表單一起捲（兩欄各自捲的話，手機上兩個捲軸疊在一起） */
+@media (max-width: 1023px) {
+  .pe-form {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .pe-form > .pe-main {
+    flex: none;
+    overflow: visible;
+    padding: var(--space-4);
+  }
+
+  .pe-side {
+    width: auto;
+    overflow: visible;
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+}
+
 /* 分段標題：等寬小字，後面一條點線拉到底（同 .adm-section-head） */
 .pe-side-head {
   display: flex;

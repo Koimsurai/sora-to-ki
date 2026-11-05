@@ -214,6 +214,18 @@
   color: var(--ink-subtle);
 }
 
+/* 跟在一句話後面的動作（「還沒接上來源。到來源設定 →」）：按鈕的外觀拿掉，只留列尾動作那種等寬小字 */
+.adm-page .adm-inline-action {
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 4px;
+}
+
 /* ── 數字：四角框（前台留給投票、數字、圖表的那種框） ── */
 .adm-tiles {
   display: grid;
@@ -263,6 +275,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+}
+
+/* 分頁那排裡的「設定」（收藏的來源設定、留言的封鎖名單與關鍵字）：前面一條髮絲線隔開，
+   讀起來是另一類東西，不是第 N 種內容 */
+.adm-tabs-aside {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--line);
 }
 
 /* 分頁：前面一顆空心小圓，選中的是琥珀實心點 */
@@ -456,6 +480,22 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2-5);
+}
+
+/* 長表單最底下黏著的那一列（pageEditorKit 的 SaveBar）：頁面、站台設定都用。
+   放在共用的這支，不放某一頁的 CSS：原本在 PagesManager.css，站台設定沒載入它，儲存列就沉到三千多像素的最底下 */
+.adm-save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  align-items: center;
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--line);
+  background: var(--ground);
+}
+
+.adm-save-bar .adm-meta {
+  margin-right: auto;
 }
 
 /* 當成標籤用的等寬小字：AdminTheme 給 label 的字級與顏色要蓋回來 */
@@ -897,5 +937,49 @@
 
   .adm-latin {
     font-size: var(--fs-24);
+  }
+}
+
+/* 手機上的清單表格：一筆一塊，不橫向捲。原本表格最少 760 寬，狀態、編輯、刪除全在畫面右邊外面。
+   表頭收掉；標題獨占一行，其他欄（分類、語系、狀態、時間）接在下面一行，動作靠右 */
+@media (max-width: 640px) {
+  .adm-table-wrap {
+    overflow-x: visible;
+  }
+
+  .adm-table.adm-table-stack {
+    min-width: 0;
+  }
+
+  .adm-table.adm-table-stack thead {
+    display: none;
+  }
+
+  .adm-table.adm-table-stack tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) 0;
+  }
+
+  .adm-table.adm-table-stack td {
+    width: auto;
+    padding: 0;
+    white-space: normal;
+  }
+
+  .adm-table.adm-table-stack td:first-child {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .adm-table.adm-table-stack td:last-child {
+    margin-left: auto;
+  }
+
+  /* 分頁換行時設定那組掉到第二行開頭，前面的縮排就多餘了，只留髮絲線 */
+  .adm-tabs-aside {
+    margin-left: 0;
   }
 }

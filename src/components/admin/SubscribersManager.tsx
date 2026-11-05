@@ -148,7 +148,7 @@ export default function SubscribersManager() {
             </p>
           ) : (
             <div className="adm-table-wrap">
-              <table className="adm-table">
+              <table className="adm-table adm-table-stack">
                 <thead>
                   <tr>
                     <th scope="col">{t('subscribers.col.email')}</th>

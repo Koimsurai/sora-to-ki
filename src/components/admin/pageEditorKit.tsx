@@ -155,7 +155,7 @@ export function SaveBar({
   onSave: () => void;
 }) {
   return (
-    <div className="adm-form-actions pg-save">
+    <div className="adm-form-actions adm-save-bar">
       <span className="adm-meta">{dirty ? at('pages.unsaved') : at('pages.inSync')}</span>
       <button type="button" className="adm-btn" disabled={!dirty || saving} onClick={onReset}>
         {at('common.revert')}

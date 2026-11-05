@@ -118,7 +118,7 @@ export default function UsersManager() {
           <p className="adm-empty">{q ? t('users.noMatch') : t('users.empty')}</p>
         ) : (
           <div className="adm-table-wrap">
-            <table className="adm-table">
+            <table className="adm-table adm-table-stack">
               <thead>
                 <tr>
                   <th scope="col">{t('users.col.name')}</th>

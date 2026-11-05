@@ -5,6 +5,7 @@
   "go": {
     "review": "去審 →",
     "look": "去看 →",
+    "relogin": "去重新登入 →",
     "continue": "繼續寫 →",
     "list": "看清單 →"
   },

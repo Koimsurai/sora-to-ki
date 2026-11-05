@@ -84,20 +84,6 @@
   align-self: flex-start;
 }
 
-.pg-save {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-  align-items: center;
-  padding-block: var(--space-3);
-  border-top: 1px solid var(--line);
-  background: var(--ground);
-}
-
-.pg-save .adm-meta {
-  margin-right: auto;
-}
-
 @media (max-width: 640px) {
   .pg-row,
   .pg-row-chapter {

@@ -4,7 +4,7 @@
     "watch": "在看",
     "listen": "在聽",
     "fav": "最愛",
-    "sources": "來源"
+    "sources": "來源設定"
   },
   "kind": {
     "anime": "動畫",
@@ -183,7 +183,8 @@
   "spotifyRecent": "最近 {{count}} 首",
   "booksLink": "書在書架 →",
   "loadingCollection": "讀收藏",
-  "watchEmpty": "還沒有觀看紀錄。巴哈、Simkl 同步之後會出現在這裡。",
+  "watchEmpty": "還沒有觀看紀錄。接上一個觀看來源、同步之後會出現在這裡。",
+  "goSources": "到來源設定 →",
   "watchNote": "同步進來的紀錄改不了，只能決定要不要出現在前台；電影與影集可以放進收藏頁最上面那一排。",
   "untitled": "（沒有名字）",
   "watchedUpTo": "看到 {{detail}}",
@@ -195,7 +196,7 @@
   "shown": "前台顯示",
   "listenNote": "直接從 Spotify 來（最近播放的 50 首），這裡只能決定哪幾首不要出現在前台。",
   "spotifyError": "Spotify 現在抓不到：{{error}}",
-  "listenEmpty": "沒有最近播放。Spotify 沒接上的話這裡會是空的。",
+  "listenEmpty": "沒有最近播放。在聽要接上 Spotify、Last.fm 或 ListenBrainz。",
   "otherHidden": "其他不公開的歌",
   "hiddenOn": "{{date}} 藏起來的",
   "unhide": "改回公開",

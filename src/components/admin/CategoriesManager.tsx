@@ -198,7 +198,7 @@ export default function CategoriesManager() {
           </p>
         ) : (
           <div className="adm-table-wrap">
-            <table className="adm-table">
+            <table className="adm-table adm-table-stack">
               <thead>
                 <tr>
                   <th scope="col">{t('taxonomy.col.name')}</th>
