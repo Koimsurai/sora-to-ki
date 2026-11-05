@@ -79,7 +79,7 @@
       "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
-      "WAKATIME_API_KEY": "API key",
+      "WAKATIME_TOKEN": "OAuth token",
       "BANGUMI_USERNAME": "Username",
       "BANGUMI_TOKEN": "Access Token",
       "ANILIST_USERNAME": "Username",
@@ -173,7 +173,7 @@
       "wakatime": {
         "name": "WakaTime",
         "what": "Coding time and languages",
-        "help": "Copy the API key from wakatime.com/settings/api-key."
+        "help": "Copy your personal OAuth token from wakatime.com/oauth. Since 2026-11-01, API keys only work for editor plugins and can't read data."
       }
     }
   },

@@ -260,7 +260,7 @@ Only `DATABASE_URL` and `JWT_SECRET` are required (both are in the example file)
 | Basics | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
 | Sign-in (owner and readers) | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
 | MCP machine account | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
-| Activity page | `GITHUB_TOKEN` `WAKATIME_API_KEY` `STEAM_API_KEY` `STEAM_ID` |
+| Activity page | `GITHUB_TOKEN` `WAKATIME_TOKEN` (personal OAuth token from wakatime.com/oauth) `STEAM_API_KEY` `STEAM_ID` |
 | Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
 | Film and TV | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN`; Taiwan's Bahamut Anime Crazy: `BAHAMUT_UID` `BAHAMUT_PASSWORD` |
 | Bookshelf | `GOOGLE_BOOKS_API_KEY`; Taiwan's National Central Library ISBN data: `ENABLE_TW_ISBN_SYNC` |

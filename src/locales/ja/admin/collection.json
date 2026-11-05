@@ -79,7 +79,7 @@
       "SPOTIFY_REFRESH_TOKEN": "Refresh Token",
       "STEAM_API_KEY": "Web API key",
       "STEAM_ID": "Steam ID",
-      "WAKATIME_API_KEY": "API key",
+      "WAKATIME_TOKEN": "OAuth token",
       "BANGUMI_USERNAME": "ユーザー名",
       "BANGUMI_TOKEN": "Access Token",
       "ANILIST_USERNAME": "ユーザー名",
@@ -173,7 +173,7 @@
       "wakatime": {
         "name": "WakaTime",
         "what": "コードを書いた時間と言語",
-        "help": "wakatime.com/settings/api-key から API key をコピーします。"
+        "help": "wakatime.com/oauth から個人用の OAuth token をコピーします。2026-11-01 以降、API key はエディタのプラグイン専用になり、データを読めません。"
       }
     }
   },
