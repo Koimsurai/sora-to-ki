@@ -129,7 +129,7 @@
     "jsonwebtoken": "^9.0.3",
     "knip": "^6.32.2",
     "nitro": "3.0.260610-beta",
-    "sharp": "^0.35.0",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "thumbhash": "^0.1.1",
     "tsx": "^4.23.12",
