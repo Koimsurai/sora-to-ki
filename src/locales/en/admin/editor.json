@@ -96,8 +96,9 @@
     "slug": "URL slug",
     "slugHint": "The post URL is /blog/<slug>. Leave empty to generate it from the English title; changing it won't break links — the old URL redirects (301) to the new one.",
     "layout": "Layout",
-    "layoutRecord": "📅 Record (time-bound)",
-    "layoutColumn": "💎 Column (timeless)",
+    "slugPlaceholder": "Empty: made from the English title",
+    "layoutRecord": "Record (time-bound)",
+    "layoutColumn": "Column (timeless)",
     "allowComments": "Allow comments"
   },
   "cover": {

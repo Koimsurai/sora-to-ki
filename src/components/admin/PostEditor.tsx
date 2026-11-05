@@ -1261,7 +1261,7 @@ export default function PostEditor() {
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="blog-post-rendering-strategy"
+                              placeholder={tr('editor.publishing.slugPlaceholder')}
                               variant="glass"
                               size="compact"
                             />

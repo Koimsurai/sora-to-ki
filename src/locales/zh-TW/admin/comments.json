@@ -2,14 +2,14 @@
   "status": {
     "pending": "待審",
     "approved": "已批准",
-    "spam": "垃圾",
-    "trash": "垃圾桶"
+    "spam": "垃圾留言",
+    "trash": "已刪除"
   },
   "done": {
     "pending": "已退回待審",
     "approved": "已批准",
     "spam": "已標成垃圾",
-    "trash": "已丟進垃圾桶"
+    "trash": "已刪除"
   },
   "place": {
     "post": "手記 #{{id}}",
@@ -50,7 +50,7 @@
   "replyTo": "這是一則回覆（回覆 #{{id}}）",
   "approve": "批准",
   "markSpam": "標成垃圾",
-  "toTrash": "丟進垃圾桶",
+  "toTrash": "刪除",
   "edit": "編輯",
   "blockIp": "封鎖這個 IP",
   "deleteForever": "永久刪除…",

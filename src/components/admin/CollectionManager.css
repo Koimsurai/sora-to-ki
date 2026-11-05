@@ -73,6 +73,24 @@
   color: var(--ink);
 }
 
+/* 「前台顯示」是開關不是主要按鈕：前面一顆點，開是實心、關是空心（最愛的 ★／☆ 是同一個意思）。
+   只靠框的深淺的話，一整排亮框看起來像一排要按的按鈕 */
+.adm-coll-dot {
+  box-sizing: border-box;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: var(--space-1-5);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-round);
+  vertical-align: middle;
+}
+
+.adm-coll-actions .adm-btn[aria-pressed="true"] .adm-coll-dot {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
 .adm-coll-hidden {
   display: flex;
   flex-direction: column;
