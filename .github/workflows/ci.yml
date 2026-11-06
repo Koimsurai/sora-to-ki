@@ -108,7 +108,7 @@ jobs:
       #   兩個數字差很多是正常的，別把它們當成同一件事。
       - name: 覆蓋率上傳（frontend）
         if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: coverage/lcov.info
           flags: frontend
@@ -124,7 +124,7 @@ jobs:
       #   測試本身卻全過。
       - name: Test Analytics（frontend）
         if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: junit-frontend.xml
@@ -269,7 +269,7 @@ jobs:
       #   到時候會變成「有時有報告有時沒有」這種最難查的狀態。
       - name: Codecov（覆蓋率上報）
         if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: backend/lcov.info
           # disable_search：不讓它自己去翻整個 repo。前端目前沒有產覆蓋率報告，
@@ -281,7 +281,7 @@ jobs:
       # 測試結果（跟上面的覆蓋率是兩回事）。target/ 在 workspace root，不是 backend/ 底下。
       - name: Test Analytics（backend）
         if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: target/nextest/ci/junit.xml
@@ -433,7 +433,7 @@ jobs:
       #   仍然算綠，那種訊號在 CI log 上只是一行 flaky 標記，跑完就沒了。
       - name: Test Analytics（e2e）
         if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: junit-e2e.xml
@@ -493,7 +493,7 @@ jobs:
         run: node scripts/e2e-coverage-report.mjs .e2e-coverage lcov-e2e.info
       - name: 覆蓋率上傳（e2e）
         if: ${{ env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: lcov-e2e.info
           flags: e2e
