@@ -139,6 +139,10 @@ const ADMIN_ROUTES: { route: string; heading?: string | RegExp; ready?: (p: Page
   { route: '/admin/categories', heading: '分類' },
   { route: '/admin/books', heading: '書架' },
   { route: '/admin/users', heading: '帳號' },
+  // 站台設定與流量：儲存列、分頁旁的設定、Plausible 表單都在這兩頁。
+  // 會存東西的測試（site-settings、admin 的流量）把寫入攔在瀏覽器裡，種子資料不會變。
+  { route: '/admin/site', heading: '站台設定' },
+  { route: '/admin/analytics', heading: '流量' },
   // 編輯器沒有 <h1>（標題那格是 input），等 monaco 掛上。
   { route: '/admin/posts/create', ready: (p) => p.locator('.monaco-editor').first() },
 ];

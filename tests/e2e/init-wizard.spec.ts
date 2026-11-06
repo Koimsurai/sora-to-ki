@@ -1,5 +1,5 @@
 /**
- * 初次設定的精靈（/admin/init）：設定碼 → 認領站長 → 語言 → 站台 → 頁面 → 完成。
+ * 初次設定的精靈（/admin/init）：設定碼 → 認領站長 → 語言 → 站台（含預設天體）→ 頁面 → 完成。
  *
  * 後端的 /api/init/* 在這裡全部攔下來給假的回應：e2e 的後端設了 OWNER_EMAIL（見 stack.mjs），
  * 是「已經有站長的站」，而認領要真的 GitHub／Google 登入。後端那半邊（設定碼、錯太多次換碼、
@@ -113,6 +113,7 @@ test.describe('初次設定', () => {
     await expect(page.getByText('站名不能是空的')).toBeVisible();
     await name.fill('新的站');
     await expect(page.locator('.wz-name')).toHaveText('新的站');
+    await page.getByRole('radio', { name: /黑洞/ }).check();
     await page.getByRole('button', { name: '下一步' }).click();
 
     // 頁面：關掉作品，星圖上那條軌道收起來、留一條「關」的虛線
@@ -124,7 +125,7 @@ test.describe('初次設定', () => {
 
     // 完成：送出去的是剛才的答案，右邊換成真的首頁
     await expect(page.getByRole('heading', { name: '開站了' })).toBeVisible();
-    expect(m.saved).toMatchObject({ name: '新的站', default_locale: 'en' });
+    expect(m.saved).toMatchObject({ name: '新的站', default_locale: 'en', theme: 'blackhole' });
     expect(m.saved?.locales).toEqual(expect.arrayContaining(['en', 'ja']));
     expect(m.saved?.disabled_pages).toEqual(expect.arrayContaining(['works']));
     await expect(page.locator('.wz-sky-live iframe')).toHaveAttribute('src', '/');

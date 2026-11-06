@@ -10,7 +10,7 @@ import { expect, test } from './fixtures';
 import { gotoAdminUntil } from './admin-session';
 
 test.describe('站台設定', () => {
-  test('改站名、關一頁，存出去的是改過的那份', async ({ page }) => {
+  test('改站名、換天體、關一頁，存出去的是改過的那份', async ({ page }) => {
     let saved: Record<string, unknown> | null = null;
     await page.route('**/api/admin/site/config', async (r) => {
       saved = r.request().postDataJSON() as Record<string, unknown>;
@@ -35,10 +35,14 @@ test.describe('站台設定', () => {
 
     await page.getByLabel('站名', { exact: true }).fill('改過的站');
     await page.getByRole('switch', { name: /朋友/ }).click();
+    await page.getByRole('radio', { name: /參宿四/ }).check();
+    const readerSwitch = page.getByRole('switch', { name: /讓讀者自己挑天體/ });
+    const switchWas = (await readerSwitch.getAttribute('aria-checked')) === 'true';
+    await readerSwitch.click();
     await expect(page.locator('.sfs-sky .wz-sky')).toBeVisible();
     await save.click();
     await expect(page.getByText('站台設定存好了')).toBeVisible();
-    expect(saved).toMatchObject({ name: '改過的站' });
+    expect(saved).toMatchObject({ name: '改過的站', theme: 'betelgeuse', theme_switch: !switchWas });
     expect((saved as unknown as { disabled_pages: string[] }).disabled_pages).toContain('friends');
   });
 

@@ -154,15 +154,34 @@ test.describe('後台', () => {
   });
 
   /**
-   * 流量：e2e 沒有 Plausible 的 key，後端回 configured: false → 畫面要教人怎麼設。
+   * 流量：e2e 沒有 Plausible 的 key，後端回 configured: false → 頁面上直接填 key。
+   * 存的那一支（PUT /api/admin/sources/plausible）攔下來：真的存進去，後端會拿假 key 去打 Plausible。
    * 接上之後的報表用攔截的假資料驗：摘要、跟上一段比、柱狀圖、每篇文章、來源與進站頁、
    * 搜尋字詞、收起來的排行（國碼翻成國名）都畫得出來。
    * （後端把 Plausible 的回應整理成這個形狀，那段在 backend/tests/analytics.rs 測。）
    */
-  test('流量：沒設 key 時說怎麼設；有資料時畫得出報表', async ({ page }) => {
+  test('流量：沒設 key 時在頁面上填；有資料時畫得出報表', async ({ page }) => {
+    let sent: unknown = null;
+    await page.route('**/api/admin/sources/plausible', async (r) => {
+      sent = r.request().postDataJSON();
+      const res = await r.fetch({
+        method: 'GET',
+        url: r
+          .request()
+          .url()
+          .replace(/\/plausible$/, ''),
+      });
+      const { sources } = (await res.json()) as { sources: { key: string }[] };
+      await r.fulfill({ json: { ...sources.find((s) => s.key === 'plausible'), configured: true } });
+    });
     await signIn(page);
     await gotoAdmin(page, '/admin/analytics', '流量');
-    await expect(page.getByText('PLAUSIBLE_API_KEY', { exact: false })).toBeVisible();
+    const setup = page.getByRole('region', { name: '流量' });
+    await setup.getByRole('button', { name: '設定', exact: true }).click();
+    await setup.getByLabel('Stats API key').fill('e2e-plausible-key');
+    await setup.getByRole('button', { name: '儲存', exact: true }).click();
+    await expect(page.getByText('Plausible 存好了')).toBeVisible();
+    expect(sent, '只送填了的那一格').toEqual({ values: { PLAUSIBLE_API_KEY: 'e2e-plausible-key' } });
 
     const totals = {
       visitors: 1234,
@@ -311,6 +330,14 @@ test.describe('後台', () => {
 
     await row.getByRole('button', { name: `${title} 在前台顯示` }).click();
     await expect.poll(publicFilms, { message: '改回公開要回來' }).toContain(title);
+  });
+
+  /** 總覽的「巴哈的 cookie 失效了」連到 ?tab=sources：打開就該停在來源設定，不是「在看」 */
+  test('收藏：網址帶 tab=sources 直接打開來源設定', async ({ page }) => {
+    await signIn(page);
+    await gotoAdmin(page, '/admin/collection?tab=sources', '收藏');
+    await expect(page.getByRole('button', { name: '來源設定' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('region', { name: '在看' })).toBeVisible();
   });
 
   /**
