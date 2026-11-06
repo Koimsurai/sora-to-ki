@@ -293,13 +293,15 @@ test.describe('後台', () => {
     const title = await side.getByRole('img').getAttribute('alt');
     const before = await publicIds();
 
+    // 存完會讓清單重抓、側欄跟著重畫；點擊剛好落在要被換掉的那個元素上就不會送出
+    // （CI 的 trace：第二下沒有 PATCH）。沒按進去就再按一次，check／uncheck 本身是冪等的。
     const toggle = side.getByRole('checkbox', { name: /前台顯示/ });
     await expect(toggle).toBeChecked();
-    await toggle.uncheck();
+    await expect(() => toggle.uncheck({ timeout: 2_000 })).toPass({ timeout: 10_000 });
     await expect(page.getByText('藏起來了').first()).toBeVisible({ timeout: 10_000 });
     await expect.poll(publicIds, { message: `〈${title}〉藏起來之後還在公開清單上` }).toHaveLength(before.length - 1);
 
-    await side.getByRole('checkbox', { name: /前台顯示/ }).check();
+    await expect(() => toggle.check({ timeout: 2_000 })).toPass({ timeout: 10_000 });
     await expect.poll(publicIds, { message: '打開之後要回來' }).toEqual(before);
   });
 
