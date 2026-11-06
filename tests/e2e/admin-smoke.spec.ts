@@ -79,6 +79,15 @@ test.describe('後台每一頁都打得開', () => {
       }
       expect(p.errors, `${route.path} 的 console error`).toEqual([]);
       expect(p.failed, `${route.path} 的請求失敗`).toEqual([]);
+
+      // 手機寬度：清單表格疊成一筆一塊、編輯器的設定欄接在下面，整頁不能被撐出橫向捲動。
+      // 同一次載入改寬度量，不重新導覽：這支便宜的價值在每一頁都跑得起。
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), {
+          message: `${route.path} 在 390 寬被撐出橫向捲動`,
+        })
+        .toBeLessThanOrEqual(1);
     });
   }
 });
