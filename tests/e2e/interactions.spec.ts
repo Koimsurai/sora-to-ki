@@ -72,6 +72,32 @@ test.describe('留言', () => {
   });
 
   /**
+   * 「站長回覆時寄信通知我」：沒填 email 就不出現（沒地方寄）；勾了才帶 notify_reply，
+   * 預設不勾（email 欄誰都能亂填，勾了才算同意）。勾過的下次回來還勾著。
+   */
+  test('留了 email 才問要不要回覆通知，勾了才帶 notify_reply，下次回來還記得', async ({ page }) => {
+    await page.goto('/blog/1');
+    await fillAnonymousComment(page, 'e2e 訪客', `e2e 回覆通知 ${Date.now()}`);
+    const notify = page.getByRole('checkbox', { name: '站長回覆時寄信通知我' });
+    await expect(notify, '沒有 email 就沒地方寄').toHaveCount(0);
+
+    await page.locator('input[name="email"]').fill('reader@example.com');
+    await expect(notify).not.toBeChecked();
+    await notify.check();
+
+    const posted = page.waitForRequest((r) => r.url().includes('/comments') && r.method() === 'POST');
+    await page.locator('button.cf-submit').click();
+    const body = (await posted).postDataJSON() as { email: string; notify_reply: boolean };
+    expect(body).toMatchObject({ email: 'reader@example.com', notify_reply: true });
+    await expect(page.locator('.cf-note')).toContainText('審核');
+
+    await page.reload();
+    await openForm(page);
+    await expect(page.locator('input[name="email"]')).toHaveValue('reader@example.com');
+    await expect(notify).toBeChecked();
+  });
+
+  /**
    * 留言頁的留言不屬於任何一篇文章（後端的 comments.page）。翻新上線時它借文章留言的路徑、
    * 塞一個假的文章 id（meta-messages），每一則都撞外鍵、回 400——訪客看到「送不出去」，
    * 而這裡沒有任何一條測試真的送過一則，所以上線兩天都沒人發現。
