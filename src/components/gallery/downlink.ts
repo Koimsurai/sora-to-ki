@@ -20,13 +20,26 @@ const DISH = { src: '/illustrations/dsn-dish.webp', feed: [0.7, 0.098] } as cons
 /** 探測器的高增益天線碟面中心；畫的時候轉 180°，讓碟面朝左下對著地面站 */
 const PROBE = { src: '/illustrations/deep-space-probe.webp', dish: [435 / 698, 265 / 700] } as const;
 
+/**
+ * 解碼成功過的圖。`complete && naturalWidth` 不夠：檔頭讀到了（有寬度）但內容壞掉或下載被切斷時，
+ * drawImage 會丟「in the 'broken' state」。decode() 成功才算數
+ */
+const decoded = new WeakSet<HTMLImageElement>();
 function load(src: string) {
   const img = new Image();
   img.decoding = 'async';
   img.src = src;
+  // jsdom（單元測試）沒有 decode：那邊不畫就好
+  if ('decode' in img)
+    img.decode().then(
+      () => decoded.add(img),
+      () => {
+        // 解不出來就不畫，天線與探測器是裝飾
+      },
+    );
   return img;
 }
-const ready = (img: HTMLImageElement) => img.complete && img.naturalWidth > 0;
+const ready = (img: HTMLImageElement) => decoded.has(img);
 
 export function createStation() {
   const dish = load(DISH.src);

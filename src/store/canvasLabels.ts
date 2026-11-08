@@ -175,7 +175,8 @@ export function applyLabelGeometry(geometry: LabelGeometry) {
   const apply = (els: HTMLElement[], boxes: LabelBox[]) => {
     for (const [i, box] of boxes.entries()) {
       const el = els[i] as HTMLElement | undefined;
-      if (!el) continue;
+      // worker 的框晚一拍才到：換頁時卡片已經從畫布底下拿掉了，這時再設位置瀏覽器會丟 InvalidStateError
+      if (!el || el.parentElement?.closest('canvas') !== canvas) continue;
       if (box) canvas.updateElementGeometry?.(el, { canvasTransform: { a: 1, b: 0, c: 0, d: 1, e: box.x, f: box.y } });
       else canvas.clearElementGeometry?.(el);
     }
