@@ -120,6 +120,18 @@ export default function Messages() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dish = new Image();
     dish.src = DISH_SRC;
+    // 解碼成功才畫：`complete && naturalWidth` 擋不住內容壞掉的圖（檔頭有寬度、drawImage 丟 broken）
+    let dishOk = false;
+    // jsdom（單元測試）沒有 decode：那邊不畫就好
+    if ('decode' in dish)
+      dish.decode().then(
+        () => {
+          dishOk = true;
+        },
+        () => {
+          // 解不出來就不畫天線，它是裝飾
+        },
+      );
     const draw = createStrip();
     let visible = true;
     const io = new IntersectionObserver(([e]) => {
@@ -198,7 +210,7 @@ export default function Messages() {
         pulse,
         ping,
         dishAlpha: leaveRef.current !== null ? 1 - 0.6 * (1 - head) : Math.min(1, 0.3 + head),
-        dish,
+        dish: dishOk ? dish : null,
       });
       const l = labelsRef.current;
       const next = sending ? l.sending : typingRef.current ? l.ready : countRef.current ? l.count : l.rx;
