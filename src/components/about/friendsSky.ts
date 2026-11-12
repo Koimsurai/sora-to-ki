@@ -4,6 +4,7 @@
 // 點一顆星，鏡頭拉近、星換成對接線稿的那艘船，這個站的船從左邊滑進來接上（面板由頁面疊在旁邊）。
 // 表單打名字時，一顆預覽星從畫面外飛到外圈等著；送出時點火，沿轉移軌道切進那條空軌道。
 // 這裡只畫點、線與插圖，字全是疊在上面的 DOM（要能點、要被裁字器看到）。
+import { canDraw } from '@/lib/drawableImage';
 import { onPalette, palette } from '@/lib/palette';
 import { currentFold } from '@/lib/viewportFold';
 import { focusY } from '@/lib/viewportShape';
@@ -429,7 +430,7 @@ function drawDocking(
   height: number,
   w: number,
 ) {
-  if (!img.complete || !img.naturalWidth) return;
+  if (!canDraw(img)) return;
   const { CUT, LEFT_PORT, RIGHT_PORT, AXIS } = DOCK;
   const sw = img.naturalWidth;
   const sh = img.naturalHeight;
@@ -469,7 +470,7 @@ export function drawDockIllustration(
 ) {
   const { IW, IH, CUT, LEFT_PORT, RIGHT_PORT, AXIS } = DOCK;
   ctx.clearRect(0, 0, w, h);
-  if (!img.complete || !img.naturalWidth) return;
+  if (!canDraw(img)) return;
   const sw = img.naturalWidth;
   const sh = img.naturalHeight;
   const sc = Math.min(w / IW, h / IH);

@@ -373,10 +373,19 @@ export function PhotoToy() {
         }
       });
     };
-    if (img.complete && img.naturalWidth) start();
-    else img.onload = start;
+    // 解碼成功才開始畫：`complete && naturalWidth` 擋不住壞掉的圖（見 lib/drawableImage）
+    let gone = false;
+    if ('decode' in img)
+      img.decode().then(
+        () => {
+          if (!gone) start();
+        },
+        () => {
+          // 解不出來就不放這段示範
+        },
+      );
     return () => {
-      img.onload = null;
+      gone = true;
       stop?.();
     };
   }, [src, key, run, cell]);

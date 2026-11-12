@@ -4,6 +4,7 @@
 // 換頁時頻道起點振一下（像超聲波探頭），一道琥珀色的光沿頻道跑：進場跑進天線、離場從天線倒著跑回起點，
 // 頻道跟著它長出來、收回去。
 // 這裡只畫線與天線，狀態文字（RX／TX）是疊在上面的 DOM。
+import { canDraw } from '@/lib/drawableImage';
 import { onPalette, palette } from '@/lib/palette';
 
 let { paper: INK, amber: AMBER } = palette();
@@ -122,7 +123,7 @@ export function createStrip() {
         }
       } else pulseHit = false;
 
-      if (dish?.complete && dish.naturalWidth) {
+      if (canDraw(dish)) {
         ctx.save();
         ctx.globalAlpha = (0.45 + 0.5 * flash) * dishAlpha;
         ctx.translate(d.x + d.dw, d.y);

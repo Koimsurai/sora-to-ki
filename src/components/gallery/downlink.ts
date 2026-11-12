@@ -2,6 +2,7 @@
 // 在太空拍的照片要經過一趟傳輸才看得到：相機把畫面轉成 0 和 1，天線把訊號送回地球，
 // 地面站的巨型天線接住，再解碼、上色。這裡畫三樣東西：頁首的地面站與遠處的探測器、
 // 每個月收到幾張的接收紀錄、每一張照片進畫面時的接收過程。只有畫圖，不碰 React。
+import { canDraw, loadDrawable } from '@/lib/drawableImage';
 import { onPalette, palette } from '@/lib/palette';
 
 const TAU = Math.PI * 2;
@@ -20,30 +21,9 @@ const DISH = { src: '/illustrations/dsn-dish.webp', feed: [0.7, 0.098] } as cons
 /** 探測器的高增益天線碟面中心；畫的時候轉 180°，讓碟面朝左下對著地面站 */
 const PROBE = { src: '/illustrations/deep-space-probe.webp', dish: [435 / 698, 265 / 700] } as const;
 
-/**
- * 解碼成功過的圖。`complete && naturalWidth` 不夠：檔頭讀到了（有寬度）但內容壞掉或下載被切斷時，
- * drawImage 會丟「in the 'broken' state」。decode() 成功才算數
- */
-const decoded = new WeakSet<HTMLImageElement>();
-function load(src: string) {
-  const img = new Image();
-  img.decoding = 'async';
-  img.src = src;
-  // jsdom（單元測試）沒有 decode：那邊不畫就好
-  if ('decode' in img)
-    img.decode().then(
-      () => decoded.add(img),
-      () => {
-        // 解不出來就不畫，天線與探測器是裝飾
-      },
-    );
-  return img;
-}
-const ready = (img: HTMLImageElement) => decoded.has(img);
-
 export function createStation() {
-  const dish = load(DISH.src);
-  const probe = load(PROBE.src);
+  const dish = loadDrawable(DISH.src);
+  const probe = loadDrawable(PROBE.src);
 
   /** 探測器在畫布上的位置、大小、轉角，以及它發送訊號的那一點 */
   const layout = (w: number, t: number) => {
@@ -84,13 +64,13 @@ export function createStation() {
     ctx.clearRect(0, 0, w, h);
     const dh = h - 6;
     const dw = dh * (669 / 865);
-    if (ready(dish)) {
+    if (canDraw(dish)) {
       ctx.globalAlpha = 0.85;
       ctx.drawImage(dish, 0, 0, dw, dh);
       ctx.globalAlpha = 1;
     }
     const l = layout(w, t);
-    if (ready(probe)) {
+    if (canDraw(probe)) {
       ctx.save();
       ctx.translate(l.cx, l.cy);
       ctx.rotate(l.rot);
