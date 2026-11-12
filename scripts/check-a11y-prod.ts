@@ -78,6 +78,18 @@ async function scan(browser: Browser, path: string): Promise<Finding[]> {
     await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {
       /* 有輪詢的頁面永遠不會 idle，等到上限就好 */
     });
+    // 進場的淡入跑完再掃：opacity 還沒到 1 時 axe 算出來的對比會偏低（手記頁的 .nt-in）。
+    // 星空那類無限循環的動畫不等
+    // 寫成字串：scripts 的 tsconfig 沒有 DOM 型別，這段在瀏覽器裡跑
+    await page.evaluate(`Promise.race([
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => Number.isFinite(Number(a.effect?.getComputedTiming().endTime ?? Infinity)))
+          .map((a) => a.finished.catch(() => undefined)),
+      ),
+      new Promise((r) => setTimeout(r, 5000)),
+    ])`);
     const { violations } = await new AxeBuilder({ page }).analyze();
     const allowed = KNOWN[path] ?? [];
     return violations
@@ -98,7 +110,13 @@ const browser = await chromium.launch();
 let findings: Finding[] = [];
 try {
   for (const path of PAGES) {
-    const found = await scan(browser, path);
+    let found = await scan(browser, path);
+    // 有問題就換一個乾淨的 context 再掃一次，兩次都有的才算：掃的那一刻頁面剛好在重新導覽，
+    // axe 會拿到一份空文件（<html><head></head><body></body></html>），報一整排「沒有 title、沒有 lang」
+    if (found.length > 0) {
+      const again = new Set((await scan(browser, path)).map((f) => f.id));
+      found = found.filter((f) => again.has(f.id));
+    }
     const mark = found.length === 0 ? '✓' : '✗';
     console.log(`${mark} ${path.padEnd(14)} ${found.map((f) => `${f.impact}:${f.id}`).join(', ') || '乾淨'}`);
     findings = findings.concat(found);
