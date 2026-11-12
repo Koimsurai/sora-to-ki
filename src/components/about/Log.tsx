@@ -21,6 +21,7 @@ import { pickText } from '@/lib/i18nText';
 import { after, isArriving } from '@/store/pageTransition';
 import { createLog, ROCKET_SRC } from './logSky';
 import './Log.css';
+import { loadDrawable } from '@/lib/drawableImage';
 import { sameTitle } from '@/lib/pageTitle';
 
 /** 火箭從發射台爬到現在要幾秒 */
@@ -167,8 +168,7 @@ export default function Log() {
     const ctx = cv?.getContext('2d');
     if (!el || !cv || !ctx) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const rocket = new Image();
-    rocket.src = ROCKET_SRC;
+    const rocket = loadDrawable(ROCKET_SRC);
     let pointer: [number, number] | null = null;
     /** 窄螢幕的讀數：手指（或滑鼠）停在畫面上的水平位置。放開之後留著，讀數才看得到 */
     let scrubX: number | null = null;

@@ -14,6 +14,7 @@ import { useBareSky } from '@/hooks/useBareSky';
 import { after, isArriving, isRejoining, transitionDot, type Pt } from '@/store/pageTransition';
 import { createFallSky, METER_BOTTOM, METER_TOP, meterMark, meterProgress, phases, smooth } from './fallSky';
 import './AboutFall.css';
+import { loadDrawable } from '@/lib/drawableImage';
 import { sameTitle } from '@/lib/pageTitle';
 
 /**
@@ -152,8 +153,7 @@ export default function AboutFall() {
     if (!cv || !ctx || !page) return;
     const root = document.documentElement;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const chute = new Image();
-    chute.src = CHUTE_SRC;
+    const chute = loadDrawable(CHUTE_SRC);
     const sky = createFallSky(window.innerWidth < 760 ? 280 : 720, chute);
     const mono = getComputedStyle(root).getPropertyValue('--mono-font').trim() || 'monospace';
     const chapterEls = [...page.querySelectorAll<HTMLElement>('.af-ch')];

@@ -7,6 +7,7 @@
 //   - 高度計：右邊的尺，下墜時是離地表幾公里，往下挖時換成地表以下幾公尺
 // 琥珀點（讀者）由頁面算位置（它會從標題的句號落到高度計上，著地時停在「就此落下。」的句號），
 // 這裡只負責畫。畫布固定在視窗上，位置都由捲動算出來；這裡只有畫圖，不碰 React。
+import { canDraw } from '@/lib/drawableImage';
 import { onPalette, palette } from '@/lib/palette';
 import type { Pt } from '@/store/pageTransition';
 
@@ -339,7 +340,7 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
       }
 
       // 返回艙：從上面降下來，「就此落下」那一刻著地——彈一下、揚起一陣土，傘慢慢塌下去躺在地上
-      if (chute.complete && chute.naturalWidth) {
+      if (canDraw(chute)) {
         const gx = w * (narrow ? 0.7 : 0.76);
         const gy = ridge(gx, cx, cy, R, 0);
         const dh = Math.min(narrow ? 170 : 250, h * 0.34);

@@ -8,6 +8,7 @@
 // 這裡只畫點、線與插圖，字（里程碑的名字、遙測讀數、提示）是疊在上面的 DOM。
 
 import type { Ground } from '@koimsurai/api-types';
+import { canDraw } from '@/lib/drawableImage';
 import { onPalette, palette } from '@/lib/palette';
 import { currentFold } from '@/lib/viewportFold';
 
@@ -654,7 +655,7 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
           ctx.fillStyle = q < 0.35 ? `rgba(${AMBER}, ${0.9 * (1 - q)})` : `rgba(${INK}, ${0.6 * (1 - q) * fade})`;
           ctx.fillRect(px, py, 2, 2);
         }
-        if (rocket?.complete && rocket.naturalWidth) {
+        if (canDraw(rocket)) {
           const rw = rocket.naturalWidth;
           const rh = rocket.naturalHeight;
           const ax = (ROCKET.nose[0] - ROCKET.nozzle[0]) * rw;

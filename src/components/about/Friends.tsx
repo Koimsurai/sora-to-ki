@@ -25,6 +25,7 @@ import {
   type Preview,
 } from './friendsSky';
 import './Friends.css';
+import { loadDrawable } from '@/lib/drawableImage';
 import { sameTitle } from '@/lib/pageTitle';
 
 const ART = '/illustrations/docking.webp';
@@ -267,8 +268,7 @@ export default function Friends() {
     const ctx = cv?.getContext('2d');
     if (!box || !cv || !ctx) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const art = new Image();
-    art.src = ART;
+    const art = loadDrawable(ART);
     let pointer: [number, number] | null = null;
     const onMove = (e: PointerEvent) => {
       const r = box.getBoundingClientRect();
@@ -564,8 +564,7 @@ export default function Friends() {
     const ctx = cv?.getContext('2d');
     if (!cv || !ctx) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const img = new Image();
-    img.src = ART;
+    const img = loadDrawable(ART);
     let raf = 0;
     let last = 0;
     let start = -1;
