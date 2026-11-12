@@ -17,4 +17,11 @@ ignore = [
   # `cargo tree -i ctutils --target all -e all` 印不出任何東西，根本沒編進後端。
   # 修補版 0.4.4 發佈於 2026-10-23，滿兩週（2026-11-06）後跟著一般更新升上去再拿掉這條。
   "RUSTSEC-2026-0385",
+  # RUSTSEC-2026-0459 — libsqlite3-sys 0.37 內建的 SQLite 3.53 碰上頁大小不同的 -wal 會讀出未初始化的記憶體。
+  # 修補在 0.39（SQLite 3.54），但 sqlx-sqlite 0.9.0 把它鎖在 <0.38，上游還沒有新版，升不上去。
+  # 條件是打開一份別人寫的資料庫「連同它的 -wal」。我們只會打開兩種檔：自己的 db.sqlite，
+  # 以及備份還原上傳的那一份（handlers/backup.rs）。上傳只收一個檔，檢查時用 immutable 開（不讀 -wal），
+  # 換上去之前現有的 -wal／-shm 先改名移走，所以上傳的檔不會跟任何 -wal 配對。
+  # sqlx 出了接受 libsqlite3-sys 0.39 的版本就升上去，再拿掉這條。
+  "RUSTSEC-2026-0459",
 ]
