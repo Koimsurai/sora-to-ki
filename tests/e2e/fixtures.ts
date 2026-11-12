@@ -15,12 +15,11 @@
 //   不是失敗——這樣未來要加 firefox/webkit 也不必動這裡。
 
 import { test as base, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const COVERAGE_DIR = process.env.E2E_COVERAGE_DIR;
-
-let seq = 0;
 
 const withCoverage = base.extend({
   page: async ({ page }, use, testInfo) => {
@@ -42,7 +41,9 @@ const withCoverage = base.extend({
         .filter((e) => e.url.includes('/assets/') && e.url.endsWith('.js'))
         .map(({ url, functions }) => ({ url, functions }));
       if (!slim.length) return;
-      const name = `${process.pid}-${seq++}-${testInfo.workerIndex}.json`;
+      // 檔名不能只靠 pid：CI 分三片在三台 runner 上跑，pid 很接近，彙整時
+      // download-artifact 的 merge-multiple 把三片解到同一個資料夾，同名檔會被並行寫壞
+      const name = `${randomUUID()}-${testInfo.workerIndex}.json`;
       fs.writeFileSync(path.join(COVERAGE_DIR as string, name), JSON.stringify(slim));
     } catch {
       /* 收集失敗不該讓測試變紅——它不是被測的東西 */
