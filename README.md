@@ -56,7 +56,7 @@ first step walks you through creating the OAuth app it needs for sign-in.
 - If `OWNER_EMAIL` is set in `.env.backend` there's no wizard: whoever signs in with that address is the owner
 - The admin is at `/admin` and only takes GitHub or Google sign-in (`ADMIN_USERNAME` / `ADMIN_PASSWORD` is a machine account for MCP, not for people)
 - Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.4.2` in `.env`
-- The database is backed up to `./backups` every day
+- The database is backed up to `./backups` every day; the admin's Site → Backup and moving can also download and restore one. On a new machine, the setup wizard's first step can restore the old site's backup
 
 ### Let an AI set it up
 
@@ -86,7 +86,7 @@ Every page is one kind of thing in the same night sky. Turn off a page you don't
 | Notes | rings of star trails, one trail per article | articles written in the admin |
 | Moments | passing comets; the newest moment is the head | short posts from the admin |
 | Works | a spiral course outward; a planet's size is its code size, its moons are GitHub stars | GitHub repos picked in the admin |
-| Collection | signals sent from Earth at the moment something was finished, travelling at the speed of light | bookshelf, Simkl / TMDb, Spotify (all optional) |
+| Collection | signals sent from Earth at the moment something was finished, travelling at the speed of light | the bookshelf, plus whatever platforms you connect in the admin (see Collection sources below) |
 | Log | a launch from your launch pad; altitude is your cumulative GitHub contributions | a start date and milestones from the admin |
 | About | a free fall from one year down to now | chapters, skills and experience from the admin |
 | Photos | pictures downlinked from deep space, received line by line | a NAS or an uploaded folder |
@@ -94,6 +94,17 @@ Every page is one kind of thing in the same night sky. Turn off a page you don't
 | Friends | stars around one center | a form on the page, reviewed in the admin |
 | Messages | radio waves received | readers |
 | Colophon | a sextant and the stars it measured | a Q&A from the admin |
+
+### Collection sources
+
+All optional. Fill in keys and turn on syncing under Collection → Source settings in the admin; changes apply on save, no restart. They're grouped by region, so pick the ones you actually use:
+
+| | Platforms |
+|---|---|
+| Watching | TMDb, Simkl, AniList, MyAnimeList, Letterboxd; Bangumi (China/Japan); Bahamut Anime Crazy (Taiwan) |
+| Reading | Books are looked up by ISBN: Google Books, then the national library of the ISBN's country (Taiwan, Japan, Korea); NeoDB |
+| Listening | Spotify; otherwise Last.fm or ListenBrainz |
+| Playing & coding | Steam, WakaTime (for the log) |
 
 ### Writing
 
@@ -110,8 +121,10 @@ Every page is one kind of thing in the same night sky. Turn off a page you don't
 - **Now**: an overview of what needs attention and the last 28 days of Web Vitals
 - **Write**: Monaco editor (Vim mode, slash commands, drag-and-drop upload) with live preview; synced records sit next to the moments composer, one click pulls one in
 - **Keep**: the bookshelf, photo titles and featured picks, what the collection shows publicly
-- **Reply**: comment moderation (keyboard j / k / a / s / r), **link-exchange requests** (one-click checks that the site is reachable, links back and has an RSS feed), newsletter subscribers
-- **Station**: site settings (name, languages, celestial body, launch pad, each page's description), each page's content, accounts and roles
+- **Reply**: comment moderation (keyboard j / k / a / s / r), **link-exchange requests** (one-click checks that the site is reachable, links back and has an RSS feed), newsletter subscribers.
+  Readers can tick "email me when the owner replies" when they comment; new comments and link-exchange requests can be pushed to Discord, Slack or any webhook (without emails or IPs)
+- **Station**: site settings (name, languages, celestial body, launch pad, each page's description, the signature, notifications), backup and moving, each page's content, accounts and roles
+- **Traffic**: once Plausible is connected, visitors, where they came from, countries and devices; the key goes straight into the traffic page
 - The admin itself speaks all five languages, following you rather than the site's default
 
 | Now | Notes |
@@ -130,7 +143,7 @@ You choose from a set of carefully made options rather than a wall of knobs: eve
 
 ### Four celestial bodies
 
-Pick the one readers see first; readers can switch for themselves from the top bar. The home page, the palette and the share images all follow it.
+Pick the one readers see first; readers can switch for themselves from the top bar (you can turn that off, so everyone sees your pick). The home page, the palette and the share images all follow it.
 
 | | |
 |:---:|:---:|
@@ -144,6 +157,7 @@ Pick the one readers see first; readers can switch for themselves from the top b
 - **Launch pad**: where you are. The log's rocket lifts off there over that part of the coastline (with rivers and lakes if you're inland), and it's the amber dot on the Collection globe
 - **Pages**: moments, works, collection, setup, log, messages, photos, friends and the colophon can all be turned off
 - **Descriptions**: each page's description in search results, and the opening line of the About menu, written separately in each language
+- **Signature**: upload an SVG in the admin and it's written out stroke by stroke at the end of each post; without one, nothing is shown
 - **Setup sheets**: to use your own hand-drawn sheets on the setup page (with whole parts lighting up on hover), drop a sheet pack into `custom/setup/`;
   the format, and how to ask an AI to make one, are in [`custom/setup/README.md`](custom/setup/README.md)
 
@@ -220,7 +234,7 @@ flowchart LR
 Every change has to pass these before it can merge (the full list is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 
 - **Types and lint**: `tsc`, oxlint (with type-aware rules and `@shadcn/lint`), Biome (CSS), the CSS token check, knip (unused files and exports)
-- **Tests**: vitest unit tests; Playwright e2e (26 specs, including accessibility checks, admin round trips, and computed-style comparisons of 11 public routes × 3 widths plus the admin pages); backend cargo-nextest with a coverage threshold
+- **Tests**: vitest unit tests; Playwright e2e (28 specs, including accessibility checks, admin round trips, and computed-style comparisons of 11 public routes × 3 widths plus the admin pages); backend cargo-nextest with a coverage threshold
 - **API**: Schemathesis generates requests from the OpenAPI spec and checks the responses against the declared schemas
 - **Backend**: `cargo clippy` (pedantic), `cargo audit`, `cargo shear`, `typos`
 - **Performance**: Lighthouse CI budgets
@@ -260,13 +274,11 @@ Only `DATABASE_URL` and `JWT_SECRET` are required (both are in the example file)
 | Basics | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
 | Sign-in (owner and readers) | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
 | MCP machine account | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
-| Activity page | `GITHUB_TOKEN` `WAKATIME_TOKEN` (personal OAuth token from wakatime.com/oauth) `STEAM_API_KEY` `STEAM_ID` |
-| Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
-| Film and TV | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN`; Taiwan's Bahamut Anime Crazy: `BAHAMUT_UID` `BAHAMUT_PASSWORD` |
-| Bookshelf | `GOOGLE_BOOKS_API_KEY`; Taiwan's National Central Library ISBN data: `ENABLE_TW_ISBN_SYNC` |
-| Newsletter | `RESEND_API_KEY` |
+| Works page, log | `GITHUB_TOKEN` |
+| Collection sources, Steam, WakaTime, Plausible | Fill them in from the admin (Collection → Source settings, the traffic page); changes apply on save. They can also go in `.env.backend`, with the admin's values taking precedence; variable names are in [`.env.backend.example`](.env.backend.example) |
+| Newsletter, comment-reply emails | `RESEND_API_KEY` |
 | Error tracking | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
-| Admin traffic (Plausible) | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
+| Signature | `SITE_SIGNATURE_FILE` (read once at startup while the site has no signature; change it in the admin afterwards) |
 | Reader countries | `GEOIP_DOWNLOAD` (on by default; `0` turns off the monthly DB-IP download) `GEOIP_DB` |
 | ISR purge | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET` (generated automatically under compose if left empty) |
 
