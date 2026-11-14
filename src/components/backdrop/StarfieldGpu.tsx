@@ -118,6 +118,8 @@ export default function StarfieldGpu({
   /** 建 runner 各段的時間＋從開頁到就緒（只給 ?debug=perf 的徽章看） */
   const [initInfo, setInitInfo] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  /** device 掉了、新的那張還沒換上：舊的 canvas 不能再露出來 */
+  const [lost, setLost] = useState(false);
   const [perf, setPerf] = useState<PerfReport | null>(null);
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
   // 首頁標註畫進這張 canvas（HTML-in-Canvas，store/canvasLabels）：只走 worker 的路徑
@@ -239,17 +241,26 @@ export default function StarfieldGpu({
       recoveriesRef.current += 1;
       console.warn(`[StarfieldGpu] ${reason}；第 ${recoveriesRef.current} 次重建`);
       reportLost(reason, 'rebuild');
+      // 掉了的那張 canvas 立刻藏起來：Windows 上 GPU 被收走的 canvas 會整片變白、一閃一閃，
+      // 一直到重建好（等 500ms 再加上建場景將近一秒）。新的那張照開頁時一樣，畫出來才淡入
+      setLost(true);
+      setBackend(BACKEND_PENDING);
+      // 換上新的那張：backend 還是「初始化中」，所以它照樣是透明的，就緒才淡入
+      const rebuild = () => {
+        setLost(false);
+        setGeneration((g) => g + 1);
+      };
       // 分頁還在背景時重建沒有意義（GPU 資源正是那時候被回收的），等切回來再做。
       if (document.hidden) {
         const once = () => {
           if (document.hidden) return;
           document.removeEventListener('visibilitychange', once);
-          setGeneration((g) => g + 1);
+          rebuild();
         };
         document.addEventListener('visibilitychange', once);
         return;
       }
-      recoverTimerRef.current = setTimeout(() => setGeneration((g) => g + 1), 500);
+      recoverTimerRef.current = setTimeout(rebuild, 500);
     },
     [reportLost],
   );
@@ -533,8 +544,9 @@ export default function StarfieldGpu({
         style={{
           ...canvasStyle,
           zIndex,
-          opacity: backend === BACKEND_PENDING ? 0 : 1,
-          transition: 'opacity var(--dur-1000) ease',
+          opacity: lost || backend === BACKEND_PENDING ? 0 : 1,
+          // 掉了是立刻藏，不淡出（淡出的那一秒就是白的）
+          transition: lost ? 'none' : 'opacity var(--dur-1000) ease',
         }}
       />
       {/* backend 徽章：?debug=perf 才顯示（正式訪客不看 debug 資訊） */}
