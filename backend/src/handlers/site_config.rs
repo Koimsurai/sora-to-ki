@@ -198,7 +198,7 @@ pub fn locale_prefix(locale: &str) -> String {
 
 /// 設定裡沒有就看環境變數（見 `SiteSettings::email`）
 fn or_env(value: Option<String>, key: &str) -> String {
-    value.unwrap_or_else(|| std::env::var(key).map(|v| v.trim().to_string()).unwrap_or_default())
+    value.unwrap_or_else(|| std::env::var(key).map_or_default(|v| v.trim().to_string()))
 }
 
 static CURRENT: LazyLock<RwLock<Option<SiteSettings>>> = LazyLock::new(|| RwLock::new(None));

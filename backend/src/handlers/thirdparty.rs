@@ -287,10 +287,8 @@ pub async fn github_contributions(
         return err(msg.to_string());
     }
     let cal = v.pointer("/data/user/contributionsCollection/contributionCalendar");
-    let contributions: Vec<GithubContributionDay> = cal
-        .and_then(|c| c.get("weeks"))
-        .and_then(|w| w.as_array())
-        .map(|weeks| {
+    let contributions: Vec<GithubContributionDay> =
+        cal.and_then(|c| c.get("weeks")).and_then(|w| w.as_array()).map_or_default(|weeks| {
             weeks
                 .iter()
                 .filter_map(|w| w.get("contributionDays").and_then(|d| d.as_array()))
@@ -302,8 +300,7 @@ pub async fn github_contributions(
                     })
                 })
                 .collect()
-        })
-        .unwrap_or_default();
+        });
     let total =
         cal.and_then(|c| c.get("totalContributions")).and_then(serde_json::Value::as_i64).unwrap_or(0);
     Json(GithubContributionsResponse { contributions, total, error: None }).into_response()
@@ -454,21 +451,17 @@ async fn works_for(state: &AppState, repos: &[(String, String)]) -> Response {
                     .pointer("/defaultBranchRef/target/history/totalCount")
                     .and_then(Value::as_i64)
                     .unwrap_or(0),
-                languages: r
-                    .pointer("/languages/edges")
-                    .and_then(Value::as_array)
-                    .map(|edges| {
-                        edges
-                            .iter()
-                            .filter_map(|e| {
-                                Some(WorkLanguage {
-                                    name: e.pointer("/node/name")?.as_str()?.to_string(),
-                                    bytes: e.get("size")?.as_i64()?,
-                                })
+                languages: r.pointer("/languages/edges").and_then(Value::as_array).map_or_default(|edges| {
+                    edges
+                        .iter()
+                        .filter_map(|e| {
+                            Some(WorkLanguage {
+                                name: e.pointer("/node/name")?.as_str()?.to_string(),
+                                bytes: e.get("size")?.as_i64()?,
                             })
-                            .collect()
-                    })
-                    .unwrap_or_default(),
+                        })
+                        .collect()
+                }),
             })
         })
         .collect();
@@ -630,23 +623,19 @@ fn github_event_from(ev: &Value) -> Option<GithubEvent> {
     };
     let p = ev.get("payload");
     let ps = |k: &str| p.and_then(|p| p.get(k)).and_then(|v| v.as_str()).map(String::from);
-    let commits = p
-        .and_then(|p| p.get("commits"))
-        .and_then(|c| c.as_array())
-        .map(|a| {
-            a.iter()
-                .filter_map(|c| {
-                    let sha = c.get("sha").and_then(|v| v.as_str())?.to_string();
-                    let author = c.get("author").and_then(|a| a.as_object()).map(|a| GithubCommitAuthor {
-                        name: a.get("name").and_then(|v| v.as_str()).map(String::from),
-                        email: a.get("email").and_then(|v| v.as_str()).map(String::from),
-                    });
-                    let message = c.get("message").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-                    Some(GithubCommit { sha, message, author })
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    let commits = p.and_then(|p| p.get("commits")).and_then(|c| c.as_array()).map_or_default(|a| {
+        a.iter()
+            .filter_map(|c| {
+                let sha = c.get("sha").and_then(|v| v.as_str())?.to_string();
+                let author = c.get("author").and_then(|a| a.as_object()).map(|a| GithubCommitAuthor {
+                    name: a.get("name").and_then(|v| v.as_str()).map(String::from),
+                    email: a.get("email").and_then(|v| v.as_str()).map(String::from),
+                });
+                let message = c.get("message").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+                Some(GithubCommit { sha, message, author })
+            })
+            .collect()
+    });
     Some(GithubEvent {
         id,
         kind,
@@ -742,19 +731,17 @@ pub struct WakatimeStatsResponse {
 }
 
 fn waka_stats_from(data: &Value) -> Vec<WakatimeStat> {
-    data.as_array()
-        .map(|a| {
-            a.iter()
-                .filter_map(|x| {
-                    Some(WakatimeStat {
-                        name: x.get("name").and_then(|v| v.as_str())?.to_string(),
-                        text: x.get("text").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
-                        percent: x.get("percent").and_then(serde_json::Value::as_f64).unwrap_or(0.0),
-                    })
+    data.as_array().map_or_default(|a| {
+        a.iter()
+            .filter_map(|x| {
+                Some(WakatimeStat {
+                    name: x.get("name").and_then(|v| v.as_str())?.to_string(),
+                    text: x.get("text").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    percent: x.get("percent").and_then(serde_json::Value::as_f64).unwrap_or(0.0),
                 })
-                .collect()
-        })
-        .unwrap_or_default()
+            })
+            .collect()
+    })
 }
 
 /// axios 式請求：非 2xx → Err((status, parsed body))、網路錯 → Err((500, message 字串))。
@@ -815,7 +802,7 @@ pub async fn wakatime_today(State(state): State<AppState>) -> Response {
     };
 
     let dur_list: Vec<&Value> =
-        durations.get("data").and_then(|d| d.as_array()).map(|a| a.iter().collect()).unwrap_or_default();
+        durations.get("data").and_then(|d| d.as_array()).map_or_default(|a| a.iter().collect());
     let mut actual_start: Option<f64> = None;
     let mut actual_end: Option<f64> = None;
     for d in &dur_list {
@@ -946,19 +933,16 @@ pub struct SteamGamesResponse {
 }
 
 fn steam_games_from(v: &Value) -> Vec<SteamGame> {
-    v.pointer("/response/games")
-        .and_then(|g| g.as_array())
-        .map(|a| {
-            a.iter()
-                .map(|g| SteamGame {
-                    appid: g.get("appid").and_then(serde_json::Value::as_i64),
-                    name: g.get("name").and_then(|x| x.as_str()).map(String::from),
-                    playtime_2weeks: g.get("playtime_2weeks").and_then(serde_json::Value::as_i64),
-                    playtime_forever: g.get("playtime_forever").and_then(serde_json::Value::as_i64),
-                })
-                .collect()
-        })
-        .unwrap_or_default()
+    v.pointer("/response/games").and_then(|g| g.as_array()).map_or_default(|a| {
+        a.iter()
+            .map(|g| SteamGame {
+                appid: g.get("appid").and_then(serde_json::Value::as_i64),
+                name: g.get("name").and_then(|x| x.as_str()).map(String::from),
+                playtime_2weeks: g.get("playtime_2weeks").and_then(serde_json::Value::as_i64),
+                playtime_forever: g.get("playtime_forever").and_then(serde_json::Value::as_i64),
+            })
+            .collect()
+    })
 }
 
 #[utoipa::path(get, path = "/api/steam/player", tag = "integrations",
@@ -1149,13 +1133,11 @@ async fn search_google_books(http: &reqwest::Client, base: &str, q: &str) -> Res
             let authors = v
                 .get("authors")
                 .and_then(|a| a.as_array())
-                .map(|a| a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(", "))
-                .unwrap_or_default();
+                .map_or_default(|a| a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(", "));
             let categories = v
                 .get("categories")
                 .and_then(|a| a.as_array())
-                .map(|a| a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(", "))
-                .unwrap_or_default();
+                .map_or_default(|a| a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(", "));
             let page_count =
                 v.get("pageCount").filter(|x| js_truthy(Some(x))).cloned().unwrap_or(Value::Null);
             json!({
@@ -1190,15 +1172,9 @@ async fn search_open_library(http: &reqwest::Client, base: &str, input: &str, is
         let key = format!("ISBN:{clean}");
         let Some(b) = data.get(&key) else { return vec![] };
         let names = |k: &str| -> String {
-            b.get(k)
-                .and_then(|a| a.as_array())
-                .map(|a| {
-                    a.iter()
-                        .filter_map(|x| x.get("name").and_then(|n| n.as_str()))
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                })
-                .unwrap_or_default()
+            b.get(k).and_then(|a| a.as_array()).map_or_default(|a| {
+                a.iter().filter_map(|x| x.get("name").and_then(|n| n.as_str())).collect::<Vec<_>>().join(", ")
+            })
         };
         let description = b
             .get("notes")
@@ -1213,17 +1189,13 @@ async fn search_open_library(http: &reqwest::Client, base: &str, input: &str, is
                 b.pointer(&format!("/cover/{k}")).and_then(|x| x.as_str()).filter(|s| !s.is_empty())
             })
             .unwrap_or("");
-        let categories = b
-            .get("subjects")
-            .and_then(|a| a.as_array())
-            .map(|a| {
-                a.iter()
-                    .take(5)
-                    .filter_map(|x| x.get("name").and_then(|n| n.as_str()))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            })
-            .unwrap_or_default();
+        let categories = b.get("subjects").and_then(|a| a.as_array()).map_or_default(|a| {
+            a.iter()
+                .take(5)
+                .filter_map(|x| x.get("name").and_then(|n| n.as_str()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        });
         vec![json!({
             "isbn": clean,
             "title": s_or_empty(b.get("title")),
@@ -1247,22 +1219,19 @@ async fn search_open_library(http: &reqwest::Client, base: &str, input: &str, is
                 let year = d
                     .get("first_publish_year")
                     .filter(|x| js_truthy(Some(x)))
-                    .map(crate::util::js_interp)
-                    .unwrap_or_default();
+                    .map_or_default(crate::util::js_interp);
                 let cover = d
                     .get("cover_i")
                     .filter(|x| js_truthy(Some(x)))
-                    .map(|c| format!("https://covers.openlibrary.org/b/id/{}-L.jpg", crate::util::js_interp(c)))
-                    .unwrap_or_default();
+                    .map_or_default(|c| format!("https://covers.openlibrary.org/b/id/{}-L.jpg", crate::util::js_interp(c)));
                 let subjects = d
                     .get("subject")
                     .and_then(|a| a.as_array())
-                    .map(|a| a.iter().take(3).filter_map(|x| x.as_str()).collect::<Vec<_>>().join(", "))
-                    .unwrap_or_default();
+                    .map_or_default(|a| a.iter().take(3).filter_map(|x| x.as_str()).collect::<Vec<_>>().join(", "));
                 json!({
                     "isbn": d.pointer("/isbn/0").and_then(|x| x.as_str()).unwrap_or(""),
                     "title": s_or_empty(d.get("title")),
-                    "authors": d.get("author_name").and_then(|a| a.as_array()).map(|a| a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(", ")).unwrap_or_default(),
+                    "authors": d.get("author_name").and_then(|a| a.as_array()).map_or_default(|a| a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(", ")),
                     "publisher": d.pointer("/publisher/0").and_then(|x| x.as_str()).unwrap_or(""),
                     "published_date": year,
                     "description": "",

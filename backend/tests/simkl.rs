@@ -53,7 +53,7 @@ async fn paths(server: &MockServer) -> Vec<String> {
     reqs.iter()
         .map(|r| {
             let u = &r.url;
-            format!("{}{}", u.path(), u.query().map(|q| format!("?{q}")).unwrap_or_default())
+            format!("{}{}", u.path(), u.query().map_or_default(|q| format!("?{q}")))
         })
         .collect()
 }

@@ -395,7 +395,7 @@ async fn send_reply_mail(state: &AppState, parent_id: i64, reply: &str) -> Resul
     .await
     .map_err(|e| e.to_string())?
     .ok_or("parent comment not found")?;
-    let to = p.email.as_deref().map(str::trim).unwrap_or_default();
+    let to = p.email.as_deref().map_or_default(str::trim);
     let owner = crate::identity::owner_email();
     if p.notify_reply != Some(1)
         || p.is_admin == Some(1)

@@ -64,8 +64,7 @@ pub async fn list_categories(
     // WHERE 會把該語系 0 篇的分類整列打掉（LEFT JOIN 退化成 INNER），前端就拿不到那筆
     // 分類資料；放 ON 則會照樣回該列、post_count = 0，由前端的 `post_count > 0` 隱藏。
     let locale_cond = crate::handlers::posts::parse_locale(q.lang.as_deref())
-        .map(|loc| format!(" AND {}", crate::handlers::posts::locale_available_sql(loc, "p")))
-        .unwrap_or_default();
+        .map_or_default(|loc| format!(" AND {}", crate::handlers::posts::locale_available_sql(loc, "p")));
     let sql = format!(
         r"
         SELECT

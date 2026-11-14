@@ -54,19 +54,17 @@ pub(crate) fn ndl_book(item: &str, isbn: &str) -> Option<Value> {
         None => title,
     };
     // 作者在 dc:creator 是「姓/名」或「姓, 名」，日文名字接起來；有拉丁字母的（外國作者）留著逗號
-    let authors = tag(item, "dc:creator")
-        .map(|a| {
-            let a = a.replace('/', "");
-            if a.chars().any(|c| c.is_ascii_alphabetic()) { a } else { a.replace(", ", "") }
-        })
-        .unwrap_or_default();
+    let authors = tag(item, "dc:creator").map_or_default(|a| {
+        let a = a.replace('/', "");
+        if a.chars().any(|c| c.is_ascii_alphabetic()) { a } else { a.replace(", ", "") }
+    });
     let pages = tag(item, "dc:extent").and_then(|e| PAGES.captures(&e)?.get(1)?.as_str().parse::<i64>().ok());
     Some(json!({
         "isbn": isbn,
         "title": title,
         "authors": authors,
         "publisher": tag(item, "dc:publisher").unwrap_or_default(),
-        "published_date": tag(item, "dcterms:issued").map(|d| d.replace('.', "-")).unwrap_or_default(),
+        "published_date": tag(item, "dcterms:issued").map_or_default(|d| d.replace('.', "-")),
         "description": "",
         "cover_url": "",
         "page_count": pages,
@@ -103,8 +101,7 @@ pub(crate) fn nlk_book(d: &Value, isbn: &str) -> Option<Value> {
     // 出版預定日是 YYYYMMDD
     let date = s("PUBLISH_PREDATE")
         .filter(|d| d.len() == 8)
-        .map(|d| format!("{}-{}-{}", &d[..4], &d[4..6], &d[6..]))
-        .unwrap_or_default();
+        .map_or_default(|d| format!("{}-{}-{}", &d[..4], &d[4..6], &d[6..]));
     Some(json!({
         "isbn": isbn,
         "title": title,

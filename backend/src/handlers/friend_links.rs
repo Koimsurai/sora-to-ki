@@ -319,7 +319,7 @@ pub async fn run_checks(
         },
     ));
 
-    let html = home.as_ref().map(|p| p.body.as_str()).unwrap_or_default();
+    let html = home.as_ref().map_or_default(|p| p.body.as_str());
     let discovered = if feed_url.is_none() { discover_feed(html, url) } else { None };
     let feed = feed_url.map(String::from).or_else(|| discovered.clone());
     let posts = match &feed {
