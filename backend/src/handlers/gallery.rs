@@ -187,8 +187,7 @@ fn empty_manifest() -> PhotosManifest {
 }
 
 fn manifest_from_value(v: &Value) -> PhotosManifest {
-    let photos =
-        v.get("photos").and_then(|p| p.as_array()).map(|a| photos_from_values(a)).unwrap_or_default();
+    let photos = v.get("photos").and_then(|p| p.as_array()).map_or_default(|a| photos_from_values(a));
     PhotosManifest {
         version: v
             .get("version")
@@ -618,10 +617,9 @@ async fn tag_photo(state: &AppState, tagger_path: &str) -> Option<(Vec<String>, 
     // 標籤一律當字串收：tagger 回非字串（理論上不會）就丟掉那一個，而不是讓
     // manifest 裡混進一個前端 renderer 處理不了的值。
     let arr = |k: &str| {
-        data.get(k)
-            .and_then(|v| v.as_array())
-            .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect::<Vec<String>>())
-            .unwrap_or_default()
+        data.get(k).and_then(|v| v.as_array()).map_or_default(|a| {
+            a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect::<Vec<String>>()
+        })
     };
     Some((arr("zh_tw"), arr("en")))
 }
@@ -756,8 +754,8 @@ async fn sync_gallery_manifest(state: &AppState) -> anyhow::Result<Vec<(String, 
                 .and_then(|e| e.shoot_time)
                 .filter(|s| *s != 0.0 && !s.is_nan())
                 .or(Some(mtime_ms)),
-            tags: existing.map(|e| e.tags.clone()).unwrap_or_default(),
-            tags_en: existing.map(|e| e.tags_en.clone()).unwrap_or_default(),
+            tags: existing.map_or_default(|e| e.tags.clone()),
+            tags_en: existing.map_or_default(|e| e.tags_en.clone()),
             gps: existing.and_then(|e| e.gps.clone()),
         });
         processed += 1;

@@ -112,8 +112,7 @@ pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) 
             let cat_line = category
                 .as_deref()
                 .filter(|c| !c.is_empty())
-                .map(|c| format!("<category>{}</category>", escape_html(c)))
-                .unwrap_or_default();
+                .map_or_default(|c| format!("<category>{}</category>", escape_html(c)));
             let ident = slug.as_deref().filter(|s| !s.is_empty()).map_or_else(|| id.to_string(), str::to_string);
             let link = format!("{site_url}{url_prefix}/blog/{ident}");
             format!(

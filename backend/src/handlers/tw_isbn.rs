@@ -332,7 +332,7 @@ pub(crate) fn to_search_json(b: &TwBook) -> Value {
         "title": b.title,
         "authors": b.author.clone().unwrap_or_default(),
         "publisher": b.publisher.clone().unwrap_or_default(),
-        "published_date": b.pub_date.as_deref().map(normalize_pub_date).unwrap_or_default(),
+        "published_date": b.pub_date.as_deref().map_or_default(normalize_pub_date),
         "description": "",
         "cover_url": "",
         "page_count": b.pages,

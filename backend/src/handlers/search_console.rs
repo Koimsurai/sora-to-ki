@@ -120,20 +120,17 @@ pub struct SearchTerms {
 fn rows_from(body: &Value) -> Vec<SearchQueryRow> {
     #[allow(clippy::cast_possible_truncation, reason = "點擊與曝光數遠小於 2^53")]
     let int = |v: &Value| v.as_f64().map_or(0, |f| f.round() as i64);
-    body["rows"]
-        .as_array()
-        .map(|rows| {
-            rows.iter()
-                .map(|r| SearchQueryRow {
-                    query: r["keys"][0].as_str().unwrap_or_default().to_string(),
-                    clicks: int(&r["clicks"]),
-                    impressions: int(&r["impressions"]),
-                    ctr: r["ctr"].as_f64().unwrap_or(0.0),
-                    position: r["position"].as_f64().unwrap_or(0.0),
-                })
-                .collect()
-        })
-        .unwrap_or_default()
+    body["rows"].as_array().map_or_default(|rows| {
+        rows.iter()
+            .map(|r| SearchQueryRow {
+                query: r["keys"][0].as_str().unwrap_or_default().to_string(),
+                clicks: int(&r["clicks"]),
+                impressions: int(&r["impressions"]),
+                ctr: r["ctr"].as_f64().unwrap_or(0.0),
+                position: r["position"].as_f64().unwrap_or(0.0),
+            })
+            .collect()
+    })
 }
 
 /// 期間內的熱門搜尋字詞（照點擊數排）。日期是 `yyyy-MM-dd`；Google 的資料大約晚兩三天

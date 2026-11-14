@@ -43,8 +43,7 @@ pub(crate) fn client_ip(headers: &HeaderMap) -> String {
         .get("x-forwarded-for")
         .and_then(|v| v.to_str().ok())
         .and_then(|s| s.split(',').next())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+        .map_or_default(|s| s.trim().to_string())
 }
 
 /// JS 寬鬆相等（`==`）的近似：覆蓋 number/string/bool/null 與 number↔string 強制轉換
