@@ -25,7 +25,7 @@
 #   cache +588M —— 相依的編譯產物現在真的落在 layer 裡（本來就是目的）。
 #                  正因如此 CI 的快取才從 type=gha（硬性 10 GB/repo、LRU 淘汰）
 #                  搬去 GHCR；那 10 GB 上限被撐爆正是 546s 冷建的成因。
-FROM rust:1.97-slim AS chef
+FROM rust:1.100-slim AS chef
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config \
     && rm -rf /var/lib/apt/lists/*
@@ -68,7 +68,7 @@ COPY public/illustrations ./public/illustrations
 RUN cargo build --release -p koimsurai-web-backend \
     && cp target/release/koimsurai-web-backend /koimsurai-web-backend
 
-# ⚠ 必須跟 builder 的 rust:1.97-slim 同一個 Debian 版本（現在是 trixie / glibc 2.41）。
+# ⚠ 必須跟 builder 的 rust:1.100-slim 同一個 Debian 版本（現在是 trixie / glibc 2.41）。
 # 上游 rust image 換 base 後這裡沒跟上，binary 會在啟動時死在
 # `libc.so.6: version 'GLIBC_2.39' not found`——編得起來、跑不起來。
 # 這一段有名字（runtime）是為了讓 CI 能對「只有它」關掉快取，見下面那段註解。

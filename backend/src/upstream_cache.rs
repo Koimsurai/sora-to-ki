@@ -187,11 +187,8 @@ mod tests {
             .await
             .expect("oneshot");
         let status = res.status();
-        let tag = res
-            .headers()
-            .get("x-upstream-cache")
-            .map(|v| v.to_str().unwrap_or("").to_string())
-            .unwrap_or_default();
+        let tag =
+            res.headers().get("x-upstream-cache").map_or_default(|v| v.to_str().unwrap_or("").to_string());
         let bytes = axum::body::to_bytes(res.into_body(), MAX_BODY).await.expect("body");
         (status, tag, serde_json::from_slice(&bytes).unwrap_or_default())
     }

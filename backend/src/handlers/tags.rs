@@ -59,8 +59,7 @@ pub async fn list_tags(
     // 條件併進 COUNT 的 CASE WHEN 而非 WHERE，理由同 categories：不能讓某語系 0 篇的標籤
     // 改變其他列的結果。這裡剛好 `HAVING post_count > 0` 會順手把 0 的標籤收掉。
     let locale_cond = crate::handlers::posts::parse_locale(q.lang.as_deref())
-        .map(|loc| format!(" AND {}", crate::handlers::posts::locale_available_sql(loc, "p")))
-        .unwrap_or_default();
+        .map_or_default(|loc| format!(" AND {}", crate::handlers::posts::locale_available_sql(loc, "p")));
     let sql = format!(
         r"
         SELECT t.id, t.name, t.created_at,

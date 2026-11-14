@@ -542,10 +542,8 @@ pub async fn tmdb_search(
     match r {
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e }))).into_response(),
         Ok(j) => {
-            let results: Vec<TmdbSearchResult> = j
-                .get("results")
-                .and_then(|r| r.as_array())
-                .map(|a| {
+            let results: Vec<TmdbSearchResult> =
+                j.get("results").and_then(|r| r.as_array()).map_or_default(|a| {
                     a.iter()
                         .take(8)
                         .map(|it| {
@@ -582,8 +580,7 @@ pub async fn tmdb_search(
                             }
                         })
                         .collect()
-                })
-                .unwrap_or_default();
+                });
             Json(TmdbSearchResponse { message: "success", results }).into_response()
         }
     }

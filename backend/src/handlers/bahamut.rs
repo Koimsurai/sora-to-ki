@@ -18,7 +18,7 @@ fn cookie_file_path(database_url: &str) -> PathBuf {
         return PathBuf::from(p);
     }
     let path = database_url.trim_start_matches("sqlite://");
-    let dir = std::path::Path::new(path).parent().map(std::path::Path::to_path_buf).unwrap_or_default();
+    let dir = std::path::Path::new(path).parent().map_or_default(std::path::Path::to_path_buf);
     dir.join(".bahamut-cookie.json")
 }
 

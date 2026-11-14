@@ -229,10 +229,8 @@ pub async fn upload(State(state): State<AppState>, _auth: crate::auth::AdminAuth
     let year_s = now_local.format("%Y").to_string();
     let month_s = now_local.format("%m").to_string();
     let (year, month) = (year_s.as_str(), month_s.as_str());
-    let ext = std::path::Path::new(&original)
-        .extension()
-        .map(|e| format!(".{}", e.to_string_lossy()))
-        .unwrap_or_default();
+    let ext =
+        std::path::Path::new(&original).extension().map_or_default(|e| format!(".{}", e.to_string_lossy()));
     // rand 0.9 起 thread_rng() → rng()、gen_range() → random_range()（舊名在 0.10 已移除）
     let rand_part: u64 = rand::rng().random_range(0..=1_000_000_000);
     let filename = format!("{now_ms}-{rand_part}{ext}");

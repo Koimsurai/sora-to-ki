@@ -1451,8 +1451,7 @@ pub(crate) async fn manage_tags(state: &AppState, post_id: &str, tags: &[String]
 fn tags_from(body: &Map<String, Value>) -> Vec<String> {
     body.get("tags")
         .and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|t| t.as_str().map(String::from)).collect())
-        .unwrap_or_default()
+        .map_or_default(|a| a.iter().filter_map(|t| t.as_str().map(String::from)).collect())
 }
 
 /// 建/改文「發佈即推送」共用：呼叫 Rust mailer，回前端可讀結果（{sent,failed,errors} 或 {error}）。
@@ -2113,8 +2112,7 @@ pub async fn admin_batch_comment_status(
     let ids: Vec<i64> = body
         .get("ids")
         .and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(serde_json::Value::as_i64).collect())
-        .unwrap_or_default();
+        .map_or_default(|a| a.iter().filter_map(serde_json::Value::as_i64).collect());
     let status = body.get("status").and_then(|v| v.as_str()).unwrap_or("");
     if ids.is_empty() || !matches!(status, "pending" | "approved" | "spam" | "trash") {
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Invalid request" }))).into_response();
