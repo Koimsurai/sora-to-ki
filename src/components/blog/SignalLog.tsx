@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { CommentRow } from '@koimsurai/api-types';
 import { bandPath, freqOf } from '@/components/about/messagesWave';
 import { groupComments } from '@/lib/comments';
+import { linkify } from '@/lib/linkify';
 import { utcStamp as stampOf } from '@/lib/serverDate';
 import { websiteHref } from '@/lib/website';
 import './SignalLog.css';
@@ -75,7 +76,17 @@ export default function SignalLog({ comments, liked, onLike, onReply }: Props) {
                   )}
                   {c.is_admin ? <span className="sl-admin">{t('signal.admin')}</span> : null}
                 </div>
-                <p className="sl-text">{c.content}</p>
+                <p className="sl-text">
+                  {linkify(c.content).map((p) =>
+                    'href' in p ? (
+                      <a key={p.at} href={p.href} target="_blank" rel="noopener noreferrer nofollow ugc">
+                        {p.text}
+                      </a>
+                    ) : (
+                      p.text
+                    ),
+                  )}
+                </p>
                 <div className="sl-actions">
                   {!isReply && (
                     <button type="button" onClick={() => onReply(c)}>
