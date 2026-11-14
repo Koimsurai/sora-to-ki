@@ -55,7 +55,7 @@ docker compose logs backend-rs | grep setup   # 初始化的网址
 - `.env.backend` 填了 `OWNER_EMAIL` 的话不走向导：用那个邮箱登录就是站长
 - 后台在 `/admin`，只能用 GitHub 或 Google 登录（`ADMIN_USERNAME`／`ADMIN_PASSWORD` 是给 MCP 用的机器账号，不是给人登录的）
 - 升级：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 设 `SORA_TO_KI_VERSION=0.4.2`
-- 数据库每天自动备份到 `./backups`
+- 数据库每天自动备份到 `./backups`；后台「站点 → 备份与迁移」也能下载与还原。搬到新机器时，向导第一步就能换上旧站的备份
 
 <details>
 <summary><b>用主机上的 nginx（不用内置的 Caddy）</b></summary>
@@ -108,7 +108,7 @@ AI 能做的是把机器准备好、把配置文件填对、在你建好 OAuth A
 | 手记 | 一圈一圈的星轨，一篇文章就是一道 | 后台写的文章 |
 | 碎念 | 划过的彗星，最新那则是彗核 | 后台写的短篇 |
 | 作品 | 往外长的螺旋航线，星球大小是代码量、卫星是 GitHub 星星 | 后台挑的 GitHub repo |
-| 收藏 | 从地球发出的信号：看完、读完、听完的那一刻发出，以光速飞到现在 | 书架、Simkl／TMDb、Spotify（都是可选） |
+| 收藏 | 从地球发出的信号：看完、读完、听完的那一刻发出，以光速飞到现在 | 书架，加上后台接上的平台（见下面「收藏的来源」） |
 | 航行日志 | 从你设的发射台升空，高度是累积的 GitHub 贡献 | 后台填的起点与里程碑 |
 | 关于 | 一次下坠，从某一年掉到现在 | 后台填的章节、技能、经历 |
 | 照片 | 从深空传回来的照片，一行一行收下来 | NAS 或上传的文件夹 |
@@ -116,6 +116,17 @@ AI 能做的是把机器准备好、把配置文件填对、在你建好 OAuth A
 | 朋友 | 绕着同一个中心的星 | 朋友页的表单送进来，后台审 |
 | 留言 | 收到的电波 | 读者 |
 | 此站点 | 一具六分仪与它量到的星 | 后台填的问答 |
+
+### 收藏的来源
+
+全部是可选，在后台「收藏 → 来源设置」填密钥、开同步，保存就生效，不用重启。按地区分好，挑你在用的就好：
+
+| | 平台 |
+|---|---|
+| 在看 | TMDb、Simkl、AniList、MyAnimeList、Letterboxd；中日的 Bangumi；台湾的巴哈姆特动画疯 |
+| 在读 | 书架用 ISBN 查书：Google Books，再按书号的国别问台湾、日本、韩国的国家图书馆；NeoDB |
+| 在听 | Spotify；没有的话用 Last.fm 或 ListenBrainz |
+| 在玩、在写 | Steam、WakaTime（航行日志用） |
 
 ### 写
 
@@ -132,8 +143,10 @@ AI 能做的是把机器准备好、把配置文件填对、在你建好 OAuth A
 - **此刻**：总览列出等你处理的事、近 28 天的 Web Vitals
 - **写**：Monaco 编辑器（Vim 模式、斜线命令、拖放上传）与实时预览；碎念旁边列出同步进来的记录，按一下带进编写框
 - **收**：书架、照片的标题与精选、收藏页要公开哪些
-- **回**：留言审核（键盘 j／k／a／s／r）、**友链申请**（一键检查对方的站连得到、有没有回连、有没有 RSS）、邮件订阅者
-- **站**：站点设置（站名、语言、天体、发射台、各页的介绍文字）、各页的内容、账号与权限
+- **回**：留言审核（键盘 j／k／a／s／r）、**友链申请**（一键检查对方的站连得到、有没有回连、有没有 RSS）、邮件订阅者。
+  读者留言时可以勾「站长回复时发邮件通知我」；新留言与友链申请可以推到 Discord、Slack 或任何 webhook（不带邮箱与 IP）
+- **站**：站点设置（站名、语言、天体、发射台、各页的介绍文字、文末签名、通知）、备份与迁移、各页的内容、账号与权限
+- **流量**：接上 Plausible 之后看访客、从哪里来、国家与设备，密钥直接在流量页填
 - 后台本身也有五种语言，跟着站长自己，不跟着站的默认语言
 
 | 此刻 | 手记 |
@@ -152,7 +165,7 @@ AI 能做的是把机器准备好、把配置文件填对、在你建好 OAuth A
 
 ### 四套星球主题
 
-挑一颗当作读者第一次看到的那颗，读者也能在顶栏自己换。首页、全站的配色与分享图都跟着它。
+挑一颗当作读者第一次看到的那颗，读者也能在顶栏自己换（这个也能关掉，大家都看你挑的那颗）。首页、全站的配色与分享图都跟着它。
 
 | | |
 |:---:|:---:|
@@ -166,6 +179,7 @@ AI 能做的是把机器准备好、把配置文件填对、在你建好 OAuth A
 - **发射台**：你在哪里。航行日志的火箭从那里升空、地面画那附近的海岸线（内陆的话加上河流与湖），收藏页地球上的琥珀点也在那里
 - **页面**：碎念、作品、收藏、设备、航行日志、留言、照片、朋友、此站点都能关
 - **介绍文字**：每一页在搜索结果里的描述、「关于」菜单开头那一句，五种语言各自写
+- **文末签名**：在后台上传一个 SVG，文章结尾按笔画顺序一笔一笔写出来；没有就不显示
 - **设备页的图纸**：想用自己的手绘图纸、让滑过的部件整个亮起来，做一个图纸包放进 `custom/setup/`，
   格式与交给 AI 的说法见 [`custom/setup/README.md`](custom/setup/README.md)
 
@@ -242,7 +256,7 @@ flowchart LR
 每一次改动都要通过下面这些才能合并（完整清单在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）：
 
 - **类型与 lint**：`tsc`、oxlint（含类型感知规则与 `@shadcn/lint`）、Biome（CSS）、CSS token 检查、knip（没用到的文件与 export）
-- **测试**：vitest 单元测试、Playwright e2e（26 支 spec，含无障碍检查、后台的往返操作，以及公开页 11 条 × 3 种宽度加上后台页的计算后样式比对）、后端 cargo-nextest 搭配覆盖率门槛
+- **测试**：vitest 单元测试、Playwright e2e（28 支 spec，含无障碍检查、后台的往返操作，以及公开页 11 条 × 3 种宽度加上后台页的计算后样式比对）、后端 cargo-nextest 搭配覆盖率门槛
 - **API**：用 OpenAPI 规范自动生成测试数据打后端（Schemathesis），并检查响应符合声明的 schema
 - **后端**：`cargo clippy`（pedantic）、`cargo audit`、`cargo shear`、`typos`
 - **性能**：Lighthouse CI 的性能预算
@@ -282,13 +296,11 @@ pnpm dev
 | 基本 | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
 | 登录（站长与读者） | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
 | MCP 的机器账号 | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
-| 动态页 | `GITHUB_TOKEN` `WAKATIME_TOKEN`（wakatime.com/oauth 的个人 OAuth token）`STEAM_API_KEY` `STEAM_ID` |
-| Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
-| 影视 | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN`；台湾的动画疯：`BAHAMUT_UID` `BAHAMUT_PASSWORD` |
-| 书柜 | `GOOGLE_BOOKS_API_KEY`；台湾 NCL 的 ISBN 数据：`ENABLE_TW_ISBN_SYNC` |
-| 邮件订阅 | `RESEND_API_KEY` |
+| 作品页、航行日志 | `GITHUB_TOKEN` |
+| 收藏的来源、Steam、WakaTime、Plausible | 在后台填就好（收藏 → 来源设置、流量页），保存就生效。也可以写在 `.env.backend`，后台填的优先；变量名见 [`.env.backend.example`](.env.backend.example) |
+| 邮件订阅、留言回复通知 | `RESEND_API_KEY` |
 | 错误追踪 | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
-| 后台流量（Plausible） | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
+| 文末签名 | `SITE_SIGNATURE_FILE`（站点还没有签名时，启动时读一次这个 SVG；之后在后台换） |
 | 读者国家 | `GEOIP_DOWNLOAD`（默认开，`0` 关掉每月下载 DB-IP）`GEOIP_DB` |
 | ISR 清缓存 | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET`（compose 里没填会自动生成） |
 

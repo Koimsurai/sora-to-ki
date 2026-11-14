@@ -55,7 +55,7 @@ docker compose logs backend-rs | grep setup   # 初次設定的網址
 - `.env.backend` 填了 `OWNER_EMAIL` 的話不走精靈：用那個信箱登入就是站長
 - 後台在 `/admin`，只能用 GitHub 或 Google 登入（`ADMIN_USERNAME`／`ADMIN_PASSWORD` 是給 MCP 用的機器帳號，不是給人登入的）
 - 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.4.2`
-- 資料庫每天自動備份到 `./backups`
+- 資料庫每天自動備份到 `./backups`；後台「站台 → 備份與搬家」也能下載與還原。搬到新機器時，精靈第一步就能換上舊站的備份
 
 <details>
 <summary><b>用主機上的 nginx（不用內建的 Caddy）</b></summary>
@@ -108,7 +108,7 @@ AI 能做的是把機器準備好、把設定檔填對、在你建好 OAuth App 
 | 手記 | 一圈一圈的星軌，一篇文章就是一道 | 後台寫的文章 |
 | 碎念 | 劃過的彗星，最新那則是彗核 | 後台寫的短篇 |
 | 作品 | 往外長的螺旋航線，星球大小是程式碼量、衛星是 GitHub 星星 | 後台挑的 GitHub repo |
-| 收藏 | 從地球發出的訊號：看完、讀完、聽完的那一刻發出，以光速飛到現在 | 書架、Simkl／TMDb、Spotify（都是選配） |
+| 收藏 | 從地球發出的訊號：看完、讀完、聽完的那一刻發出，以光速飛到現在 | 書架，加上後台接上的平台（見下面「收藏的來源」） |
 | 航行日誌 | 從你設的發射台升空，高度是累積的 GitHub 貢獻 | 後台填的起點與里程碑 |
 | 關於 | 一次下墜，從某一年掉到現在 | 後台填的章節、技能、經歷 |
 | 照片 | 從深空傳回來的照片，一行一行收下來 | NAS 或上傳的資料夾 |
@@ -116,6 +116,17 @@ AI 能做的是把機器準備好、把設定檔填對、在你建好 OAuth App 
 | 朋友 | 繞著同一個中心的星 | 朋友頁的表單送進來，後台審 |
 | 留言 | 收到的電波 | 讀者 |
 | 此站點 | 一具六分儀與它量到的星 | 後台填的問答 |
+
+### 收藏的來源
+
+全部是選配，在後台「收藏 → 來源設定」填金鑰、開同步，存了就生效，不用重開。照地區分好，挑你在用的就好：
+
+| | 平台 |
+|---|---|
+| 在看 | TMDb、Simkl、AniList、MyAnimeList、Letterboxd；中日的 Bangumi；台灣的巴哈姆特動畫瘋 |
+| 在讀 | 書架用 ISBN 查書：Google Books，再照書號的國別問台灣、日本、韓國的國家圖書館；NeoDB |
+| 在聽 | Spotify；沒有的話用 Last.fm 或 ListenBrainz |
+| 在玩、在寫 | Steam、WakaTime（航行日誌用） |
 
 ### 寫
 
@@ -132,8 +143,10 @@ AI 能做的是把機器準備好、把設定檔填對、在你建好 OAuth App 
 - **此刻**：總覽列出等你處理的事、近 28 天的 Web Vitals
 - **寫**：Monaco 編輯器（Vim 模式、斜線指令、拖放上傳）與即時預覽；碎念旁邊列出同步進來的紀錄，按一下帶進撰寫框
 - **收**：書架、照片的標題與精選、收藏頁要公開哪些
-- **回**：留言審核（鍵盤 j／k／a／s／r）、**友鏈申請**（一鍵檢查對方的站連得到、有沒有回連、有沒有 RSS）、電子報訂閱者
-- **站**：站台設定（站名、語系、天體、發射台、各頁的介紹文字）、各頁的內容、帳號與權限
+- **回**：留言審核（鍵盤 j／k／a／s／r）、**友鏈申請**（一鍵檢查對方的站連得到、有沒有回連、有沒有 RSS）、電子報訂閱者。
+  讀者留言時可以勾「站長回覆時寄信通知我」；新留言與友鏈申請可以推到 Discord、Slack 或任何 webhook（不帶信箱與 IP）
+- **站**：站台設定（站名、語系、天體、發射台、各頁的介紹文字、文末簽名、通知）、備份與搬家、各頁的內容、帳號與權限
+- **流量**：接上 Plausible 之後看訪客、從哪裡來、國家與裝置，金鑰直接在流量頁填
 - 後台本身也有五種語言，跟著站長自己，不跟著站的預設語系
 
 | 此刻 | 手記 |
@@ -152,7 +165,7 @@ AI 能做的是把機器準備好、把設定檔填對、在你建好 OAuth App 
 
 ### 四顆天體
 
-挑一顆當作讀者第一次看到的那顆，讀者也能在頂欄自己換。首頁、整站的配色與分享圖都跟著它。
+挑一顆當作讀者第一次看到的那顆，讀者也能在頂欄自己換（這個也能關掉，大家都看你挑的那顆）。首頁、整站的配色與分享圖都跟著它。
 
 | | |
 |:---:|:---:|
@@ -166,6 +179,7 @@ AI 能做的是把機器準備好、把設定檔填對、在你建好 OAuth App 
 - **發射台**：你在哪裡。航行日誌的火箭從那裡升空、地面畫那附近的海岸線（內陸的話加上河流與湖），收藏頁地球上的琥珀點也在那裡
 - **頁面**：碎念、作品、收藏、設備、航行日誌、留言、照片、朋友、此站點都能關
 - **介紹文字**：每一頁在搜尋結果裡的描述、「關於」選單開頭那一句，五種語言各自寫
+- **文末簽名**：在後台上傳一個 SVG，文章結尾照筆畫順序一筆一筆寫出來；沒有就不顯示
 - **設備頁的圖紙**：想用自己的手繪圖紙、讓滑過的部件整個亮起來，做一個圖紙包放進 `custom/setup/`，
   格式與交給 AI 的說法見 [`custom/setup/README.md`](custom/setup/README.md)
 
@@ -242,7 +256,7 @@ flowchart LR
 每一次改動都要通過下面這些才能合併（完整清單在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）：
 
 - **型別與 lint**：`tsc`、oxlint（含型別感知規則與 `@shadcn/lint`）、Biome（CSS）、CSS token 檢查、knip（沒用到的檔案與 export）
-- **測試**：vitest 單元測試、Playwright e2e（26 支 spec，含無障礙檢查、後台的往返操作，以及公開頁 11 條 × 3 種寬度加上後台頁的計算後樣式比對）、後端 cargo-nextest 搭配覆蓋率門檻
+- **測試**：vitest 單元測試、Playwright e2e（28 支 spec，含無障礙檢查、後台的往返操作，以及公開頁 11 條 × 3 種寬度加上後台頁的計算後樣式比對）、後端 cargo-nextest 搭配覆蓋率門檻
 - **API**：用 OpenAPI 規格自動產生測試資料打後端（Schemathesis），並檢查回應符合宣告的 schema
 - **後端**：`cargo clippy`（pedantic）、`cargo audit`、`cargo shear`、`typos`
 - **效能**：Lighthouse CI 的效能預算
@@ -282,13 +296,11 @@ pnpm dev
 | 基本 | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
 | 登入（站長與讀者） | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` `OWNER_EMAIL` |
 | MCP 的機器帳號 | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
-| 動態頁 | `GITHUB_TOKEN` `WAKATIME_TOKEN`（wakatime.com/oauth 的個人 OAuth token）`STEAM_API_KEY` `STEAM_ID` |
-| Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
-| 影劇 | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN`；台灣的動畫瘋：`BAHAMUT_UID` `BAHAMUT_PASSWORD` |
-| 書櫃 | `GOOGLE_BOOKS_API_KEY`；台灣的國家圖書館 ISBN：`ENABLE_TW_ISBN_SYNC` |
-| 電子報 | `RESEND_API_KEY` |
+| 作品頁、航行日誌 | `GITHUB_TOKEN` |
+| 收藏的來源、Steam、WakaTime、Plausible | 在後台填就好（收藏 → 來源設定、流量頁），存了就生效。也可以寫在 `.env.backend`，後台填的優先；變數名見 [`.env.backend.example`](.env.backend.example) |
+| 電子報、留言回覆通知 | `RESEND_API_KEY` |
 | 錯誤追蹤 | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
-| 後台流量（Plausible） | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
+| 文末簽名 | `SITE_SIGNATURE_FILE`（站台還沒有簽名時，開機讀一次這個 SVG；之後在後台換） |
 | 讀者國家 | `GEOIP_DOWNLOAD`（預設開，`0` 關掉每月下載 DB-IP）`GEOIP_DB` |
 | ISR 清快取 | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET`（compose 裡沒填會自動產生） |
 
