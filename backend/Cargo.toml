@@ -40,7 +40,7 @@ regex = "1"
 # newsletter unsubscribe token（crypto.randomBytes(16).hex 等價）
 rand = "0.10"
 # in-process cache 的鎖（短臨界區、無 poison；不跨 await 持有）
-parking_lot = "0.12"
+parking_lot = "0.13"
 # 上傳圖片的 thumbhash 編成 base64url
 base64 = "0.23"
 # 自家 bahamut SDK（https://crates.io/crates/anigamer；本地開發要改 SDK 時可暫換 path dep）
