@@ -159,6 +159,19 @@ a.sl-author {
   overflow-wrap: anywhere;
 }
 
+/* 留言裡自動轉出來的連結：跟內文的連結同一種底線 */
+.sl-text a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--dur-200) ease;
+}
+
+.sl-text a:hover {
+  text-decoration-color: var(--signal);
+}
+
 .sl-actions {
   display: flex;
   gap: var(--space-4);

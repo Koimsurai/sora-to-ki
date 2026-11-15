@@ -118,6 +118,30 @@ describe('主執行緒路徑的 device lost 重建', () => {
     expect(runners[0].dispose).toHaveBeenCalled();
   });
 
+  // Windows 上 GPU 被收走的 canvas 會整片變白、一閃一閃。掉了的那一刻就要藏（不能淡出，淡出的那一秒就是白的），
+  // 新的那張照開頁時一樣就緒才淡入
+  it('device lost 當下立刻藏起舊的 canvas，新的就緒才露出來', async () => {
+    await mount();
+    expect(canvases()[0].style.opacity).toBe('1');
+
+    await act(async () => {
+      lostHandlers.at(-1)?.('測試用 device lost');
+      await Promise.resolve();
+    });
+    expect(canvases()[0].style.opacity).toBe('0');
+    expect(canvases()[0].style.transition).toBe('none');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(600);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(runners).toHaveLength(2);
+    expect(canvases()[0].style.opacity).toBe('1');
+    expect(canvases()[0].style.transition).toContain('opacity');
+  });
+
   it('重建 3 次仍然掉 → 收掉 3D，不會無限重建', async () => {
     await mount();
     for (let i = 0; i < 3; i++) await loseDevice();

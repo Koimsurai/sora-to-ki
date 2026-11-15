@@ -1274,13 +1274,18 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
   }, [bodyKey, bodyDone]);
 
   /* ── Copy protection ── */
+  // 只擋選到內文的複製。留言、留言框、頁尾這些不是文章，讀者要能複製（以前整頁都換成版權聲明）
   useEffect(() => {
     const preventCopy = (e: ClipboardEvent) => {
       const sel = window.getSelection();
-      if (sel?.anchorNode) {
-        const parent = sel.anchorNode.parentElement;
-        if (parent?.closest('.code-block-wrapper')) return;
-      }
+      const body = document.querySelector('.blog-post-container .post-content');
+      if (!sel || sel.rangeCount === 0 || !body) return;
+      const touchesBody = Array.from({ length: sel.rangeCount }, (_, i) => sel.getRangeAt(i)).some((r) =>
+        r.intersectsNode(body),
+      );
+      if (!touchesBody) return;
+      const parent = sel.anchorNode?.parentElement;
+      if (parent?.closest('.code-block-wrapper, .terminal-block')) return;
       e.preventDefault();
       e.clipboardData?.setData('text/plain', '此內容受版權保護，禁止複製。\n原文連結：' + window.location.href);
     };
