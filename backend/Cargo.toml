@@ -109,6 +109,8 @@ tikv-jemallocator = "0.7"
 [dev-dependencies]
 # 整合測試（tests/api.rs）：tower oneshot 打 build_router + 收 body
 http-body-util = "0.1"
+# tests/telemetry.rs：攔下送往 Sentry 的事件，確認各層級分流沒變（壞掉時正式環境沒有任何症狀）
+sentry = { version = "0.49", default-features = false, features = ["test"] }
 # 快照測試（tests/snapshots.rs）：公開讀取端點的回應形狀。
 # 選它的理由是「不手寫斷言」——`cargo insta test --accept` 直接把預期的 JSON 生出來，
 # 而那批端點（rss/series/books/polls/watch）的回應是幾十個欄位的巢狀結構，

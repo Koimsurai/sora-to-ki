@@ -27,6 +27,7 @@ pub mod openapi;
 pub mod revalidate;
 pub mod router;
 pub mod state;
+pub mod telemetry;
 pub mod ui_text;
 pub mod upstream_cache;
 pub mod util;
