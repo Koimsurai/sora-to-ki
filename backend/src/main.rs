@@ -6,7 +6,7 @@ use std::{env, str::FromStr, sync::Arc, time::Duration};
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use koimsurai_web_backend::{handlers, revalidate, router, state};
+use koimsurai_web_backend::{handlers, revalidate, router, state, telemetry};
 use state::AppState;
 
 // jemalloc（tikv fork）：長跑 server 的 RSS/碎片化優於 glibc malloc
@@ -74,24 +74,8 @@ async fn run() -> anyhow::Result<()> {
                 .unwrap_or_else(|_| "info,koimsurai_web_backend=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
-        // tracing 事件 → Sentry。event_filter 決定每個層級走哪幾條路（可以用 | 疊）：
-        //   ERROR  → Event（成為 issue）+ Log
-        //   WARN   → Breadcrumb（附在下一個 issue 上）+ Log
-        //   INFO   → 只有 Log
-        //   DEBUG/TRACE → 丟掉。這兩級在正式環境是 request 級別的雜訊，
-        //                 全送的話 Postgres 會被灌爆而且沒有對應的價值。
-        //
-        // ⚠️ WARN 刻意**不**變成 Event。link_preview 抓不到、manage_tags 失敗這類
-        //   日常雜訊每天都有，變成 issue 的話列表會被淹掉——而列表一旦沒人看，
-        //   真的出事時也就沒人看。
-        .with(sentry_tracing::layer().event_filter(|md| match *md.level() {
-            tracing::Level::ERROR => sentry_tracing::EventFilter::Event | sentry_tracing::EventFilter::Log,
-            tracing::Level::WARN => {
-                sentry_tracing::EventFilter::Breadcrumb | sentry_tracing::EventFilter::Log
-            }
-            tracing::Level::INFO => sentry_tracing::EventFilter::Log,
-            _ => sentry_tracing::EventFilter::Ignore,
-        }))
+        // tracing 事件 → Sentry：哪個層級變成 issue、麵包屑或日誌，見 telemetry 模組
+        .with(telemetry::sentry_layers())
         .init();
 
     // 開機自檢：`SENTRY_SMOKE_TEST=1` 時送一則測試錯誤，然後照常啟動。
