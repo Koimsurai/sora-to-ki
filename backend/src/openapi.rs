@@ -24,6 +24,42 @@ impl Modify for SecurityAddon {
     }
 }
 
+/// 沒寫 `description` 的回應補上狀態碼的標準說法（200 → OK）。
+///
+/// OpenAPI 3.1 的回應一定要有 description。utoipa 5 會輸出空字串湊數，6 改成空的就省略，
+/// 規格因此不合法（`responses((status = 200, body = X))` 這種寫法有八十多處）。
+/// 在這裡統一補，不用每一處都寫一句「成功」。
+struct ResponseDescriptions;
+impl Modify for ResponseDescriptions {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        for item in openapi.paths.paths.values_mut() {
+            let ops = [
+                &mut item.get,
+                &mut item.put,
+                &mut item.post,
+                &mut item.delete,
+                &mut item.options,
+                &mut item.head,
+                &mut item.patch,
+                &mut item.trace,
+            ];
+            for op in ops.into_iter().flatten() {
+                for (code, resp) in &mut op.responses.responses {
+                    let utoipa::openapi::RefOr::T(resp) = resp else { continue };
+                    if resp.description.is_empty() {
+                        resp.description = code
+                            .parse::<axum::http::StatusCode>()
+                            .ok()
+                            .and_then(|s| s.canonical_reason())
+                            .unwrap_or("Response")
+                            .to_string();
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[derive(OpenApi)]
 #[openapi(
     info(
@@ -31,7 +67,7 @@ impl Modify for SecurityAddon {
         description = "個人站 Rust 後端 · 完整 API 面（公開讀 typed、admin/mutation/第三方 proxy path-level）",
         version = "0.2.0",
     ),
-    modifiers(&SecurityAddon),
+    modifiers(&SecurityAddon, &ResponseDescriptions),
     paths(
         handlers::admin::admin_batch_comment_status,
         handlers::admin::admin_blacklist,
