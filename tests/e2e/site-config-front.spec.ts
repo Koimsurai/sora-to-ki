@@ -42,10 +42,7 @@ test.describe('前台跟著站台設定', () => {
       await expect(sky).toHaveAttribute('aria-expanded', 'true', { timeout: 2_000 });
     }).toPass({ timeout: 20_000 });
 
-    await page
-      .locator('.snav-page-sky')
-      .getByRole('button', { name: /黑洞/ })
-      .click();
+    await page.locator('.snav-page-sky').getByRole('button', { name: /黑洞/ }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'blackhole', { timeout: 10_000 });
     await expect(sky).toHaveAccessibleName(/黑洞/);
 
