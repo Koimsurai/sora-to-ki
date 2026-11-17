@@ -95,6 +95,12 @@ export default function HomeOrbit() {
   /** 衛星在畫面上的位置與速度（px/ms），轉場的「收」要用 */
   const positionsRef = useRef<SatelliteScreen[]>([]);
   const velocityRef = useRef<Pt[]>([]);
+  /** 下面那個每幀的 effect 跨重跑要接著用的狀態（理由見 effect 開頭） */
+  const liveRef = useRef<{ flat: boolean; lastPositionsAt: number | null; positionsAt: number }>({
+    flat: false,
+    lastPositionsAt: null,
+    positionsAt: 0,
+  });
   // 字卡與標註畫進 3D 的那張 canvas（接上了才有；伺服器端與不支援的瀏覽器是 null）
   const labelHost = useSyncExternalStore(subscribeCanvasHost, canvasHost, () => null);
   // 3D 沒跑起來（平面的備案）時字照舊是頁面上的一欄連結
@@ -181,7 +187,10 @@ export default function HomeOrbit() {
     if (!section) return;
     const count = main.length;
     let positions: SatelliteScreen[] = [];
-    let lastPositionsAt = performance.now();
+    // 切成平面會換掉字卡的掛載點（host），這個 effect 因此重跑：平面與否、最後收到位置的時間要接著上一輪，
+    // 不能歸零。歸零的話 3D 回來時算出「不是平面」跟歸零的值一樣，就再也不會切回去（兩套字疊在一起）
+    const track = liveRef.current;
+    track.lastPositionsAt ??= performance.now();
     let pointer: [number, number] | null = null;
     let focused = -1;
     let tapped = -1;
@@ -190,7 +199,6 @@ export default function HomeOrbit() {
     let hintIndex = 0;
     let hintStart = 0;
     let raf = 0;
-    let flatNow = false;
     // 字卡與小標註最後一次看得到（透明度大於 0）是什麼時候：整個淡出之後就不再每幀擺位置。
     // 每一幀改它們的樣式，瀏覽器就得重算那些元素的樣式；五張字卡、五個小標註加上字卡裡的每一行，
     // 在慢手機上一幀要好幾毫秒（CPU 降速 4 倍時首頁閒置只剩 20fps），而字卡大部分時間是透明的
@@ -217,9 +225,9 @@ export default function HomeOrbit() {
     });
 
     /** 收到的這組位置是 3D 在哪個時間點算的（store/homeOrbit 的 absNow 時基） */
-    let positionsAt = 0;
     const unsubscribe = subscribeSatellites((next, at) => {
       const prev = positionsRef.current;
+      const { positionsAt } = track;
       // 速度照 3D 算位置的時間差算，不照訊息到達的時間：訊息有時一幀到兩筆、有時一筆都沒有
       if (next.length && prev.length === next.length && at > positionsAt) {
         velocityRef.current = next.map((p, i) => ({
@@ -229,9 +237,10 @@ export default function HomeOrbit() {
       }
       positions = next;
       positionsRef.current = next;
-      if (next.length) {
-        lastPositionsAt = performance.now();
-        positionsAt = at;
+      // 重跑時訂閱會先補送一次舊的那組：那不是 3D 活著的證據，不算新的一筆
+      if (next.length && at > positionsAt) {
+        track.lastPositionsAt = performance.now();
+        track.positionsAt = at;
       }
     });
 
@@ -308,18 +317,19 @@ export default function HomeOrbit() {
 
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      const live = positions.length === count && now - lastPositionsAt < FLAT_AFTER_MS;
+      const since = now - (track.lastPositionsAt ?? now);
+      const live = positions.length === count && since < FLAT_AFTER_MS;
       const noGpu = document.documentElement.classList.contains('no-gpu');
-      const nextFlat = !live && (noGpu || now - lastPositionsAt > FLAT_AFTER_MS);
-      if (nextFlat !== flatNow) {
-        flatNow = nextFlat;
+      const nextFlat = !live && (noGpu || since > FLAT_AFTER_MS);
+      if (nextFlat !== track.flat) {
+        track.flat = nextFlat;
         setFlat(nextFlat);
       }
       if (!live) return;
       // 字跟著衛星：3D 在 worker 裡畫，位置傳過來時已經晚了一點，而且跟這邊的幀不同步（有的幀收到兩筆、
       // 有的一筆也沒有），照收到的位置擺字會一停一跳。照速度推算到這一幀的時間，字就跟畫面上的衛星對齊。
       // 最多推 PREDICT_MAX_MS：3D 停下來（分頁切走、收起來）時字不會自己飄走
-      const ahead = Math.min(PREDICT_MAX_MS, Math.max(0, absNow() - positionsAt));
+      const ahead = Math.min(PREDICT_MAX_MS, Math.max(0, absNow() - track.positionsAt));
       const shown = positions.map((p, i) => {
         const v = velocityRef.current[i] as Pt | undefined;
         return v ? { ...p, x: p.x + v.x * ahead, y: p.y + v.y * ahead } : p;
