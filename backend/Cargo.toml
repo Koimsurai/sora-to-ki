@@ -99,7 +99,7 @@ specta-serde = "0.0.12"
 utoipa = { version = "6.0.0", features = ["axum_extras"] }
 utoipa-scalar = { version = "0.4.0", features = ["axum"] }
 csv = "1"
-maxminddb = "0.32.0"
+maxminddb = "0.33.0"
 flate2 = "1.1.10"
 
 # jemalloc（tikv fork）：長跑 server 降 RSS/碎片化。MSVC 不支援 → target cfg 排除。
