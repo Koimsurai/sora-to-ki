@@ -71,7 +71,7 @@
     "framer-motion": "^12.6.2",
     "harfbuzzjs": "1.6.3",
     "hast-util-to-jsx-runtime": "^2.3.6",
-    "i18next": "^26.4.0",
+    "i18next": "^27.1.5",
     "jotai": "^2.20.3",
     "katex": "^0.18.4",
     "lucide-react": "^0.468.0",
